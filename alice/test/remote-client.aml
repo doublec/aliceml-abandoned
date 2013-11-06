@@ -1,0 +1,17 @@
+import "x-alice:/lib/distribution/Remote"
+import "x-alice:/lib/system/Print"
+import "x-alice:/lib/tools/Inspector"
+
+structure T = unpack Pickle.load "/tmp/ticket" : (val it : string)
+val p = Remote.take T.it
+structure S = unpack p : (val f : int -> unit)
+
+fun g x = (S.f x; print " = ()\n")
+	  handle Remote.Proxy e => (print " = raise Proxy("; Print.printVal e; print ")\n"; Inspector.inspect e)
+	       | e => (print " = raise "; Print.printVal e; print "\n")
+
+val _ = g 1
+val _ = g 2
+val _ = Thread.sleep (Time.fromSeconds 15)
+val _ = g 3
+val _ = g 4

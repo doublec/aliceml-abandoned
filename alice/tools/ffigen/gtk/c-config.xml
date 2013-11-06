@@ -1,0 +1,37 @@
+<xml>
+
+<filter>
+  <accept>pointer</accept>
+  <accept>c_##</accept>
+  <accept>my_new</accept>
+  <accept>my_delete</accept>
+  <accept>pointer##</accept>
+  <accept>unref##</accept>
+  <accept>sizeof##</accept>
+  <accept>cast##</accept>
+</filter>
+
+<filter>
+  <rename>
+    <from>my_#x#</from>
+    <to>#x#</to>
+  </rename>
+  <accept>##</accept>
+</filter>
+
+<fun>
+   <name>stringToCharPtr</name>
+   <type>string -> c_char pointer</type>
+   <export>INIT_STRUCTURE(record, "c", "stringToCharPtr",stringToCharPtr , 1);</export>
+   <body>
+     DEFINE1(stringToCharPtr) {
+	DECLARE_CSTRING(y0,x0);
+	word rw = UNMANAGED_POINTER_TO_WORD((void*)(y0));
+	RETURN(rw);
+     } END 
+   </body>
+</fun>
+
+
+</xml>
+

@@ -1,0 +1,146 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name           from "x-alice:/lib/rtt/Name"
+import structure Label          from "x-alice:/lib/rtt/Label"
+import structure Path           from "x-alice:/lib/rtt/Path"
+import structure Type           from "Type"
+import structure PathSet        from "x-alice:/lib/rtt/PathSet"
+import signature PERVASIVE_TYPE from "PERVASIVE_TYPE-sig"
+
+
+functor MkPervasiveType(val labid_false :	string
+			val labid_true :	string
+			val typid_bool :	string
+			val typid_int :		string
+			val typid_word :	string
+			val typid_real :	string
+			val typid_char :	string
+			val typid_string :	string
+			val typid_exn :		string
+			val typid_ref :		string
+			val typid_vec :		string
+			val typid_array :	string
+			val typid_strict :	string
+			val typid_conarrow :	string
+			val typid_package :	string
+			val valid_match :	string
+			val valid_bind :	string
+			val modid_pervasive :	string
+			val prefix_arrow :	string
+			val prefix_arrow2 :	string
+			) :> PERVASIVE_TYPE =
+struct
+    type lab		= Label.t
+    type name		= Name.t
+    type path		= Path.t
+    type typ		= Type.typ
+
+    val lab_false	= Label.fromString labid_false
+    val lab_true	= Label.fromString labid_true
+
+    val name_pervasive	= Name.ExId modid_pervasive
+    val name_bool	= Name.ExId typid_bool
+    val name_int	= Name.ExId typid_int
+    val name_word	= Name.ExId typid_word
+    val name_real	= Name.ExId typid_real
+    val name_char	= Name.ExId typid_char
+    val name_string	= Name.ExId typid_string
+    val name_exn	= Name.ExId typid_exn
+    val name_ref	= Name.ExId typid_ref
+    val name_vec	= Name.ExId typid_vec
+    val name_array	= Name.ExId typid_array
+    val name_strict	= Name.ExId typid_strict
+    val name_conarrow	= Name.ExId typid_conarrow
+    val name_package	= Name.ExId typid_package
+
+    val name_match	= Name.ExId valid_match
+    val name_bind	= Name.ExId valid_bind
+
+    val paths		= PathSet.set()
+    val path_bool	= Path.pervasive typid_bool
+			  (* non-generative *)
+    val path_int	= Path.pervasive typid_int
+    val _		= PathSet.insert(paths, path_int)
+    val path_word	= Path.pervasive typid_word
+    val _		= PathSet.insert(paths, path_word)
+    val path_real	= Path.pervasive typid_real
+    val _		= PathSet.insert(paths, path_real)
+    val path_char	= Path.pervasive typid_char
+    val _		= PathSet.insert(paths, path_char)
+    val path_string	= Path.pervasive typid_string
+    val _		= PathSet.insert(paths, path_string)
+    val path_exn	= Path.pervasive typid_exn
+    val _		= PathSet.insert(paths, path_exn)
+    val path_ref	= Path.pervasive typid_ref
+    val _		= PathSet.insert(paths, path_ref)
+    val path_vec	= Path.pervasive typid_vec
+    val _		= PathSet.insert(paths, path_vec)
+    val path_array	= Path.pervasive typid_array
+    val _		= PathSet.insert(paths, path_array)
+    val path_strict	= Path.pervasive typid_strict
+    val _		= PathSet.insert(paths, path_strict)
+    val path_conarrow	= Path.pervasive typid_conarrow
+    val _		= PathSet.insert(paths, path_conarrow)
+    val path_package	= Path.pervasive typid_package
+    val _		= PathSet.insert(paths, path_package)
+
+    val kind_star	= Type.starKind()
+    val kind_ext	= Type.extKind()
+    val kind_arrow	= Type.arrowKind(kind_star, kind_star)
+    val kind_arrow2	= Type.arrowKind(kind_star, kind_arrow)
+
+    val typ_int		= Type.con(path_int,      kind_star)
+    val typ_word	= Type.con(path_word,     kind_star)
+    val typ_real	= Type.con(path_real,     kind_star)
+    val typ_char	= Type.con(path_char,     kind_star)
+    val typ_string	= Type.con(path_string,   kind_star)
+    val typ_exn		= Type.con(path_exn,      kind_ext )
+    val typ_ref		= Type.con(path_ref,      kind_arrow)
+    val typ_vec		= Type.con(path_vec,      kind_arrow)
+    val typ_array	= Type.con(path_array,    kind_arrow)
+    val typ_strict	= Type.con(path_strict,   kind_arrow)
+    val typ_conarrow	= Type.con(path_conarrow, kind_arrow)
+    val typ_package	= Type.con(path_package,  kind_star)
+
+    val typ_zero	= Type.apply(typ_strict, Type.tuple #[])
+    val row_bool	= Type.extendRow(lab_false, typ_zero,
+			  Type.extendRow(lab_true, typ_zero, Type.emptyRow()))
+    val typ_bool	= Type.abbrev(Type.con(path_bool, kind_star),
+				      Type.unknown kind_star)
+    val _               = Type.fix #[(typ_bool, Type.sum row_bool)]
+
+
+    exception Lookup of string
+
+    fun lookup s =
+	if      s = typid_int    then typ_int
+	else if s = typid_word   then typ_word
+	else if s = typid_real   then typ_real
+	else if s = typid_char   then typ_char
+	else if s = typid_string then typ_string
+	else if s = typid_exn    then typ_exn
+	else if s = typid_ref    then typ_ref
+	else if s = typid_vec	 then typ_vec
+	else if s = typid_array  then typ_array
+	else if s = typid_strict then typ_strict
+	else if s = typid_conarrow then typ_conarrow
+	else if s = typid_package  then typ_package
+	else
+	if String.isPrefix prefix_arrow s
+	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow,
+						    NONE)), kind_arrow)
+	else if String.isPrefix prefix_arrow2 s
+	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow2,
+						    NONE)), kind_arrow2)
+	else Type.con(Path.pervasive s, kind_star)
+end

@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature STACK =
+sig
+    (*__eqeqtype*)eqtype 'a stack
+    type t = stack
+
+    exception Empty
+
+    val stack :		unit -> 'a stack
+    val clone :		'a stack -> 'a stack
+    val push :		'a stack * 'a -> unit
+    val pop :		'a stack -> 'a		(* Empty *)
+    val peek :		'a stack -> 'a option
+    val purge :		'a stack -> unit
+    val isEmpty :	'a stack -> bool
+    val size :		'a stack -> int
+end

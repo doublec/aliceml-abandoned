@@ -1,0 +1,59 @@
+signature S =
+sig
+   val f : string -> unit
+   val g : string -> unit
+   val s : string
+end
+
+structure X =
+struct
+   fun f s = print s
+   val g = print
+   val s = "bla\n"
+end
+
+structure P = Remote.Proxy (signature S = S structure X = X)
+;
+
+Pickle.save ("/tmp/a", pack X : S);
+Pickle.save ("/tmp/a", pack P : S);
+structure L = unpack Pickle.load "/tmp/a" : S;
+
+X.f X.s; X.g X.s;
+P.f P.s; P.g P.s;
+L.f L.s; L.g L.s;
+
+
+
+functor F () =
+let
+   val _ = print "blub\n"
+in
+   fct () =>
+   let
+      val _ = print "bloink\n"
+   in
+      X
+   end
+end
+structure P = Remote.Proxy (signature S = ()->()->S structure X = F)
+;
+
+Pickle.save ("/tmp/a", pack F : (()->()->S));
+Pickle.save ("/tmp/a", pack P : (()->()->S));
+Pickle.save ("/tmp/b", pack (F ()) : (()->S));
+Pickle.save ("/tmp/b", pack (P ()) : (()->S));
+structure L = unpack Pickle.load "/tmp/a" : ()->()->S;
+structure M = unpack Pickle.load "/tmp/b" : ()->S;
+
+structure FF = F ();
+structure PP = P ();
+structure LL = L ();
+structure FFF = FF ();
+structure PPP = PP ();
+structure LLL = LL ();
+structure MM = M ();
+FFF.f FFF.s;
+PPP.f PPP.s;
+LLL.f LLL.s;
+MM.f MM.s;

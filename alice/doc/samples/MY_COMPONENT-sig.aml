@@ -1,0 +1,4 @@
+signature MY_COMPONENT =
+    sig
+	val fak: int -> int
+    end

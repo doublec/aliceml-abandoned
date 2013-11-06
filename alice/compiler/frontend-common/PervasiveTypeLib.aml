@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label              from "../../lib/rtt/Label"
+import structure Type               from "../../lib/rtt/Type"
+import structure PervasiveType      from "../../lib/rtt/PervasiveType"
+import signature PERVASIVE_TYPE_LIB from "PERVASIVE_TYPE_LIB-sig"
+
+structure PervasiveTypeLib : PERVASIVE_TYPE_LIB =
+struct
+    fun vallab s	= Label.fromString s
+    fun modlab s	= Label.fromString s
+
+  (* Module *)
+
+    val modlab_pervasiveType	= modlab "PervasiveType"
+    structure PervasiveType	= PervasiveType			(* verify *)
+
+  (* Operations *)
+
+    type typ = Type.t
+
+    val lab_lookup	= vallab "lookup"
+    val _		= PervasiveType.lookup : string -> typ	(* verify *)
+end

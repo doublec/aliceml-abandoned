@@ -1,0 +1,66 @@
+We are happy to announce the first release of the Alice programming
+system:
+
+        http://www.ps.uni-sb.de/alice/
+
+Alice is a functional programming language bridging the gap
+between the statically typed, functional world of ML and the
+dynamically typed world of concurrent constraint programming as
+found in Oz. Alice combines the most appreciated features from
+both worlds.
+
+From Standard ML it inherits:
+
+    Functional core language
+	seamless higher-order functional programming in a
+	well-established syntax
+    Polymorphic type system
+	strong static typing with automatic type inference
+    Higher-order modules
+	parameterization and encapsulation via type abstraction
+    Simplicity
+	high expressiveness with few orthogonal language
+	constructs
+    Compatibility
+	access to a large pool of libraries and introductory
+	literature
+
+From Oz it inherits:
+
+    Futures
+	laziness and light-weight concurrency with implicit
+	dataflow synchronisation
+    Components
+        platform-independent higher-order persistence and
+        lazy dynamic linking
+    Distribution
+	network transparent mobility with fault tolerance
+    Constraints
+	concurrent constraints and programmable search
+	for combinatorical problems
+    Interactive tools
+	browsers for data structures and search spaces
+    Interoperability
+	application development in mixed ML/Oz environment
+
+Alice also provides features not found in either language:
+
+    Promises
+	safer "logic variables" with separated read/write view
+    Runtime typing
+	type-safe linking, persistence and inter-process
+	communication
+    Packages
+	typeful modules as first-class values
+
+Alice is based on the Mozart system. Alice applications can hence
+import Oz components ("functors"), and vice versa. Interoperation
+works smoothly down to the level of individual data structures.
+
+For more information, please visit the Alice project homepage:
+
+        http://www.ps.uni-sb.de/alice/
+
+Enjoy,
+
+	- The Alice Team

@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_SEARCH_COMPONENT =
+    sig
+	structure UnsafeSearch :
+	    sig
+		val searchOne : 'a
+		val searchOneDepth : 'a
+		val searchOneDepthS : 'a
+		val searchOneBound : 'a
+		val searchOneBoundS : 'a
+		val searchOneIter : 'a
+		val searchOneIterS : 'a
+		val searchOneLDS : 'a
+		val searchOneLDSS : 'a
+		val searchAll : 'a
+		val searchAllDepth : 'a
+		val searchAllDepthS : 'a
+		val searchBest : 'a
+		val searchBestBAB : 'a
+		val searchBestBABS : 'a
+		val searchBestRestart : 'a
+		val searchBestRestartS : 'a
+	    end
+    end

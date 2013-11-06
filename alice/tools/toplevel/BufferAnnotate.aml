@@ -1,0 +1,164 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+structure BufferAnnotate =
+struct
+    exception Malformed
+
+    fun parseInt(ss, i) =
+	if Char.isDigit(Substring.sub(ss, i)) then
+	    parseInt(ss, i+1)
+	else
+	    let
+		val (ss1,ss2) = Substring.splitAt(ss, i)
+		val n = case Int.fromString(Substring.string ss1) of
+			    SOME n => n
+			  | NONE => raise Malformed
+	    in
+		(n, ss2)
+	    end
+
+    fun parsePos ss =
+	let
+	    val (n1,ss1) = parseInt(ss,0)
+	    val _ = if Substring.sub(ss1,0) <> #"." then raise Malformed else ()
+	    val (n2,ss2) = parseInt(Substring.triml 1 ss1,0)
+	in
+	    ((n1,n2), ss2)
+	end
+
+    fun parseRegion ss =
+	let
+	    val (p1,ss1) = parsePos ss
+	    val _ = if Substring.sub(ss1,0) <> #"-" then raise Malformed else ()
+	    val (p2,ss2) = parsePos(Substring.triml 1 ss1)
+	in
+	    ((p1,p2), ss2)
+	end
+
+    fun parseRegions(ss, rs) =
+	if Substring.sub(ss, 0) = #"\n" then
+	    rs
+	else if Substring.sub(ss, 0) = #" " then
+	    parseRegions(Substring.triml 1 ss, rs)
+	else
+	    let
+		val (r,ss') = parseRegion ss
+	    in
+		parseRegions(ss', r::rs)
+	    end
+
+    fun parseContent([], lines) = raise Malformed
+      | parseContent(line::stream, lines) =
+	if String.size line = 0 orelse String.sub(line, 0) = #"#" then
+	    (String.concat(List.rev lines), line::stream)
+	else
+	    parseContent(stream, line::lines)
+
+    fun getLine([], ss) = ([], String.concat(List.rev ss))
+      | getLine(s::stream, ss) =
+	if String.sub(s, String.size s-1) = #"\n"
+	then (stream, String.concat(List.rev(s::ss)))
+	else getLine(stream, s::ss)
+
+    fun parseEntries([], entries) = raise Malformed
+      | parseEntries(line::stream, entries) =
+	if String.size line < 2 orelse line = "##\n" then
+	    (stream, Vector.fromList entries)
+	else
+	    if String.sub(line, 0) <> #"#" then raise Malformed else
+	    let
+		val (stream',line') = getLine(line::stream, [])
+		val rs = parseRegions(Substring.extract(line', 2, NONE), [])
+		val (s, stream'') = parseContent(stream', [])
+		val (keyw,tok) = case String.sub(line, 1)
+				  of #"V" => ("val", ":")
+				   | #"M" => ("structure", ":")
+				   | #"T" => ("type", "=")
+				   | #"S" => ("signature", "=")
+				   | _ => raise Malformed
+	    in
+		parseEntries(stream'', (rs,(keyw,tok,s))::entries)
+	    end
+
+    fun parseAnnotations stream = parseEntries(stream, [])
+
+    exception Off
+    fun moveToCol(iter, 0, col) = ()
+      | moveToCol(iter, n, col) =
+	let
+	    val c = Gtk.TextIter.getChar iter
+	in
+	    if c = Char.ord #"\n" then
+		raise Off
+	    else if c = Char.ord #"\t" then
+		let
+		    val tabjump = 8 - col mod 8
+		in
+		    Gtk.TextIter.forwardChar iter;
+		    moveToCol(iter, n-tabjump, col+tabjump)
+		end
+	    else
+		(Gtk.TextIter.forwardChar iter;
+		 moveToCol(iter, n-1, col+1))
+	end
+
+    fun applyTag (buf, tag, iter1, iter2) ((l1,c1), (l2,c2)) =
+	(Gtk.TextIter.setLine(iter1, l1-1);
+	 moveToCol(iter1, c1, 0);
+	 Gtk.TextIter.setLine(iter2, l2-1);
+	 moveToCol(iter2, c2, 0);
+	 Gtk.TextBuffer.applyTag(buf, tag, iter1, iter2))
+
+    fun applyAnnot (buf, iter1, iter2) ((rs,s), (tag, _)) =
+	List.app (applyTag(buf, tag, iter1, iter2)) rs;
+
+    val tagNamePrefix = "type-annotation"
+
+    val isAnnotationTagName = String.isPrefix tagNamePrefix
+    fun annotationIndex name =
+	valOf(Int.fromString(String.extract(name, String.size tagNamePrefix, NONE)))
+
+    fun applyAnnots(buf, entries, annotTags) =
+	let
+	    val iter1 = Gtk.TextIter.new()
+	    val iter2 = Gtk.TextIter.new()
+	    val tagTable = Gtk.TextBuffer.getTagTable buf
+	    val nTags = Vector.length annotTags
+	    val nEntries = Vector.length entries
+	    val annotTags' =
+		Vector.tabulate(Int.max(nTags, nEntries), fn i =>
+		    if i < nTags then
+			let
+			    val (tag, annot) = Vector.sub(annotTags, i)
+			in
+			    (tag, if i >= nEntries then annot
+				  else Pair.snd(Vector.sub(entries, i)))
+			end
+		    else
+			let
+			    val tag = Gtk.TextTag.new(tagNamePrefix ^ Int.toString i)
+			in
+			    Gtk.TextTagTable.add(tagTable, tag);
+			    (tag, Pair.snd(Vector.sub(entries, i)))
+			end
+		)
+	in
+	    Gtk.TextBuffer.getStartIter(buf, iter1);
+	    Gtk.TextBuffer.getStartIter(buf, iter2);
+	    VectorPair.app (applyAnnot(buf, iter1, iter2)) (entries, annotTags');
+	    annotTags'
+	end
+end

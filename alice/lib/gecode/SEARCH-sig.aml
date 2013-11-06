@@ -1,0 +1,35 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space from "Space"
+
+signature SEARCH =
+sig
+    (* Standard search engines, full copying *)
+    val searchOne : (Space.space -> 'a) -> (Space.space * 'a) option
+    val searchAll : (Space.space -> 'a) -> Space.space list * 'a
+
+    (* Branch and bound search engine *)
+    val searchBest :
+        (Space.space -> 'a * (Space.space *  Space.space -> unit)) ->
+	(Space.space * 'a) option
+
+    structure Recompute : sig
+        (* batch recomputation with fixed distance *)
+        val searchOne  : (Space.space -> 'a) * int -> (Space.space * 'a) option
+        val searchAll  : (Space.space -> 'a) * int -> Space.space list * 'a
+    end
+end

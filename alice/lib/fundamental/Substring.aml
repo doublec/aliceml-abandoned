@@ -1,0 +1,111 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                       from "Pervasive"
+import __primitive
+       type char and string
+       datatype bool and order and option and list from "ToplevelTypes"
+import __primitive
+       infix 6 + - infix 4 = <> < <= > infixr 5 ::
+       val op = and op <> and op < and op <= and op >
+       val op + and op -                           from "ToplevelValues"
+import __primitive structure General               from "General"
+import __primitive structure Option                from "Option"
+import __primitive structure List                  from "List"
+import __primitive structure Char                  from "Char"
+import __primitive structure String                from "String"
+import __primitive structure CharVectorSlice       from "CharVectorSlice"
+import __primitive signature SUBSTRING             from "SUBSTRING-sig"
+
+structure Substring : SUBSTRING =
+struct
+    type char			= char
+    type string			= string
+    type substring		= CharVectorSlice.slice
+    type t			= substring
+
+    open CharVectorSlice
+    val size			= length
+    val string			= vector
+    val extract			= slice
+    val slice			= subslice
+    fun substring(s,i,n)	= extract(s, i, SOME n)
+    val getc			= getItem
+    fun first ss		= Option.map #1 (getc ss)
+    val explode			= toList
+
+    fun hash ss			= String.hash(#1(base ss))
+    val equal			= equal op=
+    val compare			= collate Char.compare
+
+    (*INEFFICIENT*)
+    fun concatWith s sss	= String.concatWith s (List.map string sss)
+    fun translate f ss		= String.concat(List.map f (explode ss))
+
+    fun span(ss1,ss2)		= let
+				      val (s1,i1,n1) = base ss1
+				      val (s2,i2,n2) = base ss2
+				  in
+				      if s1 <> s2 orelse i2+n2 < i1
+				      then raise General.Span
+				      else substring(s1, i1, (i2+n2)-i1)
+				  end
+
+    fun isPrefix s ss		= isPrefix'(s,ss,0)
+    and isPrefix'(s,ss,i)	= i = String.size s orelse
+				  i <> size ss andalso
+				  String.sub(s,i) = sub(ss,i)
+				  andalso isPrefix'(s,ss,i+1)
+
+    fun isSuffix s ss		= isSuffix'(s, ss, String.size(s)-1, size(ss)-1)
+    and isSuffix'(s,ss,i1,i2)	= i1 = ~1 orelse
+				  i2 <> ~1 andalso
+				  String.sub(s,i1) = sub(ss,i2)
+				  andalso isSuffix'(s,ss,i1-1,i2-1)
+
+    fun isSubstring s ss	= isSubstring'(s,ss,0)
+    and isSubstring'(s,ss,i)	= i + String.size s <= size ss andalso
+				  (isSubstring''(s,ss,i,0)
+				  orelse isSubstring'(s,ss,i+1))
+    and isSubstring''(s,ss,i,j)	= j = String.size s orelse
+				  String.sub(s,j) = sub(ss,i+j) andalso
+				  isSubstring''(s,ss,i,j+1)
+
+    fun tokens  f s		= tokens'(f,s,0,0,nil)
+    and tokens'(f,s,i,j,ss) if (j = size s)
+				= List.rev(if i = j then ss
+					   else slice(s,i,SOME(j-i))::ss)
+      | tokens'(f,s,i,j,ss) if (f(sub(s,j)))
+				= tokens'(f,s,j+1,j+1, if i = j then ss
+				           else slice(s,i,SOME(j-i))::ss)
+      | tokens'(f,s,i,j,ss)	= tokens'(f,s,i,j+1,ss)
+
+    fun fields  f s		= fields'(f,s,0,0,nil)
+    and fields'(f,s,i,j,ss) if (j = size s)
+				= List.rev(slice(s,i,SOME(j-i))::ss)
+      | fields'(f,s,i,j,ss) if (f(sub(s,j)))
+				= fields'(f,s,j+1,j+1, slice(s,i,SOME(j-i))::ss)
+      | fields'(f,s,i,j,ss)	= fields'(f,s,i,j+1,ss)
+
+    fun position s ss           = position'(s,ss,0)
+    and position'(s,ss,i) if (i > (size ss)-String.size s)
+				= (ss,slice(ss,size ss,SOME 0))
+      | position'(s,ss,i) if (isPrefix s (slice(ss,i,NONE)))
+				= (slice(ss,0,SOME i),
+				   slice(ss,i,NONE))
+      | position'(s,ss,i)       = position'(s,ss,i+1)
+
+end

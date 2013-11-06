@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive from "Pervasive"
+
+signature PACKAGE =
+sig
+    type package
+    type t = package
+    type mismatch
+    exception Mismatch of mismatch
+
+    functor Pack(signature S structure X : S) : (val package : package)
+    functor Unpack(val package : package signature S) : S	(* Mismatch *)
+    functor PackVal(type t val x : t) : (val package : package)
+    functor UnpackVal(val package : package type t) : (val x : t)
+								(* Mismatch *)
+end

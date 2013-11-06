@@ -1,0 +1,11 @@
+(* replaced 'lexer' with 'lexxer' because of problems with hose *)
+
+
+val fileParser = fn f =>
+	let val ins = TextIO.openIn f
+	    val lexxer = Lexer.makeLexer (fn n => TextIO.inputN (ins,n))
+	    val result = Parse.parse lexxer
+	    val _ = TextIO.closeIn ins
+	in 
+	    result
+	end	 

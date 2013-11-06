@@ -1,0 +1,248 @@
+LEXER-PARSER-TRALLALA
+=====================
+
+
+*OK* soll '_' auch fuer einen Zeilenwechsel stehen koennen?
+
+
+*fixed* gibts einen Unterschied zwischen "abc" und abc als regulaerem Ausdruck?
+	-ja, muss geaendert werden
+	->Folgefehler: man muss ds* so klammern: d(s)* oder d(s*)
+
+
+*OK* keine Moeglichkeit gefunden, explist ohne '@' zu machen, da in exp ( )
+     vorkommt
+     -Baumstruktur
+
+
+*fixed* die Eingabe darf nicht mit ';' aufhoeren, sonst wird Exception geworfen
+
+
+*fixed* im let-in muss geklammert werden, wenn ';' auftritt
+
+
+*OK* soll '\ ' ein regulaerer Ausdruck fuer " " sein?
+     -nein
+
+
+*OK* -Symolische Bezeichner muessen ALLE mitgelext werden
+
+
+*OK* -[...] zu ["..."] und [^...] zu [^"..."] geaendert
+
+
+*OK* -statt exp : '(' exp ')'
+
+
+*fixed* -nach '=> (' muss ein MLKEY kommen , sonst Error
+
+
+*OK* -statt bool array BoolVector:
+
+
+*OK* -BoolVector auslagern
+
+
+*OK* -Keywords hinzugefuegt:
+               construktor
+               exttype
+               import
+
+
+*fixed* -was tun, wenn file nicht mit MLKEY beginnt?
+
+
+*gestrichen* -2 STATES fuer Kommentare
+
+
+*OK* -Abstrakte Datentypen uebersichtlicher/aussagekraeftiger organisieren
+
+
+*fixed* - r s | t u   wird falsch ( r (s | t u) ) geklammert
+
+*fixed* -Fehlermeldungen zeigen die falschen Zeilen an
+
+*nein, syntax verkehrt* -darf 'val x = [regexp a = "b"]' einen Fehler werfen,
+                         oder auch als MLKEY deklarieren? { } analog
+                         ansonsten muessten mehrere PAREXP deklariert werden
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+AUTOMAT
+=======
+
+*OK* -regids in einer map speichern
+
+*OK* -sollen regids ueber Strukturen und ueber Klammerungen hinweg gueltig sein?
+      aktuell: ja
+
+*OK* -alle REGs werden beim ersten Durchlauf von Collect.substLexList geloescht,
+      korrekt?
+
+*ja* - ' "a" "a"? | "b" "c" '  ist: {"a", "aa", "bc"}?
+
+*nein, falsche Annahme* -Algorithmus scheinbar besser als angenommen,
+                         bekomme nur minimierte Automaten. Gegenbeispiel?
+
+*ja, muss 'i' statt 'j' heissen* -S.168 Fehler in der Beschreibung eines NEA
+                                  ohne epsilon-Uebergaenge
+
+*uninteressant* -Tabellenkompaktierung?
+
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+
+TO-DO!
+======
+
+*OK* testen: Testfiles im Ordner test, hamlet
+
+*OK* schwachhsinnsfiles erzeugen
+
+*OK* Parser.parser : string -> AbsSyn.lex list
+
+*OK* -Main.sml erstellen
+      genannt Hose.sml!
+
+*OK* -Signaturen erstellen
+
+*255* geht der Zeichensatz immer bis 255, oder muss die Automatendarstellung
+      auch mit 127 funktionieren?
+
+*nein* unclosed comment: (* ... "(*" ... *) wie in ml oder "besser"?
+
+*OK* 'eof' als spezielles Zeichen behandeln
+
+*OK* Zustaende in lineare Reihenfolge umbenennnen
+
+*OK* statt Liste zwei Vektoren benutzen
+
+*OK* pruefen, dass 'eof' nur in finale Zustaende fuehrt
+
+*OK* mehr in Lexer.sml reinpacken
+
+*OK* Module aufraeumen ( Help.sml verteilen )
+
+*OK* posToString in AbsSyn einfuegen
+
+*OK* internal Errors hervorheben
+
+*OK* Zeilennummer vom Parser an den AST weitergeben (..right, ..left)
+
+*OK* Typ aendern in kleinbuchstaben_mit_underscore
+
+*OK* yytext-Funktion einbauen
+
+*nein* beinhaltet '_' das 'eof' ?
+
+*nein* stringToExp korrigieren, damit die Spaltenangabe stimmt
+       nicht moeglich, da nur die Position uebergeben wird
+
+*OK* newLines funktionieren noch nicht richtig
+
+*OK* codeGenerator anhand von Beispiel in.test.sml nachbauen!
+
+*OK* Lexer rekursiv aufrufen koennen, auch verschachtelt
+
+*OK* gaps in strings bei regexp- und lexerdeklarationen erlauben
+
+*OK* Kommentierung in die SIGs uebertragen
+
+*OK* Fehlermeldungen umbenennen/vereinheitlichen!
+
+*eingefuegt* signatur fuer structure Lexer sinnvoll? (im Moment auskommentiert)
+
+*OK* -Komandozeilen bekommt zu parsendes File, opt. Ausgabefile
+               Hose.sml / HOSE-sig.sml anpassen
+               hose <infile> [-o <outfile>]
+               usage-message, if not matched
+               SMLofNJ.exportFn - Doku
+               hilfreiche dateien von hamlet:
+                          wrap-smlnj.sml
+                          Main.sml
+                          hamlet
+
+*OK* -IO.Io exception handeln
+
+*fixed* -EOF wandert nach rechts, wenn es mehrmals gefunden wird
+
+*OK* -typ: unit -> string option,
+           also quasi in Lexer.sml string durch getString ersetzen
+           vom alten string muss der Rest uebernommen werden,
+           der noch keine Action gab
+           wenn einmal NONE kam, darf die Funktion nicht wieder aufgerufen
+	   werden
+           helfen koennte hose.lex.sml
+
+*OK* -Output.sml: REGCASE-Ausgabe vervollständigen.
+
+*fixed* -bei regcase ... of ( ... ) müssen die Klammern stehen
+
+*OK* -statt getChar : unit -> char option
+            getString : unit -> string option
+
+    Idee: CharArray.array als Buffer (evtl. wie bei ml-lex)
+          oder string list
+    Realisiert: mit char vector, also string
+
+*OK* -zusätzlich Lexer.fromList : string list -> (unit -> string option)
+
+*OK* -statt Ausnahme Error: RegMatch of string
+
+-welche Variablen werden benutzt, ggf. umbenennen (z.B. pos)
+
+-tagged transitions einführen
+
+-Jacke zum laufen kriegen
+
+-bootstrap einchecken
+
+-kurze Anleitung schreiben
+
+-Jacke bootstrap
+
+
+--------------------------------------------------------------------------------
+
+
+
+FEATURES
+========
+
+-["..."] statt [...]
+
+-Bezeichner fuer regulaere Ausdruecke duerfen nur einmal verwendet werden
+
+-Bezeichner fuer lexer duerfen nur einmal verwendet werden
+
+-regbinds koennen fast ueberall stehen, da sie geloescht werden
+
+-'eof' darf nur am Ende einer Regel vorkommen
+
+-yytext liefert das Lexem
+
+-yyline liefert die Anfangszeile des Lexems
+
+-yycol liefert die Anfangsspalte des Lexems
+
+-'_' steht fuer alle Zeichen '\000' - '\255', nicht fuer 'eof'
+
+-reg{n,m} wiederholt reg n bis m Mal, reg{n} bedeutet genau n-mal reg
+
+-[^"..."] steht fuer alles Zeichen ausser den aufgefuehrten und 'eof'
+
+-regcase string of       der string muss genau auf einen der regexp passen
+   regexp1 => action1     dann wird die zugehörige action ausgeführt
+ | regexp2 => action2     in den regexp darf 'eof' nicht vorkommen
+ | ...
+
+

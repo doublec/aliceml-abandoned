@@ -1,0 +1,58 @@
+(* Alice Snake 2.0 - TextWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature TEXT from "TEXT-sig"
+
+import structure Gtk  from "GtkSupport"
+
+
+structure Text :> TEXT =
+struct
+
+    type text_widget = Gtk.object
+
+    (* [mkTextWindow(title, mode)] builds a text window 
+     with title 'title' and text 'mode' *)
+    fun mkTextWindow (parent, title, mode) = 
+	let
+
+	    val textWindow  = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val dialogVBox  = Gtk.VBox.new (false, 0)
+	    val closeButton = Gtk.Button.newWithLabel "  Close  "
+	    val buttonHBox  = Gtk.HButtonBox.new ()
+	    val label       = Gtk.Label.new mode
+
+	in
+	    Gtk.Window.setTitle (textWindow, title);
+	    Gtk.Window.setModal (textWindow, true);
+	    Gtk.Window.setPosition (textWindow, Gtk.WindowPosition.CENTER);
+	    Gtk.Container.setBorderWidth (textWindow , 10);
+	    if String.isPrefix "<" mode
+		then Gtk.Label.setMarkup (label, mode)
+	    else ();
+
+	    Gtk.signalConnect (textWindow , "delete-event", 
+			       fn _ => Gtk.Widget.destroy textWindow);
+	    Gtk.signalConnect (closeButton, "clicked", 
+			       fn _ => Gtk.Widget.destroy textWindow);
+
+	    Gtk.Box.packStart (buttonHBox, closeButton, false, false, 5);
+	    Gtk.Box.packStart (dialogVBox, label, false, false, 5);
+	    Gtk.Box.packStart (dialogVBox, buttonHBox, false, false, 5);
+
+	    Gtk.Container.add (textWindow, dialogVBox);
+    	    Gtk.Widget.showAll textWindow;
+
+	    textWindow
+
+	end
+
+end

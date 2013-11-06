@@ -1,0 +1,57 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Byte structure", "The <TT>Byte</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature BYTE
+    structure Byte : BYTE
+  </PRE>
+
+  <P>
+    The Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/byte.html"><TT>Byte</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="word.html"><TT>Word8</TT></A>,
+    <A href="char.html"><TT>Char</TT></A>,
+    <A href="string.html"><TT>String</TT></A>,
+    <A href="substring.html"><TT>Substring</TT></A>,
+    <A href="mono-vector.html"><TT>CharVector</TT></A>,
+    <A href="mono-vector-slice.html"><TT>CharVectorSlice</TT></A>,
+    <A href="mono-vector.html"><TT>Word8Vector</TT></A>,
+    <A href="mono-array.html"><TT>Word8Array</TT></A>,
+    <A href="mono-vector.html"><TT>Word8VectorSlice</TT></A>,
+    <A href="mono-array.html"><TT>Word8ArraySlice</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature BYTE =
+    sig
+	val byteToChar :      Word8.t -> char
+	val charToByte :      char -> Word8.t
+	val bytesToString :   Word8Vector.t -> string
+	val stringToBytes :   string -> Word8Vector.t
+	val unpackStringVec : Word8VectorSlice.t -> string
+	val unpackString :    Word8ArraySlice.t -> string
+	val packString :      Word8Array.t * int * Substring.t -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Like the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/byte.html"><TT>Byte</TT></A> structure.
+  </P>
+
+<?php footing() ?>

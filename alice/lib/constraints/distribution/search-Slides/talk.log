@@ -1,0 +1,560 @@
+This is e-TeXk, Version 3.141592-2.1 (Web2C 7.5.2) (format=latex 2003.12.12)  3 JUN 2004 14:52
+entering extended mode
+ %&-line parsing enabled.
+ (/services/ps/texshare/texlive2003/texmf/web2c/cp8bit.tcx)
+**talk
+(./talk.tex
+LaTeX2e <2001/06/01>
+Babel <v3.7j> and hyphenation patterns for english, dumylang, nohyphenation, ba
+sque, czech, slovak, german, ngerman, danish, spanish, catalan, finnish, french
+, ukenglish, greek, croatian, hungarian, italian, latin, mongolian, dutch, norw
+egian, polish, portuguese, russian, ukrainian, serbocroat, swedish, loaded.
+(/services/ps/texshare/texlive2003/texmf/tex/latex/seminar/seminar.cls
+Document Class: seminar 1997/10/13, 1.4
+Document Style: `seminar' v1.4 <1997/10/13> (tvz)
+\slidewidth=\dimen102
+\slideheight=\dimen103
+\footheight=\dimen104
+(/services/ps/texshare/texlive2003/texmf/tex/latex/base/article.cls
+Document Class: article 2001/04/21 v1.4e Standard LaTeX document class
+(/services/ps/texshare/texlive2003/texmf/tex/latex/base/size12.clo
+File: size12.clo 2001/04/21 v1.4e Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen105
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/seminar/sem-page.sty)
+\before@document=\toks14
+\after@document=\toks15
+\before@enddocument=\toks16
+\c@slide=\count87
+\slide@count=\count88
+\@slidebox=\box26
+\not@slidebox=\box27
+\slide@hook=\toks17
+\after@slide=\toks18
+\slide@footins=\insert233
+\slide@listdepth=\count89
+\saved@specials=\box28
+\before@newslide=\toks19
+\after@slidepage=\toks20
+\slidesep=\skip43
+\c@note=\count90
+\slideframewidth=\dimen106
+\slideframesep=\dimen107
+\semin=\dimen108
+\semcm=\dimen109
+)
+(./talk.sty (/services/ps/texshare/texlive2003/texmf/tex/latex/base/fontenc.sty
+Package: fontenc 2001/06/05 v1.94 Standard LaTeX package
+(/services/ps/texshare/texlive2003/texmf/tex/latex/base/t1enc.def
+File: t1enc.def 2001/06/05 v1.94 Standard LaTeX file
+LaTeX Font Info:    Redeclaring font encoding T1 on input line 38.
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/seminar/seminar.bug)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/seminar/seminar.bg2
+seminar.bg2: various corrections for the Seminar document class added since sem
+inar.bug (waiting Seminar 98)
+(Version 1.7 of <May 22, 1998> (D.G.))
+) (/services/ps/texshare/texlive2003/texmf/tex/latex/seminar/semcolor.sty
+Style Option: `semcolor' for doc style `seminar' 1.0 <93/04/01> (tvz)
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pstricks.tex
+`PSTricks' v97 patch 14  <1999/12/23> (tvz)
+\pst@dima=\dimen110
+\pst@dimb=\dimen111
+\pst@dimc=\dimen112
+\pst@dimd=\dimen113
+\pst@dimg=\dimen114
+\pst@dimh=\dimen115
+\pst@hbox=\box29
+\pst@boxg=\box30
+\pst@cnta=\count91
+\pst@cntb=\count92
+\pst@cntc=\count93
+\pst@cntd=\count94
+\pst@cntg=\count95
+\pst@cnth=\count96
+\pst@toks=\toks21
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pstricks.con)
+\psunit=\dimen116
+\psxunit=\dimen117
+\psyunit=\dimen118
+\pslinewidth=\dimen119
+\pst@customdefs=\toks22
+\pslinearc=\dimen120
+\everypsbox=\toks23
+\psframesep=\dimen121
+\pslabelsep=\dimen122
+\theoverlaybox=\box31
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/seminar/slidesec.sty
+File `slidesec.sty' v0.9  92/05/07  <tvz>
+\@temptokenb=\toks24
+\c@slidesection=\count97
+\c@slidesubsection=\count98
+) (/services/ps/texshare/texlive2003/texmf/tex/latex/fancyhdr/fancyhdr.sty
+\headwidth=\dimen123
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks25
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2001/07/07 v1.0n Standard LaTeX Graphics (DPC,SPQR)
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/texlive/graphics.cfg
+File: graphics.cfg 2001/08/31 v1.1 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: dvips.def on input line 80.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen124
+\Gin@req@width=\dimen125
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/psnfss/pifont.sty
+Package: pifont 2002/09/08 PSNFSS-v9.0a Pi font support (SPQR) 
+LaTeX Font Info:    Try loading font information for U+pzd on input line 62.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/psnfss/upzd.fd
+File: upzd.fd 2001/06/04 font definitions for U/pzd.
+)
+LaTeX Font Info:    Try loading font information for U+psy on input line 63.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/psnfss/upsy.fd
+File: upsy.fd 2001/06/04 font definitions for U/psy.
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-all.sty
+Package: pst-all 1997/03/25 all pstricks tools
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/pstcol.sty
+Package: pstcol 2001/06/20 v1.1 PSTricks color colompatibility (DPC)
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pstricks.sty
+Package: pstricks 1997/03/25 package wrapper for PSTricks pstricks.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pstricks.tex))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/color.sty
+Package: color 1999/02/16 v1.0i Standard LaTeX Color (DPC)
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/texlive/color.cfg
+File: color.cfg 2001/08/31 v1.1 color configuration of teTeX/TeXLive
+)
+Package color Info: Driver file: dvips.def on input line 125.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/graphics/dvipsnam.def
+File: dvipsnam.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+)))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-grad.sty
+Package: pst-grad 1997/03/25 package wrapper for PSTricks pst-grad.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-grad.tex
+ v97 patch 1, 1997/04/28
+Package color Info: Redefining color gradbegin on input line 45.
+Package color Info: Redefining color gradend on input line 49.
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-plot.sty
+Package: pst-plot 1997/03/25 package wrapper for PSTricks pst-plot.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-plot.tex
+ v97 patch 2, 1999/12/12
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/multido.tex
+ v1.4, 93/01/14 <tvz>
+\multido@count=\count99
+\multidocount=\count100
+\multido@stuff=\toks26
+)))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-coil.sty
+Package: pst-coil 1997/03/25 package wrapper for PSTricks pst-coil.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-coil.tex
+ v97 patch 2, 1998/03/19))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-text.sty
+Package: pst-text 1997/03/25 package wrapper for PSTricks pst-text.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-text.tex
+ v97, 1997/03/25))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-char.sty
+Package: pst-char 1997/03/25 package wrapper for PSTricks pst-char.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-char.tex
+ v97 patch 3, 1999/03/11))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-node.sty
+Package: pst-node 1997/03/25 package wrapper for PSTricks pst-node.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-node.tex
+ v97 patch 11, 2000/11/09
+\psrow=\count101
+\pscol=\count102
+\psmatrixcnt=\count103
+\psrowsep=\skip44
+\pscolsep=\skip45
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-3d.sty
+Package: pst-3d 1997/03/25 package wrapper for PSTricks pst-3d.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-3d.tex
+ v97, 1997/03/25))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-eps.sty
+Package: pst-eps 1997/03/25 package wrapper for PSTricks pst-eps.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-eps.tex
+ v97 patch 1, 1997/05/05
+\pst@epsout=\write3
+\pst@tempout=\write4
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-fill.sty
+Package: pst-fill 1997/04/08 package wrapper for PSTricks pst-fill package
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-fill.tex
+ v97 patch 2, 1997/12/12
+\pst@fillbox=\box32
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/pst-tree.sty
+Package: pst-tree 1997/03/25 package wrapper for PSTricks pst-tree.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/pst-tree.tex
+ v97 patch 5, 1999/10/28
+\pstree@rootbox=\box33
+\pstree@box=\box34
+\psnodecnt=\count104
+\pstreelevel=\count105
+\pstreecnt=\count106
+\pstree@cnt=\count107
+\pstree@stop=\count108
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/pstricks/multido.sty
+Package: multido 1997/03/25 package wrapper for PSTricks multido.tex
+
+(/services/ps/texshare/texlive2003/texmf/tex/generic/pstricks/multido.tex
+ v1.4, 93/01/14 <tvz>))) (./hollow.sty)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 1999/03/28  ver 1.5x  Verb mode for urls, etc.
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/base/alltt.sty
+Package: alltt 1997/06/16 v2.0g defines alltt environment
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2003/09/15 v6.74i Hypertext links for LaTeX
+\@linkdim=\dimen126
+\Hy@linkcounter=\count109
+\Hy@pagecounter=\count110
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2003/09/15 v6.74i Hyperref: PDFDocEncoding definition (HO)
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/texlive/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
+)
+Package hyperref Info: Hyper figures OFF on input line 1879.
+Package hyperref Info: Link nesting OFF on input line 1884.
+Package hyperref Info: Hyper index ON on input line 1887.
+Package hyperref Info: Plain pages ON on input line 1892.
+Package hyperref Info: Backreferencing OFF on input line 1899.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks ON on input line 2003.
+LaTeX Info: Redefining \url on input line 2142.
+\Fld@menulength=\count111
+\Field@Width=\dimen127
+\Fld@charsize=\dimen128
+\Choice@toks=\toks27
+\Field@toks=\toks28
+Package hyperref Info: Hyper figures OFF on input line 2617.
+Package hyperref Info: Link nesting OFF on input line 2622.
+Package hyperref Info: Hyper index ON on input line 2625.
+Package hyperref Info: backreferencing OFF on input line 2632.
+Package hyperref Info: Link coloring OFF on input line 2637.
+\c@Item=\count112
+\c@Hfootnote=\count113
+)
+*hyperref using default driver hdvips*
+(/services/ps/texshare/texlive2003/texmf/tex/latex/hyperref/hdvips.def
+File: hdvips.def 2003/09/15 v6.74i Hyperref driver for dvips
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/hyperref/pdfmark.def
+File: pdfmark.def 2003/09/15 v6.74i Hyperref definitions for pdfmark specials
+\pdf@docset=\toks29
+\pdf@box=\box35
+\pdf@toks=\toks30
+\pdf@defaulttoks=\toks31
+\Fld@listcount=\count114
+\@outlinefile=\write5
+))
+(/services/ps/texshare/texlive2003/texmf/tex/generic/thumbpdf/thumbpdf.sty
+Package: thumbpdf 2003/06/06 v3.4 Inclusion of thumbnails (HO)
+
+
+Package thumbpdf Warning: Missing driver name.
+
+) (/services/ps/texshare/texlive2003/texmf/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2002/01/22 v2.2d
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2001/10/25 v2.2f
+\@emptytoks=\toks32
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 132.
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/stmaryrd/stmaryrd.sty
+Package: stmaryrd 1994/03/03 St Mary's Road symbol package
+\symstmry=\mathgroup6
+LaTeX Font Info:    Overwriting symbol font `stmry' in version `bold'
+(Font)                  U/stmry/m/n --> U/stmry/b/n on input line 89.
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amslatex/amsmath.sty
+Package: amsmath 2000/07/18 v2.13 AMS math features
+\@mathmargin=\skip46
+
+For additional information on amsmath, use the `?' option.
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amslatex/amstext.sty
+Package: amstext 2000/06/29 v2.01
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amslatex/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0
+\@emptytoks=\toks33
+\ex@=\dimen129
+))
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amslatex/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d
+\pmbraise@=\dimen130
+)
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amslatex/amsopn.sty
+Package: amsopn 1999/12/14 v2.01 operator names
+)
+\inf@bad=\count115
+LaTeX Info: Redefining \frac on input line 211.
+\uproot@=\count116
+\leftroot@=\count117
+LaTeX Info: Redefining \overline on input line 307.
+\classnum@=\count118
+\DOTSCASE@=\count119
+LaTeX Info: Redefining \ldots on input line 379.
+LaTeX Info: Redefining \dots on input line 382.
+LaTeX Info: Redefining \cdots on input line 467.
+\Mathstrutbox@=\box36
+\strutbox@=\box37
+\big@size=\dimen131
+LaTeX Font Info:    Redeclaring font encoding OML on input line 567.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 568.
+\macc@depth=\count120
+\c@MaxMatrixCols=\count121
+\dotsspace@=\muskip11
+\c@parentequation=\count122
+\dspbrk@lvl=\count123
+\tag@help=\toks34
+\row@=\count124
+\column@=\count125
+\maxfields@=\count126
+\andhelp@=\toks35
+\eqnshift@=\dimen132
+\alignsep@=\dimen133
+\tagshift@=\dimen134
+\tagwidth@=\dimen135
+\totwidth@=\dimen136
+\lineht@=\dimen137
+\@envbody=\toks36
+\multlinegap=\skip47
+\multlinetaggap=\skip48
+\mathdisplay@stack=\toks37
+LaTeX Info: Redefining \[ on input line 2666.
+LaTeX Info: Redefining \] on input line 2667.
+)
+Package color Info: Redefining color cyan on input line 41.
+Package color Info: Redefining color white on input line 41.
+)
+(./interface.tex) (./talk.aux)
+\openout1 = `talk.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 6.
+LaTeX Font Info:    ... okay on input line 6.
+Package hyperref Info: Link coloring OFF on input line 6.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/hyperref/nameref.sty
+Package: nameref 2001/01/27 v2.19 Cross-referencing by name of section
+\c@section@level=\count127
+)
+LaTeX Info: Redefining \ref on input line 6.
+LaTeX Info: Redefining \pageref on input line 6.
+
+(./talk.out) (./talk.out)
+\openout5 = `talk.out'.
+
+LaTeX Font Info:    Try loading font information for T1+cmss on input line 14.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/base/t1cmss.fd
+File: t1cmss.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+File: part1.eps Graphic file (type eps)
+ <part1.eps>
+File: part2.eps Graphic file (type eps)
+
+<part2.eps>
+File: part3.eps Graphic file (type eps)
+ <part3.eps>
+Overfull \vbox (9.49998pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (0.19011pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (4.3702pt too high) has occurred while \output is active []
+
+
+[1
+
+
+]
+LaTeX Font Info:    Try loading font information for T1+cmtt on input line 32.
+ (/services/ps/texshare/texlive2003/texmf/tex/latex/base/t1cmtt.fd
+File: t1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msa on input line 33.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 33.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+stmry on input line 33.
+
+(/services/ps/texshare/texlive2003/texmf/tex/latex/stmaryrd/Ustmry.fd)
+Overfull \hbox (3.59552pt too wide) in paragraph at lines 34--34
+[]    \T1/cmtt/m/n/8 {[]: $\OML/cmm/m/it/8 ^^K$ \T1/cmtt/m/n/8 worker_intf $\OM
+S/cmsy/m/n/8 !$ \T1/cmtt/m/n/8 unit ,[] 
+ []
+
+
+Overfull \hbox (3.59552pt too wide) in paragraph at lines 35--35
+[]     []\T1/cmtt/m/n/8 : []        unit $\OMS/cmsy/m/n/8 !$ \T1/cmtt/m/n/8 uni
+t ,[] 
+ []
+
+
+Overfull \hbox (3.59552pt too wide) in paragraph at lines 36--36
+[]     []\T1/cmtt/m/n/8 :             $\OML/cmm/m/it/8 ^^K$ $\OMS/cmsy/m/n/8 !$
+ \T1/cmtt/m/n/8 unit }[] 
+ []
+
+
+Overfull \hbox (13.30382pt too wide) in paragraph at lines 50--50
+[]    \T1/cmtt/m/n/8 {[]:  []unit $\OMS/cmsy/m/n/8 !$ \T1/cmtt/m/n/8 ($\OML/cmm
+/m/it/8 ^^K$ \T1/cmtt/m/n/8 work) option,[] 
+ []
+
+
+Overfull \vbox (9.49998pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (0.19011pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (4.3702pt too high) has occurred while \output is active []
+
+
+[2
+
+]
+LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10> not available
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 77.
+
+Overfull \vbox (9.49998pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (0.19011pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (4.3702pt too high) has occurred while \output is active []
+
+
+[3
+
+]
+LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <12> not available
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 127.
+
+Overfull \vbox (9.49998pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (0.19011pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (4.3702pt too high) has occurred while \output is active []
+
+
+[4
+
+]
+Overfull \vbox (9.49998pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (0.19011pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (4.3702pt too high) has occurred while \output is active []
+
+
+[5
+
+]
+Overfull \vbox (9.49998pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (0.19011pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (4.3702pt too high) has occurred while \output is active []
+
+
+[6
+
+]
+
+*******************************************************
+***** !! PRINT THIS DOCUMENT IN LANDSCAPE MODE !! *****
+*******************************************************
+(./talk.aux) ) 
+Here is how much of TeX's memory you used:
+ 6080 strings out of 95104
+ 80017 string characters out of 1182737
+ 153532 words of memory out of 1602921
+ 8961 multiletter control sequences out of 10000+50000
+ 17384 words of font info for 53 fonts, out of 1000000 for 2000
+ 458 hyphenation exceptions out of 1000
+ 37i,11n,45p,237b,587s stack positions out of 5000i,500n,6000p,200000b,40000s
+
+Output written on talk.dvi (6 pages, 33796 bytes).

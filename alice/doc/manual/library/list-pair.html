@@ -1,0 +1,207 @@
+<?php include("macros.php3"); ?>
+<?php heading("The ListPair structure", "The <TT>ListPair</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature LIST_PAIR
+    structure ListPair : LIST_PAIR
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/list-pair.html"><TT>ListPair</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="list.html"><TT>List</TT></A>,
+    <A href="vector-pair.html"><TT>VectorPair</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature LIST_PAIR =
+    sig
+        exception UnequalLengths
+
+	val zip :           'a list * 'b list -> ('a * 'b) list
+	val zipEq :         'a list * 'b list -> ('a * 'b) list
+	val unzip :         ('a * 'b) list -> 'a list * 'b list
+
+	val app :           ('a * 'b -> unit) -> 'a list * 'b list -> unit
+	val appEq :         ('a * 'b -> unit) -> 'a list * 'b list -> unit
+	val appr :          ('a * 'b -> unit) -> 'a list * 'b list -> unit
+	val apprEq :        ('a * 'b -> unit) -> 'a list * 'b list -> unit
+	val map :           ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+	val mapEq :         ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+	val mapPartial :    ('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+	val mapPartialEq :  ('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+	val foldl :         ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val foldlEq :       ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val foldr :         ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val foldrEq :       ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val all :           ('a * 'b -> bool) -> 'a list * 'b list -> bool
+	val allEq :         ('a * 'b -> bool) -> 'a list * 'b list -> bool
+	val exists :        ('a * 'b -> bool) -> 'a list * 'b list -> bool
+	val existsEq :      ('a * 'b -> bool) -> 'a list * 'b list -> bool
+	val find :          ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option
+	val filter :        ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) list
+	val filterEq :      ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) list
+
+	val appi :          (int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+	val appiEq :        (int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+	val appri :         (int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+	val appriEq :       (int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+	val mapi :          (int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+	val mapiEq :        (int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+	val mapiPartial :   (int * 'a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+	val mapiPartialEq : (int * 'a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+	val foldli :        (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list ->'c
+	val foldliEq :      (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list ->'c
+	val foldri :        (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val foldriEq :      (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val alli :          (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+	val alliEq :        (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+	val existsi :       (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+	val existsiEq :     (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+	val findi :         (int * 'a * 'b -> bool) -> 'a list * 'b list -> (int * 'a * 'b) option
+	val filteri :       (int * 'a * 'b -> bool) -> 'a list * 'b list -> (int * 'a * 'b) list
+	val filteriEq :     (int * 'a * 'b -> bool) -> 'a list * 'b list -> (int * 'a * 'b) list
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/list-pair.html"><TT>ListPair</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>appr <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Like <TT>app</TT>, but applies <TT><I>f</I></TT> in
+      right to left order.</P>
+    </DD>
+
+    <DT>
+      <TT>mapPartial <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Maps the function <TT><I>f</I></TT> over the list of pairs of elements
+      from the lists <TT><I>l1</I></TT> and <TT><I>l2</I></TT>, returning the
+      list of results where <TT><I>f</I></TT> was defined. If the lists are of
+      unequal lengths, the excess elements from the tail of the longer one are
+      ignored. The above expression is equivalent to:</P>
+      <PRE>
+         List.mapPartial f (zip (l1, l2)).</PRE>
+    </DD>
+
+    <DT>
+      <TT>find <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Applies <TT><I>f</I></TT> to each pair <TT>(<I>x1</I>,<I>x2</I>)</TT>
+      of elements of the lists, from left to right, until
+      <TT><I>f</I>(<I>x1</I>,<I>x2</I>)</TT>
+      evaluates to <TT>true</TT>; returns <TT>SOME(<I>x1</I>,<I>x2</I>)</TT> if
+      such a pair exists and <TT>NONE</TT> otherwise. If the lists are of
+      unequal lengths, the excess elements from the tail of the longer one are
+      ignored. The above expression is equivalent to:</P>
+      <PRE>
+         List.find <I>f</I> (zip (<I>l1</I>, <I>l2</I>))</PRE>
+    </DD>
+
+    <DT>
+      <TT>appi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>appri <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>mapi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>mapiPartial <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>foldli <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>foldri <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>alli <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>existsi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>findi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>filteri <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>app</TT>, <TT>appr</TT>,
+      <TT>map</TT>, <TT>mapPartial</TT>, <TT>foldl</TT>, <TT>foldr</TT>,
+      <TT>all</TT>, <TT>exists</TT>, <TT>find</TT> and <TT>filter</TT>.
+      The index of each pair of elements
+      (starting from 0) is passed to <TT><I>f</I></TT> as an additional
+      argument. For <TT>appri</TT> and <TT>foldri</TT>, processing
+      starts at the highest index. The functions <TT>findi</TT> and
+      <TT>filteri</TT> return indices along with the corresponding pair
+      of elements. The following equivalences hold:</P>
+      <PRE>
+        app <I>f</I> (<I>l1</I>, <I>l2</I>)        = appi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        appr <I>f</I> (<I>l1</I>, <I>l2</I>)       = appri (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        map <I>f</I> (<I>l1</I>, <I>l2</I>)        = mapi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        mapPartial <I>f</I> (<I>l1</I>, <I>l2</I>) = mapiPartial (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        foldl <I>f b</I> (<I>l1</I>, <I>l2</I>)    = foldli (<I>f</I> o <I>g2</I>) <I>b</I> (<I>l1</I>, <I>l2</I>)
+        foldr <I>f b</I> (<I>l1</I>, <I>l2</I>)    = foldri (<I>f</I> o <I>g2</I>) <I>b</I> (<I>l1</I>, <I>l2</I>)
+        all <I>f</I> (<I>l1</I>, <I>l2</I>)        = alli (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        exists <I>f</I> (<I>l1</I>, <I>l2</I>)     = existsi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        find <I>f</I> (<I>l1</I>, <I>l2</I>)       = Option.map <I>g1</I> (findi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>))
+        filter <I>f</I> (<I>l1</I>, <I>l2</I>)     = map <I>g1</I> (filteri (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>))</PRE>
+      <P>where</P>
+      <PRE>
+        <I>g1</I> = fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)
+        <I>g2</I> = fn (<I>i</I>,<I>a</I>,<I>b</I>,<I>c</I>) => <I>f</I>(<I>a</I>,<I>b</I>,<I>c</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>apprEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>mapPartialEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Variants of the functions <TT>appr</TT> and <TT>mapPartial</TT>
+      that raise <TT>UnequalLengths</TT> if the argument lists are not of equal
+      lengths.</P>
+    </DD>
+
+    <DT>
+      <TT>appiEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>appriEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>mapiEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>mapiPartialEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>foldliEq <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>foldriEq <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>filteriEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Variants of the functions <TT>appi</TT>, <TT>appri</TT>,
+      <TT>mapi</TT>, <TT>mapiPartial</TT>, <TT>foldli</TT>, <TT>foldri</TT> and
+      <TT>filteri</TT>
+      that raise <TT>UnequalLengths</TT> if the argument lists are not of equal
+      lengths.</P>
+    </DD>
+
+    <DT>
+      <TT>alliEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>existsiEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Indexed version of the functions <TT>allEq</TT> and <TT>existsEq</TT>.
+      The index of each pair of elemente (starting from 0) is passed to <TT><I>f</I></TT>
+      as an additional argument. The following equivalence hold:</P>
+      <PRE>
+        allEq <I>f</I> (<I>l1</I>, <I>l2</I>)    = alliEq (<I>f</I> o <I>g</I>) (<I>l1</I>, <I>l2</I>)
+        existsEq <I>f</I> (<I>l1</I>, <I>l2</I>) = existsiEq (<I>f</I> o <I>g</I>) (<I>l1</I>, <I>l2</I>)</PRE>
+      <P>where</P>
+      <PRE>
+        <I>g</I> = fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)<PRE>
+    </DD>
+  </DL>
+
+<?php footing() ?>

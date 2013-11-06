@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source               from "../infrastructure/Source"
+import signature CONTEXT              from "../infrastructure/CONTEXT-sig"
+import structure EmptyContext         from "../infrastructure/EmptyContext"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
+import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar          from "FlatGrammar"
+
+signature FLATTENING_PHASE =
+    sig
+	structure C: CONTEXT = EmptyContext
+	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
+
+	val translate: Source.desc * C.t * I.t -> C.t * O.t
+    end

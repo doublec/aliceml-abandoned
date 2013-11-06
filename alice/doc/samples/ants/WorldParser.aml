@@ -1,0 +1,97 @@
+import structure World    from "World"
+import structure Ant      from "Ant"
+import structure TextIO   from "x-alice:/lib/system/TextIO"
+import structure IO       from "x-alice:/lib/system/IO"
+import structure Ctrl     from "x-alice:/lib/utility/Ctrl"
+
+structure WorldParser :>
+sig
+    exception Error of string
+
+    val parseFile : string -> World.world
+end
+=
+struct
+    exception Error of string
+
+    fun error (r, c, msg) =
+        raise Error (msg ^ " at line: " ^ Int.toString (r+1)
+                                ^ " column: " ^ Int.toString (c + 1))
+  
+    fun intLine (file, line) =
+        case TextIO.inputLine file of
+            NONE    => error (line, 0, "prematurely end of file")
+        |   SOME l  => 
+            case Int.fromString (String.substring (l, 0, String.size l)) of
+                NONE    => raise Error "size expected"
+            |   SOME i  => i
+    
+                
+    fun parseFile s =
+        let
+            val file    = TextIO.openIn s
+            val xSize   = intLine (file, 0)
+            val ySize   = intLine (file, 1)
+            val world   = World.newWorld (xSize, ySize)
+            val c = ref 0
+            fun nextId () = !c before (c := !c + 1)
+        in
+            Ctrl.repeat (ySize, fn y =>
+                case TextIO.inputLine file of
+                    NONE        => error (y+2, 0, "prematurely end of file")
+                |   SOME line   => parseLine (line, y, xSize, world, nextId))
+            handle Subscript => (TextIO.closeIn file; raise Error "invalid world")
+                |  IO.Io _   => raise Error "input failed";
+
+            TextIO.closeIn file;
+            world
+        end
+
+
+    and parseLine (line, y, xSize, world, id) =
+        if y mod 2 = 1 then 
+            parseLine' (line, true, y, 0, xSize * 2, world, id)
+        else
+            parseLine' (line, false, y, 0, xSize * 2 - 1, world, id)
+
+    and parseLine' (line, sep, y, x, xSize, world, id) =
+        if x = xSize then 
+            if String.sub (line, x) = #"\n" orelse 
+               (String.sub (line, x) = #" " andalso String.sub (line, x+1) = #"\n") then () (* line parsed *)
+            else error (y+2, x, "invalid world (expected end of line)")
+        else if sep then
+            if String.sub (line, x) = #" " then 
+                parseLine' (line, false, y, x+1, xSize, world, id)
+            else
+                error (y+2, x, "invalid world (expected separator ' '")
+        else
+            let val c = String.sub (line, x)
+                val emptyCell = World.emptyCell
+                val cell =
+                    case c of
+                        #"#"    => { (emptyCell()) where rocky = true }
+                    |   #"."    => emptyCell()
+                    |   #"+"    => { (emptyCell()) where 
+                                       redHill = true,
+                                       ant     = newAnt (Ant.Red, id, x div 2, y)
+                                   }
+                    |   #"-"    => { (emptyCell()) where 
+                                        blackHill   = true,
+                                        ant         = newAnt (Ant.Black, id, x div 2, y) }
+                    |   d       =>
+                        if Char.isDigit d andalso d <> #"0" then
+                            { (emptyCell()) where food = ref (ord d - ord #"0") }
+                        else error (y+2, x, "invalid character in world")
+            in
+                World.initCellAt (world,
+                                  x div 2, y,
+                                  cell);
+                parseLine' (line, true, y, x+1, xSize, world, id)
+            end
+
+    and newAnt (color, id, x, y) : Ant.ant option ref =
+        ref (SOME {   
+                   id = id (), color, state = ref 0, resting = ref 0, 
+                   direction = ref Ant.E, hasFood = ref false,
+                   xpos = ref x, ypos = ref y})
+end

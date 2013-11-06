@@ -1,0 +1,32 @@
+#!/bin/sh
+
+dir=`dirname $0`
+dir=`(cd $dir && pwd)`
+
+case `echo 'OS.Process.exit OS.Process.sucess' | sml | grep "110\.0\.[0-9]"` in
+    *Jersey*)
+	CM=cm
+	;;
+    *)
+	CM=newcm
+	;;
+esac
+
+case `./platform.sh smlnj` in
+    *win32)
+	AML2SML="sh \"$dir/aml2sml\""
+	sml="cmd /c sml-cm"
+	;;
+    *cygwin)
+	AML2SML="sh \"$dir/aml2sml\""
+	sml=sml
+	;;
+    *)
+	AML2SML=$dir/aml2sml
+	sml=sml
+	;;
+esac
+
+export AML2SML
+
+cat `dirname $0`/alice-$CM.sml - | $sml "$@"

@@ -1,0 +1,24 @@
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature MAIN_WINDOW =
+sig
+
+  val window              : Gtk.object
+  val menuItemAbout       : Gtk.object
+  val menuItemClose       : Gtk.object
+  val menuItemClear       : Gtk.object
+  val menuSelection       : Gtk.object
+  val menuItemExpand      : Gtk.object
+  val menuItemExpandF     : Gtk.object
+  val menuItemFold        : Gtk.object
+  val menuItemReinspect   : Gtk.object
+  val menuItemRemovEntry  : Gtk.object
+  val menuItemForceEval   : Gtk.object
+  val menuItemPPrintT     : Gtk.object
+  val menuItemPreferences : Gtk.object
+  val canvas              : Gtk.object
+  val setStatus           : string -> unit
+  val canvasWidth         : int (* Max possible width of the canvas *)
+  val popup               : int * IntInf.int -> unit
+end
+

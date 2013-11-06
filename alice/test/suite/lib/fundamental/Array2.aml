@@ -1,0 +1,976 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestArray2 :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    (* mkRegion (base, right) gives valid region if right = true
+       else mkRegions gives wrong region *)
+    fun mkRegion (base, right) = 
+	let
+	    val (r, c) = Array2.dimensions base
+	    val row = Gen.cardinal r
+	    val col = Gen.cardinal c
+	    val nrows = if Gen.bool 1 
+			then NONE
+			else SOME (Gen.cardinal (r - row))
+	    val ncols = if Gen.bool 1
+			then NONE
+			else SOME (Gen.cardinal (c - col))
+	in
+	    if right then {base, row, col, nrows, ncols}
+	    else if Gen.bool 1
+	         then {base, row = row + r + 1, col = col + c + 1,
+		       nrows = NONE, ncols = NONE}
+	         else {base, row = (~ row) - 1, col = (~ col) - 1,
+		       nrows = NONE, ncols = NONE}
+	end
+
+    fun isValidRegion { base, row, col, nrows, ncols } =
+	let
+	    val (h, w) = Array2.dimensions base
+	in
+	    row >= 0 andalso row <= h
+	    andalso
+	    col >= 0 andalso col <= w
+	    andalso
+	    (case nrows
+	     of NONE   => true
+	      | SOME n => n >= 0 andalso row + n <= h)
+	    andalso
+	    (case ncols
+	     of NONE   => true
+	      | SOME n => n >= 0 andalso col + n <= w)
+	end
+
+    fun twin src = 
+	let
+	    val (r, c) = Array2.dimensions src
+	    val dst = Array2.array (r, c, 0)
+	    fun t' (ar1, ar2) (r, c) = 
+		if r >= Array2.nRows src
+		    then dst
+		else if c = Array2.nCols src
+			 then t' (src, dst) (r + 1, 0)
+		     else (Array2.update (dst, r, c, 
+					  Array2.sub (src, r, c));
+			   t' (src, dst) (r, c + 1))
+	in
+	    t' (src, dst) (0, 0)
+	end
+
+
+    fun testCopy () = 
+	let
+	    fun copy { src, dst, dst_row, dst_col } =
+	        let
+	            val srcValid = isValidRegion src
+	            val dstValid = isValidRegion
+	               { base = dst,
+	                 row = dst_row,
+	                 col = dst_col,
+	                 nrows = SOME (getOpt (#nrows src, Array2.nRows (#base src) - #row src)),
+	                 ncols = SOME (getOpt (#ncols src, Array2.nCols (#base src) - #col src)) }
+	            
+	            do if not srcValid orelse not dstValid then
+	                raise Subscript
+	            
+	            val srcValues =
+	                Array2.foldi
+	                Array2.RowMajor
+	                (fn (r, c, x, acc) => (r - #row src, c - #col src, x)::acc)
+	                []
+	                src
+	        in
+	            app (fn (r, c, x) => Array2.update (dst, dst_row+r, dst_col+c, x)) srcValues
+	        end	  
+
+	    fun t (srcArr, dst, rnd) = 
+		let
+		    (*) sometimes test the case where src = dst
+		    val srcReg = mkRegion (srcArr, Gen.bool rnd)
+		    val dst = if Gen.bool rnd then srcArr else dst
+	
+	            val srcReg' = {srcReg where base = twin srcArr}
+	            val dst' = if srcArr = dst then #base srcReg' else twin dst
+
+		    val dst_col = Gen.int (Array2.nCols dst * 2)
+		    val dst_row = Gen.int (Array2.nRows dst * 2)
+		    
+		    val testResult =
+		        FST (copy {src = srcReg, dst, dst_row, dst_col}) handle e => SND e
+		    
+		    val realResult =
+		        FST (Array2.copy {src = srcReg', dst = dst', dst_row, dst_col}) handle e => SND e
+		in
+		    case (testResult, realResult)
+		    of (FST (), FST ())               => Array2.equal Array2.RowMajor op= (dst, dst')
+		     | (SND Subscript, SND Subscript) => true
+		     | _                              => false
+		end
+	in
+	    Gen.try 200 (Gen.triple (Gen.array2 Gen.int, Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testArray () =
+	let
+	    fun t' (r, c, x, b) = (Array2.array (r, c, x); b) 
+			          handle Size => not b
+
+
+	    fun t (r, c, x) = let 
+				  val a = SOME (Array2.array (r, c, x)) 
+					   handle Size => NONE
+			      in
+		                  if Option.isNone a then
+				      r < 0 orelse c < 0
+				  else (r >= 0 andalso c >= 0 andalso
+					Array2.nRows (valOf a) = r andalso
+					Array2.nCols (valOf a) = c andalso
+					Array2.sub (valOf a, 
+						    Int.abs (Gen.int r),
+						    Int.abs (Gen.int c)) = x)
+				       handle Subscript => r = 0 orelse c = 0
+			      end
+	in
+	    Test.test t' (~2, ~1, 0, false); 
+	    Test.test t' (~2,  1, 0, false); 
+	    Test.test t' ( 2, ~1, 0, false);
+	    Test.test t' ( 2,  1, 0, true);
+	    Gen.try 1000 (Gen.triple (Gen.int, Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testNRows () =
+	let
+	    fun t' (a, i) =  (Array2.sub (a, i, 0); t' (a, i + 1))
+			       handle Subscript => i
+
+	    fun t a = t' (a, 0) = Array2.nRows a orelse Array2.nCols a = 0
+	in
+	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
+	end
+
+    fun testNCols () =
+	let
+	    fun t' (a, i) =  (Array2.sub (a, 0, i); t' (a, i + 1))
+			       handle Subscript => i
+
+	    fun t a = t' (a, 0) = Array2.nCols a orelse Array2.nRows a = 0
+
+	in
+	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
+	end
+
+    fun testDimensions () =
+	let
+	    fun t a = Array2.dimensions a = 
+		      (Array2.nRows a, Array2.nCols a)
+	in
+	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
+	end
+
+    fun testRow () = 
+	let
+	    fun t' (a, r, c) l = if c < Array2.nCols a
+				  then t' (a, r, c + 1) 
+				          (Array2.sub (a, r, c)::l)
+				  else Vector.fromList (rev l)
+				      
+	    fun t (a, i) = 
+		    Vector.equal Int.equal (t' (a, i, 0) [], Array2.row (a, i))
+		    handle Subscript => Array2.nRows a <= i orelse i < 0
+	in
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testColumn () = 
+	let
+	    fun t' (a, r, c) l = if r < Array2.nRows a
+				  then t' (a, r + 1, c) 
+				          (Array2.sub (a, r, c)::l)
+				  else Vector.fromList (rev l)
+				      
+	    fun t (a, i) = 
+		    Vector.equal Int.equal (t' (a, 0, i) [], 
+					    Array2.column (a, i))
+		    handle Subscript => Array2.nCols a <= i orelse i < 0
+	in
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testSub () =
+	let
+	    fun t (xss, a, r, c) = if List.null xss orelse 
+		                   c < 0 orelse Array2.nCols a <= c orelse
+		                   r < 0 orelse Array2.nRows a <= r
+				       then NONE
+				   else SOME (List.nth (List.nth (xss, r), c))
+	in
+	   Gen.try 100 (Gen.triple (Gen.list (Gen.list Gen.int), 
+				     Gen.int, Gen.int))
+	      (Test.test (fn (xss, r, c) => 
+			        let
+				    val a = Array2.fromList xss
+				    val res = t (xss, a, r, c)
+				in
+				    Array2.sub (a, r, c) = valOf res
+				      handle Subscript => Option.isNone res
+	                              handle Option => false
+				end))
+	end
+
+    fun testUpdate () =
+	let
+	    fun t (a, r, c) = 
+		let
+		    val x = Gen.int (r + c)
+		in
+		   (Array2.update (a, r, c, x);
+		    Array2.sub (a, r, c) = x)
+		      handle Subscript => r < 0 orelse c < 0 orelse 
+					  Array2.nCols a <= c orelse
+					  Array2.nRows a <= r
+		end
+	in
+	    Gen.try 100 (Gen.triple (Gen.array2 Gen.int, Gen.int, Gen.int))
+	      (Test.test t)
+	end
+
+    fun testEqual () = 
+	let
+	    val xs = ref []
+
+	    fun swap a = 
+		let
+		    val a2 = Array2.array (Array2.nCols a, Array2.nRows a, 0)
+
+		    fun s' (r, c) = if c < Array2.nCols a2
+				    then if r < Array2.nRows a2
+					 then (Array2.update (a2, r, c, 
+							 Array2.sub (a, c, r));
+					       s' (r + 1, c))
+					 else s' (0, c + 1)
+				    else ()
+		in
+		    s' (0, 0);
+		    a2
+		end
+
+	    fun equal' (ar1, ar2) = 
+		Array2.dimensions ar1 = Array2.dimensions ar2 andalso
+		(List.equal (List.equal (fn (x, y) => (xs := x :: !xs; x = y))) 
+		            (Array2.toList ar1, Array2.toList ar2))
+
+	    fun t (ar1, ar2) = 
+		let
+		    val _ = xs := nil
+		    val eq1 = equal' (ar1, ar2)
+		    val eq1' = !xs before xs := nil
+		    val eq1'' = eq1 = Array2.equal Array2.RowMajor 
+			                (fn (x, y) => (xs := x :: !xs; x = y)) 
+			                           (ar1, ar2)
+		    val _ = xs := nil
+		    val eq2 = equal' (swap ar1, swap ar2)
+		    val eq2' = !xs before xs := nil
+		    val eq2'' = eq2 = Array2.equal Array2.ColMajor 
+			                (fn (x, y) => (xs := x :: !xs; x = y)) 
+			                           (ar1, ar2)
+		in
+		    eq1'' andalso eq2''
+		end
+	in
+
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int,
+				   Gen.array2 Gen.int)) (Test.test t)
+	end
+
+    fun testFromList () =
+	let
+	    fun t' nil         (_, _, a) = a
+	      | t' (nil :: xs) (r, c, a) = t' xs (r + 1, 0, a)
+	      | t' (x   :: xs) (r, c, a) = 
+		                 (Array2.update (a, r, c, List.hd x);
+				  t' ((List.tl x) :: xs) (r, c + 1, a))
+
+	    fun t nil a = SOME (Array2.array (0, 0, a))
+	      | t  xs a =
+		  if List.all (fn x => a = List.length x) xs
+		  then SOME (t' xs (0, 0, (Array2.array (a, 
+							 List.length xs, 
+							 0))))
+		  else NONE
+	in
+	    Gen.try 100 (Gen.list (Gen.list Gen.int))
+	      (Test.test (fn xs => 
+			       let
+				   val r = t xs (if List.null xs then 0
+						 else List.length (List.hd xs))
+			       in 
+				   if Option.isSome r
+				       then Array2.equal Array2.RowMajor 
+					        Int.equal 
+					        (Array2.fromList xs,
+						 valOf r)
+				   else false
+				       handle Size => Option.isNone r
+			       end))
+	end
+
+    fun testToList () = 
+	let
+	    fun t xs = Array2.toList (Array2.fromList xs) = xs
+	in
+	    Gen.try 100 (Gen.list (Gen.list Gen.int)) (Test.test t)
+	end
+
+
+    fun testTabulate () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f a (x, y) =  (a := (x, y) :: !a; x + y)
+
+	    fun t' Array2.RowMajor x (r, c) = 
+		(let
+		    val a = Array2.array (r, c, 0)
+		    val fu = f x
+		    fun t'' (i, j) = 
+			if i = r 
+			then ()
+			else if j = c 
+                             then t'' (i + 1, 0)
+			     else (Array2.update (a, i, j, fu (i, j));
+				   t'' (i, j + 1))
+		in
+		    t'' (0, 0); a
+		end)
+	      | t' Array2.ColMajor x (r, c) = 
+		(let
+		    val a = Array2.array (r, c, 0)
+		    val fu = f x
+		    fun t'' (i, j) =
+			if j = c 
+			then ()
+			else if i = r 
+			     then t'' (0, j + 1)
+			else (Array2.update (a, i, j, fu (i, j));
+			      t'' (i + 1, j))
+		in
+		    t'' (0, 0); a
+		end)
+
+	    fun t (r, c) = 
+		let
+		    val trv = if Gen.bool 1 then Array2.RowMajor
+			      else Array2.ColMajor
+		in 
+		    if r < 0 orelse c < 0 orelse 
+		       r * c >= Array.maxLen
+		    then (Array2.tabulate trv (r, c, f ys); false) 
+			 handle Size => true
+		    else (Array2.equal trv Int.equal 
+			         (t' trv xs (r, c), 
+				  Array2.tabulate trv (r, c, f ys)) andalso
+			 !xs = !ys)
+		end
+	in
+	    Gen.try 10 (Gen.pair (Gen.int, Gen.int)) 
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+
+    fun testApp () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    fun f xs x = xs := x :: !xs
+
+	    fun t' (Array2.RowMajor, f, ar) (r, c) = 
+		if r = Array2.nRows ar
+		then ar
+		else if c = Array2.nCols ar 
+		     then t' (Array2.RowMajor, f, ar) (r + 1, 0)
+		     else (f (Array2.sub (ar, r, c)); 
+		           t' (Array2.RowMajor, f, ar) (r, c + 1))
+	      | t' (Array2.ColMajor, f, ar) (r, c) = 
+		if c = Array2.nCols ar 
+		then ar
+		else if r = Array2.nRows ar 
+		     then t' (Array2.ColMajor, f, ar) (0, c + 1)
+		     else (f (Array2.sub (ar, r, c));
+		           t' (Array2.ColMajor, f, ar) (r + 1, c))
+		     
+	    fun t ar = 
+		let
+		    val trv = if Gen.bool 1 
+				  then Array2.ColMajor
+			      else Array2.RowMajor
+		    val ar2 = twin ar
+		in
+		    (Array2.equal trv Int.equal ((Array2.app trv (f xs) ar;ar),
+						 t' (trv, f ys, ar2) (0, 0))
+		     andalso !xs = !ys)
+		end
+	in
+	    Gen.try 10 (Gen.array2 Gen.int) (Test.test (fn ar => (xs := nil;
+								  ys := nil;
+								  t ar)))
+	end
+
+    
+    fun testAppi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+		
+	    fun f x (r, c, a) = x := (r, c, a) :: !x
+		
+	    fun t'' (Array2.RowMajor, g, base, 
+		     row, col, nrows, ncols) (r, c) = 
+		if r >= nrows
+		    then ()
+		else if c >= ncols
+			 then t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				   ncols) (r + 1, 0)
+		     else (g (row + r, col + c, Array2.sub (base, row + r, 
+							    col + c));
+			   t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				ncols) (r, c + 1))
+	      | t'' (Array2.ColMajor, g, base, 
+			 row, col, nrows, ncols) (r, c) = 
+		if c >= ncols
+		    then ()
+		else if r >= nrows 
+			 then t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				   ncols) (0, c + 1)
+		     else (g (row + r, col + c, Array2.sub (base, row + r, 
+							    col + c));
+			   t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				ncols) (r + 1, c))
+			 
+	    fun t (region as {base, row, col, nrows, ncols}) = 
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		    val base2 = twin base
+		    val nRows = if Option.isNone nrows
+				    then Array2.nRows base - row
+				else valOf nrows
+		    val nCols = if Option.isNone ncols
+				    then Array2.nCols base - col
+				else valOf ncols
+		in
+		    Array2.appi trav (f xs) region;
+		    t'' (trav, f ys, base2, row, col, nRows, nCols) (0, 0);
+		    (Array2.equal trav Int.equal (base, base2) andalso
+		     !xs = !ys)
+		end
+
+	    fun t' reg =
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		in
+		    (Array2.appi trav (fn (_,_,_) => ()) reg; false)
+		    handle Subscript => true
+		end
+	in
+	    Gen.try 50 (Gen.array2 Gen.int) 
+	    (Test.test (fn x => (xs := nil;
+				 ys := nil;
+				 t (mkRegion (x, true)) andalso 
+				 t' (mkRegion (x, false)))))
+	end
+
+
+    fun testModify () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    fun f xs x = (xs := x :: !xs; x + 5)
+
+	    fun t' (Array2.RowMajor, f, ar) (r, c) = 
+		if r = Array2.nRows ar
+		then ar
+		else if c = Array2.nCols ar 
+		     then t' (Array2.RowMajor, f, ar) (r + 1, 0)
+		     else (Array2.update (ar, r, c, f(Array2.sub (ar, r, c))); 
+		           t' (Array2.RowMajor, f, ar) (r, c + 1))
+	      | t' (Array2.ColMajor, f, ar) (r, c) = 
+		if c = Array2.nCols ar 
+		then ar
+		else if r = Array2.nRows ar 
+		     then t' (Array2.ColMajor, f, ar) (0, c + 1)
+		     else (Array2.update (ar, r, c, f (Array2.sub (ar, r, c)));
+		           t' (Array2.ColMajor, f, ar) (r + 1, c))
+		     
+	    fun t ar = 
+		let
+		    val trv = if Gen.bool 1 then Array2.ColMajor
+			      else Array2.RowMajor
+		    val ar2 = twin ar
+		in
+		    (Array2.equal trv Int.equal ((Array2.modify trv (f xs) ar;
+						  ar),
+						 t' (trv, f ys, ar2) (0, 0))
+		     andalso !xs = !ys)
+		end
+	in
+	    Gen.try 10 (Gen.array2 Gen.int) (Test.test (fn ar => (xs := nil;
+								  ys := nil;
+								  t ar)))
+	end
+
+    fun testModifyi () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+		
+	    fun f x (r, c, a) = (x := (r, c, a) :: !x; r + c + a)
+		
+	    fun t'' (Array2.RowMajor, g, base, 
+		     row, col, nrows, ncols) (r, c) = 
+		if r >= nrows
+		    then ()
+		else if c >= ncols
+			 then t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				   ncols) (r + 1, 0)
+		     else (Array2.update (base, row + r, col + c, 
+			       g (row + r, col + c, Array2.sub (base, row + r, 
+								col + c)));
+			   t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				ncols) (r, c + 1))
+	      | t'' (Array2.ColMajor, g, base, 
+			 row, col, nrows, ncols) (r, c) = 
+		if c >= ncols
+		    then ()
+		else if r >= nrows 
+			 then t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				   ncols) (0, c + 1)
+		     else (Array2.update (base, row + r, col + c,
+			       g (row + r, col + c, Array2.sub (base, row + r, 
+								col + c)));
+			   t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				ncols) (r + 1, c))
+			 
+	    fun t (region as {base, row, col, nrows, ncols}) = 
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		    val base2 = twin base
+		    val nRows = if Option.isNone nrows
+				    then Array2.nRows base - row
+				else valOf nrows
+		    val nCols = if Option.isNone ncols
+				    then Array2.nCols base - col
+				else valOf ncols
+		in
+		    Array2.modifyi trav (f xs) region;
+		    t'' (trav, f ys, base2, row, col, nRows, nCols) (0, 0);
+		    (Array2.equal trav Int.equal (base, base2) andalso
+		     !xs = !ys)
+		end
+
+	    fun t' reg =
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		in
+		    (Array2.modifyi trav (fn (_,_,_) => 0) reg; false)
+		    handle Subscript => true
+		end
+	in
+	    Gen.try 50 (Gen.array2 Gen.int) 
+	    (Test.test (fn x => (xs := nil;
+				 ys := nil;
+				 t (mkRegion (x, true)) andalso 
+				 t' (mkRegion (x, false)))))
+	end
+
+
+    fun testFold () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    fun f xs (a, b) = (xs := (a, b) :: !xs; a + b)
+
+	    fun t' (Array2.RowMajor, f, b, ar) (r, c) = 
+		if r = Array2.nRows ar
+		then b
+		else if c = Array2.nCols ar 
+		     then t' (Array2.RowMajor, f, b, ar) (r + 1, 0)
+		     else t' (Array2.RowMajor, f, 
+			      f (Array2.sub (ar, r, c), b),ar) (r, c + 1)
+	      | t' (Array2.ColMajor, f, b, ar) (r, c) = 
+		if c = Array2.nCols ar 
+		then b
+		else if r = Array2.nRows ar 
+		     then t' (Array2.ColMajor, f, b, ar) (0, c + 1)
+		     else t' (Array2.ColMajor, f, 
+			      f (Array2.sub (ar, r, c), b), ar) (r + 1, c)
+		     
+	    fun t ar = 
+		let
+		    val trv = if Gen.bool 1 then Array2.ColMajor
+			      else Array2.RowMajor
+		in
+		    Array2.fold trv (f xs) 0 ar = 
+		    t' (trv, f ys, 0, ar) (0,0)
+		     andalso !xs = !ys
+		end
+	in
+	    Gen.try 10 (Gen.array2 Gen.int) (Test.test (fn ar => (xs := nil;
+								  ys := nil;
+								  t ar)))
+	end
+
+    fun testFoldi () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+		
+	    fun f x (r, c, a, b) = (x := (r, c, a) :: !x; r + c + a + b)
+		
+	    fun t'' (Array2.RowMajor, g, base, 
+		     row, col, nrows, ncols, b) (r, c) = 
+		if r >= nrows
+		    then b
+		else if c >= ncols
+			 then t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				   ncols, b) (r + 1, 0)
+		     else (t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				ncols, g (row + r, col + c, 
+					  Array2.sub (base, row + r, 
+						      col + c), b)) (r, c + 1))
+	      | t'' (Array2.ColMajor, g, base, 
+			 row, col, nrows, ncols, b) (r, c) = 
+		if c >= ncols
+		    then b
+		else if r >= nrows 
+			 then t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				   ncols, b) (0, c + 1)
+		     else (t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				ncols, g (row + r, col + c, 
+					  Array2.sub (base, row + r, 
+						      col + c), b)) (r + 1, c))
+			 
+	    fun t (region as {base, row, col, nrows, ncols}) = 
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		    val base2 = twin base
+		    val nRows = if Option.isNone nrows
+				    then Array2.nRows base - row
+				else valOf nrows
+		    val nCols = if Option.isNone ncols
+				    then Array2.nCols base - col
+				else valOf ncols
+		    val erg1 = 	Array2.foldi trav (f xs) 0 region
+		    val erg2 = 	t'' (trav, f ys, base2, row, 
+				     col, nRows, nCols, 0) (0, 0)
+		in
+		    (Array2.equal trav Int.equal (base, base2) andalso
+		     !xs = !ys andalso erg1 = erg2)
+		end
+
+	    fun t' reg =
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		in
+		    (Array2.foldi trav (fn (_,_,_,_) => 0) 0 reg; false)
+		    handle Subscript => true
+		end
+	in
+	    Gen.try 50 (Gen.array2 Gen.int) 
+	    (Test.test (fn x => (xs := nil;
+				 ys := nil;
+				 t (mkRegion (x, true)) andalso 
+				 t' (mkRegion (x, false)))))
+	end
+
+    fun testAll () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f s x = (s := x :: !s; x = 2)
+
+	    fun t' (Array2.RowMajor, ar, f) (r, c) = 
+		if r = Array2.nRows ar
+		then true
+		else if c = Array2.nCols ar 
+		     then t' (Array2.RowMajor, ar, f) (r + 1, 0)
+		     else if f (Array2.sub (ar, r, c)) 
+		          then t' (Array2.RowMajor, ar, f) (r, c + 1)
+		          else false
+	      | t' (Array2.ColMajor, ar, f) (r, c) = 
+		if c = Array2.nCols ar 
+		then true
+		else if r = Array2.nRows ar 
+		     then t' (Array2.ColMajor, ar, f) (0, c + 1)
+		     else if f (Array2.sub (ar, r, c)) 
+		          then t' (Array2.ColMajor, ar, f) (r + 1, c)
+		          else false
+
+	    fun t ar = 
+		let
+		    val trv = if Gen.bool 1 then Array2.ColMajor
+			      else Array2.RowMajor
+		in
+		    Array2.all trv (f xs) ar  = 
+		    t' (trv, ar, f ys) (0, 0) andalso !xs = !ys
+		end
+	in
+	    Gen.try 10 (Gen.array2 Gen.int) (Test.test (fn ar => (xs := nil;
+								 ys := nil;
+								 t ar)))
+	end
+
+    fun testAlli () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+		
+	    fun f x (r, c, a) = (x := (r, c, a) :: !x; a < r + c)
+		
+	    fun t'' (Array2.RowMajor, g, base, 
+		     row, col, nrows, ncols) (r, c) = 
+		if r >= nrows
+		    then true
+		else if c >= ncols
+			 then t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				   ncols) (r + 1, 0)
+		     else if g (row + r, col + c, Array2.sub (base, row + r, 
+							      col + c))
+			      then (t'' (Array2.RowMajor, g, base, row, 
+					 col, nrows, ncols) (r, c + 1))
+			  else false
+	      | t'' (Array2.ColMajor, g, base, 
+			 row, col, nrows, ncols) (r, c) = 
+		if c >= ncols
+		    then true
+		else if r >= nrows 
+			 then t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				   ncols) (0, c + 1)
+		     else if g (row + r, col + c, Array2.sub (base, row + r, 
+							      col + c))
+			      then (t'' (Array2.ColMajor, g, base, row, 
+					 col, nrows, ncols) (r + 1, c))
+			  else false
+			 
+	    fun t (region as {base, row, col, nrows, ncols}) = 
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		    val base2 = twin base
+		    val nRows = if Option.isNone nrows
+				    then Array2.nRows base - row
+				else valOf nrows
+		    val nCols = if Option.isNone ncols
+				    then Array2.nCols base - col
+				else valOf ncols
+		    val erg1 = 	Array2.alli trav (f xs) region
+		    val erg2 = 	t'' (trav, f ys, base2, row, 
+				     col, nRows, nCols) (0, 0)
+		in
+		    (Array2.equal trav Int.equal (base, base2) andalso
+		     !xs = !ys andalso erg1 = erg2)
+		end
+
+	    fun t' reg =
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		in
+		    (Array2.alli trav (fn (_,_,_) => true) reg; false)
+		    handle Subscript => true
+		end
+	in
+	    Gen.try 50 (Gen.array2 Gen.int) 
+	    (Test.test (fn x => (xs := nil;
+				 ys := nil;
+				 t (mkRegion (x, true)) andalso 
+				 t' (mkRegion (x, false)))))
+	end
+
+
+    fun testExists () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f s x = (s := x :: !s; x = 2)
+
+	    fun t' (Array2.RowMajor, ar, f) (r, c) = 
+		if r = Array2.nRows ar
+		then false
+		else if c = Array2.nCols ar 
+		     then t' (Array2.RowMajor, ar, f) (r + 1, 0)
+		     else if f (Array2.sub (ar, r, c)) 
+		          then true
+		          else t' (Array2.RowMajor, ar, f) (r, c + 1)
+	      | t' (Array2.ColMajor, ar, f) (r, c) = 
+		if c = Array2.nCols ar 
+		then false
+		else if r = Array2.nRows ar 
+		     then t' (Array2.ColMajor, ar, f) (0, c + 1)
+		     else if f (Array2.sub (ar, r, c)) 
+		          then true
+		          else t' (Array2.ColMajor, ar, f) (r + 1, c)
+	    fun t ar = 
+		let
+		    val trv = if Gen.bool 1 then Array2.ColMajor
+			      else Array2.RowMajor
+		in
+		    Array2.exists trv (f xs) ar = 
+		    t' (trv , ar, f ys) (0, 0) andalso !xs = !ys
+		end
+	in
+	    Gen.try 10 (Gen.array2 Gen.int) (Test.test (fn ar => (xs := nil;
+								 ys := nil;
+								 t ar)))
+	end
+
+    fun testExistsi () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+		
+	    fun f x (r, c, a) = (x := (r, c, a) :: !x; a < r + c)
+		
+	    fun t'' (Array2.RowMajor, g, base, 
+		     row, col, nrows, ncols) (r, c) = 
+		if r >= nrows
+		    then false
+		else if c >= ncols
+			 then t'' (Array2.RowMajor, g, base, row, col, nrows, 
+				   ncols) (r + 1, 0)
+		     else if g (row + r, col + c, Array2.sub (base, row + r, 
+							      col + c))
+			      then true
+			  else (t'' (Array2.RowMajor, g, base, row, 
+				     col, nrows, ncols) (r, c + 1))
+	      | t'' (Array2.ColMajor, g, base, 
+			 row, col, nrows, ncols) (r, c) = 
+		if c >= ncols
+		    then false
+		else if r >= nrows 
+			 then t'' (Array2.ColMajor, g, base, row, col, nrows, 
+				   ncols) (0, c + 1)
+		     else if g (row + r, col + c, Array2.sub (base, row + r, 
+							      col + c))
+			      then true
+			  else (t'' (Array2.ColMajor, g, base, row, 
+				     col, nrows, ncols) (r + 1, c))
+			 
+	    fun t (region as {base, row, col, nrows, ncols}) = 
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		    val base2 = twin base
+		    val nRows = if Option.isNone nrows
+				    then Array2.nRows base - row
+				else valOf nrows
+		    val nCols = if Option.isNone ncols
+				    then Array2.nCols base - col
+				else valOf ncols
+		    val erg1 = 	Array2.existsi trav (f xs) region
+		    val erg2 = 	t'' (trav, f ys, base2, row, 
+				     col, nRows, nCols) (0, 0)
+		in
+		    (Array2.equal trav Int.equal (base, base2) andalso
+		     !xs = !ys andalso erg1 = erg2)
+		end
+
+	    fun t' reg =
+		let
+		    val trav = if Gen.bool 1 then Array2.RowMajor
+			       else Array2.ColMajor
+		in
+		    (Array2.existsi trav (fn (_,_,_) => true) reg; false)
+		    handle Subscript => true
+		end
+	in
+	    Gen.try 50 (Gen.array2 Gen.int) 
+	    (Test.test (fn x => (xs := nil;
+				 ys := nil;
+				 t (mkRegion (x, true)) andalso 
+				 t' (mkRegion (x, false)))))
+	end
+
+    fun testContains () = 
+	let
+	    fun t' (trv, f, ar) = Array2.exists trv f ar
+	    fun t (a, i) =
+		let
+		    val trv = if Gen.bool 1 then Array2.RowMajor
+			      else Array2.ColMajor
+		in
+		    Array2.contains trv a i = 
+		    Array2.exists trv (fn x => x = i) a
+		end
+	in
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testNotContains () = 
+	let
+	    fun t' (trv, f, ar) = Array2.exists trv f ar
+	    fun t (a, i) =
+		let
+		    val trv = if Gen.bool 1 then Array2.RowMajor
+			      else Array2.ColMajor
+		in
+		    Array2.notContains trv a i <>
+		    Array2.exists trv (fn x => x = i) a
+		end
+	in
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
+
+
+    val suite = ("Array2", [("array", testArray),
+			    ("toList", testToList),
+			    ("fromList", testFromList),
+			    ("tabulate", testTabulate),
+			    ("sub", testSub),
+			    ("update", testUpdate),
+			    ("dimensions", testDimensions),
+			    ("nRows", testNRows),
+			    ("nCols", testNCols),
+			    ("row", testRow),
+			    ("column", testColumn),
+			    ("copy", testCopy),
+			    ("app", testApp),
+			    ("modify", testModify),
+			    ("fold", testFold),
+			    ("all", testAll),
+			    ("exists", testExists),
+			    ("appi", testAppi),
+			    ("modifyi", testModifyi),
+			    ("foldi", testFoldi),
+			    ("alli", testAlli),
+			    ("existsi", testExistsi),
+			    ("contains", testContains),
+			    ("notContains", testNotContains),
+			    ("equal", testEqual)])
+end

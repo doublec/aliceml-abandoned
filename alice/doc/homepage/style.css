@@ -1,0 +1,88 @@
+BODY {
+	background:	url(bg.gif) repeat-y white;
+	position:	relative;
+	margin-left:	210px;
+	margin-right:	10px;
+}
+
+A:link {
+	color:		#00c000;
+}
+
+A:visited {
+	color:		#009000;
+}
+
+H1 {
+	position:	absolute;
+	left:		10px;
+	right:		10px;
+	width:		170;
+	font-size:	150%;
+	font-weight:	bold;
+	font-family:	"Courier New", Courier, Monospace;
+	text-align:	left;
+	color:		white;
+}
+
+H2 {
+	position:	absolute;
+	left:		10px;
+	right:		10px;
+	width:		100%;
+	font-size:	130%;
+	font-weight:	bold;
+	font-family:	"Courier New", Courier, Monospace;
+	text-align:	left;
+	color:		#ff8833;
+}
+
+P.quote {
+	margin-left:	5em;
+	font-size:	120%;
+	font-style:	italic;
+}
+
+A.url, TT {
+	font-size:	110%;
+	font-family:	"Courier New", Courier, Monospace;
+}
+
+P.note, DIV.note {
+	font-size:	80%;
+}
+
+P.menu {
+	margin-left:	20px;
+	width:		100%;
+	font-weight:	bold;
+	background:	url(../musicemb.jpg) no-repeat white left;
+}
+
+P.menu A {
+	font-size:	90%;
+}
+
+TABLE TR {
+	vertical-align:	baseline;
+}
+TABLE.bnf {
+	font-family:	"Times New Roman", Times, Helvetica, Serif;
+	border-style:	none;
+}
+
+
+TABLE.bnf TT {
+	font-family:	"Courier New", Courier, Monospace;
+	font-size:	100%;
+}
+
+TABLE.dyptic {
+	width:		80%;
+}
+
+TABLE.dyptic TH, TABLE.dyptic TD {
+	text-align:	left;
+	padding:	3px;
+	background:	#eeeeee;
+}

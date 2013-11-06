@@ -1,0 +1,49 @@
+(*
+ * Author:
+ *   Simon Pinkel <pinkel@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Simon Pinkel, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeMySQL from "UnsafeMySQL"
+
+import signature MYSQL from "MYSQL-sig"
+
+structure MySQL :> MYSQL= 
+    struct
+	type mysql
+
+	open UnsafeMySQL
+
+	val storeResult = ref false
+	    
+	fun connect (host,user,pw_opt,db) = 
+	    mysql_connect(host,user,Option.getOpt(pw_opt,""),db)
+
+	fun query (m,q) = 
+	    case (mysql_query(m,q,!storeResult)) of 
+		SOME r =>
+		    let
+			fun lazy next() =
+			    case mysql_fetch_row(m,r) of
+				DONE => (mysql_free_result r; nil)
+			      | ROW r => r::next()
+		    in
+			(mysql_fetch_fields r,next())
+		    end
+	      | NONE => (#[],nil)
+
+	val close = mysql_close
+
+	(* auxiliary stuff, should not be used, can cause
+	   MySQL-commands to be out of sync
+	   (e.g. a ping while fetching results)
+	 *)
+	val ping = mysql_ping
+	val cset = mysql_character_set_name
+    end

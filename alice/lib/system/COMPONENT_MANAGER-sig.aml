@@ -1,0 +1,40 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ $Author$
+ *   $Revision$
+ *)
+
+import structure Url from "Url"
+
+local
+    __primitive type component = "Component.component"
+in
+    signature COMPONENT_MANAGER =
+    sig
+	exception Conflict
+
+	val logger: (string -> unit) ref
+
+	val load: Url.t -> component                (* Component.Failure *)
+	val eval: Url.t * component -> package      (* Component.Failure *)
+	val link: Url.t -> package                  (* Component.Failure *)
+	val enter: Url.t * component -> unit        (* Conflict *)
+	val lookup: Url.t -> component option
+
+	functor Eval(val component: component
+		     val url: Url.t
+		     signature S): S                (* Component.Failure *)
+	functor Link(val url: Url.t
+		     signature S): S                (* Component.Failure *)
+	functor Enter(val url: Url.t
+		      signature S
+		      structure X: S): any          (* Conflict *)
+    end
+end

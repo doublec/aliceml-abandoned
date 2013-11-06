@@ -1,0 +1,44 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* A source file. *)
+
+import structure Url from "../../lib/system/Url"
+
+signature SOURCE =
+sig
+    type source
+    type t	= source
+
+    type pos	= int * int
+    type region	= pos * pos
+
+    type desc
+
+    val fromString:		string -> source
+    val toString:		source -> string
+
+    val nowhere:		region
+    val at:			region -> region
+    val span:			region * region -> region
+    val between:		region * region -> region
+    val isEmpty:                region -> bool
+
+    val regionToString:		region -> string
+
+    val stringDesc:		desc
+    val urlDesc:		{source: Url.t, target: Url.t option} -> desc
+
+    val sourceUrl:		desc -> Url.t option
+    val targetUrl:		desc -> Url.t option
+    val anyUrl:			desc -> Url.t option
+end

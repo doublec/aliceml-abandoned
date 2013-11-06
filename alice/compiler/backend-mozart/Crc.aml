@@ -1,0 +1,54 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * The following sample code represents a practical implementation of the
+ * CRC (Cyclic Redundancy Check) employed in PNG chunks. (See also ISO
+ * 3309 [ISO-3309] or ITU-T V.42 [ITU-V42] for a formal specification.)
+ *)
+
+import
+    signature CRC
+from "CRC-sig"
+
+structure Crc :> CRC =
+    struct
+	open Word32
+
+	infix >>
+
+	type t = word
+
+	fun init i = init' (fromInt i, 8)
+	and init' (c, n) =
+	    if n = 0 then c
+	    else init' (if andb (c, 0w1) = 0w1 then
+			    xorb (0wxEDB88320, c >> 0w1)
+			else c >> 0w1, Int.- (n, 1))
+
+	val table = Array.tabulate (256, init)
+
+	val initial = 0w0: t
+
+	fun update (c, n) =
+	    let
+		val n' = fromLarge (Word8.toLarge n)
+	    in
+		xorb (Array.sub (table, toInt (andb (xorb (c, n'), 0wxFF))),
+		      c >> 0w8)
+	    end
+
+	fun toBytes c =
+	    Word8Vector.fromList [toByte (c, 0w0), toByte (c, 0w8),
+				  toByte (c, 0w16), toByte (c, 0w24)]
+	and toByte (c, n) = Word8.fromLarge (toLarge (c >> n))
+    end

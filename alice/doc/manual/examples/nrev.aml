@@ -1,0 +1,26 @@
+open Hole
+
+fun append' (nil, ys, p) = fill (p, ys)
+  | append' (x::xr, ys, p) =
+    let
+	val p' = hole ()
+    in
+	fill (p, x::p');
+	append' (xr, ys, p')
+    end
+
+fun append (xs, ys) =
+    let
+	val p = hole ()
+    in
+	append' (xs, ys, p); p
+    end
+
+fun rev nil = nil
+  | rev (x::xr) = append (rev xr, [x])
+
+fun makeList (0, _) = nil
+  | makeList (n, x) = x::makeList (n - 1, x + 1)
+
+val _ = Tools.print (rev (makeList (2000, 0)))
+val _ = OS.Process.exit OS.Process.success

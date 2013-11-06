@@ -1,0 +1,40 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature EXPLORER_SEARCH =
+    sig
+	type explorer_state
+	type space
+	type tree
+
+	val initSearch :
+	    'a * explorer_state option ref *
+            ('a * explorer_state option ref -> unit) *
+            ('a -> explorer_state option ref -> 'b) * space *
+            (space * space -> unit) option -> unit
+	val searchFrom :
+	    'a * explorer_state option ref * (unit -> unit) *
+            ('a * explorer_state option ref -> 'b) * tree -> 'b
+	val stepFrom :
+	    'a * explorer_state option ref *
+            ('a * explorer_state option ref -> 'b) * tree -> 'b
+	val search :
+	    'a * explorer_state option ref *
+            ('a * explorer_state option ref -> unit) *
+            (explorer_state option ref * string * bool -> 'b) * int *
+            tree option -> unit
+	val searchStep :
+	    'a * explorer_state option ref *
+            ('a * explorer_state option ref -> 'b) *
+            (explorer_state option ref * string * bool -> 'c) * tree option ->
+            unit
+    end

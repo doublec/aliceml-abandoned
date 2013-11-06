@@ -1,0 +1,23 @@
+Group
+	signature INTERMEDIATE_GRAMMAR
+	functor   MkIntermediateGrammar
+	signature PP_INTERMEDIATE_GRAMMAR
+	functor   MkPPIntermediateGrammar
+	structure IntermediateInfo
+	structure IntermediateGrammar
+	structure PPIntermediateGrammar
+
+is
+	../../lib/utility/sources.cm
+	../../lib/rtt/type.cm
+	../../lib/rtt/interface.cm
+	../infrastructure/source.cm
+	../infrastructure/pp-misc.cm
+	id-stamp.cm
+
+	INTERMEDIATE_GRAMMAR-sig.aml
+	MkIntermediateGrammar.aml
+	PP_INTERMEDIATE_GRAMMAR-sig.aml
+	MkPPIntermediateGrammar.aml
+
+	IntermediateGrammar.aml

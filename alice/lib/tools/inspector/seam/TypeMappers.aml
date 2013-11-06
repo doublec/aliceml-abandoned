@@ -1,0 +1,194 @@
+import structure UnsafeValue   from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Name          from "x-alice:/lib/rtt/Name"
+import structure Type          from "x-alice:/lib/rtt/Type"
+import structure Path          from "x-alice:/lib/rtt/Path"
+import structure PathMap       from "x-alice:/lib/rtt/PathMap"
+import structure Common        from "Common"
+import structure Basic         from "BasicTypeMappers"
+import structure ModuleMapper  from "ModuleMapper"
+import structure Builtin       from "BuiltinTypeMappers"
+import structure AbsTree       from "AbsTree"
+import structure Prefs         from "Prefs"
+import structure Cache         from "Cache"
+import structure StdExceptions from "StdExceptionMappers"
+
+
+structure TypeMappers =
+struct
+
+  (* Type inspection helper. Directly from PPValue. *)
+  fun unapply'(t,ts) = case Type.inspect t of
+                         Type.Apply(t1,t2) => unapply'(t1,t2::ts)
+                       | _ => (t,ts)        
+  fun unapply t = unapply' (t,[])
+
+  (* Association list mapping some types (e.g. list) to an alias. *)
+  val aliases = ref []
+  fun newAlias (typ, name) =
+    let
+      val path  = Path.pervasive name
+      val kind  = Type.kind typ
+      val alias = Type.con (path, kind)
+    in
+      aliases := (typ, alias) :: (!aliases)
+    end
+
+  fun getAlias' (typ, []) = typ
+    | getAlias' (typ, (typ2, alias) :: ls) =
+        if Type.equal (typ, typ2) then alias
+        else getAlias' (typ, ls)
+  fun getAlias typ = getAlias'(typ, !aliases)
+
+  (* Some aliases. *)
+  val path_list = newAlias (Cache.typ_list, "list")
+
+  (* Registry containing type mappers for some type constructors. *)
+  val registry = PathMap.map () 
+
+  type absitem = AbsTree.absitem
+  type tree = AbsTree.tree
+  type 'a type_mapper = int * absitem * Type.typ * Type.typ list * 'a -> tree
+
+  (* Static representation of the type Reflect.value. *)
+  val tvalue =
+    let
+      (* Andreas is partially responsible for this. *)
+      val tvalueP = Promise.promise ()
+      fun createTValue' t _ = Promise.fulfill (tvalueP, t)
+        __overload 'a createTValue : 'a -> unit = createTValue'
+      val _ = createTValue (Reflect.reflect false)
+    in 
+      Promise.future tvalueP
+    end
+
+  fun register' t (typeMapper : 'a type_mapper) =
+    let
+      val (t',ts) = unapply t
+      val path    = Type.asCon (getAlias t')
+    in
+      (* Enforce polymorphic arguments (for soundness),
+       * by unifying the argument types (they should be variables)
+       * with Reflect.value (the static one). *)
+      (List.app (fn t => Type.unify (t, tvalue)) ts
+       handle Type.Mismatch _ => raise Common.BadTypeMapper) ;
+
+      PathMap.insert (registry, path, UnsafeValue.cast typeMapper)
+    end
+
+  __overload 'a register  : 'a type_mapper -> unit = register'
+
+  fun mapConstructor (depth, item, typ, path, args, value) =
+    case PathMap.lookup(registry, path) of
+      SOME mapper => mapper (depth, item, path, args, value)
+    | NONE        =>
+        if not(Type.isExtKind (Type.kind typ))
+          then Basic.abstract item
+        else
+          let
+            val con  = UnsafeValue.con value
+            val name = Name.toString (UnsafeValue.conName con)
+          in
+            (* Is it a nullary constructor ? *)
+	    if UnsafeValue.same (con, value) 
+              then AbsTree.simpleText (item, name, Prefs.exnStyle)
+              else AbsTree.abstractApplication (item, name)
+          end
+
+  (* Inspects a future. *)
+  fun futureMap mapper (depth, item, extra, value) =
+    if depth <= 0 then AbsTree.Fold item
+    else
+    let val item' = AbsTree.castItem item
+    in
+    if Hole.isHole value then
+    (* Hole. *)
+      let
+	val item' =
+	    case item of
+	      Common.Value (t, v)  => AbsTree.Value (t, v, AbsTree.Future ())
+	    | Common.Module (s, m) => AbsTree.Module (s, m, AbsTree.Future ())
+      in
+	Basic.future (item', value)
+      end
+
+    else case Future.status value of
+    (* Future. *)
+      Future.FUTURE => 
+      let
+	val item' =
+	    case item of
+	      Common.Value (t, v)  => AbsTree.Value (t, v, AbsTree.Future ())
+	    | Common.Module (s, m) => AbsTree.Module (s, m, AbsTree.Future ())
+      in
+	Basic.future (item', value)
+      end
+
+    (* FAILED future. *)
+    | Future.FAILED => Basic.failedFuture (item', depth, value)
+
+    (* DETERMINED value. *)
+    | Future.DETERMINED => mapper (depth, item', extra, value)
+    end
+
+  (* Mapping VALUES to Abstract Trees. *)
+  fun mapValue' (depth, item, typ, value) =
+    case Type.inspect (getAlias typ) of
+      Type.Unknown _ => Basic.abstract item
+    | Type.Var _     => Basic.abstract item
+    | Type.Con path  => mapConstructor (depth, item, typ, path, [], value)
+    | Type.Arrow tt  => Basic.arrow item
+    | Type.Prod row  => Basic.prod (depth, item, row, value, false)
+    | Type.Sum row   => Basic.sum (depth, item, row, value)
+    | Type.Mu _      => mapValue' (depth, item, Type.unroll typ, value)
+    | (Type.All(_,t') | Type.Exist(_,t')) => mapValue' (depth, item, t', value)
+    | Type.Lambda _  => assert false
+    | Type.Apply _   =>
+        let
+          val (t', ts) = unapply typ (* Flatten type applications. *)
+        in
+          case Type.inspect (getAlias t') of
+            Type.Mu _ => mapValue' (depth, item, Type.unroll typ, value)
+          | Type.Con path => mapConstructor (depth, item, typ, path, ts, value)
+          | _  => assert false
+        end
+
+  val mapValue = futureMap mapValue'
+
+  (* Mapping MODULES to Abstract Trees. *)
+  val mapModule = futureMap ModuleMapper.module
+
+  (* Map an item. *)
+  fun map (depth, item) = 
+    case item of 
+      Common.Value (typ, value)    => mapValue (depth, item, typ, value)
+    | Common.Module (sign, module) => mapModule (depth, item, sign, module)
+
+  val _ = Promise.fulfill (AbsTree.mapValueP, mapValue)
+  val _ = Promise.fulfill (AbsTree.mapP, map)
+
+  (* Builtin mappers. *)
+
+  val _ = register Builtin.int
+  val _ = register Builtin.intInf
+  val _ = register Builtin.word
+  val _ = register Builtin.word8
+  val _ = register Builtin.word32
+  val _ = register Builtin.real
+  val _ = register Builtin.char
+  val _ = register Builtin.string
+  val _ = register Builtin.reference
+  val _ = register Builtin.promise
+  val _ = register Builtin.list
+  val _ = register Builtin.atom
+  val _ = register Builtin.time
+  val _ = register Builtin.thread
+  val _ = register Builtin.array
+  val _ = register Builtin.charArray
+  val _ = register Builtin.word8Array
+  val _ = register Builtin.vector
+  val _ = register Builtin.word8Vector
+  val _ = register Builtin.package
+
+  val _ = register StdExceptions.stdExceptions
+end

@@ -1,0 +1,19 @@
+(*
+ * Interpreter for F - Types stuff
+ *
+ * 2000/02/02 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Env    from "Env"
+
+signature TYPE =
+sig
+    (* datatype typ = datatype Syntax.typ   Currently does not work with RTTs *)
+    datatype typ = Bool
+		 | Int
+		 | Arrow of typ * typ
+
+    val constant : Syntax.con -> typ
+    val base :     typ Env.env
+end

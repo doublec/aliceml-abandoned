@@ -1,0 +1,383 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2003
+ *   Andreas Rossberg, 1999
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS              from "../../lib/system/OS"
+import structure BinIO           from "../../lib/system/BinIO"
+import structure Url             from "../../lib/system/Url"
+import structure Name            from "../../lib/rtt/Name"
+import structure Label           from "../../lib/rtt/Label"
+import structure Crash           from "../infrastructure/Crash"
+import structure Source          from "../infrastructure/Source"
+import structure Stamp           from "../infrastructure/Stamp"
+import structure StampMap        from "../infrastructure/StampMap"
+import structure Arity           from "../backend-common/Arity"
+import structure FlatGrammar     from "../backend-common/FlatGrammar"
+import signature CODE            from "../backend-common/CODE-sig"
+import structure PickleOutStream from "PickleOutStream"
+
+structure PickleFlatGrammar :> CODE
+    where type t = Source.desc * string option ref * FlatGrammar.t =
+    struct
+	open FlatGrammar
+
+	type t = Source.desc * string option ref * FlatGrammar.t
+
+	open PickleOutStream
+
+	fun outputUnit' (q, _) = outputUnit q
+
+	fun outputStamp (q, stamp) = outputInt (q, Stamp.hash stamp)
+
+	fun outputUrl (q, url) = outputString (q, Url.toStringRaw url)
+
+	(*--** remove global state *)
+	val visited: label StampMap.t = StampMap.map ()
+
+	fun outputOption _ (q, NONE) = ignore (outputAtom (q, "NONE"))
+	  | outputOption outputX (q, SOME x) =
+	    (outputTuple (q, "SOME", 1); ignore (outputX (q, x)))
+
+	fun appTail f (x::xr) = (f (x, xr); appTail f xr)
+	  | appTail _ nil = ()
+
+	fun outputVector _ (q, #[]) = ignore (outputAtom (q, "#[]"))
+	  | outputVector outputX (q, xs) =
+	    (outputTuple (q, "#[]", Vector.length xs);
+	     Vector.appr (fn x => ignore (outputX (q, x))) xs)
+
+	fun outputChar (q, c) = outputInt (q, WideChar.ord c)
+
+	fun outputPair (outputA, outputB) (q, (a, b)) =
+	    (outputTuple (q, "#", 2); outputB (q, b); outputA (q, a))
+
+	fun outputTriple (outputA, outputB, outputC) (q, (a, b, c)) =
+	    (outputTuple (q, "#", 3); outputC (q, c); outputB (q, b);
+	     outputA (q, a))
+
+	fun outputQuadruple (outputA, outputB, outputC, outputD)
+	    (q, (a, b, c, d)) =
+	    (outputTuple (q, "#", 4); outputD (q, d); outputC (q, c);
+	     outputB (q, b); outputA (q, a))
+
+	local
+	    val outputIntPair = outputPair (outputInt, outputInt)
+
+	    fun outputRegion (q, region) =
+		outputPair (outputIntPair, outputIntPair) (q, region)
+	in
+	    fun outputIdInfo (q, info: id_info) = outputRegion (q, #region info)
+	    fun outputStmInfo (q, info: stm_info) = outputRegion (q, info)
+	    fun outputExpInfo (q, info: exp_info) = outputRegion (q, info)
+	end
+
+	fun outputLit (q, WordLit (_, w)) =
+	    (outputTuple (q, "WordLit", 1); ignore (outputWord (q, 31, w)))
+	  | outputLit (q, IntLit (_, n)) =
+	    (outputTuple (q, "IntLit", 1); outputLargeInt (q, n))
+	  | outputLit (q, CharLit (_, c)) =
+	    (outputTuple (q, "CharLit", 1); outputChar (q, c))
+	  | outputLit (q, StringLit (_, s)) =
+	    (outputTuple (q, "StringLit", 1); ignore (outputString (q, s)))
+	  | outputLit (q, RealLit (_, r)) =
+	    (outputTuple (q, "RealLit", 1); outputLargeReal (q, r))
+
+	fun outputLabel (q, label) =
+	    case Label.toInt label of
+		SOME n => outputInt (q, n)
+	      | NONE =>
+		    case Label.toString label of
+			"true" => ignore (outputBool (q, true))
+		      | "false" => ignore (outputBool (q, false))
+		      | "::" => ignore (outputAtom (q, "|"))
+		      | s => ignore (outputAtom (q, s))
+
+	fun outputName (q, Name.ExId s) =
+	    (outputTuple (q, "ExId", 1); outputAtom (q, s))
+	  | outputName (q, Name.InId) = outputAtom (q, "InId");
+
+	fun outputId (q, Id (info, stamp, name)) =
+	    (outputTuple (q, "Id", 3); outputName (q, name);
+	     outputStamp (q, stamp); outputIdInfo (q, info))
+
+	fun outputIdDef (q, IdDef id) =
+	    (outputTuple (q, "IdDef", 1); outputId (q, id))
+	  | outputIdDef (q, Wildcard) = ignore (outputAtom (q, "Wildcard"))
+
+	fun outputIdRef (q, IdRef id) =
+	    (outputTuple (q, "IdRef", 1); outputId (q, id))
+	  | outputIdRef (q, LastIdRef id) =
+	    (outputTuple (q, "LastIdRef", 1); outputId (q, id))
+	  | outputIdRef (q, Lit lit) =
+	    (outputTuple (q, "Lit", 1); outputLit (q, lit))
+	  | outputIdRef (q, Prim name) =
+	    (outputTuple (q, "Prim", 1); ignore (outputAtom (q, name)))
+	  | outputIdRef (q, Value _) = 
+	    raise Crash.Crash "PickleFlatGrammar.outputIdRef"
+
+	fun outputFunFlag (q, PrintName s) =
+	    (outputTuple (q, "PrintName", 1); ignore (outputAtom (q, s)))
+	  | outputFunFlag (q, AuxiliaryOf stamp) =
+	    (outputTuple (q, "AuxiliaryOf", 1); outputStamp (q, stamp))
+	  | outputFunFlag (q, IsToplevel) =
+	    ignore (outputAtom (q, "IsToplevel"))
+
+	fun outputArity (q, Arity.Unary) =
+	    ignore (outputAtom (q, "Unary"))
+	  | outputArity (q, Arity.Tuple n) =
+	    (outputTuple (q, "Tuple", 1); outputInt (q, n))
+	  | outputArity (q, Arity.Product labels) =
+	    (outputTuple (q, "Product", 1);
+	     outputVector outputLabel (q, labels))
+
+	fun outputArgs outputX (q, OneArg id) =
+	    (outputTuple (q, "OneArg", 1); ignore (outputX (q, id)))
+	  | outputArgs outputX (q, TupArgs ids) =
+	    (outputTuple (q, "TupArgs", 1); outputVector outputX (q, ids))
+	  | outputArgs outputX (q, ProdArgs labelIdVec) =
+	    (outputTuple (q, "ProdArgs", 1);
+	     outputVector (outputPair (outputLabel, outputX)) (q, labelIdVec))
+
+	fun outputProd (q, Tuple n) =
+	    (outputTuple (q, "Tuple", 1); outputInt (q, n))
+	  | outputProd (q, Product labels) =
+	    (outputTuple (q, "Product", 1);
+	     outputVector outputLabel (q, labels))
+
+	fun outputEntryPoint (q, ConEntry (typ, idRef, args)) =
+	    (outputTuple (q, "ConEntry", 2); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef))
+	  | outputEntryPoint (q, SelEntry (prod, label, n, typ, idRef)) =
+	    (outputTuple (q, "SelEntry", 4); outputIdRef (q, idRef);
+	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod))
+	  | outputEntryPoint (q, StrictEntry (typ, idRef)) =
+	    (outputTuple (q, "StrictEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, AppEntry (typ ,idRef, args)) =
+	    (outputTuple (q, "AppEntry", 2); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef))
+	  | outputEntryPoint (q, CondEntry (typ, idRef)) =
+	    (outputTuple (q, "CondEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, RaiseEntry  idRef) =
+	    (outputTuple (q, "RaiseEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, HandleEntry idRef) =
+	    (outputTuple (q, "HandleEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, SpawnEntry) =
+	    ignore (outputAtom (q, "SpawnEntry"))
+
+	fun outputExitPoint (q, ConExit) =
+	    ignore (outputAtom (q, "ConExit"))
+	  | outputExitPoint (q, SelExit typ) =
+	    ignore (outputAtom (q, "SelExit"))
+	  | outputExitPoint (q, StrictExit) =
+	    ignore (outputAtom (q, "StrictExit"))
+	  | outputExitPoint (q, AppExit) =
+	    ignore (outputAtom (q, "AppExit"))
+	  | outputExitPoint (q, CondExit typ) =
+	    ignore (outputAtom (q, "CondExit"))
+	  | outputExitPoint (q, RaiseExit typ) =
+	    ignore (outputAtom (q, "RaiseExit"))
+	  | outputExitPoint (q, HandleExit typ) =
+	    ignore (outputAtom (q, "HandleExit"))
+	  | outputExitPoint (q, SpawnExit typ) =
+	    ignore (outputAtom (q, "SpawnExit"))
+
+	fun outputStm (q, Entry (info, entryPoint)) =
+	    (outputTuple (q, "Entry", 2); outputEntryPoint (q, entryPoint);
+	     outputStmInfo (q, info))
+	  | outputStm (q, Exit (info, exitPoint, idRef)) =
+	    (outputTuple (q, "Exit", 3); outputIdRef (q, idRef);
+	     outputExitPoint (q, exitPoint); outputStmInfo (q, info))
+	  | outputStm (q, LastUse (info, ids)) =
+	    (outputTuple (q, "LastUse", 2); outputVector outputId (q, ids);
+	     outputStmInfo (q, info))
+	  | outputStm (q, ValDec (info, idDef, exp)) =
+	    (outputTuple (q, "ValDec", 3); outputExp (q, exp);
+	     outputIdDef (q, idDef); outputStmInfo (q, info))
+	  | outputStm (q, RecDec (info, idDefExpVec)) =
+	    (outputTuple (q, "RecDec", 2);
+	     outputVector (outputPair (outputIdDef, outputExp))
+			  (q, idDefExpVec);
+	     outputStmInfo (q, info))
+	  | outputStm (q, RefDec (info, idDef, idRef)) =
+	    (outputTuple (q, "RefDec", 3); outputIdRef (q, idRef);
+	     outputIdDef (q, idDef); outputStmInfo (q, info))
+	  | outputStm (q, TupDec (info, idDefs, idRef)) =
+	    (outputTuple (q, "TupDec", 3); outputIdRef (q, idRef);
+	     outputVector outputIdDef (q, idDefs); outputStmInfo (q, info))
+	  | outputStm (q, ProdDec (info, labelIdDefVec, idRef)) =
+	    (outputTuple (q, "ProdDec", 3); outputIdRef (q, idRef);
+	     outputVector (outputPair (outputLabel, outputIdDef))
+			  (q, labelIdDefVec);
+	     outputStmInfo (q, info))
+	  | outputStm (q, TryStm (info, tryBody, idDef1, idDef2, handleBody)) =
+	    (outputTuple (q, "TryStm", 5); outputBody (q, handleBody);
+	     outputIdDef (q, idDef2); outputIdDef (q, idDef1);
+	     outputBody (q, tryBody); outputStmInfo (q, info))
+	  | outputStm (q, EndTryStm (info, body)) =
+	    (outputTuple (q, "EndTryStm", 2); outputBody (q, body);
+	     outputStmInfo (q, info))
+	  | outputStm (q, EndHandleStm (info, body)) =
+	    (outputTuple (q, "EndHandleStm", 2); outputBody (q, body);
+	     outputStmInfo (q, info))
+	  | outputStm (q, TestStm (info, idRef, tests, body)) =
+	    (outputTuple (q, "TestStm", 4); outputBody (q, body);
+	     outputTests (q, tests); outputIdRef (q, idRef);
+	     outputStmInfo (q, info))
+	  | outputStm (q, RaiseStm (info, idRef)) =
+	    (outputTuple (q, "RaiseStm", 2); outputIdRef (q, idRef);
+	     outputStmInfo (q, info))
+	  | outputStm (q, ReraiseStm (info, idRef)) =
+	    (outputTuple (q, "ReraiseStm", 2); outputIdRef (q, idRef);
+	     outputStmInfo (q, info))
+	  | outputStm (q, SharedStm (info, body, stamp)) =
+	    (case StampMap.lookup (visited, stamp) of
+		 SOME label => outputShared (q, label)
+	       | NONE =>
+		     let
+			 val label = outputTuple (q, "SharedStm", 3)
+		     in
+			 outputStamp (q, stamp); outputBody (q, body);
+			 outputStmInfo (q, info);
+			 StampMap.insert (visited, stamp, label)
+		     end)
+	  | outputStm (q, ReturnStm (info, exp)) =
+	    (outputTuple (q, "ReturnStm", 2); outputExp (q, exp);
+	     outputStmInfo (q, info))
+	  | outputStm (q, IndirectStm (info, bodyOptRef)) =
+	    (outputTuple (q, "IndirectStm", 2);
+	     outputRef (outputOption outputBody) (q, bodyOptRef);
+	     outputStmInfo (q, info))
+	  | outputStm (q, ExportStm (info, exp)) =
+	    (outputTuple (q, "ExportStm", 2); outputExp (q, exp);
+	     outputStmInfo (q, info))
+	and outputTests (q, LitTests litBodyVec) =
+	    (outputTuple (q, "LitTests", 1);
+	     outputVector (outputPair (outputLit, outputBody)) (q, litBodyVec))
+	  | outputTests (q, TagTests (labels, tagBodyVec)) =
+	    (outputTuple (q, "TagTests", 2);
+	     outputVector (outputTriple (outputInt, outputArgs outputIdDef,
+					 outputBody)) (q, tagBodyVec);
+	     outputVector outputLabel (q, labels))
+	  | outputTests (q, ConTests conBodyVec) =
+	    (outputTuple (q, "ConTests", 1);
+	     outputVector (outputTriple (outputIdRef, outputArgs outputIdDef,
+					 outputBody)) (q, conBodyVec))
+	  | outputTests (q, VecTests vecBodyVec) =
+	    (outputTuple (q, "VecTests", 1);
+	     outputVector (outputPair (outputVector outputIdDef, outputBody))
+	     (q, vecBodyVec))
+	and outputExp (q, NewExp (info, name)) =
+	    (outputTuple (q, "NewExp", 2); outputName (q, name);
+	     outputExpInfo (q, info))
+	  | outputExp (q, VarExp (info, idRef)) =
+	    (outputTuple (q, "VarExp", 2); outputIdRef (q, idRef);
+	     outputExpInfo (q, info))
+	  | outputExp (q, TagExp (info, labels, n, args)) =
+	    (outputTuple (q, "TagExp", 4); outputArgs outputIdRef (q, args);
+	     outputInt (q, n); outputVector outputLabel (q, labels);
+	     outputExpInfo (q, info))
+	  | outputExp (q, ConExp (info, idRef, args)) =
+	    (outputTuple (q, "ConExp", 3); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef); outputExpInfo (q, info))
+	  | outputExp (q, RefExp (info, idRef)) =
+	    (outputTuple (q, "RefExp", 2); outputIdRef (q, idRef);
+	     outputExpInfo (q, info))
+	  | outputExp (q, TupExp (info, idRefs)) =
+	    (outputTuple (q, "TupExp", 2);
+	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
+	  | outputExp (q, ProdExp (info, labelIdRefVec)) =
+	    (outputTuple (q, "ProdExp", 2);
+	     outputVector (outputPair (outputLabel, outputIdRef))
+			  (q, labelIdRefVec); outputExpInfo (q, info))
+	  | outputExp (q, PolyProdExp (info, labelIdRefVec)) =
+	    (outputTuple (q, "PolyProdExp", 2);
+	     outputVector (outputPair (outputLabel, outputIdRef))
+			  (q, labelIdRefVec); outputExpInfo (q, info))
+	  | outputExp (q, VecExp (info, idRefs)) =
+	    (outputTuple (q, "VecExp", 2);
+	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
+	  | outputExp (q, FunExp (info, stamp, flags, _, args, outArityOpt, 
+				  body)) =
+	    (outputTuple (q, "FunExp", 6); outputBody (q, body);
+ 	     outputOption outputArity (q, outArityOpt);
+	     outputArgs outputIdDef (q, args);
+	     outputList outputFunFlag (q, flags);
+	     outputStamp (q, stamp); outputExpInfo (q, info))
+	  | outputExp (q, PrimAppExp (info, name, idRefs)) =
+	    (outputTuple (q, "PrimAppExp", 3);
+	     outputVector outputIdRef (q, idRefs);
+	     outputAtom (q, name); outputExpInfo (q, info))
+	  | outputExp (q, VarAppExp (info, idRef, args)) =
+	    (outputTuple (q, "VarAppExp", 3); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef); outputExpInfo (q, info))
+	  | outputExp (q, DirectAppExp (info, idRef, args)) =
+	    (outputTuple (q, "DirectAppExp", 3);
+	     outputArgs outputIdRef (q, args); outputIdRef (q, idRef);
+	     outputExpInfo (q, info))
+	  | outputExp (q, SelExp (info, prod, label, n, idRef)) =
+	    (outputTuple (q, "SelExp", 5); outputIdRef (q, idRef);
+	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
+	     outputExpInfo (q, info))
+	  | outputExp (q, LazyPolySelExp (info, label, idRef)) =
+	    (outputTuple (q, "LazyPolySelExp", 3); outputIdRef (q, idRef);
+	     outputLabel (q, label); outputExpInfo (q, info))
+	  | outputExp (q, FunAppExp (info, idRef, stamp, args)) =
+	    (outputTuple (q, "FunAppExp", 4); outputArgs outputIdRef (q, args);
+	     outputStamp (q, stamp); outputIdRef (q, idRef);
+	     outputExpInfo (q, info))
+	  | outputExp (q, FailExp info) =
+	    (outputTuple (q, "FailExp", 1); outputExpInfo (q, info))
+	and outputBody (q, stms) = outputList outputStm (q, stms)
+
+	fun outputComponent (q, {imports, body, exports, sign}) =
+	    (outputTuple (q, "#", 4);
+	     outputUnit' (q, sign);
+	     outputVector (outputPair (outputLabel, outputId))
+			  (q, exports);
+	     outputBody (q, body);
+	     outputVector (outputQuadruple
+			       (outputId, outputUnit', outputUrl, outputUnit'))
+			  (q, imports))
+
+	fun parseUrl NONE = NONE
+	  | parseUrl (SOME url) =
+	    SOME (Url.toLocalFile url)
+	    handle Url.NotLocal => NONE
+
+	fun toString (desc, tmpOptRef, component) =
+	    let
+		val q = openOut ()
+		val (sourcename, filename') =
+		    case parseUrl (Source.anyUrl desc) of
+			SOME filename => (filename, filename ^ ".ozp")
+		      | NONE =>
+			    let
+				val filename = OS.FileSys.tmpName ()
+			    in
+				tmpOptRef := SOME filename;
+				("", filename)
+			    end
+		val outstream = BinIO.openOut filename'
+	    in
+		StampMap.removeAll visited;
+		outputPair (outputString, outputComponent)
+			   (q, (sourcename, component));
+		BinIO.output (outstream, closeOut q);
+		BinIO.closeOut outstream;
+		OS.FileSys.fullPath filename'
+	    end
+
+	fun cleanup (_, ref (SOME tmpFilename), _) =
+	    (OS.FileSys.remove tmpFilename handle _ => ())
+	  | cleanup (_, ref NONE, _) = ()
+    end

@@ -1,0 +1,185 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
+import structure Gtk   from "x-alice:/lib/gtk/Gtk"
+
+import signature TYPES from "TYPES-sig"
+import signature OPTIONS_WINDOW from "OPTIONS_WINDOW-sig"
+
+functor MkOptionsWindow (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    : OPTIONS_WINDOW
+    where type explorer_state = Types.explorer_state
+    =
+  struct
+      type explorer_state = Types.explorer_state
+
+    fun newViewOptionsWindow
+	(mw, serve, state : Types.explorer_state option ref) =
+        case !state of
+            SOME {refreshAfter,
+                  breakAfter,
+		  breakAfterNodes,
+                  hideFailed=hf,
+                  zoomFollows=zf,
+		  tree={mrd,...},...} =>
+            let
+                val configure = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
+                val _ = Gtk.Window.setTitle(configure,"View options")
+                val _ = Gtk.Window.setModal(configure,true)
+                val table1 = Gtk.Table.new(5,2,false)
+                val _ = Gtk.Widget.show table1
+                val _ = Gtk.Table.setRowSpacings(table1,0)
+                val _ = Gtk.Table.setColSpacings(table1,0)
+                val label1 = Gtk.Label.new("Refresh after how many solutions: ")
+                val _ = Gtk.Widget.show label1
+                val _ = Gtk.Misc.setAlignment(label1,0.0,0.5)
+                val label2 = Gtk.Label.new("Break after how many solutions: ")
+                val _ = Gtk.Widget.show label2
+                val _ = Gtk.Misc.setAlignment(label2,0.0,0.5)
+                val label3 = Gtk.Label.new("Break after how many nodes: ")
+                val _ = Gtk.Widget.show label3
+                val _ = Gtk.Misc.setAlignment(label3,0.0,0.5)
+                val solutions_adj =
+                    Gtk.Adjustment.new(Real.fromInt (!refreshAfter),
+                                      0.0,10000.0,1.0,10.0,10.0)
+                val solutions = Gtk.SpinButton.new(solutions_adj,1.0,0)
+                val solutions2_adj =
+                    Gtk.Adjustment.new(Real.fromInt (!breakAfter),
+                                      0.0,10000.0,1.0,10.0,10.0)
+                val solutions2 = Gtk.SpinButton.new(solutions2_adj,1.0,0)
+                val breakNodes_adj =
+                    Gtk.Adjustment.new(Real.fromInt (!breakAfterNodes),
+                                      0.0,10000.0,1.0,10.0,10.0)
+                val breakNodes = Gtk.SpinButton.new(breakNodes_adj,1.0,0)
+                val hideFailed =
+                    Gtk.CheckButton.newWithMnemonic("Hide failed subtrees")
+                val _ = Gtk.ToggleButton.setActive(hideFailed, !hf)
+                val zoomFollows =
+                    Gtk.CheckButton.newWithMnemonic("Automatic zoom")
+                val _ = Gtk.ToggleButton.setActive(zoomFollows, !zf)
+
+                val _ = Gtk.Table.attach(table1,label1,0,1,0,1,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,solutions,1,2,0,1,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,label2,0,1,1,2,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,solutions2,1,2,1,2,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+
+                val _ = Gtk.Table.attach(table1,label3,0,1,2,3,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,breakNodes,1,2,2,3,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,hideFailed,0,2,3,4,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,zoomFollows,0,2,4,5,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Container.add(configure,table1)
+                        
+                fun valueChangedHandler _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {refreshAfter=refreshAfter,...} =>
+                                  refreshAfter :=
+                                  Real.round
+                                      (Gtk.Adjustment.getValue solutions_adj)
+                                | _ => ())
+                val _ = Gtk.signalConnect(solutions_adj, "value_changed",
+                                          valueChangedHandler)
+
+                fun valueChangedHandler2 _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {breakAfter=breakAfter,...} =>
+                                  breakAfter :=
+                                  Real.round
+                                      (Gtk.Adjustment.getValue solutions2_adj)
+                                | _ => ())
+                val _ = Gtk.signalConnect(solutions2_adj, "value_changed",
+                                          valueChangedHandler2)
+
+                fun valueChangedHandler3 _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {breakAfterNodes,...} =>
+                                  breakAfterNodes :=
+                                  Real.round
+                                      (Gtk.Adjustment.getValue breakNodes_adj)
+                                | _ => ())
+                val _ = Gtk.signalConnect(breakNodes_adj, "value_changed",
+                                          valueChangedHandler3)
+
+
+                fun hfToggledHandler _ =
+                    serve (fn () =>
+                              Types.setHideFailed state
+                              (Gtk.ToggleButton.getActive hideFailed))
+                val _ = Gtk.signalConnect(hideFailed, "toggled",
+                                          hfToggledHandler)
+
+                fun zfToggledHandler _ =
+                    serve (fn () =>
+                              Types.setZoomFollows state
+                              (Gtk.ToggleButton.getActive zoomFollows))
+                val _ = Gtk.signalConnect(zoomFollows, "toggled",
+                                          zfToggledHandler)
+            in
+                configure
+            end
+          | _ => raise Empty
+
+    fun newSearchOptionsWindow
+	(mw, serve, state : Types.explorer_state option ref) =
+        case !state of
+            SOME {tree={mrd,...},...} =>
+            let
+                val configure = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
+                val _ = Gtk.Window.setTitle(configure,"Search options")
+                val _ = Gtk.Window.setModal(configure,true)
+                val table1 = Gtk.Table.new(2,2,false)
+                val _ = Gtk.Widget.show table1
+                val _ = Gtk.Table.setRowSpacings(table1,0)
+                val _ = Gtk.Table.setColSpacings(table1,0)
+                val label1 = Gtk.Label.new("Maximum recomputation distance: ")
+                val _ = Gtk.Widget.show label1
+                val _ = Gtk.Misc.setAlignment(label1,0.0,0.5)
+                val mrd_adj =
+                    Gtk.Adjustment.new(Real.fromInt (!mrd),
+                                      0.0,10000.0,1.0,10.0,10.0)
+                val mrd = Gtk.SpinButton.new(mrd_adj,1.0,0)
+
+                val _ = Gtk.Table.attach(table1,label1,0,1,0,1,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Table.attach(table1,mrd,1,2,0,1,
+                                        [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+                val _ = Gtk.Container.add(configure,table1)
+                        
+                fun valueChangedHandler _ =
+                    serve (fn () =>
+                              case !state of
+                                  SOME {tree={mrd,...},...} =>
+                                  mrd :=
+                                  Real.round
+                                      (Gtk.Adjustment.getValue mrd_adj)
+                                | _ => ())
+                val _ = Gtk.signalConnect(mrd_adj, "value_changed",
+                                          valueChangedHandler)
+            in
+                configure
+            end
+          | _ => raise Empty
+
+    end

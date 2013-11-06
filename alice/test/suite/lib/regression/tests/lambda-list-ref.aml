@@ -1,0 +1,25 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure LambdaListRef : REGRESSION =
+struct
+
+val name = "lambda-list-ref"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+val r : (int -> int) list ref = ref []
+
+val _ = r := (fn x => x + 1) :: ! r
+val _ = r := (fn x => x + 2) :: ! r
+
+val _ = app (fn f => (f 13; ())) (!r)
+
+
+val result = !result
+
+end				     
+   

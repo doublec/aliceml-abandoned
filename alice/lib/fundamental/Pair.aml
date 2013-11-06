@@ -1,0 +1,46 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive      from "Pervasive"
+import __primitive datatype order from "ToplevelTypes"
+import __primitive signature PAIR from "PAIR-sig"
+
+
+structure Pair : PAIR =							(**)
+struct
+    type ('a,'b) pair	= 'a * 'b
+    type ('a,'b) t	= ('a,'b) pair
+
+    fun fst(x,y)	= x
+    fun snd(x,y)	= y
+
+    fun app (f,g) (x,y)	= (f x ; g y)
+    fun appFst f  (x,y)	= f x
+    fun appSnd f  (x,y)	= f y
+
+    fun map (f,g) (x,y)	= (f x, g y)
+    fun mapFst f  (x,y)	= (f x, y)
+    fun mapSnd f  (x,y)	= (x, f y)
+    fun mapBoth f (x,y) = (f x, f y)
+
+    fun equal (equalX,equalY) ((x1,y1), (x2,y2)) =
+	equalX(x1,x2) andalso equalY(y1,y2)
+
+    fun collate (compareX,compareY) ((x1,y1), (x2,y2)) =
+	case compareX(x1,x2)
+	 of EQUAL => compareY(y1,y2)
+	  | other => other
+end

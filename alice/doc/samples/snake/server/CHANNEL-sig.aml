@@ -1,0 +1,22 @@
+signature CHANNEL =
+sig
+    type 'a channel
+
+    exception Closed
+
+    val channel : unit -> 'a channel
+
+    val send : 'a channel * 'a -> unit
+
+    val receive : 'a channel -> 'a (* Closed *)
+
+    val length : 'a channel -> int
+
+    val destroy : 'a channel -> unit
+    (* remove all unprocessed values from the channel and
+       close it. *)
+
+    val close : 'a channel -> unit
+
+    val isClosed : 'a channel -> bool
+end

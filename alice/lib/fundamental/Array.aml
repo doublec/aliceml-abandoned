@@ -1,0 +1,61 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive        from "Pervasive"
+import __primitive
+       type unit and int and vector
+       type array and list          from "ToplevelTypes"
+import __primitive val op =         from "ToplevelValues"
+import __primitive functor MkArray  from "MkArray"
+import __primitive signature ARRAY  from "ARRAY-sig"
+
+structure Array : ARRAY =
+struct
+    type 'a vector = 'a vector
+    type array  = array
+    type t      = array
+    type v      = vector
+
+    structure Array = MkArray(
+	type array      = array
+	type dst_array  = array
+	type vector     = vector
+	type dst_vector = vector
+	type 'a elem    = 'a
+	__primitive val maxLen :   int			= "Array.maxLen"
+	__primitive val length :   'a t -> int		= "Array.length"
+	__primitive val sub :	   'a t * int -> 'a	= "Array.sub"
+	__primitive val uSub :	   'a t * int -> 'a	= "Unsafe.Array.sub"
+	__primitive val update :   'a t * int * 'a -> unit = "Array.update"
+	__primitive val uUpdate :  'a t * int * 'a -> unit = "Unsafe.Array.update"
+	__primitive val dlength :  'a t -> int		= "Array.length"
+	__primitive val dupdate :  'a t * int * 'a -> unit = "Array.update"
+	__primitive val dextract : 'a t * int * int -> 'a v = "Array.extract"
+	__primitive val vlength :  'a v -> int		= "Vector.length"
+	__primitive val vsub :	   'a v * int -> 'a	= "Vector.sub"
+	__primitive val uVsub :	   'a v * int -> 'a	= "Unsafe.Vector.sub"
+    )
+    open Array
+
+    __primitive val array :    int * 'a -> 'a t		= "Array.array"
+    __primitive val tabulate : int * (int ->'a) -> 'a t	= "Array.tabulate"
+    __primitive val fromList : 'a list -> 'a t		= "Array.fromList"
+    __primitive val toList :   'a t -> 'a list		= "Array.toList"
+    __primitive val fromVector : 'a v -> 'a t		= "Array.fromVector"
+
+    fun contains a	= Array.contains op= a
+    fun notContains a	= Array.notContains op= a
+end

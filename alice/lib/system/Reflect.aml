@@ -1,0 +1,82 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label         from "../rtt/Label"
+import structure Type          from "../rtt/Type"
+import structure Inf           from "../rtt/Inf"
+import structure UnsafeReflect from "UnsafeReflect"
+import signature REFLECT       from "REFLECT-sig"
+
+structure Reflect : REFLECT =
+    struct
+	__primitive type value  = "Reflect.value"
+	__primitive type module = "Reflect.module"
+
+	__primitive val cast : 'a -> 'b = "Unsafe.cast"
+	val reflect = cast
+	val reify   = cast
+
+	(* TODO: Q&D, has to correspond to translation *)
+	datatype package' = Package__ of module * Inf.t
+
+	fun reflectPackage p = case cast p of Package__ mj => mj
+	fun reifyPackage mj  = cast(Package__ mj)
+
+	functor Reflect(signature S structure X: S) =
+	    let
+		structure Str = UnsafeReflect.Reflect(signature S = S
+						      structure X = X)
+	    in
+		(val x = cast Str.x)
+	    end
+
+	functor Reify(val x: module signature S) =
+	    UnsafeReflect.Reify(val x = cast x signature S = S)
+
+	functor ReflectSig(signature S) =
+	    let
+		structure Str = UnsafeReflect.ReflectSig(signature S = S)
+	    in
+		(val x = cast Str.x)
+	    end
+
+	functor ReifySig(val x : Inf.t) =
+	    UnsafeReflect.ReifySig(val x = cast x)
+
+	functor ReflectType(type t) =
+	    let
+		structure Sig = ReflectSig(signature S = (type t = t))
+	    in
+		(val x = Inf.lookupTyp'(Inf.asSig(cast Sig.x),
+					Label.fromString "t"))
+	    end
+(*
+	functor ReifyType(val x : Type.t) =
+	    let
+		val s = Inf.emptySig()
+		val p = Path.fromString "t"
+		val _ = Inf.extendTyp(s, p, Type.singKind x)
+		val j = Inf.sign s
+	    in
+	    end
+*)
+
+	functor LiftPackage(val package : package) =
+	    let
+		val (m,j) = reflectPackage package
+		structure Sig = ReifySig(val x = j)
+		structure Mod = Reify(val x = m signature S = Sig.S)
+	    in
+		(signature S = Sig.S structure X = Mod)
+	    end
+    end

@@ -1,0 +1,321 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Thorsten Brunklaus, 2000-2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+ * Usage: scramble [width [height]]
+ *)
+
+import structure Gtk    from "x-alice:/lib/gtk/Gtk"
+import structure Gdk    from "x-alice:/lib/gtk/Gdk"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
+import structure Random from "x-alice:/lib/utility/Random"
+
+local
+    (* A simple server abstraction *)
+
+    fun newServer () =
+	let
+	    val fs     = Promise.promise ()
+	    val stream = Ref.ref fs
+
+	    fun enqueue f =
+		let
+		    val newtail = Promise.promise ()
+		    val tail    = Ref.exchange (stream, newtail)
+		in
+		    Promise.fulfill (tail, f::Promise.future newtail)
+		end
+	in
+	    spawn List.app (fn f => f ()) (Promise.future fs);
+	    enqueue
+	end
+
+    val serve = newServer ()
+
+
+
+    (* The board *)
+
+    datatype piece = PIECE of {num : int,
+			       group : Gtk.object option,
+			       pos : (int * int) ref}
+    datatype board = BOARD of {canvas : Canvas.object,
+			       matrix : piece Array2.array,
+			       spot : (int * int) ref}
+
+    fun makeColor colormap (r, g, b) = 
+	let
+	    fun colorConv n = Real.round (65535.0 * n)
+	    val color = Gdk.Color.new { red   = colorConv r, 
+				        green = colorConv g, 
+				        blue  = colorConv b }
+	in
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
+	    color
+	end
+
+    val pieceSize = 50
+    val map   = Gdk.Colormap.getSystem ()
+    val black = makeColor map (0.0, 0.0, 0.0)
+    val white = makeColor map (1.0, 1.0, 1.0)
+
+    infix 3 ::=
+
+    val op ::= = Gtk.Prop.prop
+
+    fun newItem (p, t, vals) =
+        let
+            val item = Canvas.Group.newItem (p, t)
+        in
+            Canvas.Prop.setL item vals;
+            item
+        end
+            
+    (* Constructing pieces *)
+
+    val spot = PIECE {num = 0, group = NONE, pos = ref (0, 0)}
+
+    fun piece (parent, 0, 0, n, color, handler) = spot
+      | piece (parent, x, y, n, color, handler) =
+	let
+	    val pos = ref (x, y)
+	    val x1 = real (x * pieceSize)
+	    val y1 = real (y * pieceSize)
+	    val x2 = x1 + real pieceSize
+	    val y2 = y1 + real pieceSize
+	    val tx = x1 + 25.0
+	    val ty = y1 + 25.0
+	    val text  = Int.toString n
+
+	    val group = newItem (parent, Canvas.Group.getType (), [
+                                    Canvas.Group.x ::= x1,
+                                    Canvas.Group.y ::= y1
+                                ])
+	    val box   = newItem (group, Canvas.Rect.getType (), [
+			   Canvas.RE.x1                 ::= 0.0,
+                           Canvas.RE.y1                 ::= 0.0,
+                           Canvas.RE.x2                 ::= real pieceSize,
+                           Canvas.RE.y2                 ::= real pieceSize,
+                           Canvas.Shape.fillColorGdk    ::= color,
+                           Canvas.Shape.outlineColorGdk ::= black,
+                           Canvas.Shape.widthPixels     ::= 0
+                        ])
+	    val text = newItem (group, Canvas.Text.getType (), [
+                            Canvas.Text.text            ::= text,
+                            Canvas.Text.x               ::= 25.0,
+                            Canvas.Text.y               ::= 25.0,
+                            Canvas.Text.anchor          ::= Gtk.AnchorType.CENTER,
+                            Canvas.Text.fillColorGdk    ::= black
+                        ])
+	in
+	    Gtk.signalConnect (group, "event", handler (pos, text));
+	    PIECE {num = n, group = SOME group, pos}
+	end
+
+
+    (* Piece colors *)
+
+    fun toHexString i = (if i < 0x10 then "0" else "") ^ Int.fmt StringCvt.HEX i
+
+    fun pieceColor (w, h) (x, y) =
+	let
+	    fun colorConv n = Real.round (65535.0 * n)
+
+	    val r      = 255 * (w - x) div w
+	    val g      = 255 * (h - y) div h
+	    val b      = 128
+	    val color  = Gdk.Color.new { red   = colorConv 0.0, 
+				         green = colorConv 0.0,
+				         blue  = colorConv 0.0 }
+	    val colStr = "#" ^ toHexString r ^ toHexString g ^ toHexString b
+	    val _      = Gdk.Color.parse (colStr, color) 
+	    val _      = Gdk.Colormap.allocColor (map, color, false, true)
+	in
+	    color
+	end
+
+
+    (* Moving pieces *)
+
+    fun moveSpot (BOARD {matrix, spot = spotPos as ref (x, y), ...}, x', y') =
+	let
+	    val spot  as PIECE {pos = pos, ...} = Array2.sub (matrix, x, y)
+	    val piece as PIECE {pos = pos', group, ...} =
+						  Array2.sub (matrix, x', y')
+	    val dx = real (pieceSize * (x-x'))
+	    val dy = real (pieceSize * (y-y'))
+	in
+	    spotPos := (x', y');
+	    pos := (x', y');
+	    pos' := (x, y);
+	    Array2.update (matrix, x, y, piece);
+	    Array2.update (matrix, x', y', spot);
+	    Canvas.Item.move (valOf group, dx, dy)
+	end
+
+
+    (* Victory notification window *)
+
+    fun victoryNotification () =
+	let
+	    val window      = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val vbox        = Gtk.VBox.new (true, 12)
+	    val deleteEvent = fn _ => Gtk.Widget.destroy window
+	    val label       = Gtk.Label.new "Congratulations, you solved the puzzle!"
+	    val button      = Gtk.Button.newWithLabel "OK"
+	in
+	    Gtk.Container.setBorderWidth (vbox, 10);
+	    Gtk.Widget.show vbox;
+	    Gtk.Box.packStart (vbox, label, true, true, 8);
+	    Gtk.Box.packStart (vbox, button, false, false, 8);
+	    Gtk.signalConnect (window, "delete-event", deleteEvent);
+	    Gtk.signalConnect (button, "clicked", deleteEvent);
+	    Gtk.Window.setTitle (window, "Scramble Notification");
+	    Gtk.Container.add (window, vbox);
+	    Gtk.Widget.showAll window
+	end
+
+
+    (* Event handler for pieces *)
+
+    fun checkVictory (BOARD {matrix, ...}) =
+	if Array2.alli Array2.ColMajor
+	    (fn (i, j, PIECE {num, ...}) => num = Array2.nRows matrix*j+i)
+	    {base = matrix, row = 0, col = 0, nrows = NONE, ncols = NONE}
+	then victoryNotification ()
+	else ()
+
+    fun pieceHandler (board as BOARD {spot,...}) (pos, text) (_,events) =
+	serve
+	(fn () =>
+	 case events of
+	    Gtk.EVENT (Gtk.EVENT_ENTER_NOTIFY _) :: _ =>
+                Canvas.Prop.set Canvas.Text.fillColorGdk (text, white)
+	  | Gtk.EVENT (Gtk.EVENT_LEAVE_NOTIFY _) :: _ =>
+                Canvas.Prop.set Canvas.Text.fillColorGdk (text, black)
+	  | Gtk.EVENT (Gtk.EVENT_BUTTON_PRESS _) :: _ =>
+	    let
+		val (x, y)   = !spot
+		val (x', y') = !pos
+	    in
+		if abs (x'-x) + abs (y'-y) = 1
+		then (moveSpot (board, x', y');
+		      checkVictory board)
+		else ()
+	    end
+	  | _ => ()
+	)
+
+
+    (* Creating a board *)
+
+    fun board (canvas, w, h) =
+	let
+	    val parent = Canvas.root canvas
+	    val matrix = Array2.array (w, h, spot)
+	    val board  = BOARD {canvas, matrix, spot = ref (0, 0)}
+	in
+	    Array2.modifyi Array2.ColMajor
+		(fn (i, j, _) => piece (parent, i, j, w*j+i,
+					pieceColor (w, h) (i, j),
+					pieceHandler board))
+		{base = matrix, row = 0, col = 0, nrows = NONE, ncols = NONE};
+	    board
+	end
+
+
+    (* Scrambling *)
+
+    fun randomMove (board as BOARD {matrix, spot = ref (x, y), ...}) =
+	let
+	    val (w,h) = Array2.dimensions matrix
+	    val dir   = Random.int 4
+	in
+	    if      dir = 0 andalso x > 0   then (x-1, y)
+	    else if dir = 1 andalso x < w-1 then (x+1, y)
+	    else if dir = 2 andalso y > 0   then (x, y-1)
+            else if dir = 3 andalso y < h-1 then (x, y+1)
+	    else randomMove board
+	end
+
+    and scramble (board, 0) = ()
+      | scramble (board, n) =
+	let
+	    val (x, y) = randomMove board
+	in
+	    moveSpot (board, x, y);
+	    scramble (board, n-1)
+	end
+
+
+    (* The board as a widget *)
+
+    fun boardWidget (w, h) =
+	let
+	    val vbox      = Gtk.VBox.new (false, 4)
+ 	    val alignment = Gtk.Alignment.new (0.5, 0.5, 0.0, 0.0)
+	    val frame     = Gtk.Frame.new ""
+	    val canvas    = Canvas.new ()
+	    val board     = board (canvas, w, h)
+	    val button    = Gtk.Button.newWithLabel "Scramble"
+	in
+	    Gtk.Container.setBorderWidth (vbox, 4);
+	    Gtk.Widget.show vbox;
+	    Gtk.Box.packStart (vbox, alignment, true, true, 0);
+	    Gtk.Widget.show alignment;
+	    Gtk.Frame.setShadowType (frame, Gtk.ShadowType.IN);
+	    Gtk.Container.add (alignment, frame);
+	    Gtk.Widget.show frame;
+	    Gtk.Widget.setSizeRequest (canvas, w*pieceSize, h*pieceSize);
+	    Canvas.setScrollRegion (canvas, 0.0, 0.0,
+				       real (w*pieceSize), real (h*pieceSize));
+	    Gtk.Container.add (frame, canvas);
+	    Gtk.Widget.show canvas;
+	    Gtk.Box.packStart (vbox, button, false, false, 0);
+	    Gtk.signalConnect (button, "clicked",
+			       fn _ => serve (fn () => scramble (board, 20*w*h)));
+	    Gtk.Widget.show button;
+	    vbox
+	end
+
+
+    (* Main *)
+
+    fun main' (w, h) =
+	if w < 2 orelse h < 2 then raise Domain else
+	let
+	    val window      = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val deleteEvent = fn _ => OS.Process.exit OS.Process.success
+	    val page        = boardWidget (w, h)
+	    val label       = Gtk.Label.new "Scramble"
+	in
+	    Gtk.signalConnect (window, "delete-event", deleteEvent);
+	    Gtk.Container.setBorderWidth (window, 4);
+            Gtk.Window.setTitle (window, "Scramble");
+	    Gtk.Container.add (window, page);
+	    Gtk.Widget.showAll window
+	end
+
+    fun usage () =
+	(TextIO.output (TextIO.stdErr, "Usage: scramble [w [h]]\n");
+	 OS.Process.exit OS.Process.failure)
+
+    fun main []      = main' (4, 4)
+      | main [s]     = let val w = valOf (Int.fromString s) in main' (w, w) end
+      | main [s1,s2] = main' (valOf (Int.fromString s1),
+			      valOf (Int.fromString s2))
+      | main _       = usage ()
+in
+    val _ = main (CommandLine.arguments ()) handle _ => usage ()
+end

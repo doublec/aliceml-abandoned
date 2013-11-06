@@ -1,0 +1,17 @@
+
+
+import structure Reflect     from "../../lib/system/Reflect"
+import structure FlatGrammar from "FlatGrammar"
+
+
+(*
+ * Finds implementations of primitive functions that are specialized
+ * for particular argument types (e.g. replacing op= with Int.equal).
+ *)
+signature SPECIALIZE = sig
+
+    val specValue : Reflect.value * FlatGrammar.idRef vector -> Reflect.value
+    val specPrim : string * FlatGrammar.idRef vector -> string
+    val specIdRef : FlatGrammar.idRef * FlatGrammar.idRef FlatGrammar.args -> FlatGrammar.idRef
+
+end

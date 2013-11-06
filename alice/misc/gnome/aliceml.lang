@@ -1,0 +1,233 @@
+<!--
+	Install this file by copying to /usr/share/gtksourceview-*.*/language-specs
+-->
+<language id="aliceml" _name="AliceML" version="2.0" _section="Sources">
+
+	<metadata>
+		<property name="mimetypes">text/x-aliceml-aml;text/x-aliceml-asig</property>
+		<property name="globs">*.aml;*.asig</property>
+		<property name="line-comment-start">(*)</property>
+		<property name="block-comment-start">(*</property>
+		<property name="block-comment-end">*)</property>
+	</metadata>
+
+	<styles>
+		<style id="comment" _name="Comment" map-to="def:comment"/>
+		<style id="keyword" _name="Keyword" map-to="def:keyword"/>
+		<style id="base-n-integer" _name="Base-N Integer" map-to="def:base-n-integer"/>
+		<style id="floating-point" _name="Floating Point number" map-to="def:floating-point"/>
+		<style id="string" _name="String" map-to="def:string"/>
+		<style id="boolean" _name="Boolean value" map-to="def:boolean"/>
+		<style id="tyvar" _name="Type Variable" map-to="def:type"/>
+		<style id="identifier" _name="Identifier" map-to="def:identifier"/>
+		<style id="structure-selection" name="Structure selection" map-to="def:constant"/>
+		<style id="record-selection" name="Record selection" map-to="def:operator"/>
+		<style id="error" _name="Error" map-to="def:error"/>
+	</styles>
+
+	<definitions>
+
+		<define-regex id="formatting">[ \t\n\011\012\013]*</define-regex>
+		<define-regex id="letter">[A-Za-z]</define-regex>
+		<define-regex id="symbol">[-!%&amp;$#+/:&lt;=&gt;?@\\~`|*^]</define-regex>
+		<define-regex id="digit">[0-9]</define-regex>
+		<define-regex id="bindigit">[0-1]</define-regex>
+		<define-regex id="hexdigit">[0-9a-fA-F]</define-regex>
+		<define-regex id="xdigit">\%{digit}|_</define-regex>
+		<define-regex id="xbindigit">\%{bindigit}|_</define-regex>
+		<define-regex id="xhexdigit">\%{hexdigit}|_</define-regex>
+		<define-regex id="digits">\%{xdigit}*\%{digit}\%{xdigit}*</define-regex>
+		<define-regex id="bindigits">\%{xbindigit}*\%{bindigit}\%{xbindigit}*</define-regex>
+		<define-regex id="hexdigits">\%{xhexdigit}*\%{hexdigit}\%{xhexdigit}*</define-regex>
+
+		<define-regex id="posdecint">\%{digit}\%{xdigit}*</define-regex>
+		<define-regex id="posbinint">0b\%{bindigits}</define-regex>
+		<define-regex id="poshexint">0x\%{hexdigits}</define-regex>
+		<define-regex id="negdecint">~\%{posdecint}</define-regex>
+		<define-regex id="negbinint">~\%{posbinint}</define-regex>
+		<define-regex id="neghexint">~\%{poshexint}</define-regex>
+		<define-regex id="decint">\%{posdecint}|\%{negdecint}</define-regex>
+		<define-regex id="binint">\%{posbinint}|\%{negbinint}</define-regex>
+		<define-regex id="hexint">\%{poshexint}|\%{neghexint}</define-regex>
+		<define-regex id="decword">0w\%{digits}</define-regex>
+		<define-regex id="binword">0(wb|bw)\%{bindigits}</define-regex>
+		<define-regex id="hexword">0(wx|xw)\%{hexdigits}</define-regex>
+
+		<define-regex id="int">\%{decint}|\%{binint}\%|\%{hexint}</define-regex>
+		<define-regex id="word">\%{decword}|\%{binword}|\%{hexword}</define-regex>
+		<define-regex id="exp">e|E</define-regex>
+		<define-regex id="real">(\%{decint}\.\%{digits}(\%{exp}\%{decint})?)|(\%{decint}\%{exp}\%{decint})</define-regex>
+
+		<define-regex id="numericlab">[1-9]\%{digit}*</define-regex>
+		<define-regex id="alphanumid">\%{letter}(\%{letter}|\%{digit}|[_'])*</define-regex>
+		<define-regex id="symbolicid">\%{symbol}+</define-regex>
+		<define-regex id="id">\%{alphanumid}|\%{symbolicid}</define-regex>
+		<define-regex id="tyvar">'(\%{letter}|\%{digit}|[_'])*</define-regex>
+		<define-regex id="printable">[^\000-\032"\127\\]</define-regex>
+		<define-regex id="escape">\\a|\\b|\\t|\\n|\\v|\\f|\\r|(\\^[@-_])|(\\\%{digit}{3})|(\\u\%{hexdigit}{4})|\\"|\\\\</define-regex>
+		<define-regex id="gap">\\\%{formatting}\\</define-regex>
+		<define-regex id="stringchar">\%{printable}| |\%{escape}</define-regex>
+		<define-regex id="string">"(\%{stringchar}|\%{gap})*"</define-regex>
+		<define-regex id="char">#\%{string}</define-regex>
+
+		<context id="aliceml">
+			<include>
+
+				<context id="line-comment" end-at-line-end="true" style-ref="comment">
+					<start>\(\*\)</start>
+					<include>
+						<context ref="def:in-comment:*"/>
+					</include>
+				</context>
+
+				<context id="comment" style-ref="comment">
+					<start>\(\*</start>
+					<end>\*\)</end>
+					<include>
+						<context ref="line-comment"/>
+						<context ref="comment"/>
+						<context ref="def:in-comment:*"/>
+					</include>
+				</context>
+
+				<context id="keywords" style-ref="keyword">
+					<keyword>__eqeqtype</keyword>
+					<keyword>__overload</keyword>
+					<keyword>__pervasive</keyword>
+					<keyword>__primitive</keyword>
+					<keyword>__reftype</keyword>
+					<keyword>_file_</keyword>
+					<keyword>_line_</keyword>
+					<keyword>abstype</keyword>
+					<keyword>and</keyword>
+					<keyword>andalso</keyword>
+					<keyword>any</keyword>
+					<keyword>as</keyword>
+					<keyword>assert</keyword>
+					<keyword>assert0</keyword>
+					<keyword>assert1</keyword>
+					<keyword>assert2</keyword>
+					<keyword>assert3</keyword>
+					<keyword>assert4</keyword>
+					<keyword>assert5</keyword>
+					<keyword>assert6</keyword>
+					<keyword>assert7</keyword>
+					<keyword>assert8</keyword>
+					<keyword>assert9</keyword>
+					<keyword>case</keyword>
+					<keyword>comp</keyword>
+					<keyword>constructor</keyword>
+					<keyword>datatype</keyword>
+					<keyword>do</keyword>
+					<keyword>else</keyword>
+					<keyword>end</keyword>
+					<keyword>eqtype</keyword>
+					<keyword>exception</keyword>
+					<keyword>exttype</keyword>
+					<keyword>fct</keyword>
+					<keyword>finally</keyword>
+					<keyword>fn</keyword>
+					<keyword>from</keyword>
+					<keyword>fun</keyword>
+					<keyword>functor</keyword>
+					<keyword>handle</keyword>
+					<keyword>if</keyword>
+					<keyword>import</keyword>
+					<keyword>in</keyword>
+					<keyword>include</keyword>
+					<keyword>infix</keyword>
+					<keyword>infixr</keyword>
+					<keyword>lazy</keyword>
+					<keyword>let</keyword>
+					<keyword>local</keyword>
+					<keyword>non</keyword>
+					<keyword>nonfix</keyword>
+					<keyword>of</keyword>
+					<keyword>op</keyword>
+					<keyword>open</keyword>
+					<keyword>orelse</keyword>
+					<keyword>pack</keyword>
+					<keyword>raise</keyword>
+					<keyword>rec</keyword>
+					<keyword>sharing</keyword>
+					<keyword>sig</keyword>
+					<keyword>signature</keyword>
+					<keyword>spawn</keyword>
+					<keyword>struct</keyword>
+					<keyword>structure</keyword>
+					<keyword>then</keyword>
+					<keyword>type</keyword>
+					<keyword>unpack</keyword>
+					<keyword>val</keyword>
+					<keyword>where</keyword>
+					<keyword>while</keyword>
+					<keyword>with</keyword>
+					<keyword>withfun</keyword>
+					<keyword>withtype</keyword>
+					<keyword>withval</keyword>
+				</context>
+
+				<context id="symbol" style-ref="def:operator">
+					<match>(#\[|\(|\)|,|\.\.\.|\.|;|\[|\]|_|\{|\})|((\-&gt;|:&gt;|:|=&gt;|=|\|)(?!\%{symbol}))</match>
+				</context>
+
+				<context id="char" style-ref="string">
+					<match>\%{char}</match>
+				</context>
+
+				<context id="string" end-at-line-end="true" style-ref="string">
+					<start>"</start>
+					<end>"</end>
+					<include>
+						<context>
+							<start>\\\%{formatting}$</start>
+							<end>^\%{formatting}\\|"</end>
+						</context>
+						<context>
+							<match>\%{escape}</match>
+						</context>
+						<context style-ref="error">
+							<match>[^"]$</match>
+						</context>
+					</include>
+				</context>
+
+				<context id="record-selection" style-ref="record-selection">
+					<match>#([1-9][0-9]*|\%{alphanumid})</match>
+				</context>
+
+				<context id="structure-selection" style-ref="structure-selection">
+					<match>\%{id}(?=\.)</match>
+				</context>
+
+				<context id="boolean-constant" style-ref="boolean">
+					<keyword>true</keyword>
+					<keyword>false</keyword>
+				</context>
+
+				<context id="identifier" style-ref="identifier">
+					<match>\%{id}</match>
+				</context>
+
+				<context id="tyvar" style-ref="tyvar">
+					<match>\%{tyvar}</match>
+				</context>
+
+				<context id="real" style-ref="floating-point">
+					<match>\%{real}</match>
+				</context>
+
+				<context id="word" style-ref="base-n-integer">
+					<match>\%{word}</match>
+				</context>
+
+				<context id="int" style-ref="base-n-integer">
+					<match>\%{int}</match>
+				</context>
+
+			</include>
+		</context>
+
+	</definitions>
+
+</language>

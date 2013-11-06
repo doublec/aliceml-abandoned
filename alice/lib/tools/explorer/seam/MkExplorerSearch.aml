@@ -1,0 +1,159 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature SEARCH        from "SEARCH-sig"
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+import signature MENU_MANAGER  from "MENU_MANAGER-sig"
+
+import signature EXPLORER_SEARCH from "EXPLORER_SEARCH-sig"
+
+functor MkExplorerSearch (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    (MenuManager : MENU_MANAGER
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    (Search : SEARCH
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    :
+    EXPLORER_SEARCH
+    where type tree = Types.tree
+    where type explorer_state = Types.explorer_state
+    where type space = Space.space
+
+    =
+  struct
+      type tree = Types.tree
+      type explorer_state = Types.explorer_state
+      type space = Space.space
+
+  fun initSearch (serve, state : Types.explorer_state option ref,
+                  refresh,resetCanvas, s, better) =
+      case Space.status s of
+          Space.FAILED =>
+          (case !state of
+               SOME {tree={tree,rootSpace,bestSpace,
+                           constrain,currentNode,...},...} =>
+               (ExplorerNode.discardTree (!tree);
+                resetCanvas serve state;
+                tree := ExplorerNode.createNode(state, NONE, 0);
+                ExplorerNode.setStatus (!tree) Types.FAILED;
+                rootSpace := NONE;
+		constrain := better;
+                bestSpace := NONE;
+                currentNode := SOME (!tree);
+                ExplorerNode.setRoot (!tree) NONE;
+                MenuManager.updateMenus (!tree);
+                MenuManager.finishSearch();
+                refresh (serve, state))
+             | _ => ())
+        | _ =>
+          let
+              val s' = Space.clone s
+          in
+              case !state of
+                  SOME {tree={tree,rootSpace,bestSpace,
+                              constrain,currentNode,...},...} =>
+                  (ExplorerNode.discardTree (!tree);
+		   Types.resetSearchState state;
+		   Types.resetCancelSearch state;
+		   MenuManager.refreshStatusbar state;                   
+                   resetCanvas serve state;
+                   tree := ExplorerNode.createNode(state, NONE, 0);
+                   rootSpace := SOME s;
+		   constrain := better;
+                   bestSpace := NONE;
+                   currentNode := SOME (!tree);
+                   MenuManager.updateMenus (!tree);
+                   MenuManager.finishSearch();
+                   ExplorerNode.setRoot (!tree) (SOME s');
+                   refresh (serve, state))
+                | _ => ()
+          end
+
+  fun searchFrom (serve, state : Types.explorer_state option ref,
+                  callBack, refresh, node) =
+      (((Search.explore (node, state, callBack))
+	handle ExplorerNode.SearchDone => ());
+       Option.app MenuManager.updateMenus (Types.getCurrentNode state);
+       refresh (serve, state))
+
+  fun stepFrom (serve, state : Types.explorer_state option ref,
+                  refresh, node) =
+      (Search.step (node, state)
+       handle ExplorerNode.SearchDone => ();
+       Option.app MenuManager.updateMenus (Types.getCurrentNode state);
+       refresh (serve, state))
+
+  fun search (serve, state : Types.explorer_state option ref,
+              refresh, setStatusMsg, breakAfter, root) =
+      case !state of
+          SOME {refreshAfter=ref refreshAfter,
+                tree={tree=ref tree,...},...} =>
+          let
+              val found = ref 0
+              val found2 = ref 0
+              fun callBack _ = (if refreshAfter > 0 then
+                                    (found2 := (!found2) + 1;
+                                     if (!found2) >= refreshAfter then
+                                         (found2 := 0;
+                                          refresh (serve, state))
+                                     else ())
+                                else ();
+                                if breakAfter > 0 then
+                                    (found := (!found) + 1;
+                                     if (!found) >= breakAfter then
+                                         raise ExplorerNode.SearchDone
+                                     else ())
+                                else ())
+              val fromNode = Option.getOpt(root, tree)
+              
+          in
+              Types.resetCancelSearch state;
+              setStatusMsg(state, "Searching...", true);
+              MenuManager.startSearch();
+              searchFrom (serve, state, callBack, refresh, fromNode);
+              MenuManager.finishSearch();
+              setStatusMsg(state, "", false);
+              ()
+          end
+        | _ => ()
+
+  fun searchStep (serve, state : Types.explorer_state option ref,
+		  refresh, setStatusMsg, root) =
+      case !state of
+          SOME {refreshAfter=ref refreshAfter,
+                tree={tree=ref tree,...},...} =>
+          let
+              val fromNode = Option.getOpt(root, tree)
+              
+          in
+              Types.resetCancelSearch state;
+              setStatusMsg(state, "Searching...", true);
+              MenuManager.startSearch();
+              stepFrom (serve, state, refresh, fromNode);
+              MenuManager.finishSearch();
+              setStatusMsg(state, "", false);
+              ()
+          end
+        | _ => ()
+
+
+  end

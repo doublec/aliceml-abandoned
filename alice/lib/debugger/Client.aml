@@ -1,0 +1,29 @@
+import structure Socket from "../../lib/system/Socket"
+
+
+fun run port = 
+    let 
+	val socket = Socket.client("localhost", port)
+	fun show() = 
+	    let
+		val lineopt = Socket.inputLine socket	
+		val _ = (case lineopt of 
+		    SOME(line) => print line
+		  | NONE       => ())
+	    in 
+		show () 
+	    end
+    in
+	show()
+    end
+
+
+
+val _ = let 
+	    val args = CommandLine.arguments()
+	in case args of 
+	    [port] => run (Option.valOf(Int.fromString port))
+	  | _      => print "invalid number of arguments\n"
+	end
+
+

@@ -1,0 +1,661 @@
+	    import structure Protocol from "../common/Protocol"
+import structure Snake from "Snake"
+import structure Loader from "Loader"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import structure Log from "../common/Log"
+import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+import structure Random from "x-alice:/lib/utility/Random"
+
+
+
+fun internalError () = raise Fail "internal error"
+
+structure PosKey = 
+struct
+    type t = int * int
+    
+    val equal = op=
+    fun hash (r,c) = (Int.hash r) + (Int.hash c) handle Overflow => Int.hash r
+end
+
+
+structure CookieMap = MkHashImpMap (PosKey)
+
+functor Server (val level: Loader.level val timeBetweenTicks: Time.time) :> Protocol.SERVER =
+struct
+    type client_id = int
+    structure P = Protocol (* I'm lazy *)
+    type connect_info = client_id * P.arena_info * P.snake_info
+
+
+    (* In order to avoid a dynamic type check
+     * every time we call the client
+     * we unpack the clients interface into
+     * a record (upon connect).
+     *)
+    type client_interface =
+	{ cliName: string,
+	 cliOpponentHasConnected: P.client_info -> unit,
+	 cliOpponentHasDisconnected: P.snake_id -> unit,
+	 cliOpponentHasGivenUp: P.snake_id -> unit,
+
+	 cliGameStarted: unit -> unit,
+	 cliGameFinished: P.snake_id option -> unit,
+	 cliSnakeKilled: P.snake_id -> unit,
+	 cliUpdate : P.pos * P.field -> unit,
+	 cliUpdateSeveral : (P.pos * P.field) list -> unit,
+	 cliTick: unit -> unit
+	 }
+
+	(* Besides the client's interface we also
+	 * store some more data
+	 *)
+
+    datatype status =
+	CONNECTED
+      | START_REQUESTED
+      | ALIVE
+      | DEAD
+      | DISCONNECTED
+
+    fun statusName CONNECTED = "CONNECTED"
+      | statusName START_REQUESTED = "START_REQUESTED"
+      | statusName ALIVE = "ALIVE"
+      | statusName DEAD = "DEAD"
+      | statusName DISCONNECTED = "DISCONNECTED"
+
+    type client_data =
+	{ interface: client_interface option ref,
+	 status: status ref, 
+	 snake: Snake.snake,
+	 info: P.snake_info
+	 }
+     (* invariants:
+        (status = ref DICONNECTED) = (interface = ref NONE)
+      *)
+
+
+    (* ----- constants ------ *)
+
+    val initialCookieSize = 20
+    val pointsTreshold = 20
+    val joulePerCookie = 3
+
+
+    (* ----- logging stuff ----- *)
+    local
+	fun fieldToStr P.EMPTY = "."
+	  | fieldToStr (P.HEAD (id,_)) = "@" (* Int.toString id *)
+	  | fieldToStr (P.BODY id) = Int.toString id
+	  | fieldToStr (P.COOKIE _) = "*"
+	  | fieldToStr P.WALL = "#"
+	  | fieldToStr _ = "?"
+
+
+	fun stateToStr st = Array2.foldi Array2.RowMajor (fn (r, c, v, res) =>
+							  res ^ 
+							  (if c = 0 then "\n" else
+							       "") ^ (fieldToStr v)) 
+	    "" { base = st, row = 0, col = 0, nrows = NONE,
+	         ncols = NONE }
+    in
+	fun logState st = Log.log (stateToStr st)
+    end
+
+
+    (* State: 
+     *  - vector 'clients' which we use as a map from client/snake id 
+     *    to client_data
+     *  - flag 'running' to do a fast test wether the game is running or
+     *    not.
+     *  - map 'cookies' Protocol.pos -> int 
+     *)
+	
+    fun createClient id =
+	let val (initD, initP) = Vector.sub (#startPos level, id)
+	    val info = 
+		{ snakeId = id,
+		 initialDir = initD,
+		 initialPos = initP
+		 }
+	in
+	    ({snake = Snake.snake info,
+	     interface = ref NONE,
+	     status = ref DISCONNECTED,
+	      info = info
+	     }:client_data)
+	end
+
+    val winner = ref NONE
+
+    val clients = Vector.tabulate (Vector.length (#startPos level),
+				   createClient)
+
+    val running = ref false
+
+    val cookies = CookieMap.map ()
+
+    val lock = Lock.lock ()
+
+    fun countAll st = Vector.foldl (fn ({ status=ref s, ...}, res) =>
+				    if s = st then res + 1 else res) 
+	                           0 clients
+
+	
+    (* [appAll st f] is equivalent to 
+     * [Vector.app f (Vector.filter (fn {status=ref s,...} s = st) 
+           clients)]
+     *)
+
+    fun appAll st f = Vector.app (fn (c as { status=ref s, ...}) =>
+				  if s = st then f c else ()) clients
+
+	
+    val appAlive = appAll ALIVE
+	
+    val appStartRequested = appAll START_REQUESTED
+
+    fun send f arg (d:client_data) =
+	case !(#status d) of 
+	    DISCONNECTED => ()
+          | _ =>
+		((Log.log "sending";
+		  f (valOf (! (#interface d))) arg;
+		  Log.log "sending done") handle e =>
+		      ((#status d) := DISCONNECTED;
+		       Log.log ("client raised " ^ exnName e)))
+
+    (* [broadcast f arg] calls [f arg] of every connected client.
+     * In case an exception is raisen by the client the client
+     * is marked as disconnected.
+     * FIXME: In this case the other clients should be informed about that
+     *)
+    fun broadcast f arg = Vector.app (send f arg) clients
+
+    fun broadcastAllBut foo f arg = Vector.appi (fn (id, d) =>
+						if id = foo then ()
+						else send f arg d) clients
+	
+    (* connect
+     *)
+    val connect = Lock.sync lock (fn (package) =>
+	if !running then
+	    NONE
+	else
+	    (let structure C = unpack package : Protocol.CLIENT
+		 val inter = 
+		     { cliName = C.name,
+		      cliOpponentHasConnected = C.opponentHasConnected,
+		      cliOpponentHasDisconnected = 
+		                 C.opponentHasDisconnected,
+		      cliOpponentHasGivenUp = C.opponentHasGivenUp,
+		      cliSnakeKilled = C.snakeKilled,
+		      cliGameStarted = C.gameStarted,
+		      cliGameFinished = C.gameFinished,
+		      cliUpdateSeveral = C.updateSeveral,
+		      cliUpdate = C.update,
+		      cliTick = C.tick
+		      }
+		 val cld = Vector.find (fn ({status, interface, snake, info
+					     }:client_data) =>
+					case !status of
+					    DISCONNECTED => 
+						(interface := SOME inter;
+						 true)
+					  | _ => false) clients
+
+		 fun broadcastConnect (name, id) = 
+		     broadcast #cliOpponentHasConnected (name, id)
+	     in
+		 Log.log ("client <" ^ C.name ^ "> connected\n");
+
+		 case cld of
+		     SOME { status, interface, snake, info } =>
+			 let val res = SOME (Snake.id snake, #arena level, 
+					     info)
+			 in
+			     broadcastConnect (C.name, info);
+			     status := CONNECTED;
+			     res
+			 end
+		   | NONE => internalError ()
+	     end) handle Package.Mismatch _ => NONE)
+
+    exception KillTicker    
+    local
+    (* Every 'tick' we calculate the new positions of every
+     * snake and all collisions.
+     *
+     * The algorithm is pretty simple:
+     *   1. We advance every snake. (See SNAKE-sig.aml -- Snake.step)
+     *   2. We create a two dimensional array which initially
+     *      contains only the walls and cookies.
+     *   3. We enter the snakes into the array checking for
+     *      collisions while we do that.
+     *
+     * Note: We must either clear the array or create a new one
+     *       every round.  Otherwise the algorithm we will not
+     *       work correctly for the nasty cases.  Such as
+     *
+     *     *****>*****>	    or  *********>
+     *		       		^
+     *		       		*
+     *				*
+     *				*
+     * Solution:
+     * We actually use two arrays one always represents the last
+     * state of the world. (So that we can compare both arrays and
+     * send only the diffs)
+     * During that comparison we also clear the the one which
+     * represents the new world state
+     *)
+	val (rows, cols) = #size (#arena level)
+	val walls = #walls level
+
+	val lastWorldState = Array2.array (rows, cols, P.EMPTY)
+	val newWorldState = Array2.array (rows, cols, P.EMPTY)
+
+	fun placeWalls st =
+	    List.app (fn (r,c) => Array2.update (st, r, c, P.WALL)) walls
+
+
+	fun findFreeCell (newSt, (r,c)) =
+	    (* Try to find a free cell near 'p'. 
+	     * return NONE if no such position was found.
+	     *)
+	    if Array2.sub (newSt, r, c) = P.EMPTY then
+		SOME (r, c)
+	    else
+		NONE 
+
+
+	fun randomPos () = (Random.int (rows - 1), Random.int (cols - 1))
+
+	local
+	    val hasExit = ref false
+	in
+	    fun createExit (oldSt, newSt) = 
+		if !hasExit then ()
+		else
+		    case findFreeCell (oldSt, #exitPos level) of
+			SOME (r,c) => (Array2.update (newSt, r, c, P.EXIT);
+				       hasExit := true)
+	              | NONE => () (* Fixme: search for some other place to 
+				    * put the exit *)
+	end
+
+	fun placeNewCookies newSt = 
+	    if Random.int 100 < 20 then
+		let val p as (r, c) = randomPos ()
+		in
+		    case findFreeCell (newSt, p) of
+			SOME p => (CookieMap.insert (cookies, p, 
+						     initialCookieSize);
+				   Array2.update (newSt, r, c, P.COOKIE 
+						  initialCookieSize))
+		      | NONE => ()
+		end
+	    else
+		()
+
+	val placeNewCookies = Log.logFn ("placeNewCookies", placeNewCookies)
+
+	local
+	    val newCookies = ref []
+
+	    fun placeCookie newSt ((r,c),ck) = 
+		let val nck = ck - 1 
+		in
+		    if nck <= 0 then ()
+		    else (Array2.update (newSt, r, c, P.COOKIE nck);
+			  newCookies := ((r,c), nck) :: !newCookies)
+		end
+	in
+	    fun placeCookies newSt = (newCookies := [];
+				      CookieMap.appi (placeCookie newSt) cookies;
+				      CookieMap.removeAll cookies;
+				      List.app (fn (p, ck) => 
+						CookieMap.insert (cookies, p, ck))
+				               (!newCookies))
+	end
+
+	val placeCookies = Log.logFn ("placeCookies", placeCookies)
+
+	fun placeSnakes (oldSt, newSt) =
+	    let 
+		fun killSnake id =
+		    let val status = #status (Vector.sub (clients, id)) in
+			if !status = ALIVE then 
+			    (status := DEAD;
+			     Log.log ("killed " ^ Int.toString id);
+			     broadcast #cliSnakeKilled id)
+			else
+			    ()
+		    end
+
+		fun placeSnake (c: client_data) =
+		    let val snake = #snake c
+			val status = #status c
+
+			fun placeHead ((r, c), h, id) =
+			    let val s = P.HEAD (id, h)
+			    in
+				case Array2.sub (newSt, r, c) of
+				    P.EMPTY => 
+					Array2.update (newSt, r, c, s)
+				  | P.WALL => killSnake id
+				  | P.HEAD (id2,_) => (killSnake id;
+						       killSnake id2)
+				  | P.BODY _ => killSnake id
+				  | P.COOKIE ck => 
+					(Snake.eat (snake, joulePerCookie);
+					 CookieMap.remove (cookies, (r,c));
+					 Array2.update (newSt, r, c, s);
+					 if Snake.points snake > pointsTreshold then
+					     createExit (oldSt, newSt)
+					 else
+					     ())
+                                  | P.EXIT => winner := SOME id
+				  | _ => raise Fail "placeHead ??"
+			    end
+
+			fun placeBodyPart id (r, c) =
+			    let val b = P.BODY id
+			    in
+				case Array2.sub (newSt, r, c) of
+				    P.EMPTY => 
+					Array2.update (newSt, r, c, b)
+				  | P.HEAD (id2,_) => killSnake id2
+			          | _ => raise Fail "placeBody"
+			    end
+		    in
+			placeHead (Snake.headPos snake, Snake.direction
+				   snake, Snake.id snake);
+			Snake.appBodyPos (placeBodyPart (Snake.id snake))
+			                 snake
+		    end
+			
+	    in
+		appAlive placeSnake 
+	    end
+
+	val placeSnakes = Log.logFn ("placeSnakes", placeSnakes)
+
+	(* We do not place the walls on lastWorldState 
+	 * therefore the first time calculateAndSendDiffs 
+	 * is called the walls are send.
+	 *
+	 * FIXME: This actually seems to be not fast enough 
+	 * on the current implementation (Stockhausen 0.9.1).
+
+	 * Therefore the protocol was extended to support 
+	 * updateSeveral: (pos * field) list -> unit
+	 * so that only one RPC is made instead of one per wall
+	 *)
+	val _ = placeWalls newWorldState
+
+
+	fun calculateAndSendDiffs (lastSt, newSt) =
+        (* This function does not only calculates the difference beetween
+	 * lastSt and newSt but also removes all nonconstant fields from newSt 
+	 *)
+	    let	
+		val changes = ref []
+
+		fun sendFieldDiff (r, c, oldField) =
+		    let val newField = Array2.sub (newSt, r, c) 
+			fun killed id = 
+			    !(#status (Vector.sub (clients, id))) = DEAD
+
+			fun updateIfNeq f = 
+			    if oldField <> f then changes := ((r,c),f) :: !changes
+			    else ()
+		    in
+			case newField of
+			    P.WALL => 
+				(updateIfNeq newField;
+				 newField)
+			  | P.EMPTY => 
+				(updateIfNeq newField;
+				 newField)
+			  | P.EXIT =>
+				(updateIfNeq newField;
+				 newField)
+
+			  | (P.COOKIE _) =>
+				(Array2.update (newSt, r, c, P.EMPTY);
+				 updateIfNeq newField;
+				 newField)
+				
+			  | (P.BODY id | P.HEAD (id,_)) where (killed id) =>
+				(* We know that this snake
+				 * commited suicide this round
+				 * so we don't display her anymore.
+				 *)
+				(Array2.update (newSt, r, c, P.EMPTY);
+				 updateIfNeq P.EMPTY;
+				 P.EMPTY)
+			  | (P.BODY _ | P.HEAD _) =>
+				(Array2.update (newSt, r, c, P.EMPTY);
+				 updateIfNeq newField;
+				 newField)
+		    end
+	    in
+		Array2.modifyi Array2.RowMajor sendFieldDiff 
+		         { base = lastSt, row = 0, col = 0, nrows = NONE,
+			  ncols = NONE };
+
+		broadcast #cliUpdateSeveral (!changes)
+	    end
+
+	val calculateAndSendDiffs = Log.logFn ("calculateAndSendDiffs", 
+					       calculateAndSendDiffs)
+
+	fun doTick () =
+	    let 
+		val _ = Log.log "newWorldState"
+		val _ = logState newWorldState
+		val _ = appAll ALIVE (fn {snake,...} => Snake.step snake) 
+
+		val _ = placeCookies newWorldState
+		val _ = Log.log "newWorldState (after placeCookies)"
+		val _ = logState newWorldState
+
+		val _ = placeSnakes (lastWorldState, newWorldState)
+		val _ = Log.log "newWorldState (after placeSnakes)"
+		val _ = logState newWorldState
+
+		val _ = placeNewCookies newWorldState
+		val _ = Log.log "newWorldState (after placeNewCookies)"
+		val _ = logState newWorldState
+
+		
+	    in
+		calculateAndSendDiffs (lastWorldState, newWorldState);
+		Log.log "newWorldState (after calculateAndSendDiffs)";
+		logState newWorldState;
+		Log.log "lastWorldState (after calculateAndSendDiffs)";
+		logState lastWorldState;
+		
+		broadcast #cliTick ();
+		if isSome (!winner) then
+		    (Log.log ("Snake " ^ Int.toString (valOf (!winner)));
+		     broadcast #cliGameFinished (!winner);
+		     winner := NONE;
+		     running := false;
+		     raise KillTicker)
+		else
+		    (case countAll ALIVE of
+			 0 => (broadcast #cliGameFinished NONE;
+			       running := false;
+			       raise KillTicker)
+		       | _ => ())
+	    end
+
+	val doTick = Log.logFn ("doTick", doTick)
+
+	val tick = Lock.sync lock doTick
+    in
+	
+	fun ticker () =
+	    (broadcast #cliGameStarted ();
+	     while true do
+		 (tick ();
+		  Thread.sleep (timeBetweenTicks)))
+
+
+	fun resetLastWorldState () = 
+	    Array2.modify Array2.RowMajor (fn _ => P.EMPTY) lastWorldState
+	   
+
+	fun resetNewWorldState () =
+	    (Array2.modify Array2.RowMajor (fn _ => P.EMPTY) newWorldState;
+	     placeWalls newWorldState)
+    end
+
+
+    fun checkStartGame () =
+	if Vector.all (fn ({status=ref d, ...}) => (d = DISCONNECTED) orelse
+		                                    (d = START_REQUESTED))
+	    clients then
+	    (Log.log "starting";
+	     resetLastWorldState (); 
+	     resetNewWorldState ();
+	     CookieMap.removeAll cookies;
+	     appAll START_REQUESTED (fn ({status, snake,...}) =>
+				     (status := ALIVE;
+				      Snake.reset snake));
+	     running := true;
+	     spawn (ticker () handle KillTicker => ());
+	     ()  (* DO NOT REMOVE THIS () !!
+		  * otherwise a never determined future will be 
+		  * returned from this function and tried to be
+		  * pickled. (By the implementation of Remote.proxy)
+		  *) )
+	else ()
+	    
+
+    val startGame = Lock.sync lock 
+	(fn (id) =>
+	 let val d = Vector.sub (clients, id) 
+	     val status = #status d
+	 in
+	     Log.log ("client <" ^ Int.toString id ^ "> requested start");
+	     case !status of
+		 (CONNECTED|DEAD) => (status := START_REQUESTED;
+				      checkStartGame ())
+	       | _ => (Log.log ("Protocol: " ^ statusName (!status));
+		       status := START_REQUESTED;
+		       checkStartGame ())
+(*		       raise P.SnakeProtocol *)
+	 end)
+				    
+
+    val disconnect = Lock.sync lock
+	(fn id =>
+	 let val d = Vector.sub (clients, id)
+	     val status = #status d
+	 in
+	     case !status of
+		 DISCONNECTED => raise P.SnakeProtocol
+	       | _ => (status := DISCONNECTED;
+		       broadcast #cliOpponentHasDisconnected id)
+	 end)
+
+    val giveUp = Lock.sync lock
+	(fn id =>
+	 let val d = Vector.sub (clients, id)
+	     val status = #status d
+	 in
+	     case !status of
+		 ALIVE => (status := DEAD;
+			   broadcastAllBut id #cliOpponentHasGivenUp id)
+	       | _ => raise P.SnakeProtocol
+	 end)
+
+    val turn = Lock.sync lock
+	(fn (id,h) =>
+	 let val d = Vector.sub (clients, id)
+	     val status = #status d
+	     val snake = #snake d
+	 in
+	     case !status of
+		 ALIVE => Snake.turn (snake, h)
+	       | _ => (* raise P.SnakeProtocol *)
+		     Log.log ("turn called from a snake which is not alive!!")
+	 end)
+			    
+end
+
+
+functor LogServer (S:Protocol.SERVER) =
+struct
+    type client_id = S.client_id
+    type connect_info = S.connect_info
+
+    local
+	val logFn = Log.logFn
+    in
+	val connect = logFn ("S.connect", S.connect)
+	val disconnect = logFn ("S.disconnect", S.disconnect)
+	val giveUp = logFn ("S.giveUp", S.giveUp)
+	val startGame = logFn ("S.startGame", S.startGame)
+	val turn = logFn ("S.turn", S.turn)
+    end
+end
+    
+functor ProxyServer (S:Protocol.SERVER) =
+struct
+    type client_id = S.client_id
+    type connect_info = S.connect_info
+	
+    val connect = Remote.proxy S.connect
+    val disconnect = Remote.proxy S.disconnect
+    val giveUp = Remote.proxy S.giveUp
+    val startGame = Remote.proxy S.startGame
+    val turn = Remote.proxy S.turn
+end    
+
+
+fun usage () =
+    (print ("usage: " ^ CommandLine.name () ^ " <levelname> [<milliseconds between each tick default = 200>]\n");
+     OS.Process.exit OS.Process.failure)
+
+
+fun saveTicket t =
+    let val f = TextIO.openOut "ticket"
+    in
+	TextIO.output (f, t ^ "\n");
+	TextIO.closeOut f
+    end
+	
+fun realMain (levelName, milliseconds) =
+    (let
+        val _       = print ("loading level <" ^ levelName ^ "> ...")
+	val level   = Loader.load levelName
+	val _       = print "done\n"
+        val time    = Time.fromMilliseconds (Int.max (milliseconds, 10))
+	structure S = ProxyServer (LogServer (Server (val level = level val timeBetweenTicks = time)))
+	val _ = print "server up\n"
+	val ticket = Remote.offer (pack S :> Protocol.SERVER)
+    in
+        print ("you can connect using <" ^ ticket ^ ">\n");
+	saveTicket ticket
+    end) handle 
+        Loader.Error s  => (print (s^ "\n");
+		OS.Process.exit OS.Process.failure)
+    |   IO.Io _         => (print "io error\n";
+		OS.Process.exit OS.Process.failure)
+
+
+fun main () =
+    case CommandLine.arguments () of
+        [levelName]     => realMain (levelName, 200)
+    |   [levelName,num] =>
+        (case Int.fromString num of
+            NONE    => usage ()
+        |   SOME t => realMain (levelName, t))
+    |   _               => usage ()
+
+	
+val _ = main ()

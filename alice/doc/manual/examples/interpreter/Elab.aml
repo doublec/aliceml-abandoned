@@ -1,0 +1,57 @@
+(*
+ * Interpreter for F+rec - Elaboration
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Type   from "Type"
+import structure Env    from "Env"
+import signature ELAB   from "ELAB-sig"
+
+structure Elab :> ELAB =
+struct
+    open Syntax
+    open Env
+
+    exception Error
+
+    fun elab T (Con c) =
+	    Type.constant c
+      | elab T (Id x) =
+	    (lookup (x,T) handle Unbound _ => raise Error)
+      | elab T (If(e1,e2,e3)) =
+	let
+	    val t1 = elab T e1
+	    val t2 = elab T e2
+	    val t3 = elab T e3
+	in
+	    if t1 <> Bool orelse t2 <> t3
+	    then raise Error
+	    else t2
+	end
+      | elab T (App (e1,e2)) =
+	let
+	    val t1 = elab T e1
+	    val t2 = elab T e2
+	in
+	    case t1
+	     of Arrow (t3,t4) where (t3 = t2) => t4
+	      | _ => raise Error
+	end
+      | elab T (Abs (x,t,e)) =
+	let
+	    val t2 = elab (insert (x,t,T)) e
+	in
+	    Arrow(t,t2)
+	end
+      | elab T (Rec (x1,x2,t2,t1,e)) =
+	let
+	    val t  = Arrow (t2,t1)
+	    val t3 = elab (insert (x2,t2, insert (x1,t,T))) e
+	in
+	    if t3 <> t1
+	    then raise Error
+	    else t
+	end
+end

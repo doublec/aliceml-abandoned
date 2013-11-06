@@ -1,0 +1,329 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Christian Schulte <schulte@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *   Christian Schulte, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD     from "FD"
+import signature LINEAR from "LINEAR-sig"
+
+structure Linear :> LINEAR =
+    struct
+	infix  7  `*
+	infix  6  `+ `-
+	infix  5  `#
+	infix  4  `= `<> `> `>= `< `<=
+	infix  3  `<->
+
+	exception Transform of string
+
+	datatype fdop = PLUS | MUL
+
+	datatype domain_element =
+	    `` of int
+	  | `# of int * int
+
+	type domain = domain_element list
+
+	datatype term =
+	    FD of FD.fd
+	  | `  of int
+	  | `+ of term * term
+	  | `- of term * term
+	  | `* of term * term
+	
+	datatype term' =
+	    Id    of term
+	  | BinOp of fdop * term' * term'
+	  | Op    of fdop * term' list
+
+	datatype rel =
+	    `<   of term * term
+	  | `<=  of term * term
+	  | `=   of term * term
+	  | `<>  of term * term
+	  | `>=  of term * term
+	  | `>   of term * term
+	  | `<-> of rel * term
+
+	datatype status =
+	    ATOMIC of FD.fd
+	  | SUM | SUMC | SUMCN
+
+	fun simplify(op`*(op`+(a, b), c)) =
+	    let
+	      val c' = simplify c
+	    in
+	      simplify (op`+(op`*(simplify a, c'), op`*(simplify b, c')))
+	    end
+	  | simplify(op`*(a, op`+(b, c))) =
+	    let
+	      val a' = simplify a
+	    in
+	      simplify (op`+(op`*(a', simplify b), op`*(a', simplify c)))
+	    end
+	  | simplify (op`+(op`(i), op`+(op`(j), a))) =
+	    simplify (op`+(op`(i + j), simplify a))
+	  | simplify (op`+(op`+(op`(i), a), op`(j))) =
+	    simplify (op`+(op`(i + j), simplify a))
+	  | simplify (op`+(op`+(op`(i), op`(j)), a)) =
+	    simplify (op`+(op`(i + j), simplify a))
+	  | simplify (op`+(a, b)) = op`+(simplify a, simplify b)
+	  | simplify (op`*(op`(i), op`*(op`(j), a))) =
+	    simplify (op`*(op`(i * j), simplify a))
+	  | simplify (op`*(op`*(op`(i), a), op`(j))) =
+	    simplify (op`*(op`(i * j), simplify a))
+	  | simplify (op`*(op`*(op`(i), op`(j)), a)) =
+	    simplify (op`*(op`(i * j), a))
+	  | simplify (op`*(op`(i), op`(j))) = op`(i * j)
+	  | simplify (op`*(a, b)) = op`*(simplify a, simplify b)
+	  | simplify (op`-(a, b)) =
+	    simplify (op`+(simplify a, op`*(`(~1), simplify b)))
+	  | simplify t            = t
+
+	fun transform a             = transform' (simplify a)
+	and transform' (op`+(a, b)) = BinOp(PLUS, transform' a, transform' b)
+	  | transform' (op`*(a, b)) = BinOp(MUL, transform' a, transform' b)
+	  | transform' t            = Id t
+			
+	fun flatten (x as (Id _)) = x
+	  | flatten (BinOp(label, a, b)) =
+	    let
+	      val ts  = flatten'(label, a, [b])
+	      fun flatten''(Op(l, ls), e) if (l = label) = e @ ls
+		| flatten'' (t, e)                       = e @ [t]
+	    in
+	      Op(label, foldl flatten'' nil ts)
+	    end
+	  | flatten _ = raise Match
+	and flatten'(l, t as BinOp(opl, a, b), ts) if (l = opl) =
+	    flatten'(l, a, b::ts)
+	  | flatten'(label, t, ts) = map flatten (t::ts)
+
+	fun getFD (Id (FD v))  = v
+	  | getFD (Id (op` i)) = FD.fromInt i
+	  | getFD _            = raise (Transform "getFD")
+
+	fun getInt (Id(op` i)) = i
+	  | getInt _           = raise (Transform "getInt")
+
+	fun isSum ts            = List.all checkS ts
+	and checkS (Id (op` i)) = i >= 0
+	  | checkS (Id (FD v))  = true
+	  | checkS _            = false
+				  
+	fun isSumC ts                                 = List.all checkSC ts
+	and checkSC (Op(MUL, [Id(op` _), Id(FD _)]))  = true
+	  | checkSC (Op(MUL, [Id(FD _), Id(op` _)]))  = true
+	  | checkSC (Op(MUL, [Id(op` _), Id(op` _)])) = true
+	  | checkSC (Id _)                            = true
+	  | checkSC _                                 = false
+							 
+	fun allAtomic nil           = true
+	  | allAtomic ((Id  _)::tr) = allAtomic tr
+	  | allAtomic _             = false
+				   
+	fun isSumCN ts             = List.all checkSCN ts
+	and checkSCN (Op(MUL, ts)) = allAtomic ts
+	  | checkSCN (Id _)        = true
+	  | checkSCN _             = false
+
+	fun analyzeSum ts = if isSum ts then SUM
+			    else if isSumC ts then SUMC
+			    else if isSumCN ts then SUMCN
+			    else raise (Transform "analyzeSum")
+					  
+	fun analyzeCN ts = if allAtomic ts then SUMCN else raise (Transform "analyzeCN")
+
+	fun analyze (Id (FD v))                  = ATOMIC v
+	  | analyze (Id (op` i))                 = ATOMIC (FD.fromInt i)
+	  | analyze (Op(MUL, [Id(op` _), Id _])) = SUMC
+	  | analyze (Op(MUL, ts))                = analyzeCN ts
+	  | analyze (Op(PLUS, ts))               = analyzeSum ts
+	  | analyze _                            = raise Match
+
+	fun createSumVector (Op(PLUS, ts)) = Vector.fromList (map getFD ts)
+	  | createSumVector _              = raise (Transform "createSumVector")
+
+	fun makeConst (Op(MUL, [Id (op` i), Id (op` j)])) = (i*j, FD.fromInt 1)
+	  | makeConst (Op(MUL, [Id (op` i), v]))          = (i, getFD v)
+	  | makeConst (Op(MUL, [v, Id (op` i)]))          = (i, getFD v)
+	  | makeConst (Id (op` i))                        = (i, FD.fromInt 1)
+	  | makeConst t                                   = (1, getFD t)
+					  
+	fun createSumCVector (Op(PLUS, ts)) = Vector.fromList (map makeConst ts)
+	  | createSumCVector (t as Op(MUL, ts)) = #[makeConst t]
+	  | createSumCVector _                  = raise (Transform "createSumCVector")
+
+	fun computeInt(nil, k, nil)             = (k, [FD.fromInt 1])
+	  | computeInt(nil, k, vs)              = (k, vs)
+	  | computeInt((Id (FD v))::tr, k, vs)  = computeInt (tr, k, v::vs) 
+	  | computeInt((Id (op` i))::tr, k, vs) = computeInt(tr, k * i, vs)
+	  | computeInt _                        = raise (Transform "computeInt")
+
+	fun createSumCNEntry (Op(MUL, ts)) =
+	    let
+	      val (i, ts) = computeInt(ts, 1, nil)
+	    in
+	      (i, Vector.fromList ts)
+	    end
+	  | createSumCNEntry (Id (op` i)) = (i, #[FD.fromInt 1])
+	  | createSumCNEntry (Id (FD v))  = (1, Vector.fromList([v]))
+	  | createSumCNEntry  _           = raise (Transform "createSumCNEntry")
+
+	fun createSumCNVector (Op(PLUS, ts)) =
+	    Vector.fromList (map createSumCNEntry ts)
+	  | createSumCNVector _ = raise (Transform "createSumCNVector")
+
+	fun negateSum (i, v) = (~i, v)
+
+	fun needType(SUM, t)  = if t <> SUMCN then SUMC else SUMCN
+	  | needType(SUMC, t) = if t <> SUMCN then SUMC else SUMCN
+	  | needType _        = SUMCN
+
+	fun getTermsC(SUM, (Op(PLUS, ts)))     = (map (fn x => (1, getFD x)) ts)
+	  | getTermsC(SUMC,(Op(PLUS, ts)))      = map makeConst ts
+	  | getTermsC(SUMC,(t as (Op(MUL, _)))) = [makeConst t]
+	  | getTermsC _                         = raise (Transform "getTermsC")
+
+	fun getTermsCN(SUM, (Op(PLUS, ts))) =
+	    (map (fn x => (1, #[getFD x])) ts)
+	  | getTermsCN(SUMC,(Op(PLUS, ts))) =
+	    (map (fn x => let val (i, v) = makeConst x in (i, #[v]) end) ts)
+	  | getTermsCN(SUMC,(t as (Op(MUL, _)))) =
+	    let
+	      val (i, v) = makeConst t
+	    in
+	      [(i, #[v])]
+	    end
+	  | getTermsCN(SUMCN, Op(PLUS, ts)) =
+	    (map (fn x => createSumCNEntry x) ts)
+	  | getTermsCN(_, t) = [createSumCNEntry t]
+	    	
+	local
+	    fun convertElem (op`` i)     = FD.SINGLE(i)
+	      | convertElem (op`#(a, b)) = FD.RANGE(a, b)
+		
+	    fun convertDomain ts = Vector.fromList (map convertElem ts)
+		
+	    fun fdToTerm v = FD v
+	in
+	    fun var NONE          = FD(FD.fd NONE)
+	      | var (SOME domain) = FD(FD.fd (SOME (convertDomain domain)))
+
+	    fun bin () = FD(FD.bin ())
+
+	    fun vec(n, domain) =
+		(Vector.map fdToTerm (FD.fdVec(n, convertDomain domain)))
+	end
+
+	fun termToFD (FD v)  = v
+	  | termToFD (op` i) = FD.fromInt i
+	  | termToFD _       = raise (Transform "termToFD")
+
+	fun distribute(mode, v) =
+	    spawn FD.distribute(mode, Vector.map termToFD v)
+
+	fun distinct v = FD.distinct (Vector.map termToFD v)
+
+	fun post (op`<(a, b))   = post'(a, b, FD.LESS)
+	  | post (op`<=(a, b))  = post'(a, b, FD.LESSEQ)
+	  | post (op`=(a, b))   = post'(a, b, FD.EQUAL)
+	  | post (op`<>(a, b))  = post'(a, b, FD.NOTEQUAL)
+	  | post (op`>=(a, b))  = post'(a, b, FD.GREATEREQ)
+	  | post (op`>(a, b))   = post'(a, b, FD.GREATER)
+	  | post (op`<->(r, c)) = postReified(r, c)
+	and post'(a, b, rel) =
+	    let
+		val a' = flatten (transform a)
+		val b' = flatten (transform b)
+	    in
+		(case (analyze a', analyze b') of
+		     (ATOMIC av, ATOMIC bv) =>
+			 (case rel of
+			      FD.LESS      => FD.less(av, bv)
+			    | FD.LESSEQ    => FD.lessEq(av, bv)
+			    | FD.EQUAL     => FD.equal(av, bv)
+			    | FD.NOTEQUAL  => FD.notequal(av, bv)
+			    | FD.GREATEREQ => FD.greaterEq(av, bv)
+			    | FD.GREATER   => FD.greater(av, bv))
+		   | (SUM, ATOMIC bv) =>
+			 FD.sum(createSumVector a', rel, bv)
+		   | (SUMC, ATOMIC bv) =>
+			 FD.sumC(createSumCVector a', rel, bv)
+		   | (SUMCN, ATOMIC bv) =>
+			 FD.sumCN(createSumCNVector a', rel, bv)
+		   | (at, bt) =>
+		     (case needType(at, bt) of
+			SUMC =>
+			let
+			  val ats  = getTermsC(at, a')
+			  val bts  = getTermsC(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.sumC(Vector.fromList sums,
+				  rel, FD.fromInt 0)
+			end
+		      | SUMCN =>
+			let
+			  val ats  = getTermsCN(at, a')
+			  val bts  = getTermsCN(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.sumCN(Vector.fromList sums,
+				   rel, FD.fromInt 0)
+			end
+		      | _ => raise Match))
+	    end
+	and postReified(op`<(a, b), c)  = postReified'(a, b, c, FD.LESS)
+	  | postReified(op`<=(a, b), c) = postReified'(a, b, c, FD.LESSEQ)
+	  | postReified(op`=(a, b), c)  = postReified'(a, b, c, FD.EQUAL)
+	  | postReified(op`<>(a, b), c) = postReified'(a, b, c, FD.NOTEQUAL)
+	  | postReified(op`>=(a, b), c) = postReified'(a, b, c, FD.GREATEREQ)
+	  | postReified(op`>(a, b), c)  = postReified'(a, b, c, FD.GREATER)
+	  | postReified _               = raise (Transform "postReified")
+	and postReified'(a, b, c, rel) =
+	    let
+		val a' = flatten (transform a)
+		val b' = flatten (transform b)
+		val cv = getFD (flatten (transform c))
+	    in
+		(case (analyze a', analyze b') of
+		     (SUM, ATOMIC bv) =>
+			 FD.Reified.sum(createSumVector a', rel, bv, cv)
+		   | (SUMC, ATOMIC bv) =>
+			 FD.Reified.sumC(createSumCVector a', rel, bv, cv)
+		   | (SUMCN, ATOMIC bv) =>
+			 FD.Reified.sumCN(createSumCNVector a', rel, bv, cv)
+		   | (at, bt) =>
+		     (case needType(at, bt) of
+			SUMC =>
+			let
+			  val ats  = getTermsC(at, a')
+			  val bts  = getTermsC(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.Reified.sumC(Vector.fromList sums,
+					  rel, FD.fromInt 0, cv)
+			end
+		      | SUMCN =>
+			let
+			  val ats  = getTermsCN(at, a')
+			  val bts  = getTermsCN(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.Reified.sumCN(Vector.fromList sums,
+					   rel, FD.fromInt 0, cv)
+			end
+		      | _ => raise Match))
+	    end
+    end

@@ -1,0 +1,102 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_IO_DESC_COMPONENT =
+    sig
+	structure UnsafeIODesc:
+	    sig
+		exception ClosedStream
+
+		(* Common operations supported by all readers/writers *)
+		val hash: 'iodesc -> int
+		val compare: 'iodesc * 'iodesc -> order
+		val kind: 'iodesc -> 'iodesc_kind
+		val name: 'iodesc -> string
+		val chunkSize: 'iodesc -> int
+		val close: 'iodesc -> unit
+
+		(* Common operations not supported by all readers/writers *)
+		val capabilities:
+		    'iodesc -> {block: bool,
+				setPos: bool,
+				endPos: bool,
+				verifyPos: bool}
+		val block: 'iodesc -> unit
+		val setPos: 'iodesc * 'pos -> unit
+		val endPos: 'iodesc -> 'pos
+		val verifyPos: 'iodesc -> 'pos
+
+		(* Reader operations supported by all readers *)
+		val avail: 'reader_iodesc -> int option
+
+		(* Reader operations not supported by all readers *)
+		val readerCapabilities:
+		    'reader_iodesc -> {readVec: bool,
+				       readArr: bool,
+				       readVecNB: bool,
+				       readArrNB: bool,
+				       canInput: bool}
+		val readVec: 'reader_iodesc * int -> 'vector
+		val readArr:
+		    {iodesc: 'reader_iodesc, buf: 'array,
+		     i: int, sz: int} -> int
+		val readVecNB: 'reader_iodesc * int -> 'vector option
+		val readArrNB:
+		    {iodesc: 'reader_iodesc, buf: 'array,
+		     i: int, sz: int} -> int option
+		val canInput: 'reader_iodesc -> bool
+
+		(* Writer operations not supported by all writers *)
+		val writerCapabilities:
+		    'writer_iodesc -> {writeVec: bool,
+				       writeArr: bool,
+				       writeVecNB: bool,
+				       writeArrNB: bool,
+				       canOutput: bool}
+		val writeVec:
+		    {iodesc: 'writer_iodesc, buf: 'vector,
+		     i: int, sz: int} -> int
+		val writeArr:
+		    {iodesc: 'writer_iodesc, buf: 'array,
+		     i: int, sz: int} -> int
+		val writeVecNB:
+		    {iodesc: 'writer_iodesc, buf: 'vector,
+		     i: int, sz: int} -> int option
+		val writeArrNB:
+		    {iodesc: 'writer_iodesc, buf: 'array,
+		     i: int, sz: int} -> int option
+		val canOutput: 'writer_iodesc -> bool
+
+		(* Creating tty iodescs *)
+		val stdIn: 'reader_iodesc
+		val stdOut: 'writer_iodesc
+		val stdErr: 'writer_iodesc
+
+		(* Creating file iodescs *)
+		val openIn: string -> 'reader_iodesc
+		val openOut: string -> 'writer_iodesc
+		val openAppend: string -> 'writer_iodesc
+		val openOverwrite: string -> 'writer_iodesc
+
+		(* Creating pipe iodescs *)
+(*
+		val unixExecute: string * string list -> 'proc    (* Fail *)
+		val unixExecuteInEnv:
+		    string * string list * string list -> 'proc   (* Fail *)
+		val windowsExecute: string * string -> 'proc      (* Fail *)
+		val procStdIn: 'proc * bool -> 'writer_iodesc
+		val procStdOut: 'proc * bool -> 'reader_iodesc
+		val procStdErr: 'proc * bool -> 'reader_iodesc
+		val procReap: 'proc -> 'status
+*)
+	    end
+    end

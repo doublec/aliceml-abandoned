@@ -1,0 +1,23 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Test     from "x-alice:/lib/test/Test"
+
+signature TESTSUITE =
+sig
+
+    val randomize: unit -> unit
+    (* see Gen.randomize *)
+
+    val suite: Test.test_suite
+
+end

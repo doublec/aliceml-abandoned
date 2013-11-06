@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+# Author:
+#   Andreas Rossberg <rossberg@ps.uni-sb.de>
+#
+# Copyright:
+#   Andreas Rossberg, 2004-2006
+#
+# Last Change:
+#   $Date$
+#   $Revision$
+#
+
+if [ ! -z "$ALICE_REMOTE_PATH" ]
+then
+    PATH="${ALICE_REMOTE_PATH}:${PATH}"
+fi
+
+if [ ! -z "$ALICE_REMOTE_LOG" ]
+then
+    echo Started: `date` >>$ALICE_REMOTE_LOG
+    echo -n alicerun= >>$ALICE_REMOTE_LOG
+    which alicerun >>$ALICE_REMOTE_LOG
+    echo argv=$@ >>$ALICE_REMOTE_LOG
+    echo PATH=${PATH} >>$ALICE_REMOTE_LOG
+fi
+
+alicerun "$@"
+RETCODE=$?
+
+if [ ! -z "$ALICE_REMOTE_LOG" ]
+then
+    echo return=$RETCODE >>$ALICE_REMOTE_LOG
+    echo Completed: `date` >>$ALICE_REMOTE_LOG
+fi

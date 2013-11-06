@@ -1,0 +1,236 @@
+<?php include("macros.php3"); ?>
+<?php heading("The COMPONENT_MANAGER signature",
+	      "The <TT>COMPONENT_MANAGER</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature COMPONENT_MANAGER
+    structure ComponentManager : COMPONENT_MANAGER
+    functor Component.MkManager (val resolver : Resolver.t) : COMPONENT_MANAGER
+    functor Sandboox.MkManager (Policy : POLICY) : COMPONENT_MANAGER</PRE>
+
+  <P>
+    A <EM>component manager</EM> is responsible for loading and linking
+    components.  To this aim, every component manager maintains its
+    <EM>component table</EM>, which is a mapping from URLs to components.
+    All loading, linking, evaluating, and signature matching is performed
+    lazily.  For this reason components are initially returned as lazy
+    futures, which either get replaced by the component export (on success)
+    or failed.  See the
+    description of exception <TT><A href="component.html#Failure"
+    >Component.Failure</A></TT> to see how these "asynchronous"
+    exceptions are handled.
+  </P>
+
+  <P>
+    URLs given to any of the functions below are first resolved with
+    respect to the current working directory and stripped of their query
+    and fragment constituents.
+  </P>
+
+  <P>
+    The structure <TT>ComponentManager</TT> is the root component manager.
+    User-defined managers can be created through the
+    <a href="component.html#MkManager"><TT>Component.MkManager</TT></A>
+    or the
+    <a href="sandbox.html#MkManager"><TT>Sandbox.MkManager</TT></A> functors.
+  </P>
+
+  <P>
+    See also:
+    <A href="component.html"><TT>Component</TT></A>,
+    <A href="sandbox.html"><TT>Sandbox</TT></A>,
+    <A href="url.html"><TT>Url</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+    import structure ComponentManager from "x-alice:/lib/system/ComponentManager"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature COMPONENT_MANAGER =
+    sig
+	exception <A href="#Conflict">Conflict</A>
+
+	val <A href="#logger">logger</A> : (string -> unit) ref
+
+	val <A href="#load">load</A> : <A href="url.html#t">Url.t</A> -> Component.t
+	val <A href="#eval">eval</A> : <A href="url.html#t">Url.t</A> * Component.t -> package
+	val <A href="#link">link</A> : <A href="url.html#t">Url.t</A> -> package
+	val <A href="#enter">enter</A> : <A href="url.html#t">Url.t</A> * Component.t -> unit
+	val <A href="#lookup">lookup</A> : <A href="url.html#t">Url.t</A> -> Component.t option
+
+	functor <A href="#Eval-fn">Eval</A> (val component : Component.t
+		     val url : <A href="url.html#t">Url.t</A>
+		     signature S) : S
+
+	functor <A href="#Link-fn">Link</A> (val url : <A href="url.html#t">Url.t</A>
+		     signature S) : S
+
+	functor <A href="#Enter-fn">Enter</A> (val url: <A href="url.html#t">Url.t</A>
+		      signature S
+		      structure X : S) : any
+    end</PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>exception <A name="Conflict">Conflict</A></TT>
+    </DT>
+    <DD>
+      <P>indicates an attempt to enter a component in the component table
+	while some component was already registered under that name.</P>
+    </DD>
+
+    <DT>
+      <TT>val <A name="logger">logger</A></TT>
+    </DT>
+    <DD>
+      <P>set to a function that receives logging information from the component
+        manager. The default activity is <TT>ignore</TT>, but can be configured
+	using the environment variable <TT>ALICE_TRACE_COMPONENT</TT>, see
+	structure <A href="component.html"><TT>Component</TT></A>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="load">load</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>localizes <TT><I>url</I></TT> and loads a first-class component
+	from the file found, without evaluating or linking it. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
+	<TT><A href="io.html">IO.Io</A></TT> as cause if resolving, loading
+	or unpickling fails.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="eval">eval</A> (<I>url</I>, <I>com</I>)</TT>
+    </DT>
+    <DD>
+      <P>evaluates <TT><I>com</I></TT>, rooted at <TT><I>url</I></TT>,
+	in the context of the component table managed by this component
+	manager, and returns the computed module as a package.
+	No entry for <TT><I>url</I></TT>
+	is created in the component table, but entries may be created for
+	components imported (directly or indirectly) by <TT><I>com</I></TT>.
+	Relative import URLs in <TT><I>com</I></TT> are resolved using
+	<TT><I>url</I></TT> as a base url, which should be absolute. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> if
+	evaluation of the component fails.</P>
+
+	<P>Note that, while most components may export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure
+	(cf. <TT><A href="#link">link</A></TT>).</P>
+    </DD>
+
+    <DT>
+      <TT><A name="link">link</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>loads, evaluates and links the
+	component from <TT><I>url</I></TT>.
+	Returns a package representing the export of
+	the component.  If the component table
+	has no entry for <TT><I>url</I></TT> yet, a new entry is created
+	immediately.</P>
+
+	<P>Note that, while most library components export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure. For instance, in order to link the
+	<TT><A href="text-io.html">TextIO</A></TT> component manually, the
+	returned package has to be unpacked as follows:</P>
+	<PRE>
+	structure TextIOComp = unpack link(Url.fromString "x-alice:/lib/system/TextIO")
+	                            : (structure TextIO : TEXT_IO)
+	open TextIOComp</PRE>
+	<P>The <TT>open</TT> declaration will pull the actual <TT>TextIO</TT>
+	structure into scope.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="enter">enter</A> (<I>url</I>, <I>com</I>)</TT>
+    </DT>
+    <DD>
+      <P>enters <TT><I>com</I></TT> into the component table, under name
+	<TT><I>url</I></TT>.  Raises <TT><A href="#Conflict">Conflict</A></TT>
+	if the component table already had an entry for <TT><I>url</I
+	></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="lookup">lookup</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>returns <TT>SOME <I>com</I></TT>, if the component table has
+	an entry mapping <TT><I>url</I></TT> to <TT><I>com</I></TT>, or
+	<TT>NONE</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Eval-fn">Eval</A> (val component = <I>com</I>
+	val url = <I>url</I>
+	signature S = <I>S</I>)</TT>
+    </DT>
+    <DD>
+      <P>like the function <TT><A href="#eval">eval</A></TT>, but
+        matches the component's export against the signature <TT><I>S</I></TT>
+	and returns the export module itself. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
+	<TT><A href="component.html#Mismatch">Component.Mismatch</A></TT> as
+	cause if the component does not match <TT><I>S</I></TT>.</P>
+
+	<P>Note that, while most components may export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure
+	(cf. <TT><A href="#Link-fn">Link</A></TT>).</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Link-fn">Link</A> (val url = <I>url</I>
+	signature S = <I>S</I>)</TT>
+    </DT>
+    <DD>
+      <P>like the function <TT><A href="#link">link</A></TT>, but
+        matches the component's export against the signature <TT><I>S</I></TT>
+	and returns the export module itself. Raises
+	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
+	<TT><A href="component.html#Mismatch">Component.Mismatch</A></TT> as
+	cause if the component does not match <TT><I>S</I></TT>.</P>
+
+	<P>Note that, while most library components export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure. For instance, in order to link the
+	<TT><A href="text-io.html">TextIO</A></TT> component manually, the
+	following call to <TT>Link</TT> is necessary:</P>
+	<PRE>
+	structure TextIOComp = Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+	                             signature S = (structure TextIO : TEXT_IO))
+	open TextIOComp</PRE>
+	<P>The <TT>open</TT> declaration will pull the actual <TT>TextIO</TT>
+	structure into scope.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Enter-fn">Enter</A> (val url = <I>url</I>
+	signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>enters the module<TT><I>X</I></TT> of signature&nbsp;<TT><I>S</I></TT>
+        as an evaluated component into the component
+	table, under name <TT><I>url</I></TT>.  Raises <TT><A href="#Conflict"
+	>Conflict</A></TT> if the component table already had an entry for
+	<TT><I>url</I></TT>. Equivalent to</P>
+	<PRE>
+	enter (<I>url</I>, Component.fromPackage (pack <I>X</I> : <I>S</I>))</PRE>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,60 @@
+val dontknow      = nop
+val hill_diameter = 12
+val foodmarker    = marker foodmarker
+
+val move_to_border =
+    repeat 3 (turn left) ++
+    loopx (fn exit =>
+        sense here home ifnot exit ++
+        move ifnot (flip2 2 ifyes (turn left) ifnot (turn right)))
+
+val move_food_inside =
+    turn right ++ turn right ++
+    times (hill_diameter div 2) (move ifnot nop) ++
+    drop ++ goto "guard"
+
+fun scan360for cond fail =
+    try (fn exit =>
+        sense leftahead cond ifyes (turn left ++ exit) ++
+        sense ahead cond ifyes exit ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
+        turn right ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
+        turn right ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
+        turn right ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
+        fail) 
+    otherwise
+        nop
+
+fun blocked fail =
+    sense ahead friend ifyes fail  ++
+    sense leftahead foe ifyes fail ++
+    sense ahead foe ifyes (turn right ++ move ifnot fail)
+
+val step =
+    sense rightahead home ifnot (turn right) ++ 
+    sense rightahead home ifnot (turn right) ++ 
+    sense rightahead home ifnot (turn right) ++
+    sense here food ifyes (pick ifnot nop ++ move_food_inside) ++
+    sense here foodmarker ifyes become_worker ++
+    move ifnot (blocked (goto "guard") ++ goto "guard")
+
+fun is_explorer succ =
+    sense leftahead home ifnot (turn left ++ succ) ++
+    sense ahead home ifnot succ ++
+    sense rightahead home ifnot (turn right ++ succ) ++
+    times 3 (turn right) ++
+    sense leftahead home ifnot (turn left ++ succ) ++
+    sense ahead home ifnot succ 
+    
+val toplevel =
+    is_explorer (goto "explorer") ++
+    goto "guard" ++
+    proc "explorer" (loop nop) ++
+    proc "guard" (move_to_border ++ loop step) ++
+    proc "worker" (scan360for foodmarker (goto "guard"))
+    
+        
+val ant = toplevel

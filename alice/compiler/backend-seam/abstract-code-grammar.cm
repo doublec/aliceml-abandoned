@@ -1,0 +1,15 @@
+Group is
+
+    ../../lib/utility/sources.cm
+    ../infrastructure/crash.cm
+    ../common/id-stamp.cm
+    ../backend-common/flat-grammar.cm
+    ../../lib/system/sources.cm
+
+    ABSTRACT_CODE_GRAMMAR-sig.aml
+    MkAbstractCodeGrammar.aml
+    VALUE-sig.aml
+    ValueCross.aml
+    AbstractCodeGrammar.aml
+    OUTPUT_ABSTRACT_CODE_GRAMMAR-sig.aml
+    MkOutputAbstractCodeGrammar.aml

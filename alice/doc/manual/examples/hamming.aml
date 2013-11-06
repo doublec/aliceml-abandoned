@@ -1,0 +1,33 @@
+fun lazy
+    mapz f nil     = nil
+  | mapz f (x::xs) = f x :: mapz f xs
+
+fun lazy
+    mergez (x::xs, y::ys) =
+	(case Int.compare (x,y)
+	 of EQUAL   => x::mergez (xs,ys)
+	  | LESS    => x::mergez (xs,y::ys)
+	  | GREATER => y::mergez (x::xs,ys)
+	)
+  | mergez (_, _) = raise Empty
+
+val rec hamming =
+    1::(lazy mergez (mapz (fn i => 2 * i) hamming,
+		     mergez (mapz (fn i => 3 * i) hamming,
+			     mapz (fn i => 5 * i) hamming)))
+
+val _ = print (Int.toString (List.nth (hamming, 1500)) ^ "\n")
+val _ = OS.Process.exit OS.Process.success
+
+
+val hammingUsingPromises =
+    let
+	open Promise
+	val rest = promise ()
+	val hamming = 1::future rest
+    in
+	fulfill (rest, mergez (mapz (fn i => 2 * i) hamming,
+			       mergez (mapz (fn i => 3 * i) hamming,
+				       mapz (fn i => 5 * i) hamming))); 
+	hamming
+    end

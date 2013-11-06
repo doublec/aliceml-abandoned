@@ -1,0 +1,20 @@
+import structure Channel from "x-alice:/lib/data/Channel"
+
+import structure Common    from "Common"
+import structure Interface from "Interface"
+import structure Debug     from "Debug"
+
+signature MANAGER =
+sig
+  structure ScriptGen : Common.SCRIPT_GEN
+
+  val new : Debug.db_mask
+          * int                                (* Number of workers. *)
+          * (int vector,'a) Common.search_mode (* Search mode *)
+          * (int vector -> string)             (* Print solutions *)
+
+         -> int vector Interface.manager_intf  (* Manager interface *)
+          * (unit -> unit)                     (* Shutdown *)
+          * int vector Channel.t               (* Solutions *)
+end
+

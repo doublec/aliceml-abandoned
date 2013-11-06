@@ -1,0 +1,15 @@
+import structure Meaning from "Meaning"
+import structure Doc from "Doc"
+
+signature SMURF_COMPONENT =
+sig
+    structure Smurf:
+    sig
+	val smurf: Meaning.meaning * int -> Doc.doc list
+		(* Calculates a stream of solutions concurrently.
+		 * Each element in the stream is strictly better than
+		 * all preceeding elements. If the stream terminates,
+		 * the last element is an optimal solution.
+		 *)
+    end
+end

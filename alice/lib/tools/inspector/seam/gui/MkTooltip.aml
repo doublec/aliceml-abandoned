@@ -1,0 +1,186 @@
+import structure PPType      from "x-alice:/lib/rtt/PPType"
+import structure PPInf       from "x-alice:/lib/rtt/PPInf"
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure Gdk         from "x-alice:/lib/gtk/Gdk"
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import signature MAIN_WINDOW from "MAIN_WINDOW-sig"
+import signature SELECTION   from "SELECTION-sig"
+import structure Common      from "../Common"
+import structure Prefs       from "../Prefs"
+import structure AbsTree     from "../AbsTree"
+import structure GrTypes     from "GrTypes"
+
+functor MkTooltip (QueuePut   : Common.QUEUE_PUT)
+                  (MainWindow : MAIN_WINDOW)
+                  (Selection  : SELECTION) =
+struct
+
+  (* Tells if the tooltip is currently shown. *)
+  val shown = ref false
+
+  (********** TIMER PART : RUNS IN AN INDEPENDENT THREAD **********)
+
+  (* Last known position of the mouse. *)
+  val lastPos = ref (0.0, 0.0)
+
+  (* Number of ticks since when the mouse is at the same position. *)
+  val quiet = ref 0
+
+  (* A promise to the timer-thread. *)
+  val threadP = Promise.promise ()
+  val thread  = Promise.future threadP
+
+  (* Tells if the timer is running. *)
+  val running = ref true
+
+  (* Stop thread. *)
+  fun stopThread () = (running := false ;
+                       Thread.suspend thread)
+
+  (* Restart thread. *)
+  fun startThread () = (assert (not (!running)) ;
+                        running := true ;
+                        Thread.resume thread)
+
+  fun showTooltip () =
+    let
+      val (rx, ry) = !lastPos
+      val x = Real.round rx
+      val y = Real.round ry
+    in
+      shown := true ;
+      QueuePut.put (Common.Tooltip (x, y)) ;
+      stopThread ()
+    end
+
+  fun hideTooltip _ = (shown := false ; QueuePut.put Common.HideTooltip)
+
+  (* Endless loop that counts ticks. *)
+  fun timer () =
+    while true do (let val oldPos = !lastPos
+                   in
+                     Thread.sleep Prefs.mouseTick ;
+                     if !lastPos = oldPos
+                       then (quiet := !quiet + 1 ;
+                             if !quiet = !Prefs.tooltipDelay
+                               then showTooltip () else ())
+                     else quiet := 0
+                   end)
+
+  (* Immediately launch the timer, and freeze it. *)
+  val _ = Promise.fulfill (threadP, Thread.thread timer)
+  val _ = stopThread ()
+
+  (* We might be leaving the window because the tooltip hides it. *)
+  fun leaving () = if !shown then () else stopThread ()
+
+  fun quit () = (if !shown then hideTooltip () else () ;
+                 running := false ;
+                 Thread.terminate thread)
+
+  fun move (x, y) =
+    if !Prefs.tooltips then (quiet := 0 ; lastPos := (x, y) ;
+                             if !shown then hideTooltip () else () ;
+                             if !running then () else startThread ())
+    else ()
+
+  (*************** GRAPHICAL PART : ONLY IN THE MAIN THREAD ****************)
+
+  (* Gtk tooltip. *)
+  val tooltips = Gtk.Tooltips.new ()
+
+  fun hideTipWindow _ =
+      let
+	val _ = Gtk.Tooltips.forceWindow tooltips
+	val tipWindow = Gtk.Tooltips.getFieldTipWindow tooltips
+      in
+	Gtk.Widget.hide tipWindow
+      end
+
+  fun addEvent (window, event) =
+    Gtk.Widget.addEvents (window, Gdk.EventMask.toInt event)
+
+
+  fun createTooltip (x, y, message) =
+    let
+      val _ = Gtk.Tooltips.forceWindow tooltips
+      val tipWindow = Gtk.Tooltips.getFieldTipWindow tooltips
+      val tipLabel = Gtk.Tooltips.getFieldTipLabel tooltips
+      val (x0,y0) = Gtk.Window.getPosition (MainWindow.window, 0, 0)
+      val (x1,y1) = Gtk.Widget.getPointer (MainWindow.window, 0, 0)
+      val (ww, wh) = Gtk.Window.getSize (MainWindow.window, 0, 0)
+      val nx = x0 + x1 + 35
+      val ny = y0 + y1 + 35
+
+      val signalConnectionP = Promise.promise ()
+
+      fun mapped _ =
+        let
+          val (tipW, tipH) = Gtk.Window.getSize (tipWindow, 0, 0)
+          val screenW = Gdk.Screen.width ()
+          val screenH = Gdk.Screen.height ()
+
+          (* Find a suitable location to show the tooltip. *)
+          val xleft = x0 + x1 - tipW - 20
+          val xleft = if xleft <= 0 then 20 else xleft
+          val ytop = y0 + y1 - tipH - 20
+          val ytop = if ytop <= 0 then 20 else ytop
+
+          val nx' = if nx + tipW >= screenW then xleft else nx
+          val ny' = if ny + tipH >= screenH then ytop else ny            
+        in
+          Gtk.signalDisconnect (tipWindow, Promise.future signalConnectionP) ;
+          if nx <> nx' orelse ny <> ny'
+            then Gtk.Window.move (tipWindow, nx', ny')
+          else ()
+        end      
+    in
+      Gtk.Label.setLineWrap (tipLabel, false) ;
+      Promise.fulfill (signalConnectionP, 
+                       Gtk.signalConnect (tipWindow, "map-event", mapped)) ;
+      addEvent (tipWindow, [Gdk.EventMask.BUTTON_PRESS_MASK, 
+                            Gdk.EventMask.POINTER_MOTION_MASK]) ;
+      Gtk.signalConnect (tipWindow, "leave-notify-event", hideTooltip) ;
+      Gtk.signalConnect (tipWindow, "motion-notify-event", hideTooltip) ;
+      Gtk.signalConnect (tipWindow, "button-press-event", hideTooltip) ;
+      Gtk.Label.setText (tipLabel, message) ;
+      Gtk.Window.setTransientFor (tipWindow, MainWindow.window) ;
+      Gtk.Window.move (tipWindow, nx, ny) ;
+      Gtk.Window.setDestroyWithParent (tipWindow, true) ;
+      Gtk.Widget.show tipWindow ;      
+      ()
+    end
+
+  (* Content of the tooltips. *)
+
+  val pps = PrettyPrint.toString
+  fun pptype t = pps (PPType.ppTyp t, 80)
+  fun ppsig  s = pps (PPInf.ppInf' s, 120)
+
+  fun tooltipDecl decl =
+      case decl of
+	AbsTree.FixItem _ => "Fixity declaration"
+      | AbsTree.ValItem (_, t, _) => pptype t
+      | AbsTree.TypItem (_, _, s) => s
+      | AbsTree.ModItem (_, s, _) => ppsig s
+      | AbsTree.SigItem (_, s) => ppsig s
+
+  fun tooltip (x, y) = 
+    case Selection.findSelectionAt (x, y) of
+      NONE => ()
+    | SOME tree =>
+        let val message =
+          case GrTypes.getDesc tree of
+            AbsTree.NestedRow NONE     => NONE
+          | AbsTree.NestedRow (SOME t) => SOME (pptype t)
+	  | AbsTree.ListTail (t, _, _) => SOME (pptype t)
+          | AbsTree.Value (t, _, _)    => SOME (pptype t)
+          | AbsTree.Module (s, _, _)   => SOME (ppsig s)
+	  | AbsTree.Struct             => NONE
+	  | AbsTree.Decl decl          => SOME (tooltipDecl decl)
+	  | AbsTree.TopLevel           => assert false
+        in
+          Option.app (fn txt => createTooltip (x, y, txt)) message
+        end
+
+end

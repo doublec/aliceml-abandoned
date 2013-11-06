@@ -1,0 +1,62 @@
+(* Alice Snake 2.0 - Operations on Positions
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+
+signature POS =
+sig 
+    (** The type of a position on the arena.
+        It's in row - major order (i.e. row X column)
+        with (0,0) denoting the upper left corner 
+      *)
+    type pos = int * int
+
+    (* absolute (i.e screen not snake relativ) *)
+    datatype direction =
+        UP
+      | DOWN
+      | LEFT
+      | RIGHT
+
+
+    val row :       pos -> int
+    (** [row = #1] *)
+    
+    val column :    pos -> int
+    (** [columns = #2] *)
+
+    val above :     pos -> pos
+    (** [above (r, c) = (r - 1, c)] *)
+    
+    val below :     pos -> pos
+    (** [below (r, c) = (r + 1, c)] *)
+    
+    val left :      pos -> pos
+    (** [left (r, c) = (r, c - 1)] *)
+    
+    val right :     pos -> pos
+    (** [left (r, c) = (r, c + 1)] *)
+
+    val move :      pos * direction -> pos
+    
+    val moveBy :    pos * direction * int -> pos
+
+    val inside :    pos * pos -> pos -> bool
+    (** [inside (lower, upper) p] returns true iff p is contained inside 
+        of the rectangle given by [lower] and [upper].  If this rectangle
+        is empty, i.e either [#row upper < #row lower] or 
+        [#column upper < #column lower] or both [false] is always returned.
+      *)
+end
+
+
+
+
+

@@ -1,0 +1,73 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature ORDERED     from "ORDERED-sig"
+import signature IMP_SET     from "IMP_SET-sig"
+import functor MkRedBlackSet from "MkRedBlackSet"
+
+functor MkRedBlackImpSet (Item : ORDERED) :> IMP_SET where type item = Item.t =
+struct
+    structure Set		= MkRedBlackSet Item
+
+    type item			= Set.item
+    type set			= Set.t ref
+    type t			= set
+
+    exception Unknown		= Set.Unknown
+    exception Collision		= Set.Collision
+
+    fun set ()			= ref Set.empty
+    fun clone s			= ref (!s)
+    fun fromList xs		= ref (Set.fromList xs)
+    fun fromVector xs		= ref (Set.fromVector xs)
+    fun toList s		= Set.toList (!s)
+    fun toVector s		= Set.toVector (!s)
+
+    fun update (s,f)		= let val p  = Promise.promise ()
+				      val s' = Ref.exchange (s,Promise.future p)
+				  in  Promise.fulfill (p, f s') end
+
+    fun insert (s,x)		= update (s, fn s' => Set.insert (s',x))
+    fun insertDisjoint (s,x)	= update (s, fn s' => Set.insertDisjoint (s',x))
+    fun insertWith f (s,x)	= update (s, fn s' => Set.insertWith f (s',x))
+
+    fun remove (s,x)		= update (s, fn s' => Set.remove (s',x))
+    fun removeExistent (s,x)	= update (s, fn s' => Set.removeExistent (s',x))
+    fun removeWith f (s,x)	= update (s, fn s' => Set.removeWith f (s',x))
+    fun removeAll s		= s := Set.empty
+
+    fun union (s1,s2)		= update (s1, fn s1' => Set.union (s1',!s2))
+    fun unionDisjoint (s1,s2)	= update (s1, fn s1' =>
+						 Set.unionDisjoint (s1',!s2))
+    fun unionWith f (s1,s2)	= update (s1, fn s1' =>
+						 Set.unionWith f (s1',!s2))
+
+    fun intersect (s1,s2)	= update (s1, fn s1' => Set.intersect (s1',!s2))
+    fun difference (s1,s2)	= update (s1, fn s1' => Set.difference(s1',!s2))
+
+    fun member (s,x)		= Set.member (!s,x)
+    fun choose s		= Set.choose (!s)
+    fun size s			= Set.size (!s)
+    fun isEmpty s		= Set.isEmpty (!s)
+
+    fun app f s			= Set.app f (!s)
+    fun fold f x s		= Set.fold f x (!s)
+    fun all f s			= Set.all f (!s)
+    fun exists f s		= Set.exists f (!s)
+    fun find f s		= Set.find f (!s)
+    fun filter f s		= update (s, fn s' => Set.filter f s')
+
+    fun equal (s1,s2)		= Set.equal (!s1,!s2)
+    fun subset (s1,s2)		= Set.subset (!s1,!s2)
+    fun disjoint (s1,s2)	= Set.disjoint (!s1,!s2)
+    fun compare (s1,s2)		= Set.compare (!s1,!s2)
+end

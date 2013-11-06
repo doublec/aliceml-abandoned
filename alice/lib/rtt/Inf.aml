@@ -1,0 +1,2693 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*******************************************************************************
+
+On Names and Binding Structure:
+
+We use a mixture of the type theoretic model of module calculi [e.g. Dreyer,
+Crary, Harper 2003] and the operational model used in the SML Definition.
+
+Functor parameters and structure items are binders for module names. However,
+they also bind all names reachable "bound" in their respective signature, i.e.
+reachable by projection. This is somewhat similar to the Definition's model,
+except that there are no explicit name sets - which names are bound can be
+inferred from a signature's item list.
+
+For example, consider the following interface, where we annotate labels with
+indexes as names:
+
+	sig{
+	    type t[1]
+	    module a[2] : sig{
+		type u[3]
+		module b[4] : sig{type v[5]}
+		module c[6] : fun(d[7] : sig{type v[8]}) -> sig{type w[9]}
+		interface j[10]
+	    }
+	    interface k[11] = sig{type t[12]}
+	}
+
+This signature binds the names {1,...,6,10,11}. The argument of the functor `d'
+binds names 7 and 8.
+
+We conceptually distinguish between _free_ and _instantiated_ signatures. A
+free signature is one bound by an interface declaration, while instantiated ones
+are those assigned to modules. This extends to higher-order interfaces.
+
+To avoid capturing issues, all instantiations of the `same' signature need to
+bind different names. The instance function must be used in strategic places to
+ensure this invariant.
+
+On Paths and Instantiation:
+
+We use `paths' to name types, modules, and interfaces. A path is a name
+with additional location information. Location information is semantically
+irrelevant but is maintained for pretty printing purposes, and to
+simplify external binding analysis on interfaces (like performed by
+BindEnvFromSig, for example).
+
+There are three binders for module paths: signature items, functors, and
+dependent interfaces. Type and interface paths are only bound by interface
+items. The location information of a path p is as follows:
+
+- For the parameter x in a functor or interface function, p = x
+- For an item x in a _free_ signature, p = x
+- For an item x in an instantiated signature, i.e. a signature that is the
+  interface of a functor or interface parameter or an enclosing signature's
+  module item, p = p'.x, where p' is the path of the corresponding binder.
+
+As an example, consider the above interface with annotated path locations:
+
+	sig{
+	    type t[t]
+	    module a[a] : sig{
+		type u[a.u]
+		module b[a.b] : sig{type v[a.b.v]}
+		module c[a.c] : fun(d[d] : sig{type v[d.v]}) -> sig{type w[w]}
+		interface j[a.j]
+	    }
+	    interface k[k] = sig{type t[t]}
+	}
+
+A pretty printer should suppress any path component that is the path of an
+enclosing entity (e.g. the a. prefix inside the signature of a).
+
+Instantiation does prefix all nested paths of a signature with the given path p.
+
+On Abbreviations:
+
+As for types, we try to maintain abbreviations to generate more user friendly
+output. This is managed through a special node ABBREV, which refers to the
+original type term as well as to the reduced/substituted one.
+
+On Lookup:
+
+To make lookups more efficient, signatures cache a lookup hash table. To reduce
+size of signature representation among pickling, this can explicitly be flushed
+using the compress function.
+
+On Singletons:
+
+Singleton modules are only used for pretty-printing purposes now, they no
+longer express module sharing. We try to keep them consistent for nice printing
+but basically ignore them during matching.
+
+For singleton kinds we have canonicalisation axioms:
+
+	SING_{SING_k j}(j')  = SING_k j
+	SING_{DEP x:j.k}(j') = DEP x:j.SING_k(j' x)
+
+On Identity and Narrowing:
+
+To speed up matching of signatures with itself each signature carries a stamp.
+If we encounter two equal stamps we can shortcut any matching. This is
+partiularly important for linktime component type checking.
+
+Since we perform signature narrowing in many places - in particular to minimise
+component import signatures - a simple stamp would be too weak a mechanism. In
+order to be able to recognise quickly if a signatures is an ancestor of another
+one with respect to narrowing, every signature actually carries a list of all
+its ancestors (including itself as the list's head). More precisely, this list
+is the path in the ancestor tree of the signature. The ancestor relationship
+can be tested quickly by looking up the list head of one signature in the
+ancestor list of the other. Usually hierarchies are flat, so linear search is
+acceptable (TODO: verify this claim).
+
+TODO:
+
+- Use functional sets and maps.
+- Make signature extension functional (requires functional lookup table?).
+
+*******************************************************************************)
+
+import structure Cell         from "../utility/Cell"
+import functor   MkHashImpMap from "../data/MkHashImpMap"
+import structure GlobalStamp  from "../data/GlobalStamp"
+import structure Label        from "Label"
+import structure Path         from "Path"
+import structure PathSet      from "PathSet"
+import structure PathMap      from "PathMap"
+import structure Type         from "Type"
+import structure Fixity       from "Fixity"
+import signature INF          from "INF-sig"
+
+(*DEBUG
+import structure Addr         from "../utility/Addr"
+import structure TextIO       from "../system/TextIO"
+import structure PrettyPrint  from "../utility/PrettyPrint"
+import structure PPPath       from "PPPath"
+import structure PPType       from "PPType"
+*)
+
+structure Inf :> INF =
+struct
+    (* Don't enforce disjointness when building realisations incrementally.
+     * Is violated by component manager and linker, where multiple imports
+     * with the same interface can appear without renaming.
+     *TODO: This is not nice, but should be unproblematic. We try to find
+     * something better eventually.
+     *)
+    structure PathMap =
+    struct
+	open PathMap
+	val insertDisjoint = insert
+	val unionDisjoint = union
+    end
+
+  (* Types *)
+
+    open Cell
+
+    type lab	= Label.t
+    type path	= Path.t
+    type typ	= Type.t
+    type tkind	= Type.kind
+    type fix    = Fixity.t
+
+
+    (* A map for signatures *)
+
+    datatype space = FIX' | VAL' | TYP' | MOD' | INF'
+
+    structure Tab = MkHashImpMap(type t = space * lab
+				 val equal = op=
+				 fun hash(_,l) = Label.hash l)
+
+    datatype inf' =
+	  TOP					(* top *)
+	| CON    of path * kind			(* interface constructor *)
+	| SIG    of sign			(* signature *)
+	| THAT   of mod				(* singleton *)
+	| FUN    of path * inf * inf		(* arrow (functor) *)
+	| EXIST  of path * inf * inf		(* hidden module *)
+	| LAMBDA of path * inf * inf		(* abstraction (dep. function)*)
+	| APPLY  of inf * mod			(* application *)
+	| ABBREV of inf * inf			(* abbreviations *)
+
+    and item =
+	  FIX    of lab  * fix			(* fixity *)
+	| VAL    of lab  * typ			(* value *)
+	| TYP    of path * tkind		(* type *)
+	| MOD    of path * inf			(* module *)
+	| INF    of path * kind			(* interface *)
+	| HIDDEN of item			(* existentially quantified *)
+
+    and kind' =
+	  GROUND				(* ordinary interface *)
+	| SING   of inf				(* singleton *)
+	| DEP    of path * inf * kind		(* dependent *)
+
+    withtype mod  = path * inf' cell		(* [m] *)
+    and      inf  = inf' cell			(* [jota,j] *)
+    and      kind = kind' cell			(* [kappa,k] *)
+    and      sign = item list ref *		(* [sigma,s] *)
+		    item Tab.t option ref *
+		    GlobalStamp.t list ref
+			(* The list of items in a sig is in reverse order! *)
+
+    type t = inf
+
+    type bound_paths = {typ : (path list option * tkind) PathMap.map,
+			mod : (path list option * inf) PathMap.map,
+			inf : (path list option * kind) PathMap.map}
+
+    structure Map     = Cell.MkMap(type t = inf')
+    structure KindMap = Cell.MkMap(type t = kind')
+
+  (* Realisations *)
+
+    type typ_rea = typ PathMap.t
+    type mod_rea = mod PathMap.t
+    type inf_rea = inf PathMap.t
+
+    type rea	 = { typ_rea : typ_rea
+		   , mod_rea : mod_rea
+		   , inf_rea : inf_rea
+		   }
+
+    fun rea()    = { typ_rea = PathMap.map()
+		   , mod_rea = PathMap.map()
+		   , inf_rea = PathMap.map()
+		   } : rea
+
+    fun isEmptyRea {typ_rea, mod_rea, inf_rea} =
+	PathMap.isEmpty typ_rea andalso
+	PathMap.isEmpty mod_rea andalso
+	PathMap.isEmpty inf_rea
+
+    val dummyRea = rea()
+
+    fun cloneRea {typ_rea, mod_rea, inf_rea} : rea =
+	{ typ_rea = PathMap.clone typ_rea
+	, mod_rea = PathMap.clone mod_rea
+	, inf_rea = PathMap.clone inf_rea
+	}
+
+    fun unionRea({typ_rea, mod_rea, inf_rea}, rea : rea) =
+	(PathMap.unionDisjoint(typ_rea, #typ_rea rea);
+	 PathMap.unionDisjoint(mod_rea, #mod_rea rea);
+	 PathMap.unionDisjoint(inf_rea, #inf_rea rea))
+
+
+  (* Mismatch information *)
+
+    datatype mismatch =
+	  MissingFix       of lab
+	| MissingVal       of lab
+	| MissingTyp       of lab
+	| MissingMod       of lab
+	| MissingInf       of lab
+	| MismatchFix      of lab * fix * fix
+	| MismatchVal      of lab * typ * typ * Type.mismatch
+	| MismatchTyp      of lab * tkind * tkind * Type.kind_mismatch
+	| MismatchMod      of lab * mismatch
+	| MismatchInf      of lab * kind_mismatch
+	| MismatchDom      of mismatch
+	| MismatchRan      of mismatch
+	| MismatchParam    of mismatch
+	| MismatchBody     of mismatch
+	| MismatchFun      of mismatch
+	| MismatchArg      of mismatch
+	| Incompatible     of inf * inf
+	| IncompatibleMod  of path * path
+
+    and kind_mismatch =
+	  MismatchKindDom  of mismatch
+	| MismatchKindRan  of kind_mismatch
+	| IncompatibleKind of kind * kind
+	| IncompatibleInf  of mismatch
+
+    exception Mismatch of mismatch
+    exception KindMismatch of kind_mismatch
+
+
+  (* Very basic helpers *)
+
+    (* Almost everything in this module is mutually recursive. To avoid
+     * confusing reordering and allow for easy tracing (see below) we use
+     * the old forward reference trick.
+     *)
+
+    nonfix mod
+
+    val same			= Cell.equal
+
+    fun mapr  f   xs		= mapr'(f,xs)
+    and mapr'(f,  nil )		= nil
+      | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
+
+    fun dummy _			= assert false
+    val modFwd			= ref(dummy : path * inf -> mod)
+    val applyFwd'		= ref(dummy : inf * mod -> inf)
+    val selfifyFwd 		= ref(dummy : inf -> inf)
+    val narrowFwd 		= ref(dummy : inf * inf -> inf)
+    val narrowModFwd 		= ref(dummy : mod * inf -> mod)
+    val realiseFwd		= ref(dummy : rea * inf -> inf)
+    val realiseInstFwd		= ref(dummy : rea * inf -> inf)
+    val realiseKindFwd		= ref(dummy : rea * kind -> kind)
+    val replaceNarrowedFwd	= ref(dummy : path * inf * inf -> inf)
+    val matchFwd		= ref(dummy : inf * inf -> rea)
+    val matchKindFwd 		= ref(dummy : kind * kind -> unit)
+    val maximiseFwd		= ref(dummy : PathSet.t * inf -> inf)
+    val maximiseExistFwd	= ref(dummy : PathSet.t * path* inf* inf -> inf)
+    val avoidFwd		= ref(dummy : bound_paths * inf -> inf option)
+
+    fun mod(p,j)		= !modFwd(p,j)
+    fun apply'(j,m)		= !applyFwd'(j,m)
+    fun selfify j		= !selfifyFwd j
+    fun narrow(j1,j2)		= !narrowFwd(j1,j2)
+    fun narrowMod(m,j)		= !narrowModFwd(m,j)
+    fun realise(rea,j)		= !realiseFwd(rea,j)
+    fun realiseInst(rea,j)	= !realiseInstFwd(rea,j)
+    fun realiseKind(rea,k)	= !realiseKindFwd(rea,k)
+    fun replaceNarrowed(p,j,j')	= !replaceNarrowedFwd(p,j,j')
+    fun match(j1,j2)		= !matchFwd(j1,j2)
+    fun matchKind(k1,k2)	= !matchKindFwd(k1,k2)
+    fun maximise(u,j)		= !maximiseFwd(u,j)
+    fun maximiseExist(u,p,j1,j2) = !maximiseExistFwd(u,p,j1,j2)
+    fun avoid(u,j)		= !avoidFwd(u,j)
+
+
+  (* Debugging aids *)
+
+    val new     = cell
+    val newKind = cell
+
+    (*DEBUG: The following allows tracing of all interface nodes.
+
+    fun pth p = PrettyPrint.toString(PPPath.ppPath p, 1000000)
+
+    fun id j = Int.toString(hash (*DEBUG Addr.addr*) j)
+
+    val rec inf'ToString =
+	fn TOP		=> "TOP"
+	 | CON(p,_)	=> "CON(" ^ pth p ^ ")"
+	 | SIG s	=> "SIG(" ^ sigToString s ^ ")"
+	 | THAT(p,j)	=> "THAT(" ^ pth p ^ "," ^ inf j ^ ")"
+	 | FUN(p,j1,j2)	=> "FUN(" ^ pth p ^ "," ^ inf j1 ^ "," ^ inf j2 ^ ")"
+	 | EXIST(p,j1,j2)
+			=> "EXIST(" ^ pth p ^ "," ^ inf j1 ^ "," ^ inf j2 ^ ")"
+	 | LAMBDA(p,j1,j2)
+			=> "LAMBDA(" ^ pth p ^ "," ^ inf j1 ^ "," ^ inf j2 ^ ")"
+	 | APPLY(j1,(p,j2))
+			=> "APPLY(" ^ inf j1 ^ "," ^ pth p ^ "," ^ inf j2 ^ ")"
+	 | ABBREV(j1,j2) => "ABBREV(" ^ inf j1 ^ "," ^ inf j2 ^ ")"
+
+    and inf = fn j => id j (*DEBUG ^ "=" ^ inf'ToString(content j)*)
+
+    and sigToString = fn(ref itemsr,_,_) =>
+	String.separate ";" (List.rev (List.map itemToString itemsr))
+
+    and itemToString =
+	fn FIX(l,f) => "" (*DEBUG "fix " ^ Label.toString l*)
+	 | VAL(l,t) => "val " ^ Label.toString l ^ ":" ^ (*Int.toString(Type.hash t)DEBUG*) PrettyPrint.toString(PPType.ppTyp t, 1000000)
+	 | TYP(p,k) => "typ " ^ pth p ^ ":" ^ PrettyPrint.toString(PPType.ppKind k, 1000000)
+	 | MOD(p,j) => "mod " ^ pth p ^ ":" ^ inf j
+	 | INF(p,k) => "inf " ^ pth p ^ ":" ^ kind k
+	 | HIDDEN i => "?" ^ itemToString i
+
+    and kind'ToString =
+	fn GROUND	=> "GROUND"
+	 | SING j	=> "SING(" ^ inf j ^ ")"
+	 | DEP(p,j,k)	=> "DEP(" ^ pth p ^ "," ^ inf j ^ "," ^ kind k ^ ")"
+
+    and kind = fn k => id k (*DEBUG ^ "=" ^ kind'ToString (content k)*)
+
+    fun infToString j  = id j ^ "=" ^ inf'ToString (content j)
+    fun kindToString k = id k ^ "=" ^ kind'ToString (content k)
+
+    val new = fn j' =>
+	let
+	    val j = cell j'
+	in
+	    TextIO.print("new " ^ id j ^ " = " ^ inf'ToString j' ^ "\n");
+	    j
+	end
+
+    val replace = fn(j,j') =>
+	( TextIO.print("replace " ^ id j ^ " = " ^ inf'ToString (content j) ^
+		       " with " ^ inf'ToString j' ^ "\n");
+	  replace(j,j')
+	)
+
+    val newKind = fn k' =>
+	let
+	    val k = newKind k'
+	in
+	    TextIO.print("new " ^ id k ^ " = " ^ kind'ToString k' ^ "\n");
+	    k
+	end
+
+    *)
+
+
+  (* Signature helpers *)
+
+    exception Hidden
+
+    fun items(ref items, _, _)	= items
+    fun stamps (_,_,zs)		= !zs
+    fun narrows(s1,s2)		= List.contains (stamps s1) (List.hd(stamps s2))
+
+    fun itemDom(FIX(l,_))	= (FIX',l)
+      | itemDom(VAL(l,_))	= (VAL',l)
+      | itemDom(TYP(p,_))	= (TYP',Path.toLab p)
+      | itemDom(MOD(p,_))	= (MOD',Path.toLab p)
+      | itemDom(INF(p,_))	= (INF',Path.toLab p)
+      | itemDom(HIDDEN _)	= raise Hidden
+
+    fun itemPath(TYP(p,_))	= p
+      | itemPath(MOD(p,_))	= p
+      | itemPath(INF(p,_))	= p
+      | itemPath _		= assert false
+
+    fun tab((itemsr, ref(SOME tab), _) : sign) = tab
+      | tab((itemsr, r, _) : sign) =
+	let
+	    val tab = Tab.map()
+	in
+	    List.app (fn item => Tab.insertDisjoint(tab, itemDom item, item)
+				 handle Hidden => ()) (!itemsr);
+	    r := SOME tab;
+	    tab
+	end
+(*DEBUG handle e => raise e *)
+
+    fun missing(FIX',l) = MissingFix l
+      | missing(VAL',l) = MissingVal l
+      | missing(TYP',l) = MissingTyp l
+      | missing(MOD',l) = MissingMod l
+      | missing(INF',l) = MissingInf l
+
+
+  (* Calculating free paths *)
+
+    fun paths j =
+	let
+	    val f = PathSet.set()
+	    val b = PathSet.set()
+	in
+	    paths'(f,b,j);
+	    f
+	end
+    and paths'(f,b,j) =
+	case content j
+	 of TOP			=> ()
+	  | CON(p,k)		=> (pathsPath'(f,b,p); pathsKind'(f,b,k))
+	  | SIG s		=> pathsSig'(f,b,s)
+	  | THAT m		=> pathsMod'(f,b,m)
+	  | ( FUN(p,j1,j2)
+	    | LAMBDA(p,j1,j2) )	=> let
+				      val b' = PathSet.clone b
+				   in
+				      paths'(f,b',j1);
+				      PathSet.insert(b',p);
+				      paths'(f,b',j2)
+				   end
+	  | EXIST(p,j1,j2)	=> (paths'(f,b,j1);
+				    PathSet.insert(b,p);
+				    paths'(f,b,j2))
+	  | APPLY(j,m)		=> (paths'(f,b,j); pathsMod'(f,b,m))
+	  | ABBREV(j1,j2)	=> paths'(f,b,j2)
+
+    and pathsPath'(f,b,p) =
+	if PathSet.member(b,p) then () else PathSet.insert(f,p)
+
+    and pathsMod'(f,b,(p,j)) =
+	((* Disable module sharing...
+	 pathsPath'(f,b,p);
+	 *)
+	 paths'(f,b,j))
+
+    and pathsSig'(f,b,s)           = List.appr (pathsItem'(f,b)) (items s)
+    and pathsItem'(f,b) (FIX _)    = ()
+      | pathsItem'(f,b) (VAL(l,t)) = PathMap.appi (fn(p,_) => pathsPath'(f,b,p))
+						  (Type.paths t)
+      | pathsItem'(f,b) (TYP(p,k)) = (PathMap.appi (fn(p,_)=> pathsPath'(f,b,p))
+						   (Type.pathsKind k);
+				      PathSet.insert(b,p))
+      | pathsItem'(f,b) (MOD(p,j)) = (paths'(f,b,j); PathSet.insert(b,p))
+      | pathsItem'(f,b) (INF(p,k)) = (pathsKind'(f, PathSet.clone b, k);
+				      PathSet.insert(b,p))
+      | pathsItem'(f,b) (HIDDEN i) = pathsItem'(f,b) i
+
+    and pathsKind k =
+	let
+	    val f = PathSet.set()
+	    val b = PathSet.set()
+	in
+	    pathsKind'(f,b,k);
+	    f
+	end
+    and pathsKind'(f,b,k) =
+	case content k
+	 of GROUND		=> ()
+	  | SING j		=> paths'(f,b,j)
+	  | DEP(p,j,k)		=> (paths'(f,b,j);
+				    PathSet.insert(b,p);
+				    pathsKind'(f,b,k))
+
+  (* Calculating bound paths *)
+
+    fun boundPaths j =
+	let
+	    val b = {typ=PathMap.map(), mod=PathMap.map(), inf=PathMap.map()}
+	in
+	    boundPaths'(b, SOME [], j); b
+	end
+    and boundPaths'(b,pso,j) =
+	case content j
+	 of ( TOP
+	    | CON _
+	    | THAT _
+	    | FUN _
+	    | LAMBDA _
+	    | APPLY _ )		=> ()
+	  | SIG s		=> boundPathsSig'(b,pso,s)
+	  | EXIST(p,j1,j2)	=> (PathMap.insert(#mod b, p, (NONE,j1));
+				    boundPaths'(b,NONE,j1);
+				    boundPaths'(b,pso,j2))
+	  | ABBREV(_,j)		=> boundPaths'(b,pso,j)
+
+    and boundPathsSig'(b,pso,s)	= List.app (boundPathsItem'(b,pso)) (items s)
+    and boundPathsItem' (b,pso) (FIX _)    = ()
+      | boundPathsItem' (b,pso) (VAL(l,t)) = ()
+      | boundPathsItem' (b,pso) (TYP(p,k)) =
+	(* Hack to create less dependencies *)
+	if Path.isPervasive p then () else PathMap.insert(#typ b, p, (pso,k))
+      | boundPathsItem' (b,pso) (MOD(p,j)) =
+	(
+	    PathMap.insert(#mod b, p, (pso,j));
+	    boundPaths'(b, Option.map (fn ps => ps@[p]) pso, j)
+	)
+      | boundPathsItem' (b,pso) (INF(p,k)) = PathMap.insert(#inf b, p, (pso,k))
+      | boundPathsItem' (b,pso) (HIDDEN i) = boundPathsItem' (b,NONE) i
+
+
+  (* Kinds *)
+
+    datatype kind_desc =
+	  GroundKind
+	| SingKind of inf
+	| DepKind  of path * inf * kind
+
+    exception Kind
+
+    fun inspectKind k =
+	case content k
+	  of GROUND		=> GroundKind
+	   | SING j		=> SingKind j
+	   | DEP pjk		=> DepKind pjk
+
+    val kGround			= newKind GROUND
+    fun groundKind()		= kGround
+    fun depKind(p,j,k)		= newKind(DEP(p,j,k))
+    fun singKind j		= let val k = kind j in
+				      if isSingKind k
+				      then k
+				      else newKind(SING j)
+				  end
+
+    and kind j =
+	case content j
+	 of ( TOP
+	    | SIG _
+	    | THAT _
+	    | FUN _ )		=> groundKind()
+	  | CON(p,k)		=> k
+	  | EXIST(p,j1,j2)	=> kind j2
+	  | LAMBDA(p,j1,j2)	=> depKind(p, j1, kind j2)
+	  | ABBREV(j1,j2)	=> kind j2
+	  | APPLY(j1,m)		=> let val (p',j3,j4) = asDepKind(kind j1)
+				       val  rea       = match(#2 m,j3)
+				   in
+				       PathMap.insertDisjoint(#mod_rea rea, p',
+							      narrowMod(m,j3));
+				       realiseKind(rea,j4)
+				   end
+(*DEBUG handle e => raise e *)
+
+    and asDepKind k =
+	case content k
+	 of DEP pjk		=> pjk
+	  | SING j		=> asDepKind(kind j)
+	  | GROUND		=> raise Kind
+    and asSingKind k =
+	case content k
+	 of SING j		=> j
+	  | (GROUND | DEP _)	=> raise Kind
+
+    and isGroundKind k =
+    	case content k
+	 of GROUND		=> true
+	  | SING j		=> isGroundKind(kind j)
+	  | _			=> false
+    and isDepKind k =
+	case content k
+	 of DEP _		=> true
+	  | SING j		=> isDepKind(kind j)
+	  | _			=> false
+    and isSingKind k =
+	case content k
+	 of SING j		=> true
+	  | _			=> false
+
+
+
+  (* Inspection *)
+
+    fun asMod m = m
+
+    exception Interface
+
+    datatype desc =
+	  Top
+	| Con    of path
+	| Sig    of sign
+	| Arrow  of path * inf * inf
+	| Exist  of path * inf * inf
+	| Lambda of path * inf * inf
+	| Apply  of inf * mod
+	| Sing   of mod
+
+    fun isAbbrev j = case content j of ABBREV _ => true | _ => false
+    fun asAbbrev j = case content j of ABBREV z => z | _ => raise Interface
+
+    fun inspect j =
+	case content j
+	  of ABBREV(_,j2)	=> inspect j2
+	   | TOP		=> Top
+	   | CON(p,_)		=> Con p
+	   | SIG s		=> Sig s
+	   | THAT m		=> Sing m
+	   | FUN pjj		=> Arrow pjj
+	   | EXIST pjj		=> Exist pjj
+	   | LAMBDA pjj		=> Lambda pjj
+	   | APPLY jm		=> Apply jm
+
+    fun isTop j =
+	case content j
+	  of TOP						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2))			=> isTop j2
+	   | (SIG _ | FUN _ | CON _ | THAT _ | LAMBDA _ | APPLY _) => false
+    fun isSig j =
+	case content j
+	  of SIG _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isSig j2
+	   | (TOP | FUN _ | CON _ | LAMBDA _ | APPLY _)		=> false
+    fun isArrow j =
+	case content j
+	  of FUN _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isArrow j2
+	   | (TOP | SIG _ | CON _ | LAMBDA _ | APPLY _)		=> false
+    fun isExist j =
+	case content j
+	  of EXIST _						=> true
+	   | (ABBREV(_,j2) | THAT(_,j2))			=> isExist j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> false
+    fun isSing j =
+	case content j
+	  of THAT _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2))			=> isSing j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> false
+    fun isCon j =
+	case content j
+	  of CON _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isCon j2
+	   | (TOP | SIG _ | FUN _ | LAMBDA _ | APPLY _)		=> false
+    fun isLambda j =
+	case content j
+	  of LAMBDA _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isLambda j2
+	   | (TOP | SIG _ | FUN _ | CON _ | APPLY _)		=> false
+    fun isApply j =
+	case content j
+	  of APPLY _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isApply j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _)		=> false
+
+    fun asSig j =
+	case content j
+	  of SIG s						=> s
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asSig j2
+	   | (TOP | FUN _ | CON _ | LAMBDA _ | APPLY _)		=> raise Interface
+    fun asArrow j =
+	case content j
+	  of FUN pjj						=> pjj
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asArrow j2
+	   | (TOP | SIG _ | CON _ | LAMBDA _ | APPLY _)		=> raise Interface
+    fun asExist j =
+	case content j
+	  of EXIST pjj						=> pjj
+	   | (ABBREV(_,j2) | THAT(_,j2))			=> asExist j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> raise Interface
+    fun asSing j =
+	case content j
+	  of THAT m						=> m
+	   | (ABBREV(_,j2) | EXIST(_,_,j2))			=> asSing j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> raise Interface
+    fun asCon j =
+	case content j
+	  of CON(p,_)						=> p
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asCon j2
+	   | (TOP | SIG _ | FUN _ | LAMBDA _ | APPLY _)		=> raise Interface
+    fun asLambda j =
+	case content j
+	  of LAMBDA pjj						=> pjj
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asLambda j2
+	   | (TOP | SIG _ | FUN _ | CON _ | APPLY _)		=> raise Interface
+    fun asApply j =
+	case content j
+	  of APPLY jm						=> jm
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asApply j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _)		=> raise Interface
+
+
+  (* Creation and injection, reduction *)
+
+    nonfix mod
+    fun mod(p,j) = reduceMod(p,j)	(* ASSUME j ~ instance(p,j) *)
+    and reduceMod(p,j) =
+	case content j
+	 of ABBREV(j1,j2) =>
+	    let
+		val (p',j2') = reduceMod(p,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then (p,j)
+		else (p, new(ABBREV(j1,j2')))
+	    end
+	  | THAT m'	=> m'
+	  | _		=> (p, selfify j)
+
+    val top'		= let val j = new TOP in fn() => j end
+    fun con'(p,k)	= new(CON(p,k))
+    fun sign' s		= new(SIG s)
+    fun arrow'(p,j1,j2)	= new(FUN(p,j1,j2))
+    fun exist'(p,j1,j2)	= new(EXIST(p,j1,j2))
+
+    fun abbrev'(j1,j2)	=
+	let
+	    val j1' = reduceAbbrevL j1
+	    val j2' = reduceAbbrevR j2
+	in
+	    if Cell.equal(j1',j2')
+	    then j1'
+	    else new(ABBREV(j1',j2'))
+	end
+    and reduceAbbrevL j	=
+	case content j
+	 of ABBREV(j1,_)	=> reduceAbbrevL j1
+	  | _			=> j
+    and reduceAbbrevR j	=
+	case content j
+	 of ABBREV(_,j2)	=> reduceAbbrevR j2
+	  | _			=> j
+
+    fun sing'(m as (p,j)) = reduceSing(m,j)	(* ASSUME j ~ instance(p,j) *)
+    and reduceSing(m,j) =
+	case content j
+	 of ABBREV(j1,j2) =>
+	    let
+		val j2' = reduceSing(m,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else new(ABBREV(j1,j2'))
+	    end
+	  | THAT _	=> j
+	  | _		=> new(THAT m)
+
+    fun lambda'(p,j1,j2) = reduceEta(p,j1,j2)
+    and reduceEta(p1,j1,j2) =
+	case content j2
+	 of APPLY(j3,(p4,j4)) =>
+		if Path.equal(p1,p4) andalso not(occurs(p1,j3))
+		then j3
+		else new(LAMBDA(p1,j1,j2))
+	  | ABBREV(_,j3) =>
+		reduceEta(p1,j1,j3)
+	  (* Not needed, since k is never singleton
+	  | CON(_,k) =>
+		if isSingKind k
+		then reduceEta(p1, j1, asSingKind k)
+		else new(LAMBDA(p1,j1,j2))
+	  *)
+	  | _ =>
+		new(LAMBDA(p1,j1,j2))
+    and occurs(p,j) = true (*TODO*)
+
+    fun apply'(j,m) = reduceBeta(j,j,m,NONE)
+    and reduceBeta(j,j',m,jo) =
+	case content j'
+	 of LAMBDA(p,j1,j2) =>
+	    let
+		val rea = match(#2 m,j1)
+		val _   = PathMap.insertDisjoint(#mod_rea rea,
+						 p, narrowMod(m,j1))
+(*DEBUG handle e => raise e *)
+		val j2' = realiseInst(rea,j2)
+	    in
+		case jo of NONE     => j2'
+			 | SOME j'' => abbrev'(apply'(j'',m), j2')
+	    end
+	  | EXIST(p,j1,j2) =>
+		reduceBeta(j, j2, m, jo)
+	  | ABBREV(j1,j2) =>
+		reduceBeta(j, j2, m, SOME(Option.getOpt(jo,j1)))
+	  (* Not needed, since k is never singleton
+	  | CON(_,k) =>
+		if isSingKind k
+		then reduceBeta(j, asSingKind k, m, jo)
+		else new(APPLY(j,m))
+	  *)
+	  | _ =>
+	    let
+		val (_,j1,_) = asDepKind(kind j')
+		val  m'      = narrowMod(m,j1)
+	    in
+		new(APPLY(j,m'))
+	    end
+
+
+    (* kind-safe interface *)
+
+    fun ground j	= if isGroundKind(kind j) then j else raise Kind
+
+    val top		= top'
+    fun con(p,k)	= if isSingKind k then asSingKind k else con'(p,k)
+    val sign		= sign'
+    fun arrow(p,j1,j2)	= arrow'(p, ground j1, ground j2)
+    fun exist(p,j1,j2)	= let val u = paths j2 in
+			      maximiseExist(u, p, maximise(u, ground j1),
+						  ground j2)
+			  end
+    val sing		= sing'
+    fun abbrev(j1,j2)	= (ignore(matchKind(kind j2, kind j1))
+			   handle KindMismatch m =>
+			      raise Mismatch(Incompatible(j1,j2));
+			   abbrev'(j1,j2))
+    fun lambda(p,j1,j2)	= lambda'(p, ground j1, j2)
+    fun apply(j,m)	= let val j' = apply'(j,m) in
+			      if not(isApply j') then () (* matched already *)
+			      else ignore(match(#2 m, #2(asDepKind(kind j))));
+			      j'
+			  end
+
+
+  (* Signature construction *)
+
+    fun newSig'(is,zs)	= (ref is, ref NONE, ref(GlobalStamp.stamp()::zs))
+    fun newSig is	= newSig'(is, [])
+    fun emptySig()	= newSig []
+
+    fun hide(FIX(l,q))	= true
+      | hide(VAL(l,t))	= true
+      | hide(TYP(p,k))	= (Path.hide p; Type.isSingKind k)
+      | hide(MOD(p,j))	= (Path.hide p; isSing j)
+      | hide(INF(p,k))	= (Path.hide p; isSingKind k)
+      | hide(HIDDEN _)	= assert false
+
+    fun hideItem' dom item =
+	(if itemDom item <> dom then SOME item
+	 else if hide item then NONE
+	 else SOME(HIDDEN item)
+	) handle Hidden => SOME item
+    fun hideItem(itemsr, item) =
+	itemsr := List.mapPartial (hideItem'(itemDom item)) (!itemsr)
+
+    fun extend(s as (itemsr,_,zs), dom, item) =
+	(Tab.insertWithi (extendClash itemsr) (tab s, dom, item);
+	 itemsr := item :: !itemsr;
+	 zs := [List.hd(!zs)])
+    and extendClash itemsr (dom,item',item) = (hideItem(itemsr,item'); item)
+
+    fun extendFix(s,l,q) = extend(s, (FIX',l), FIX(l,q))
+    fun extendVal(s,l,t) = extend(s, (VAL',l), VAL(l,t))
+    fun extendTyp(s,p,k) = extend(s, (TYP', Path.toLab p), TYP(p,k))
+    fun extendMod(s,p,j) = extend(s, (MOD', Path.toLab p), MOD(p,j))
+    fun extendInf(s,p,k) = extend(s, (INF', Path.toLab p), INF(p,k))
+
+    fun extendHidden(s as (itemsr,_,_), item) = itemsr := HIDDEN item :: !itemsr
+
+    fun extendHiddenTyp(s,p,k) = ((*Path.hide p;*) extendHidden(s, TYP(p,k)))
+    fun extendHiddenMod(s,p,j) = ((*Path.hide p;*) extendHidden(s, MOD(p,j)))
+    fun extendHiddenInf(s,p,k) = ((*Path.hide p;*) extendHidden(s, INF(p,k)))
+
+
+  (* Signature inspection *)
+
+    exception Item
+
+    datatype item_desc =
+	  FixItem of lab * fix
+	| ValItem of lab * typ
+	| TypItem of path * tkind
+	| ModItem of path * inf
+	| InfItem of path * kind
+	| HiddenItem of item
+
+    fun inspectItem(FIX lf)	= FixItem lf
+      | inspectItem(VAL lt)	= ValItem lt
+      | inspectItem(TYP pk)	= TypItem pk
+      | inspectItem(MOD pj)	= ModItem pj
+      | inspectItem(INF pk)	= InfItem pk
+      | inspectItem(HIDDEN i)	= HiddenItem i
+
+    fun isFixItem(FIX _)	= true
+      | isFixItem(HIDDEN i)	= isFixItem i
+      | isFixItem _		= false
+    fun isValItem(VAL _)	= true
+      | isValItem(HIDDEN i)	= isValItem i
+      | isValItem _		= false
+    fun isTypItem(TYP _)	= true
+      | isTypItem(HIDDEN i)	= isTypItem i
+      | isTypItem _		= false
+    fun isModItem(MOD _)	= true
+      | isModItem(HIDDEN i)	= isModItem i
+      | isModItem _		= false
+    fun isInfItem(INF _)	= true
+      | isInfItem(HIDDEN i)	= isInfItem i
+      | isInfItem _		= false
+    fun isHiddenItem(HIDDEN _)	= true
+      | isHiddenItem _		= false
+
+    fun asFixItem(FIX lq)	= lq
+      | asFixItem(HIDDEN i)	= asFixItem i
+      | asFixItem _		= raise Item
+    fun asValItem(VAL lt)	= lt
+      | asValItem(HIDDEN i)	= asValItem i
+      | asValItem _		= raise Item
+    fun asTypItem(TYP pk)	= pk
+      | asTypItem(HIDDEN i)	= asTypItem i
+      | asTypItem _		= raise Item
+    fun asModItem(MOD pj)	= pj
+      | asModItem(HIDDEN i)	= asModItem i
+      | asModItem _		= raise Item
+    fun asInfItem(INF pk)	= pk
+      | asInfItem(HIDDEN i)	= asInfItem i
+      | asInfItem _		= raise Item
+    fun asHiddenItem(HIDDEN i)	= i
+      | asHiddenItem _		= raise Item
+
+
+  (* Signature lookup *)
+
+    fun strongTyp(p,k)			= if Type.isSingKind k then k else
+					  Type.singKind(Type.con(p,k))
+    fun strongMod(p,j)			= if isSing j then j else
+					  sing'(mod(p,j))
+    fun strongInf(p,k)			= if isSingKind k then k else
+					  singKind(con'(p,k))
+    fun strong(item as (FIX _ | VAL _))	= item
+      | strong(TYP(p,k))		= TYP(p, strongTyp(p,k))
+      | strong(MOD(p,j))		= MOD(p, strongMod(p,j))
+      | strong(INF(p,k))		= INF(p, strongInf(p,k))
+      | strong(HIDDEN _)		= assert false
+
+    fun selectFix(FIX(l,q))		= q
+      | selectFix _			= assert false
+    fun selectVal(VAL(l,t))		= t
+      | selectVal _			= assert false
+    fun selectTyp(TYP(p,k))		= k
+      | selectTyp _			= assert false
+    fun selectMod(MOD(p,j))		= j
+      | selectMod _			= assert false
+    fun selectInf(INF(p,k))		= k
+      | selectInf _			= assert false
+
+    fun selectTyp'(TYP(p,k))		= Type.asSingKind(strongTyp(p,k))
+      | selectTyp' _			= assert false
+    fun selectMod'(MOD(p,j))		= asSing(strongMod(p,j))
+      | selectMod' _			= assert false
+    fun selectInf'(INF(p,k))		= asSingKind(strongInf(p,k))
+      | selectInf' _			= assert false
+
+    exception Lookup of lab
+
+    fun lookup(space,s,l) =
+	case Tab.lookup(tab s, (space,l))
+	 of SOME item => item
+	  | NONE      => raise Lookup l
+
+    fun lookupFix(s,l)	= selectFix(lookup(FIX',s,l))
+    fun lookupVal(s,l)	= selectVal(lookup(VAL',s,l))
+    fun lookupTyp(s,l)	= selectTyp(lookup(TYP',s,l))
+    fun lookupMod(s,l)	= selectMod(lookup(MOD',s,l))
+    fun lookupInf(s,l)	= selectInf(lookup(INF',s,l))
+
+    fun lookupTyp'(s,l)	= selectTyp'(lookup(TYP',s,l))
+    fun lookupMod'(s,l)	= selectMod'(lookup(MOD',s,l))
+    fun lookupInf'(s,l)	= selectInf'(lookup(INF',s,l))
+
+    fun pathTyp(s,l)	= itemPath(lookup(TYP',s,l))
+    fun pathMod(s,l)	= itemPath(lookup(MOD',s,l))
+    fun pathInf(s,l)	= itemPath(lookup(INF',s,l))
+
+
+  (* Strip signature lookup tables *)
+
+    fun compress j =
+	case content j
+	 of TOP			=> ()
+	  | CON(_,k)		=> compressKind k
+	  | SIG s		=> compressSig s
+	  | THAT(_,j)		=> compress j
+	  | ( FUN(_,j1,j2)
+	    | EXIST(_,j1,j2)
+	    | LAMBDA(_,j1,j2)
+	    | APPLY(j1,(_,j2))
+	    | ABBREV(j1,j2) )	=> (compress j1 ; compress j2)
+
+    and compressKind k =
+	case content k
+	 of GROUND		=> ()
+	  | SING j		=> compress j
+	  | DEP(_,j,k)		=> (compress j ; compressKind k)
+
+    and compressSig(isr,tab,_)	= (List.app compressItem (!isr); tab := NONE)
+
+    and compressItem(MOD(_,j))	= compress j
+      | compressItem(INF(_,k))	= compressKind k
+      | compressItem _		= ()
+
+
+  (* Closure check *)
+
+    exception Unclosed of lab * typ
+
+    fun close s			= List.app closeItem (items s)
+    and closeItem(FIX _)	= ()
+      | closeItem(VAL(l,t))	= if Type.isClosed t then ()
+				  else raise Unclosed(l,t)
+      | closeItem(TYP(_,k))	= ()
+      | closeItem(MOD(_,j))	= closeInf j
+      | closeItem(INF(_,k))	= ()
+      | closeItem(HIDDEN i)	= closeItem i
+	(* ASSUME that types and interfaces are always closed *)
+
+    and closeInf j =
+	case content j
+	 of (TOP | CON _)	=> ()
+	  | SIG s		=> close s
+	  | THAT(_,j1)		=> closeInf j1
+	  | ( FUN(_,j1,j2)
+	    | EXIST(_,j1,j2)
+	    | LAMBDA(_,j1,j2)
+	    | APPLY(j1,(_,j2)))	=> (closeInf j1; closeInf j2)
+	  | ABBREV(j1,j2)	=> closeInf j2
+
+
+  (* Splitting existentials *)
+
+    fun splitExist j = splitExist'(j,j)
+    and splitExist'(j,j') =
+	case content j
+	 of ABBREV(_,j'')  => splitExist'(j,j'')
+	  | EXIST(p,j1,j2) => let val (pjs,j) = splitExist j2
+			      in ((p,j1)::pjs, j) end
+	  | _              => ([],j)
+
+
+  (* Selfification *)
+
+    fun selfify j =
+	case content j
+	 of SIG s =>
+	    let
+		val change = ref false
+		val items' = List.map (selfifyItem change) (items s)
+	    in
+		if !change
+		then sign'(newSig items')
+		else j
+	    end
+	  | EXIST(p,j1,j2) =>
+	    let
+		val j2' = selfify j2
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else new(EXIST(p,j1,j2'))
+	    end
+	  | ABBREV(j1,j2) =>
+	    let
+		val j2' = selfify j2
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else new(ABBREV(j1,j2'))
+	    end
+	  | (TOP | CON _ | THAT _ | FUN _ | LAMBDA _ | APPLY _) => j
+
+    and selfifyItem change (item as FIX _) = item
+      | selfifyItem change (item as VAL _) = item
+      | selfifyItem change (item as TYP(p,k)) =
+	    if Type.isSingKind k then item else
+	    (change := true; TYP(p, Type.singKind(Type.con(p,k))))
+      | selfifyItem change (item as MOD(p,j)) =
+	    if isSing j then item else
+	    (change := true; MOD(p, sing'(mod(p,j))))
+      | selfifyItem change (item as INF(p,k)) =
+	    if isSingKind k then item else
+	    (change := true; INF(p, singKind(con'(p,k))))
+      | selfifyItem change (item as HIDDEN _) = item
+
+
+  (* Maximisation *)
+
+    (* Calculate the most general supersignature (i.e. "syntactically smallest")
+     * that still binds the given set of paths.
+     *)
+
+    fun maximise(u,j) =
+	case content j
+	 of SIG s =>
+	    let
+		val s' = maximiseSig(u,s)
+	    in
+		if List.null(items s') then top'()
+		else if s = s' then j
+		else sign' s'
+	    end
+	  | THAT(p,j) =>
+		(PathSet.insert(u,p); maximise(u,j); top'())
+	  | EXIST(p,j1,j2) =>
+	    let
+		val j2' = maximise(u,j2)
+		val j1' = maximise(u,j1)
+	    in
+		if Cell.equal(j1,j1') andalso Cell.equal(j2,j2')
+		then j
+		else maximiseExist(u,p,j1',j2')
+	    end
+	  | ABBREV(j1,j2) =>
+	    let
+		val j2' = maximise(u,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else j2'
+	    end
+	  | (TOP | CON _ | FUN _ | APPLY _) =>
+		top'()
+	  | LAMBDA _ =>
+		raise Kind
+
+    and maximiseSig(u,s) =
+	let
+	    val change = ref false
+	    val items' = List.mapPartial (maximiseItem(u,change)) (items s)
+	in
+	    if !change
+	    then newSig items'
+	    else s
+	end
+
+    and maximiseItem (u,change) (item as FIX _) =
+	    (change := true; NONE)
+      | maximiseItem (u,change) (item as VAL(l,t)) =
+	    (change := true; NONE)
+      | maximiseItem (u,change) (item as TYP(p,k)) =
+	    if PathSet.member(u,p)
+	    then (PathMap.appi (fn(p,_) => PathSet.insert(u,p))
+			       (Type.pathsKind k); SOME item)
+	    else (change := true; NONE)
+      | maximiseItem (u,change) (item as MOD(p,j)) =
+	    if PathSet.member(u,p)
+	    then (paths'(u, PathSet.set(), j); SOME item)
+	    else let
+		val j' = maximise(u,j)
+	    in
+		if Cell.equal(j,j') then SOME item else
+		case content j' of TOP => (change := true; NONE)
+				 | _   => (change := true; SOME(MOD(p,j')))
+	    end
+      | maximiseItem (u,change) (item as INF(p,k)) =
+	    if PathSet.member(u,p)
+	    then (pathsKind'(u, PathSet.set(), k); SOME item)
+	    else (change := true; NONE)
+      | maximiseItem (u,change) (item as HIDDEN item') =
+	    Option.map HIDDEN (maximiseItem (u,change) item')
+
+
+    and maximiseExist(u,p,j1,j2) =
+(*
+if PathSet.member(u,p) then exist'(p, j1, replaceNarrowed(p,j1,j2)) else
+case content j1 of TOP => j2 | _   => exist'(p,j1,j2)
+*)
+	if not(isSig j1 orelse PathSet.member(u,p)) then j2 else
+	let
+	    val b = boundPaths j1
+	in
+	    PathMap.insertDisjoint(#mod b, p, (NONE,j1));
+	    case avoid(b,j2)
+	     of SOME j2' => j2'
+	      | NONE => exist'(p, j1, if PathSet.member(u,p)
+				      then replaceNarrowed(p,j1,j2) else j2)
+	end
+
+
+  (* Narrowing *)
+
+   (*
+     * ASSUME that j1 < j2
+     *
+     * The fact that interface subtyping - and thus narrowing - allows
+     * elimination of core quantifiers is a bit annoying - we cannot simply
+     * take the value items from the original signature but have to take the
+     * restricted ones and perform appropriate substitutions on bound type
+     * identifiers (for which we have to maintain a realisation). This requires
+     * prior calculation of a type realisation and thus a 2-pass approach.
+     *
+     * Maximisation removes redundant existentials or hidden items.
+     *)
+
+    type narrow_context =
+	{extend :  bool,
+	 used :    PathSet.t,
+	 typ_rea : typ_rea,
+	 typ :     Type.realise_context}
+
+    fun narrowContext extend =
+	{extend  = extend,
+	 used    = PathSet.set(),
+	 typ_rea = PathMap.map(),
+	 typ     = Type.realiseStart()}
+
+    fun narrow'(c,j1,j2) =
+	if Cell.equal(j1,j2) then j1 else
+	case (content j1, content j2)
+	 of (_, TOP)   => j2
+
+	  | ( (_, CON _)
+	    | (_, APPLY _) ) =>
+	    (paths'(#used c, PathSet.set(), j1) ; j1)
+
+	  | (_, ABBREV(_,j22)) => narrow'(c,j1,j22)
+	  | (ABBREV(_,j12), _) =>
+	    let
+		val j12' = narrow'(c,j12,j2)
+	    in
+		if Cell.equal(j12,j12')
+		then j1
+		else j12'
+	    end
+
+	  | (_, THAT(_,j2')) => narrow'(c,j1,j2')
+	  | (THAT m1, _) =>
+	    let
+		val m = narrowMod'(c,m1,j2)
+	    in
+		if Cell.equal(#2 m1, #2 m)
+		then j1
+		else sing' m
+	    end
+
+	  | (_, EXIST(p2,j21,j22)) => narrow'(c,j1,j22)
+	  | (EXIST(p1,j11,j12), _) =>
+	    let
+		val j12' = narrow'(c,j12,j2)
+		val j11' = maximise(#used c,j11)
+	    in
+		if Cell.equal(j11,j11') andalso Cell.equal(j12,j12')
+		then j1
+		else maximiseExist(#used c, p1,j11',j12')
+	    end
+
+	  | (SIG s1, SIG s2) =>
+	    let
+		val s1' = narrowSig'(c,s1,s2)
+	    in
+		if s1 = s1'
+		then j1
+		else sign' s1'
+	    end
+
+	  | (FUN(p1,j11,j12), FUN(p2,j21,j22)) =>
+	    let
+		val typ_rea' = PathMap.clone(#typ_rea c)
+		val _        = narrowTypRea(typ_rea',j11,j21)
+		val _        = narrowTypRea(typ_rea',j12,j22)
+		val c'       = {extend  = #extend c,
+				used    = #used c,
+				typ_rea = typ_rea',
+				typ     = #typ c}
+		val j12'     = narrow'(c',j12,j22)
+	    in
+		if Cell.equal(j12,j12')
+		then j1
+		else arrow'(p1,j11,j12')
+	    end
+
+	  | (LAMBDA _,LAMBDA _)	=> raise Kind
+	  | _			=> raise Mismatch(Incompatible(j1,j2))
+
+    and narrowMod'(c, (p,j1), j2) =
+	(PathSet.insert(#used c, p) ; (p, narrow'(c,j1,j2)))
+
+    and narrowSig'(c,s1,s2) =
+	if narrows(s2,s1) then s2 else
+	let
+	    val tab1   = tab s1
+	    val tab2   = tab s2
+	    val change = ref false
+	    val maximiseItem = maximiseItem(#used c, change)
+
+	    fun narrowItem item1 =
+		(case (item1, Tab.lookup(tab2, itemDom item1))
+		 of (FIX _, SOME(FIX _)) =>
+			SOME item1
+		  | (VAL(l1,t1), SOME(VAL(l2,t2))) =>
+		    let
+			val t2' = Type.realiseCont(#typ c,#typ_rea c,t2)
+		    in
+			PathMap.appi (fn(p,_) => PathSet.insert(#used c,p))
+				     (Type.paths t1);
+			SOME(if Type.equal(t1,t2')
+			     then item1
+			     else (change := true; VAL(l2,t2')))
+		    end
+		  | (TYP(p1,k1), SOME(TYP _)) =>
+			(PathMap.appi (fn(p,_) => PathSet.insert(#used c,p))
+				      (Type.pathsKind k1);
+			 SOME item1)
+		  | (MOD(p1,j1), SOME(MOD(p2,j2))) =>
+		    let
+			val j1' = narrow'(c,j1,j2)
+		    in
+			SOME(if Cell.equal(j1,j1')
+			     then item1
+			     else (change := true; MOD(p1,j1')))
+		    end
+		  | (INF(p1,k1), SOME(INF _)) =>
+			(pathsKind'(#used c, PathSet.set(), k1); SOME item1)
+		  | (_, NONE) =>
+		    if #extend c
+		    then maximiseItem item1
+		    else (change:= true; Option.map HIDDEN (maximiseItem item1))
+		  | _ =>
+			assert false
+		) handle Hidden =>
+			maximiseItem item1
+
+	     val items1' = List.mapPartial narrowItem (items s1)
+	in
+	    if !change
+	    then newSig'(items1', stamps s1)
+	    else s1
+	end
+
+
+    and narrowTypRea(typ_rea,j1,j2) =
+	if Cell.equal(j1,j2) then () else
+	case (content j1, content j2)
+	 of (ABBREV(_,j1'), _)	=> narrowTypRea(typ_rea,j1',j2)
+	  | (_, ABBREV(_,j2'))	=> narrowTypRea(typ_rea,j1,j2')
+	  | (THAT(_,j1'), _)	=> narrowTypRea(typ_rea,j1',j2)
+	  | (EXIST(_,_,j1'), _)	=> narrowTypRea(typ_rea,j1',j2)
+	  | (_, EXIST(_,_,j2'))	=> narrowTypRea(typ_rea,j1,j2')
+	  | (SIG s1, SIG s2)	=> narrowTypReaSig(typ_rea,s1,s2)
+	  | _			=> ()
+
+    and narrowTypReaSig(typ_rea,s1,s2) =
+	if narrows(s1,s2) then () else
+	let
+	    val tab1 = tab s1
+
+	    fun narrowTypReaItem(item2 as TYP(p2,k2)) =
+		(if Type.isSingKind k2 then () else
+		let
+		    val (p1,k1) =
+			asTypItem(Tab.lookupExistent(tab1, itemDom item2))
+		in
+		    PathMap.insert(typ_rea, p2, Type.con(p1,k1))
+		end handle Tab.Unknown _ => () (* contra-variance *))
+	      | narrowTypReaItem(item2 as MOD(p2,j2)) =
+		(let
+		    val (p1,j1) =
+			asModItem(Tab.lookupExistent(tab1, itemDom item2))
+		in
+		    narrowTypRea(typ_rea,j1,j2) handle Mismatch m =>
+			raise Mismatch(MismatchMod(Path.toLab p2, m))
+		end handle Tab.Unknown _ => () (* contra-variance *))
+	      | narrowTypReaItem _ = ()
+	in
+	    List.app narrowTypReaItem (items s2)
+	end
+
+
+    fun narrow''(extend,j1,j2) =
+	let
+	    val c = narrowContext extend
+	in
+	    narrowTypRea(#typ_rea c,j1,j2);
+	    narrow'(c,j1,j2)
+	end
+
+    fun narrowSig''(extend,s1,s2) =
+	let
+	    val c = narrowContext extend
+	in
+	    narrowTypReaSig(#typ_rea c,s1,s2);
+	    narrowSig'(c,s1,s2)
+	end
+
+    fun narrow(j1,j2)       = narrow''(false,j1,j2)
+    fun narrowExt(j1,j2)    = narrow''(true,j1,j2)
+    fun narrowSig(s1,s2)    = narrowSig''(false,s1,s2)
+    fun narrowSigExt(s1,s2) = narrowSig''(true,s1,s2)
+
+    fun narrowMod(m1 as (p1,j1), j2) =
+	let
+	    val c = narrowContext false
+	in
+	    narrowTypRea(#typ_rea c,j1,j2);
+	    narrowMod'(c,m1,j2)
+	end
+
+
+  (* Cloning for substitution. *)
+
+    datatype inst_flag = BothSingleton | LeftSingleton	(* used for infimum *)
+    datatype inst      = NoInst of inst_flag | InstTop | InstDot of path
+
+    type build_context =
+	 { inf :  inf Map.t
+	 , kind : kind KindMap.t
+	 , typ :  Type.realise_context
+	 , rea :  rea
+	 , inst : inst
+	 }
+
+    fun instContext(c as {inf, kind, typ, rea, inst}, inst') =
+	let
+	    val inst'' = case (inst,inst')
+			 of (_, NoInst BothSingleton) => inst'
+			  | (NoInst _, _)             => inst
+			  | _                         => inst'
+	in
+	    {inf = inf, kind = kind, typ = typ, rea = rea, inst = inst'}
+	end
+
+    fun build(c : build_context, j) =
+	case Map.lookup(#inf c, j)
+	 of SOME j'		=> j'
+	  | NONE		=>
+	case content j
+	 of TOP			=> buildOld(c, j)
+	  | SIG s		=> buildSig(c, j, sign', s)
+	  | THAT m		=> buildSing(c, j, sing', m)
+	  | FUN(p,j1,j2)	=> buildBind(c, j, arrow', p,j1,j2)
+	  | EXIST(p,j1,j2)	=> buildBind(c, j, exist', p,j1,j2)
+	  | LAMBDA(p,j1,j2)	=> buildBind(c, j, lambda', p,j1,j2)
+	  | APPLY(j1,m)		=> buildApply(c, j, apply', j1,m)
+	  | ABBREV(j1,j2)	=> buildPair(c, j, abbrev', j1,j2)
+	  | CON(p,k)		=>
+	case PathMap.lookup(#inf_rea(#rea c), p)
+	 of NONE		=> buildOld(c, j)
+	  | SOME j'		=> buildNew(c, j,
+					    case #inst c of NoInst _=> j' | _ =>
+					    build({inf  = Map.map(),
+						   kind = KindMap.map(),
+						   typ  = Type.realiseStart(),
+						   rea  = rea(),
+						   inst = #inst c}, j'))
+	    (* DEBUG
+		(matchKind(kind j',k)
+		 handle KindMismatch m => raise Mismatch(Incompatible(j,j'));
+		 buildNew(c,j,j')
+		)
+	    *)
+
+    and buildOld(c,j)    = (Map.insertDisjoint(#inf c, j,j); j)
+    and buildNew(c,j,j') = (Map.insertDisjoint(#inf c, j,j'); j')
+
+    and buildPath({inst = NoInst _, ...},   p) = p
+      | buildPath({inst = InstTop, ...},    p) = Path.instance p
+      | buildPath({inst = InstDot p', ...}, p) = if Path.isHidden p
+						 then Path.instance p
+						 else Path.dot(p', Path.toLab p)
+(*DEBUG
+handle e =>
+(TextIO.print "Inf.buildPath failure: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print "\n";
+raise e)
+*)
+
+    and buildBind(c, j, toInf, p,j1,j2) =
+	let
+	    val p'  = buildPath(instContext(c,InstTop), p)
+	    val j1' = build(instContext(c, InstDot p'), j1)
+	    val _   = if isSing j1 orelse
+			Cell.equal(j1,j1') andalso Path.equal(p,p') then () else
+		      PathMap.insertDisjoint(#mod_rea(#rea c), p, mod(p',j1'))
+(*DEBUG
+before (
+TextIO.print "Inf.build: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+())
+*)
+	    val j2' = build(instContext(c, InstTop), j2)
+	in
+	    if Path.equal(p,p') andalso Cell.equal(j1,j1')
+				andalso Cell.equal(j2,j2')
+	    then buildOld(c, j)
+	    else buildNew(c, j, toInf(p',j1',j2'))
+	end
+(*DEBUG handle e => raise e *)
+
+    and buildPair(c, j, toInf, j1,j2) =
+	let
+	    val j1' = build(c,j1)
+	    val j2' = build(c,j2)
+	in
+	    if Cell.equal(j1,j1') andalso Cell.equal(j2,j2')
+	    then buildOld(c, j)
+	    else buildNew(c, j, toInf(j1',j2'))
+	end
+
+    and buildApply(c, j, toInf, j1, m as (p,j2)) =
+	let
+	    val j1'            = build(c,j1)
+	    val m' as (p',j2') = buildMod(c,m)
+	in
+	    if Path.equal(p,p') andalso Cell.equal(j1,j1')
+				andalso Cell.equal(j2,j2')
+	    then buildOld(c, j)
+	    else buildNew(c, j, toInf(j1',m'))
+	end
+
+    and buildSing(c, j, toInf, m as (p,j1)) =
+	let
+	    val m' as (p',j1') = buildMod(c,m)
+	in
+	    if Cell.equal(j1,j1') andalso Path.equal(p,p')
+	    then buildOld(c, j)
+	    else buildNew(c, j, toInf m')
+	end
+
+    and buildMod(c, m as (p,j)) =
+	let
+	    val p' = case PathMap.lookup(#mod_rea(#rea c), p)
+		      of NONE       => p
+		       | SOME(p',_) => p'
+	in
+	    (p', build(c,j))
+	end
+	(* Disabled modules haring...
+	case PathMap.lookup(#mod_rea(#rea c), p)
+	 of NONE    => (p,
+	  | SOME m' => narrowMod'({extend  = false,
+				   used    = PathSet.set(),
+				   typ_rea = #typ_rea(#rea c),
+				   typ     = #typ c}, m', j)
+	*)
+
+    and buildSig(c, j, toInf, s) =
+	let
+	    val change = ref false
+	    val items' = mapr (fn item => buildItem(c,change,item)) (items s)
+	in
+	    if !change
+	    then buildNew(c, j, toInf(newSig items'))
+	    else buildOld(c, j)
+	end
+
+    and buildItem(c, change, item as FIX _) =
+	    item
+      | buildItem(c, change, item as VAL(l,t)) =
+	let
+	    val t' = Type.realiseCont(#typ c, #typ_rea(#rea c), t)
+(*DEBUG handle e => raise e *)
+(*DEBUG
+val _ = if l = Label.fromString "new" then (
+TextIO.print "Inf.buildItem: \"new\"\n";
+TextIO.print "t = ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 80);
+TextIO.print "\n";
+TextIO.print "t' = ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t', 80);
+TextIO.print "\n";
+TextIO.print "typ_rea = {\n";
+PathMap.appi (fn(p,t) => (
+  TextIO.print "  ";
+  PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+  TextIO.print " -> ";
+  PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 80);
+  TextIO.print "\n";
+())) (#typ_rea(#rea c));
+TextIO.print "}\n";
+())
+else ()
+*)
+	in
+	    if Type.same(t,t') then item else
+	    (change := true; VAL(l,t'))
+	end
+      | buildItem(c, change, item as TYP(p,k)) =
+	let
+	    val p' = buildPath(c,p)
+	    val k' = Type.realiseKindCont(#typ c, #typ_rea(#rea c), k)
+(*DEBUG handle e => raise e *)
+	in
+	    if Type.sameKind(k,k') andalso Path.equal(p,p') then item else
+	    (
+		if Type.isSingKind k then ()
+		else (PathMap.insert(#typ_rea(#rea c),p,Type.con(p',k'));
+(*DEBUG
+TextIO.print "Inf.build: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)
+())
+(*DEBUG handle e => raise e*);
+		change := true; TYP(p',k')
+	    )
+	end
+      | buildItem(c, change, item as MOD(p,j)) =
+	let
+	    val p' = buildPath(c,p)
+	    val j' = build(instContext(c, InstDot p'), j)
+	in
+	    if Cell.equal(j,j') andalso Path.equal(p,p') then item else
+	    (
+		if isSing j then ()
+		else (PathMap.insert(#mod_rea(#rea c), p, mod(p',j'));
+(*DEBUG
+TextIO.print "Inf.build: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)
+())
+(*DEBUG handle e => raise e*);
+		change := true; MOD(p',j')
+	    )
+	end
+      | buildItem(c, change, item as INF(p,k)) =
+	let
+	    val p' = buildPath(c,p)
+	    val k' = buildKind(c,k)
+	in
+	    if Cell.equal(k,k') andalso Path.equal(p,p') then item else
+	    (
+		if isSingKind k then ()
+		else (PathMap.insert(#inf_rea(#rea c), p, con(p',k'));
+(*DEBUG
+TextIO.print "Inf.build: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)
+())
+(*DEBUGhandle e => raise e*);
+		change := true; INF(p',k')
+	    )
+	end
+      | buildItem(c, change, HIDDEN item') =
+	    HIDDEN(buildItem(c, change, item'))
+
+
+    and buildKind(c,k) =
+	case KindMap.lookup(#kind c, k)
+	 of SOME k'		=> k'
+	  | NONE		=>
+	case content k
+	 of GROUND		=> buildOldKind(c,k)
+	  | SING j		=> buildSingKind(c, k, singKind, j)
+	  | DEP(p,j,k1)		=> buildBindKind(c, k, depKind, p,j,k1)
+
+    and buildOldKind(c,k)    = (KindMap.insertDisjoint(#kind c, k, k); k)
+    and buildNewKind(c,k,k') = (KindMap.insertDisjoint(#kind c, k, k'); k')
+
+    and buildSingKind(c, k, toKind, j) =
+	let
+	    val j' = build(instContext(c, NoInst LeftSingleton), j)
+	in
+	    if Cell.equal(j,j')
+	    then buildOldKind(c, k)
+	    else buildNewKind(c, k, toKind j')
+	end
+
+    and buildBindKind(c, k, toKind, p,j,k1) =
+	let
+	    val p'  = buildPath(c,p)
+(*DEBUG
+val _ = (
+TextIO.print "Inf.buildKind: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+())
+*)
+	    val j'  = build(instContext(c, InstDot p'), j)
+	    val k1' = buildKind(instContext(c, InstTop), k1)
+	in
+	    if Cell.equal(j,j') andalso Cell.equal(k1,k1')
+	    then buildOldKind(c, k)
+	    else buildNewKind(c, k, toKind(p,j',k1'))
+	end
+
+
+  (* Realisation *)
+
+    and realise(rea, j) =
+	if isEmptyRea rea then j else
+	build({inf  = Map.map(),
+	       kind = KindMap.map(),
+	       typ  = Type.realiseStart(),
+	       rea  = rea,
+	       inst = NoInst LeftSingleton}, j)
+
+    and realiseInst(rea, j) =
+	build({inf  = Map.map(),
+	       kind = KindMap.map(),
+	       typ  = Type.realiseStart(),
+	       rea  = rea,
+	       inst = InstTop}, j)
+
+    and realiseKind(rea, k) =
+	if isEmptyRea rea then k else
+	buildKind({inf  = Map.map(),
+		   kind = KindMap.map(),
+		   typ  = Type.realiseStart(),
+		   rea  = rea,
+		   inst = NoInst LeftSingleton}, k)
+
+    and replaceNarrowed(p,j,j') =
+	let
+	    val rea = rea()
+	in
+	    PathMap.insertDisjoint(#mod_rea rea, p, mod(p,j));
+	    build({inf  = Map.map(),
+		   kind = KindMap.map(),
+		   typ  = Type.realiseStart(),
+		   rea  = rea,
+		   inst = NoInst LeftSingleton}, j')
+	end
+
+
+  (* Instantiation (bound renaming) *)
+
+    fun instance(p,j) =
+	let
+(*DEBUG
+val _ = TextIO.print "Inf.instance...\n"
+val _ = TextIO.print("j = " ^ infToString j ^ "\n")
+*)
+	    val rea = rea()
+	    val j'  = build({inf  = Map.map(),
+			     kind = KindMap.map(),
+			     typ  = Type.realiseStart(),
+			     rea  = rea,
+			     inst = InstDot p}, j)
+	in
+(*DEBUG
+TextIO.print "Inf.instance done.\n";
+*)
+	    (j',rea)
+	end
+				   (* should remove p,j refs from u! *)
+
+    fun rename j =
+	build({inf  = Map.map(),
+	       kind = KindMap.map(),
+	       typ  = Type.realiseStart(),
+	       rea  = rea(),
+	       inst = InstTop}, j)
+
+
+  (* Breaking dependencies on paths b *)
+
+    exception Unavoidable
+
+    fun remainPaths1(m,u) = PathMap.existsi (fn(p,_) => PathSet.member(u,p)) m
+    fun remainPaths2(m,u) = PathMap.existsi (fn(p,_) => PathMap.member(u,p)) m
+    fun remainPaths(b : bound_paths, u) =
+	remainPaths1(#typ b,u) orelse remainPaths1(#mod b,u)
+			       orelse remainPaths1(#inf b,u)
+
+    fun avoid(b,j) = SOME(avoid'(b, rea(), j)) handle Unavoidable => NONE
+    and avoid'(b,rea,j) =
+	case content j
+	 of TOP => j
+
+	  | (CON _ | FUN _ | LAMBDA _ | APPLY _) =>
+	    let
+		val j' = realise(rea,j)
+	    in
+		if remainPaths(b, paths j') then raise Unavoidable else
+		j'
+	    end
+
+	  | ABBREV(_,j2) =>
+	    let
+		val j2' = avoid'(b,rea,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else j2'
+	    end
+
+	  | THAT(p,j') =>
+	    let
+		val p'  = case PathMap.lookup(#mod_rea rea,p)
+			   of NONE       => p
+			    | SOME(p',_) => p'
+		val j'' = avoid'(b,rea,j')
+	    in
+		if PathMap.member(#mod b,p')
+		then j''
+		else sing'(p',j'')
+	    end
+	    (* Disable module sharing...
+	    if PathMap.member(#mod_rea rea,p) then
+		if PathMap.member(#mod b,p) then raise Unavoidable else
+		realise(rea,j)
+	    else if not(PathMap.member(#mod b,p)) then
+		sing'(p, avoid'(b,rea,j'))
+	    else
+		let
+		    val j'' = avoid'(b,rea,j')
+		in
+		    PathMap.insert(#mod_rea rea, p, mod(p,j''));
+		    (* disallow further occurances of p, by keeping it in b! *)
+		    j''
+		end
+	    *)
+
+	  | EXIST(p,j1,j2) =>
+	    let
+		val j1' = avoid'(b,rea,j1)
+		val j2' = avoid'(b,rea,j2)
+	    in
+		if Cell.equal(j1,j1') andalso Cell.equal(j2,j2')
+		then j
+		else exist'(p,j1',j2')
+	    end
+
+	  | SIG s =>
+	    let
+		val s' = avoidSig'(b,rea,s)
+	    in
+		if s = s'
+		then j
+		else sign' s'
+	    end
+
+    and avoidSig'(b,rea,s) =
+	let
+	    val change = ref false
+	    val items' = mapr (avoidItem'(b,rea,change)) (items s)
+	in
+	    if !change
+	    then newSig items'
+	    else s
+	end
+
+    and avoidItem' (b,rea,change) (item as FIX _) =
+	    item
+      | avoidItem' (b,rea,change) (item as VAL(l,t)) =
+	let
+	    val t' = Type.realise(#typ_rea rea, t)
+	in
+	    if remainPaths2(#typ b, Type.paths t') then raise Unavoidable else
+	    if Type.same(t,t')
+	    then item
+	    else (change := true; VAL(l,t'))
+	end
+      | avoidItem' (b,rea,change) (item as TYP(p,k)) =
+	let
+	    val k'    = Type.realiseKind(#typ_rea rea, k)
+	    val item' = if Type.sameKind(k,k')
+			then item
+			else (change := true; TYP(p,k'))
+	in
+	    case Type.inspectKind k'
+	     of Type.SingKind t =>
+		(case Type.inspect t
+		 of Type.Con p' =>
+		    if PathMap.member(#typ b,p') then
+			let
+			    val k'' = Type.kind t
+			in
+			    PathMap.insertDisjoint(#typ_rea rea,p',
+						   Type.con(p,k''));
+			    PathMap.removeExistent(#typ b,p');
+			    change := true; TYP(p,k'')
+			end
+		    else item'
+		  | _ =>
+		    if remainPaths2(#typ b,Type.paths t) then
+		    raise Unavoidable
+		    else item'
+		)
+	      | _ => item' (* normalised kinds contain no paths *)
+	end
+      | avoidItem' (b,rea,change) (item as MOD(p,j)) =
+	let
+	    val j'    = avoid'(b,rea,j)
+	    val item' = if Cell.equal(j,j')
+			then item
+			else (change := true; MOD(p,j'))
+	in
+	    case inspect j (* respective singleton will be removed in j' *)
+	     of Sing(p',_) =>
+		if PathMap.member(#mod b,p') then
+		    (PathMap.insertDisjoint(#mod_rea rea, p', (p,j'));
+		     PathMap.removeExistent(#mod b,p');
+		     change := true;
+		     MOD(p,j'))
+		else item'
+	      | _ => item'
+	end
+	(* Disable module sharing...
+	(case inspect j
+	 of Sing(p',j') => (*UNFINISHED: where (PathMap.member(#mod b,p') ...) *)
+	    (case PathMap.lookup(#mod b,p')
+	     of SOME(_,jb) =>
+		(* If p' is in both maps then only because we encountered
+		 * some free THAT before that forced us to unshare it.
+		 *)
+		if PathMap.member(#mod_rea rea,p') then raise Unavoidable else
+		let
+		    (* (j'',rea') = instance(p, realise(rea,j')) *)
+		    val j'' = build({inf  = Map.map(),
+				     kind = KindMap.map(),
+				     typ  = Type.realiseStart(),
+				     rea  = rea,
+				     inst = InstDot p}, j')
+		    val b' = boundPaths j'
+		in
+		    (* We support only full bindings (otherwise we had to check
+		     * all remaining singleton occurances). *)
+		    match(j',jb) handle Mismatch _ => raise Unavoidable;
+		    PathMap.difference(#typ b, #typ b');
+		    PathMap.difference(#mod b, #mod b');
+		    PathMap.difference(#inf b, #inf b');
+		    PathMap.insertDisjoint(#mod_rea rea, p', mod(p,j''));
+		    change := true; MOD(p,j'')
+		end
+	      | _ =>
+		let
+		    val j' = avoid'(b,rea,j)
+		in
+		    if remainPaths(b, paths j') then raise Unavoidable else
+		    if Cell.equal(j,j')
+		    then item
+		    else (change := true; MOD(p,j'))
+		end
+	    )
+	  | _ =>
+	    let
+		val j' = avoid'(b,rea,j)
+	    in
+		if remainPaths(b, paths j') then raise Unavoidable else
+		if Cell.equal(j,j')
+		then item
+		else (change := true; MOD(p,j'))
+	    end
+	)
+	*)
+      | avoidItem' (b,rea,change) (item as INF(p,k)) =
+	let
+	    val k'    = realiseKind(rea,k)
+	    val item' = if Cell.equal(k,k')
+			then item
+			else (change := true; INF(p,k'))
+	in
+	    case inspectKind k'
+	     of SingKind j =>
+		(case inspect j
+		 of Con p' =>
+		    if PathMap.member(#inf b,p') then
+			let
+			    val k'' = kind j
+			in
+			    PathMap.insertDisjoint(#inf_rea rea, p',con(p,k''));
+			    PathMap.removeExistent(#inf b,p');
+			    change := true;
+			    INF(p,k'')
+			end
+		    else item'
+		  | _ =>
+		    if remainPaths(b, pathsKind k')
+		    then raise Unavoidable
+		    else item'
+		)
+	      | _ =>
+		if remainPaths(b, pathsKind k')
+		then raise Unavoidable
+		else item'
+	end
+      | avoidItem' (b,rea,change) (HIDDEN item') =
+	    HIDDEN(avoidItem' (b,rea,change) item')
+
+    (* 
+     * Try to remove hidden fields from a signature.
+     *
+     * This is not the smartest (and neither the most efficient) algorithm,
+     * but enough for our current needs.
+     *)
+
+    fun avoidHidden s =
+	let
+	    val b = {typ=PathMap.map(), mod=PathMap.map(), inf=PathMap.map()}
+	    val change = ref false
+	    val items' = List.foldr (avoidHiddenItem(b,rea(),change)) []
+				    (items s)
+	in
+	    if !change
+	    then newSig items'
+	    else s
+	end
+	handle Unavoidable => s
+
+    and avoidHiddenItem (b,rea,change) (HIDDEN item, items) =
+	    (avoidHiddenItem'(b,rea,change) item; change := true; items)
+(*UNFINISHED: have to think about how to descent efficiently...
+      | avoidHiddenItem (b,rea,change) (item as MOD _, items) =
+	let
+	    val (p,j) = asModItem(avoidItem' (b,rea,change) item)
+	    val    j' = avoidHiddenInf(b,rea,j);
+	in
+	    MOD(p,j)
+	end
+*)
+      | avoidHiddenItem (b,rea,change) (item, items) =
+	    avoidItem' (b,rea,change) item :: items
+    and avoidHiddenItem'(b,rea,change) (FIX _ | VAL _) = ()
+      | avoidHiddenItem'(b,rea,change) (TYP(p,k)) =
+ 	    PathMap.insert(#typ b, p, (NONE,k))
+      | avoidHiddenItem'(b,rea,change) (MOD(p,j)) =
+	    (PathMap.insert(#mod b,p, (NONE,j)); boundPaths'(b,NONE,j))
+      | avoidHiddenItem'(b,rea,change) (INF(p,k)) =
+	    PathMap.insert(#inf b,p, (NONE,k))
+      | avoidHiddenItem'(b,rea,change) (HIDDEN item) =
+	    assert false
+(*
+    and avoidHiddenInf(b,rea,j) =
+	case content j
+	 of ( TOP | CON _ | THAT _ | FUN _ | LAMBDA _ | APPLY _ ) => ()
+	  | SIG s		=> avoidHiddenSig(b,rea,s)
+	  | EXIST(p,j1,j2)	=> (PathMap.insert(#mod b, p, (NONE,j1));
+				    avoidHiddenInf(b,rea,j1);
+				    avoidHiddenInf(b,rea,j2))
+	  | ABBREV(_,j)		=> avoidHiddenInf(b,rea,j)
+*)
+
+
+  (* Matching *)
+
+    fun match(j1,j2) =
+	let
+	    val rea = rea()
+	in
+	    matchWith(rea,j1,j2);
+	    rea
+	end
+    and matchWith(rea,j1,j2) =
+(*DEBUG
+(TextIO.print "Inf.match...\n";
+TextIO.print("j1 = " ^ infToString j1 ^ "\n");
+TextIO.print("j2 = " ^ infToString j2 ^ "\n");
+*)
+	    match'(Type.matchStart(), rea, j1,j2)
+(*
+before
+TextIO.print "Inf.match done.\n")
+*)
+    and match'(mt,rea,j1,j2) =
+	if Cell.equal(j1,j2) then () else
+	case (content j1, content j2)
+	 of (ABBREV(_,j1'), _) => match'(mt,rea,j1',j2)
+	  | (_, ABBREV(_,j2')) => match'(mt,rea,j1,j2')
+	  | (EXIST(_,_,j12), _) =>
+		match'(mt,rea,j12,j2)
+	  | (_, EXIST(_,_,j22)) =>
+		match'(mt,rea,j1,j22)
+	  | (_, TOP) =>
+		()
+	  | (THAT m1, THAT m2) =>
+		matchMod(mt,rea,m1,m2)
+	  | (THAT(p1,j1'), _) =>
+		match'(mt,rea,j1',j2)
+	  | (_, THAT(p2,j2')) =>
+		(* Disable module sharing... *)
+		match'(mt,rea,j1,j2')
+	  | (CON(p1,_), CON(p2,_)) =>
+		if Path.equal(p1,p2) then () else
+		(case PathMap.lookup(#inf_rea rea, p1)
+		   of SOME j1' => match'(mt,rea,rename j1',j2)
+		    | NONE     =>
+		 case PathMap.lookup(#inf_rea rea, p2)
+		   of SOME j2' => match'(mt,rea,j1,rename j2')
+		    | NONE     => raise Mismatch(Incompatible(j1,j2))
+		)
+	  | (CON(p1,_), _) =>
+		(case PathMap.lookup(#inf_rea rea, p1)
+		   of SOME j1' => match'(mt,rea,rename j1',j2)
+		    | NONE     => raise Mismatch(Incompatible(j1,j2))
+		)
+	  | (_, CON(p2,_)) =>
+		(case PathMap.lookup(#inf_rea rea, p2)
+		   of SOME j2' => match'(mt,rea,j1,rename j2')
+		    | NONE     => raise Mismatch(Incompatible(j1,j2))
+		)
+	  | (SIG s1, SIG s2) =>
+		matchSig(mt,rea,s1,s2)
+	  | (FUN(p1,j11,j12), FUN(p2,j21,j22)) =>
+		let
+		    val rea' = cloneRea rea
+		in
+		    match'(mt,rea',j21,j11)
+		    handle Mismatch m => raise Mismatch(MismatchDom m);
+		    PathMap.insertDisjoint(#mod_rea rea', p1,
+					   mod(p2, narrow(j21,j11)))
+(*DEBUG handle e => raise e *)
+;
+		    match'(mt,rea',j12,j22)
+		    handle Mismatch m => raise Mismatch(MismatchRan m)
+		end
+	  | (LAMBDA(p1,j11,j12), LAMBDA(p2,j21,j22)) =>
+		let
+		    val rea' = cloneRea rea
+		    val mt'  = Type.matchBranch mt
+		in
+		    match'(mt',rea',j21,j11)
+		    handle Mismatch m => raise Mismatch(MismatchParam m);
+		    PathMap.insertDisjoint(#mod_rea rea', p1,
+					   mod(p2, narrow(j21,j11)))
+(*DEBUG handle e => raise e *)
+;
+		    equal'(mt',rea',j12,j22)
+		    handle Mismatch m => raise Mismatch(MismatchBody m)
+		end
+	  | (APPLY(j1',m1), APPLY(j2',m2)) =>
+		(match'(mt,rea,j1',j2')
+		 handle Mismatch m => raise Mismatch(MismatchFun m);
+		 equalMod'(mt,rea,m1,m2)
+		 handle Mismatch m => raise Mismatch(MismatchArg m)
+		)
+	  | _ => raise Mismatch(Incompatible(j1,j2))
+
+    and matchMod(mt, rea, m1 as (p1,j1), m2 as (p2,j2)) =
+	match'(mt,rea,j1,j2)
+	(* Disable module sharing...
+	if Path.equal(p1,p2) then match'(mt,rea,j1,j2) else
+	case PathMap.lookup(#mod_rea rea, p1)
+	  of SOME m1' => matchMod(mt,rea,m1',m2)
+	   | NONE     =>
+	case PathMap.lookup(#mod_rea rea, p2)
+	  of SOME m2' => matchMod(mt,rea,m1,m2')
+	   | NONE     => raise Mismatch(IncompatibleMod(p1,p2))
+	*)
+
+    and matchSig(mt,rea,s1,s2) =
+	if narrows(s2,s1)
+	then ()
+	else List.appr (matchItem (mt,rea,tab s1)) (items s2)
+
+    and matchItem (mt,rea,tab1) item2 =
+	let
+	    val dom as (_,l) = itemDom item2
+	    val item1        = strong(Tab.lookupExistent(tab1,dom))
+	in
+	    case (item1, item2)
+	     of (FIX(l1,q1), FIX(l2,q2)) =>
+		if q1 = q2
+		then ()
+		else raise Mismatch(MismatchFix(l,q1,q2))
+	      | (VAL(l1,t1), VAL(l2,t2)) =>
+		(Type.matchCont(mt,#typ_rea rea,t1,t2)
+		 handle Type.Mismatch m =>
+			raise Mismatch(MismatchVal(l,t1,t2,m))
+		)
+	      | (TYP(p1,k1), TYP(p2,k2)) =>
+		(Type.matchKindCont(mt,#typ_rea rea,k1,k2)
+		 handle Type.KindMismatch m =>
+			raise Mismatch(MismatchTyp(l,k1,k2,m));
+		 if Type.isSingKind k2 orelse Path.equal(p1,p2) then () else
+		 PathMap.insertDisjoint(#typ_rea rea, p2, Type.asSingKind k1)
+(*DEBUG
+before (
+TextIO.print "Inf.match: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(Type.asSingKind k1), 80);
+TextIO.print "\n"
+)
+*)
+(*DEBUG handle e => raise e *)
+		)
+	      | (MOD(p1,j1), MOD(p2,j2)) =>
+		(match'(mt,rea,j1,j2)
+		 handle Mismatch m => raise Mismatch(MismatchMod(l,m));
+		 if isSing j2 orelse Path.equal(p1,p2) then () else
+		 PathMap.insertDisjoint(#mod_rea rea, p2, asSing j1)
+(*DEBUG
+before (
+TextIO.print "Inf.match: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
+TextIO.print " -> ";
+TextIO.print(inf j1);
+TextIO.print "\n"
+)
+*)
+(*DEBUG handle e => raise e *)
+		)
+	      | (INF(p1,k1), INF(p2,k2)) =>
+		(matchKind'(mt,rea,k1,k2)
+		 handle KindMismatch m => raise Mismatch(MismatchInf(l,m));
+		 if isSingKind k2 orelse Path.equal(p1,p2) then () else
+		 PathMap.insertDisjoint(#inf_rea rea, p2, asSingKind k1)
+(*DEBUG
+before (
+TextIO.print "Inf.match: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
+TextIO.print " -> ";
+TextIO.print(inf(asSingKind k1));
+TextIO.print "\n"
+)
+*)
+(*DEBUG handle e => raise e *)
+		)
+	      | _ => assert false
+	end
+	handle Hidden          => ()
+	     | Tab.Unknown dom => raise Mismatch(missing dom)
+
+    and matchKind(k1,k2) = matchKind'(Type.matchStart(), rea(), k1,k2)
+    and matchKind'(mt,rea,k1,k2) =
+	if Cell.equal(k1,k2) then () else
+	case (content k1, content k2)
+	 of (GROUND, GROUND) => ()
+	  | (SING _, GROUND) => ()
+	  | (SING j1, SING j2) => equal'(mt,rea,j1,j2)
+	  | (DEP(p1,j1,k11), DEP(p2,j2,k21)) =>
+	    let
+		val rea' = cloneRea rea
+		val mt'  = Type.matchBranch mt
+	    in
+		match'(mt',rea',j2,j1)
+		handle Mismatch m => raise KindMismatch(MismatchKindDom m);
+		PathMap.insertDisjoint(#mod_rea rea', p1,
+				       mod(p2, narrow(j2,j1)))
+(*DEBUG handle e => raise e *)
+;
+		matchKind'(mt',rea',k11,k21)
+		handle KindMismatch m => raise KindMismatch(MismatchKindRan m)
+	    end
+	  | _ => raise KindMismatch(IncompatibleKind(k1,k2))
+
+
+    and equal'(mt,rea,j1,j2) =
+	ignore(match'(Type.matchBranch mt, cloneRea rea, j2,j1);
+	       match'(Type.matchBranch mt, cloneRea rea, j1,j2))
+
+    and equalMod'(mt,rea,m1,m2) =
+	ignore(matchMod(Type.matchBranch mt, cloneRea rea, m2,m1);
+	       matchMod(Type.matchBranch mt, cloneRea rea, m1,m2))
+
+    fun equal(j1,j2) =
+	(match(j1,j2); match(j2,j1); true) handle Mismatch _ => false
+
+
+  (* infimum (greatest lower bound) *)
+
+    (*
+     * This is a simple-minded and restricted algorithm for infimum.
+     * It cannot handle signatures with inconsistent orderings.
+     * A more general algorithm is not obvious, since it seems to require
+     * some fixpoint operation on realisations (which can induce recursion
+     * on core types).
+     *
+     * A universal algorithm is impossible, because interfaces don't form a
+     * lattice. A simple counter example is the ability to encode higher-order
+     * unification:
+     *  j1 = {typ t : *->*; typ u : <t(int)>}
+     *  j2 = {typ t : *->*; typ u : <int>}
+     * This example requires finding a solution for int = t(int), which is not
+     * unique.
+     *)
+
+(*DEBUG*)
+    fun infimum(j1,j2) =
+	infimum'({inf  = Map.map(),
+		  kind = KindMap.map(),
+		  typ  = Type.realiseStart(),
+		  rea  = rea(),
+		  inst = InstTop}, j1, j2)
+(*
+fun infimum(j1,j2) =
+(
+TextIO.print "Inf.infimum...\n";
+TextIO.print("j1 = " ^ infToString j1 ^ "\n");
+TextIO.print("j2 = " ^ infToString j2 ^ "\n");
+infimum'({inf  = Map.map(),
+	    kind = KindMap.map(),
+	    typ  = Type.realiseStart(),
+	    rea  = rea(),
+	    inst = InstTop}, j1, j2)
+before
+TextIO.print "Inf.infimum done.\n")
+*)
+(*DEBUG handle e => raise e *)
+
+    and infimum'(c,j1,j2) =
+	if Cell.equal(j1,j2) then j1 else
+	case (content j1, content j2)
+	 of (CON(p1,_), CON(p2,_)) =>
+	    (case PathMap.lookup(#inf_rea(#rea c), p1)
+	     of SOME j3 => infimum'(c,j3,j2)
+	      | NONE =>
+	     case PathMap.lookup(#inf_rea(#rea c), p2)
+	     of SOME j3 => infimum'(c,j1,j3)
+	      | NONE =>
+	     if Path.equal(p1,p2)
+	     then j1
+	     else raise Mismatch(Incompatible(j1,j2))
+	    )
+	  | (CON(p1,_), _) =>
+	    (case PathMap.lookup(#inf_rea(#rea c), p1)
+	     of SOME j3 => infimum'(c,j3,j2)
+	      | NONE    => raise Mismatch(Incompatible(j1,j2))
+	    )
+	  | (_, CON(p2,_)) =>
+	    (case PathMap.lookup(#inf_rea(#rea c), p2)
+	     of SOME j3 => infimum'(c,j1,j3)
+	      | NONE    => raise Mismatch(Incompatible(j1,j2))
+	    )
+	  | (TOP, _) =>
+		(* T /\ j2 = j2 *)
+		j2
+	  | (_, TOP) =>
+		(* j1 /\ T = j1 *)
+		j1
+	  | (THAT m1, THAT m2) =>
+	    let
+		val m = infimumMod(c,m1,m2)
+(*DEBUG handle e => raise e *)
+	    in
+		sing' m
+	    end
+	  | (THAT(p1,j1'), _) =>
+	    (case PathMap.lookup(#mod_rea(#rea c), p1)
+	     of SOME m => (infimum'(c, sing' m, j2)
+(*DEBUG handle e => raise e *))
+	      | NONE   =>
+	    let
+		val j' = infimum'(instContext(c, NoInst LeftSingleton), j1', j2)
+		val m  = mod(p1,j')
+(*DEBUG handle e => raise e *)
+	    in
+		sing' m
+	    end)
+	  | (_, THAT(p2,j2')) =>
+	    (case PathMap.lookup(#mod_rea(#rea c), p2)
+	     of SOME m => (infimum'(c, j1, sing' m)
+(*DEBUG handle e => raise e*))
+	      | NONE   =>
+	    let
+		val j' = infimum'(instContext(c, NoInst LeftSingleton), j2', j1)
+		val m  = mod(p2,j')
+(*DEBUG handle e => raise e *)
+	    in
+		sing' m
+	    end)
+	  | (SIG s1, SIG s2) =>
+	    (* s1 /\ s2 = ... *)
+	    let
+		val s = infimumSig(c,s1,s2)
+(*DEBUG handle e => raise e *)
+	    in
+		sign' s
+	    end
+(*TODO
+	  | (EXIST(p1,j11,j12), _) =>
+	    let
+		val j11' = build(instContext(c,p1), j11)
+		val j12' = infimum'(c,j12,j2)
+	    in
+		exist'(p1,j21,j22')
+	    end
+	  | (_, EXIST(p2,j21,j22)) =>
+	    let
+		val j21' = build(instContext(c,p2), j21)
+		val j22' = infimum'(c,j2,j22)
+	    in
+		exist'(p2,j21,j22')
+	    end
+	  | (FUN(p1,j11,j12), FUN(p2,j21,j22)) =>
+	    let
+		val (j11',rea1) = match(j21,j11) handle Mismatch m =>
+				    raise Mismatch(MismatchDom m)
+		val  _          = PathMap.insertDisjoint(#mod_rea rea1,p1,(p2,j11'))
+		val (j22',rea2) = match(realise(rea1,j12), j22)
+				  handle Mismatch m =>
+				    raise Mismatch(MismatchRan m)
+	    in
+		if Cell.equal(j22,j22')
+		then (j2, rea2)
+		else (arrow'(p2,j21,j22'), rea2)
+	    end
+	  | (LAMBDA(p1,j11,j12), LAMBDA(p2,j21,j22)) =>
+	    let
+		val (j11',rea) = match(j21,j11) handle Mismatch m =>
+				    raise Mismatch(MismatchParam m)
+	    in
+		PathMap.insertDisjoint(#mod_rea rea, p1, (p2,j11'));
+		equal(realise(rea,j12), j22) handle Mismatch m =>
+				    raise Mismatch(MismatchBody m);
+		(j2, rea())
+	    end
+	  | (APPLY(j1',m1), APPLY(j2',m2)) =>
+	    let
+		val (j',rea1) = match(j1',j2') handle Mismatch m =>
+				    raise Mismatch(MismatchFun m)
+		val (m',rea2) = matchMod(isNested,m1,m2) handle Mismatch m =>
+				    raise Mismatch(MismatchArg m)
+	    in
+		unionRea(rea2,rea1) handle PathMap.Collision _ =>
+		    raise Mismatch(Incompatible(j1,j2));
+		if Cell.equal(j2',j') andalso Cell.equal(#2 m2, #2 m')
+		then (j2, rea2)
+		else (apply'(j',m'), rea2)
+	    end
+*)	  | (ABBREV(_,j1), _) => infimum'(c,j1,j2)
+	  | (_, ABBREV(_,j2)) => infimum'(c,j1,j2)
+	  | _ => raise Mismatch(Incompatible(j1,j2))
+
+    and infimumMod(c, m1 as (p1,j1), m2 as (p2,j2)) =
+	case PathMap.lookup(#mod_rea(#rea c), p1)
+	 of SOME m3 => (infimumMod(c,m3,m2)
+(*DEBUG handle e => raise e*))
+	  | NONE =>
+	case PathMap.lookup(#mod_rea(#rea c), p2)
+	 of SOME m3 => (infimumMod(c,m1,m3)
+(*DEBUG handle e => raise e*))
+	  | NONE =>
+	if not(Path.equal(p1,p2))
+	then raise Mismatch(IncompatibleMod(p1,p2)) else
+	let
+	    val j = infimum'(instContext(c, NoInst BothSingleton), j1,j2)
+(*DEBUG handle e => raise e *)
+	in
+	    mod(p1,j)
+	end
+
+    and infimumSig(c,s1,s2) =
+	if narrows(s2,s1) then s1 else
+	if narrows(s1,s2) then s2 else
+	let
+	    val items1 = List.rev(items s1)
+	    val items2 = List.rev(items s2)
+	    val change = ref false	(* dummy *)
+	in
+	    newSig(infimumItems(c,change, tab s1, tab s2, items1,items2, []))
+	end
+
+    and infimumItems(c,change, tab1,tab2, [], [], items) =
+	    items
+      | infimumItems(c,change, tab1,tab2, item1::items1, [], items) =
+	let
+	    val item1' = buildItem(c,change,item1)
+	in
+	    infimumItems(c,change, tab1,tab2, items1,[], item1'::items)
+	end
+      | infimumItems(c,change, tab1,tab2, [], item2::items2, items) =
+	(case #inst c
+	  of NoInst LeftSingleton => raise Mismatch(missing(itemDom item2))
+	   | _ =>
+	let
+	    val item2' = buildItem(c,change,item2)
+	in
+	    infimumItems(c,change, tab1,tab2, [],items2, item2'::items)
+	end)
+      | infimumItems(c,change, tab1,tab2, items1 as item1::items1',
+					  items2 as item2::items2', items) =
+	let
+	    val domo1  = SOME(itemDom item1) handle Hidden => NONE
+	    val domo2  = SOME(itemDom item2) handle Hidden => NONE
+	    val found1 = case domo1 of NONE => false | SOME dom1 =>
+			 Option.isSome(Tab.lookup(tab2, dom1))
+	    val found2 = case domo2 of NONE => false | SOME dom2 =>
+			 Option.isSome(Tab.lookup(tab1, dom2))
+	in
+	    case (found2, found1)
+	     of (_, false) =>
+		let
+		    val item1' = buildItem(c,change,item1)
+		in
+		    infimumItems(c,change, tab1,tab2, items1',items2,
+				 item1'::items)
+		end
+	      | (false, _) =>
+		(case #inst c
+		  of NoInst LeftSingleton=> raise Mismatch(missing(valOf domo2))
+		   | _ =>
+		let
+		    val item2' = buildItem(c,change,item2)
+		in
+		    infimumItems(c,change, tab1,tab2, items1,items2',
+				 item2'::items)
+		end)
+	      | (true, true) =>
+		if domo1 <> domo2 then raise Mismatch(missing(valOf domo1)) else
+		let
+		    val item = infimumItem(c,item1,item2)
+		in
+		    infimumItems(c,change, tab1,tab2, items1',items2',
+				 item::items)
+		end
+	end
+
+    and infimumItem(c, item as FIX(l,q1), FIX(_,q2)) =
+	    if q1 = q2
+	    then item
+	    else raise Mismatch(MismatchFix(l,q1,q2))
+      | infimumItem(c, VAL(l,t1), VAL(_,t2)) =
+	(* TODO: No support for type infimum yet *)
+	let
+	    val t1' = Type.realiseCont(#typ c, #typ_rea(#rea c), t1)
+	    val t2' = Type.realiseCont(#typ c, #typ_rea(#rea c), t2)
+	in
+	    (Type.match(t2',t1'); VAL(l,t2')) handle Type.Mismatch _ =>
+	    (Type.match(t1',t2'); VAL(l,t1')) handle Type.Mismatch m =>
+	    raise Mismatch(MismatchVal(l,t1',t2',m))
+	end
+      | infimumItem(c, TYP(p1,k1), TYP(p2,k2)) =
+	(* TODO: No support for kind infimum yet *)
+	let
+	    val p'  = buildPath(c,p1)
+	    val k1' = Type.realiseKindCont(#typ c, #typ_rea(#rea c), k1)
+	    val k2' = Type.realiseKindCont(#typ c, #typ_rea(#rea c), k2)
+	    val k'  =
+		(Type.matchKind(k2',k1'); k2') handle Type.KindMismatch _ =>
+		(Type.matchKind(k1',k2'); k1') handle Type.KindMismatch m =>
+		raise Mismatch(MismatchTyp(Path.toLab p', k1',k2',m))
+	    val t'  = Type.con(p',k')	(* reduces singletons *)
+	in
+	    if Type.isSingKind k1 then ()
+	    else (PathMap.insertDisjoint(#typ_rea(#rea c), p1, t');
+(*DEBUG
+TextIO.print "Inf.infimum: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p1, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)())
+(*DEBUG handle e => raise e *)
+;
+	    if Type.isSingKind k2 then ()
+	    else (PathMap.insertDisjoint(#typ_rea(#rea c), p2, t');
+(*DEBUG
+TextIO.print "Inf.infimum: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)())
+(*DEBUG handle e => raise e *)
+;
+	    TYP(p',k')
+	end
+      | infimumItem(c, MOD(p1,j1), MOD(p2,j2)) =
+	let
+	    val p' = buildPath(c,p1)
+	    val j' = infimum'(instContext(c, InstDot p'), j1,j2)
+		     handle Mismatch m =>
+			raise Mismatch(MismatchMod(Path.toLab p', m))
+	    val m' = mod(p',j')
+	in
+	    if isSing j1 then ()
+	    else (PathMap.insertDisjoint(#mod_rea(#rea c), p1, m');
+(*DEBUG
+TextIO.print "Inf.infimum: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p1, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)())
+(*DEBUG handle e => raise e *)
+;
+	    if isSing j2 then () else
+	    (PathMap.insertDisjoint(#mod_rea(#rea c), p2, m');
+(*DEBUG
+TextIO.print "Inf.infimum: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 80);
+TextIO.print " -> ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
+TextIO.print "\n";
+*)())
+(*DEBUG handle e => raise e *)
+;
+	    MOD(p',j')
+	end
+      | infimumItem(c, INF(p1,k1), INF(p2,k2)) =
+	let
+	    val p' = buildPath(c,p1)
+	    val k' = infimumKind(c,k1,k2) handle KindMismatch m =>
+		     raise Mismatch(MismatchInf(Path.toLab p', m))
+	    val j' = con'(p',k')	(* reduces singletons *)
+	in
+	    if isSingKind k1 then ()
+	    else PathMap.insertDisjoint(#inf_rea(#rea c), p1, j')
+(*DEBUG handle e => raise e *)
+;
+	    if isSingKind k2 then ()
+	    else PathMap.insertDisjoint(#inf_rea(#rea c), p2, j')
+(*DEBUG handle e => raise e *)
+;
+	    INF(p',k')
+	end
+      | infimumItem _ = assert false
+
+    and infimumKind(c,k1,k2) =
+	if Cell.equal(k1,k2) then k1 else
+	case (content k1, content k2)
+	 of (GROUND, GROUND) =>
+		k1
+	  | (SING _, GROUND) =>
+		k1
+	  | (GROUND, SING _) =>
+		k2
+	  | (SING j1, SING j2) =>
+	    ((match(j1,j2); match(j2,j1); k1) handle Mismatch m =>
+	     raise KindMismatch(IncompatibleInf m))
+(*TODO
+	  | (DEP(p1,j1,k12), DEP(p2,j2,k22)) =>
+	    let
+		val (j1',rea1)  = match(j2,j1) handle Mismatch m =>
+				  raise KindMismatch(MismatchKindDom m)
+		val  _          = PathMap.insertDisjoint(#mod_rea rea1,p1,(p2,j1'))
+		val (k22',rea2) = matchKind(realiseKind(rea1,k12), k22)
+				  handle KindMismatch m =>
+				    raise KindMismatch(MismatchKindRan m)
+	    in
+		if Cell.equal(k22,k22')
+		then (k2, rea2)
+		else (arrow'(p2,j2,k22'), rea2)
+	    end
+*)
+	  | _ =>
+		raise KindMismatch(IncompatibleKind(k1,k2))
+
+
+  (* Tie forwarding knots *)
+
+    val _ = modFwd             := mod
+    val _ = applyFwd'          := apply'
+    val _ = selfifyFwd         := selfify
+    val _ = narrowFwd          := narrow
+    val _ = narrowModFwd       := narrowMod
+    val _ = realiseFwd         := realise
+    val _ = realiseInstFwd     := realiseInst
+    val _ = realiseKindFwd     := realiseKind
+    val _ = replaceNarrowedFwd := replaceNarrowed
+    val _ = matchFwd           := match
+    val _ = matchKindFwd       := matchKind
+    val _ = maximiseFwd        := maximise
+    val _ = maximiseExistFwd   := maximiseExist
+    val _ = avoidFwd           := avoid
+end

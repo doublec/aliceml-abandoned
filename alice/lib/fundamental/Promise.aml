@@ -1,0 +1,83 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                        from "Pervasive"
+import __primitive datatype bool type exn type unit from "ToplevelTypes"
+import __primitive structure Ref                    from "Ref"
+import __primitive signature PROMISE                from "PROMISE-sig"
+
+structure Promise : PROMISE =						(**)
+struct
+    __primitive __eqeqtype 'a promise			= "'a ''promise"
+    type t						= promise
+
+    __primitive exception Promise			= "Promise.Promise"
+
+    __primitive val promise : unit -> 'a promise	= "Promise.promise"
+    __primitive val future :  'a promise -> 'a		= "Promise.future"
+    __primitive val fulfill : 'a promise * 'a -> unit	= "Promise.fulfill"
+    __primitive val fail :    'a promise * exn -> unit	= "Promise.fail"
+    __primitive val isFulfilled : 'a promise -> bool	= "Promise.isFulfilled"
+end
+
+(* Non-primitive implementation - was needed under Mozart...
+import __primitive structure Hole from "Hole"
+
+local
+structure Promise : PROMISE =						(**)
+struct
+    open Ref
+
+    type 'a promise	= (bool * 'a) ref
+    type 'a t		= 'a promise
+
+    exception Promise
+
+    fun promise()	= ref (false, Hole.hole())
+    fun future(ref(_,h)) = Hole.future h handle Hole.Hole => h
+
+    fun fulfill(p, x) =
+	let
+	    val  p'   = Hole.hole()
+	    val (b,h) = exchange(p, Hole.future p')
+	in
+	    if b
+	    then (Hole.fill(p',(true,h)); raise Promise)
+	    else (Hole.fill(h,x) handle e => (Hole.fill(p',(false,h)); raise e);
+		  Hole.fill(p',(true,h)))
+	end
+
+    fun fail(p, e) =
+	let
+	    val  p'   = Hole.hole()
+	    val (b,h) = exchange(p, Hole.future p')
+	in
+	    if b
+	    then (Hole.fill(p',(true,h)); raise Promise)
+	    else (Hole.fail(h,e) handle e' => (Hole.fill(p',(false,h)); raise e');
+		  Hole.fill(p',(true,h)))
+	end
+
+    fun isFulfilled(ref(b,h)) = b
+end
+
+    __primitive __eqeqtype 'a promise = "'a ''promise"
+    __primitive functor Cast (structure X : PROMISE signature S) : S = "Cast"
+in
+    structure Promise = Cast (signature S = PROMISE where type promise = promise
+			      structure X = Promise)
+end
+*)

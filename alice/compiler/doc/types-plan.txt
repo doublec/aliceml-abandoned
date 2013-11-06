@@ -1,0 +1,6 @@
+- rename Inf.kind to univ
+- more suitable Type.mismatch
+- annotate paths (problem: introduces mutual recursion between Type and Inf)
+- get rid of 'con somehow
+- clean up VarDec stuff in elaborator
+- move PP stuff from lib/rtt to compiler/frontend-common

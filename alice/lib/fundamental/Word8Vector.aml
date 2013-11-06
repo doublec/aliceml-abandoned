@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive         from "Pervasive"
+import __primitive type int and list from "ToplevelTypes"
+import __primitive structure Word8   from "Word8"
+import functor MkMonoVector          from "MkMonoVector"
+
+structure Word8Vector = MkMonoVector(
+    __primitive eqtype vector = "''Word8Vector.vector"
+    type elem = Word8.word
+
+    __primitive val maxLen: int = "Word8Vector.maxLen"
+    __primitive val fromList: elem list -> vector = "Word8Vector.fromList"
+    __primitive val toList: vector -> elem list = "Word8Vector.toList"
+    __primitive val length: vector -> int = "Word8Vector.length"
+    __primitive val sub: vector * int -> elem = "Word8Vector.sub"
+    __primitive val concat: vector list -> vector = "Word8Vector.concat"
+    __primitive val tabulate: int * (int -> elem) -> vector =
+		    "Word8Vector.tabulate"
+)

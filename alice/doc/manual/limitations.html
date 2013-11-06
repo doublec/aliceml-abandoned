@@ -1,0 +1,76 @@
+<?php include("macros.php3"); ?>
+<?php heading("Limitations", "implementation\nlimitations") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>This page provides an overview of the limitations of the current version of
+the Alice system.</P>
+
+
+<?php section("language", "language") ?>
+
+<DL>
+  <?php if ($platform != "seam") { ?>
+  <DT>Equality</DT>
+  <DD><P>The <TT>=</TT> operator is <A href="futures.html#request">strict</A>.
+      Accordingly, in order to test two futures for equality, both have to
+      be requested. The current implementation will not request futures if
+      they are physically equal.</P>
+  </DD>
+  <?php } ?>
+
+  <DT>Overloaded literals</DT>
+  <DD><P>Overloading is not supported for literal constants. All literals
+      default to their primary type.</P>
+  </DD>
+
+  <DT>Constructor strictness</DT>
+  <DD><P>If a (generative or non-generative) constructor has a
+      <A href="incompatibilities.html#conarity">syntactic arity</A> not
+      equal to&nbsp;1, application of this constructor is strict in the
+      argument (record).</P>
+  </DD>
+
+  <?php if ($platform != "seam") { ?>
+  <DT>Holes</DT>
+  <DD><P>Accessing a <A href="library/hole.html">hole</A> does not raise an
+      exception as it should.  Instead, it blocks until the hole is filled.</P>
+  </DD>
+  <?php } ?>
+
+  <DT>Datatype replication</DT>
+  <DD><P>Datatype replication in signatures (<TT>datatype</TT> <I>t</I>
+      <TT>=</TT> <TT>datatype</TT> <I>u</I>) is not supported yet. Since
+      datatypes are <A href="types.html#datatype">structural</A>, the datatype
+      specification can be copied as a work-around. Datatype replication in
+      structures is supported.</P>
+  </DD>
+
+  <DT>First-class components</DT>
+  <DD><P>The export signature cannot refer to entities bound in imports.</P>
+  </DD>
+</DL>
+
+
+<?php section("library", "library") ?>
+
+<DL>
+  <DT>Incomplete structures</DT>
+  <DD><P>Some of the implemented structures and functors from the <A
+	href="http://www.standardml.org/Basis/">Standard ML Basis Library</A>
+	lack parts of their functionality. These include:</P>
+	<UL>
+	  <LI> <A href="library/real.html"><TT>Real</TT></A> and <A href="library/real.html"><TT>LargeReal</TT></A></LI>
+	  <LI> <A href="library/timer.html"><TT>Timer</TT></A></LI>
+	  <LI> <A href="library/os-file-sys.html"><TT>OS.FileSys</TT></A></LI>
+	  <LI> <A href="library/os-io.html"><TT>OS.IO</TT></A></LI>
+	  <LI> <A href="library/unix.html"><TT>Unix</TT></A></LI>
+	  <LI> <A href="library/stream-io.html"><TT>StreamIO</TT></A></LI>
+	</UL>
+	<P></P>
+  </DD>
+</DL>
+
+
+<?php footing() ?>

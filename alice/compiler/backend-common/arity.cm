@@ -1,0 +1,11 @@
+Group
+
+    structure Arity
+
+is
+
+    ../../bootstrap/sources.cm
+    ../../lib/rtt/label.cm
+
+    ARITY-sig.aml
+    Arity.aml

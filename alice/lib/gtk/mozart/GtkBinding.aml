@@ -1,0 +1,98 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GtkTreeTypes  from "GtkTreeTypes"
+import structure MkTypeManager from "MkTypeManager"
+import structure MkWrapper     from "MkWrapper"
+import structure MkSignature   from "MkSignature"
+import structure Util          from "Util"
+import signature GTK_BINDING   from "GTK_BINDING-sig"
+
+structure GtkBinding :> GTK_BINDING =
+    struct
+	open GtkTreeTypes
+
+	fun filterSpaces tree =
+	    let
+	        (* Gtk offers plenty of signal functions which cannot be used *)
+	        fun supportedFunc (FUNCTION("gtk_signal_connect", _))    = true
+		  | supportedFunc (FUNCTION("gtk_signal_disconnect", _)) = true
+		  | supportedFunc (FUNCTION("gtk_signal_handler_block", _)) =
+		    true
+		  | supportedFunc (FUNCTION("gtk_signal_handler_unblock", _)) =
+		    true
+		  | supportedFunc (FUNCTION("gtk_signal_emit", _))       = true
+		  | supportedFunc (FUNCTION(name, _)) =
+		    if Util.checkPrefix("gtk_signal_connect", name) orelse
+		       Util.checkPrefix("gtk_signal_disconnect", name) orelse
+		       Util.checkPrefix("gtk_signal_handler", name) orelse
+		       Util.checkPrefix("gtk_signal_emit", name) then false
+		    else true
+		  | supportedFunc _ = true
+ 
+		fun canvas (FUNCTION(name, _))  =
+		    Util.checkPrefix("gtk_canvas_", name)
+		  | canvas (ENUM(name, _))      =
+		    Util.checkPrefix("GtkCanvas", name)
+		  | canvas (STRUCTURE(name, _)) =
+		    Util.checkPrefix("_GtkCanvas", name)
+		  | canvas _                    = false
+		    
+		fun gtk (FUNCTION(name, _))  =
+		    Util.checkPrefix("gtk_", name)
+		  | gtk (ENUM(name, _))      =
+		    Util.checkPrefix("Gtk", name)
+		  | gtk (STRUCTURE(name, _)) =
+		    Util.checkPrefix("_Gtk", name)
+		  | gtk _                    = false
+		    
+		fun gdk (FUNCTION(name, _))  =
+		    Util.checkPrefix("gdk_", name)
+		  | gdk (ENUM(name, _))      =
+		    Util.checkPrefix("Gdk", name)
+		  | gdk (STRUCTURE(name, _)) =
+		    Util.checkPrefix("_Gdk", name)
+		  | gdk _                    = false
+		    
+		val (canvasFuncs, tree) = List.partition canvas tree
+		val (gtkFuncs, tree)    = List.partition gtk tree
+		val (gdkFuncs, _)       = List.partition gdk tree
+	    in
+		[("gdk", gdkFuncs),
+		 ("gtk", List.filter supportedFunc gtkFuncs),
+		 ("gtk_canvas", canvasFuncs)]
+	    end
+
+	fun createFuncs tree  =
+	    let
+		structure TypeManager = MkTypeManager(val types = tree)
+	    in
+		(List.app
+		 (fn (space, funcs) =>
+		  let
+		      structure Wrapper =
+			  MkWrapper(structure TypeManager = TypeManager
+				    val space = space
+				    val funcs = funcs)
+		      structure Signature =
+			  MkSignature(structure TypeManager = TypeManager
+				      val space = space
+				      val funcs = funcs)
+		  in
+		      (Wrapper.create ();
+		       Signature.create ())
+		  end) (filterSpaces tree))
+	    end
+
+	fun createFields tree = ()
+    end

@@ -1,0 +1,162 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%     PACKAGES & IMPORTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[T1]{fontenc}
+
+\input{seminar.bug}             % Official bugs corrections
+\input{seminar.bg2}             % Unofficial bugs corrections
+\usepackage{semcolor}           % Seminar colored slides
+\usepackage{slidesec}           % Seminar sections and list of slides
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\usepackage{pifont}             % Ding symbols (mainly for lists)
+\usepackage{pst-all}
+\usepackage{hollow}
+\usepackage{url}                % Convenient URL typesetting
+\usepackage{alltt}
+
+% Hyperlinks for PDF versions
+\usepackage{hyperref}
+\usepackage{thumbpdf}           % Thumbnails for PDF versions
+%\usepackage{ulem}
+
+\usepackage{amssymb,stmaryrd,amsmath}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%       COULEURS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\couleursDefaut{
+\definecolor{lightblue}{rgb}{0.75,0.75,0.95}
+\definecolor{marine}{rgb}{0.50,0.50,0.95}
+\definecolor{cyan}{rgb}{0.1,0.77,1.0}
+\definecolor{color-prefixes}{rgb}{0.6,0.95,0.95}
+\definecolor{white}{rgb}{1,1,1}
+\definecolor{orange}{rgb}{0.95,0.55,0}
+\definecolor{darkorange}{rgb}{0.99,0.55,0.55}
+\definecolor{darkgreen}{rgb}{0.0,0.55,0.0}
+}
+
+\couleursDefaut
+
+\def\kwd#1{\textcolor{darkgreen}{#1}}
+\def\comt#1{\textcolor{gray}{\textit{#1}}}
+\def\cdi#1{\textcolor{red}{\textbf{#1}}}
+\def\cldots{\psframebox[fillstyle=solid,fillcolor=lightgray,linestyle=none,framearc=0.5]{\ldots}}
+
+\def\alab#1#2{\psframebox[framearc=0.5, linestyle=none, fillstyle=solid, fillcolor=#2]{#1}}
+\def\glab#1{\alab{#1}{green}}
+\def\ylab#1{\alab{#1}{yellow}}
+\def\blab#1{\alab{#1}{lightblue}}
+\def\Blab#1{\alab{#1}{marine}}
+\def\olab#1{\alab{#1}{orange}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%    MISE EN PAGE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\slidesmag{4}     % Set magnification of slide
+\slideframe{none} % No default frame
+\centerslidesfalse%\centerslidestrue
+
+\setlength{\slidewidth}{270mm}
+\setlength{\slideheight}{200mm}
+
+%\def\SeminarPaperWidth{270mm}
+%\def\SeminarPaperHeight{190mm}
+
+%
+% Pour décaler les transparents, jouer sur ces valeurs :
+%
+\renewcommand{\slidebottommargin}{10mm}
+\renewcommand{\sliderightmargin}{0mm}
+\renewcommand{\slidetopmargin}{0mm}
+\renewcommand{\slideleftmargin}{20mm}
+
+
+
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead{}
+\fancyfoot[L]{\tiny \vskip -2mm \hbox{\thepage}}
+\fancyfoot[C]{}
+\fancyfoot[R]{}
+
+
+\makeatletter
+
+% Workaround to use hyperref and landscape slides
+% Remove if you are using portrait slides
+\def\special@paper{297mm,210mm}
+
+\makeatother
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%     MACROS UTILES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% TITLE
+\newcommand{\Title}[2][lightblue]{%
+\centerline{\noindent\psshadowbox[fillstyle=solid,fillcolor=#1]
+{\hspace{3mm}\large{\textsf{#2}}\hspace{3mm}}}}
+
+% Boite
+\newcommand{\boite}[2][yellow]{%
+\psframebox[fillstyle=solid,fillcolor=#1,linestyle=none,linecolor=black]{#2}}
+
+\newcommand{\pboite}[2][lightblue]{\boite[#1]{#2}}
+
+% "dinglist" environment
+% Redefinition of it to be able to use colored symbols
+\renewenvironment{dinglist}[2][black]
+{\begin{list}{\ding{#2}}{}}{\end{list}}
+
+% Symbol definitions for these lists
+% viewfontmftable zd
+%
+% 52 : check   86 : étoile  228 : flèche
+%
+\newcommand{\dingA}{43}
+\newcommand{\dingB}{52}
+\newcommand{\dingC}{228} % 224
+\newcommand{\dingD}{219}
+\newcommand{\dingE}{224}
+\newcommand{\dingF}{86}
+
+
+%
+% Pour barrer du texte
+%
+
+\newcommand{\psnot}[2][1em]{%
+\hbox to 0em{%
+\psset{linecolor=red}%
+\qline(0,-0.2)(#1,1em)%
+\qline(0,1em)(#1,-0.2)}%
+#2
+}
+
+\newcommand{\psyes}[1]{%
+\hbox to 0em{%
+\psset{linestyle=none}%
+\qline(-0.2,-0.2)(1,1em)%
+\qline(-0.2,1em)(1,-0.2)}%
+#1
+}
+
+
+\def\hbar{\begin{center}\rule{10mm}{0.5pt}\end{center}}
+
+
+%%
+%%   Symboles
+%%
+
+\def\ttv{\begin{math}\alpha\end{math}}
+\def\tar{\begin{math}\rightarrow\end{math}}
+\def\ttimes{\begin{math}\times\end{math}}
+
+

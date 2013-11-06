@@ -1,0 +1,135 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure types from "types"
+import structure gtk from "gtk"
+
+signature CORE =
+sig 
+    type 'a pointer = 'a types.pointer
+
+    (* event represents a GdkEvent *)
+    datatype 'a event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:'a pointer, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:'a pointer, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:'a pointer, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: 'a pointer, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:'a pointer, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: 'a pointer, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:'a pointer, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: 'a pointer, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:'a pointer, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: 'a pointer, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:'a pointer, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: 'a pointer, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:'a pointer, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:'a pointer, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:'a pointer, send:bool, subwindow:'a pointer, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:'a pointer, send:bool, subwindow:'a pointer, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:'a pointer, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:'a pointer, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:'a pointer, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:'a pointer, send:bool}
+      | EVENT_SCROLL of
+	{window:'a pointer, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:'a pointer,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of 'a pointer
+
+    (* arg is used for: 
+        - arguments coming from the event stream and passed to 
+          an alice event callback function
+        - arguments passed to a Gtk function that takes a variable number of
+	  arguments *)
+    datatype 'a arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of 'a pointer
+      | LIST of 'a pointer list
+      | EVENT of 'a event
+
+
+    val isNull : 'a pointer -> bool
+    val NULL : 'a pointer
+    val TRUE : int
+    val FALSE : int
+
+    type ('a,'b) callBackFunction = 'a pointer * 'b arg list -> unit
+    val signalConnect      : 'a pointer * string * ('b,'c) callBackFunction -> int
+    val signalConnectAfter : 'a pointer * string * ('b,'c) callBackFunction -> int
+    val signalDisconnect   : 'a pointer * int -> unit
+
+(**)val printObject : 'a pointer -> unit
+(**)val forceGC : unit -> unit
+
+(**)val addObject : 'a pointer -> 'a pointer
+(**)val init : unit -> unit
+
+
+    (*val itemCreate : gtk.GnomeCanvasGroup pointer * int * (string * 'a arg) list -> gtk.GnomeCanvasItem pointer
+    val makePoints : int list -> gtk.GnomeCanvasPoints pointer*)
+
+    val itemCreate : 'a pointer * int * (string * 'b arg) list -> 'c pointer
+    val makePoints : int list -> 'a pointer
+
+end 

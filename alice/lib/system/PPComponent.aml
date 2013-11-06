@@ -1,0 +1,397 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Mostly identical to lib/rtt/PPInf - keep in sync! *)
+
+
+import structure UnsafeValue   from "../system/UnsafeValue"
+import structure Reflect       from "../system/Reflect"
+
+import structure Name          from "../rtt/Name"
+import structure Label         from "../rtt/Label"
+import structure LabelSet      from "../rtt/LabelSet"
+import structure Path          from "../rtt/Path"
+import structure Type          from "../rtt/Type"
+import structure Inf           from "../rtt/Inf"
+import structure Fixity        from "../rtt/Fixity"
+import structure PervasiveType from "../rtt/PervasiveType"
+
+import structure PrettyPrint   from "../utility/PrettyPrint"
+import structure PPMisc        from "../rtt/PPMisc"
+import structure PPPath        from "../rtt/PPPath"
+import structure PPType        from "../rtt/PPType"
+import structure PPInf         from "../rtt/PPInf"
+import structure PPValue       from "../system/PPValue"
+import signature PP_COMPONENT  from "PP_COMPONENT-sig"
+
+structure PPComponent :> PP_COMPONENT =
+struct
+    type doc    = PrettyPrint.doc
+    type module = Reflect.module
+    type inf    = Inf.t
+
+    open PrettyPrint
+    open PPMisc
+    infixr ^^ ^/^
+
+
+  (* Deconstruction helpers *)
+
+    val dummyFuture : Reflect.value = Promise.future(Promise.promise())
+
+    fun unlambda  j        = unlambda'(j,[])
+    and unlambda'(j,binds) =
+	case Inf.inspect j
+	 of Inf.Lambda(p,j1,j2)	=> unlambda'(j2, (p,j1)::binds)
+	  | _			=> (List.rev binds, j)
+
+    fun unarrowKind  k        = unarrowKind'(k,[])
+    and unarrowKind'(k,binds) =
+	case Inf.inspectKind k
+	 of Inf.DepKind(p,j,k')	=> unarrowKind'(k', (p,j)::binds)
+	  | _			=> (List.rev binds, k)
+
+    fun unlambdaTyp  t     = unlambdaTyp'(t,[])
+    and unlambdaTyp'(t,vs) =
+	case Type.inspect t
+	 of Type.Lambda(v,t')	=> unlambdaTyp'(t',v::vs)
+	  | Type.Mu t'		=> unlambdaTyp'(t',vs)
+	  | _			=> (List.rev vs, t)
+
+    fun makeEq(b,k)            = if b then Type.eqKind k else k
+    fun unarrowTKind  k        = unarrowTKind'(k,[],false)
+    and unarrowTKind'(k,ks,eq) =
+	case Type.inspectKind k
+	 of Type.ArrowKind(k1,k2) => unarrowTKind'(k2, makeEq(eq,k1)::ks, eq)
+	  | Type.EqKind k1        => unarrowTKind'(k1, ks, true)
+	  | _                     => (List.rev ks, makeEq(eq,k))
+
+    fun unquantifyTyp  t     = unquantifyTyp'(t,[])
+    and unquantifyTyp'(t,vs) =
+	case Type.inspect t
+	 of Type.All(v,t')	=> unquantifyTyp'(t',v::vs)
+	  | _			=> (List.rev vs, t)
+
+    fun unargTyp t =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if not(Type.equal(t1, PervasiveType.typ_strict)) then SOME t else
+	    (case Type.inspect t2
+	     of Type.Prod r =>
+		if Type.isEmptyRow r
+		then NONE
+		else SOME t2
+	      | _ => SOME t2
+	    )
+	  | _ => SOME t
+
+
+    fun typToLabs(s,t) =
+	case Type.inspect t
+	 of Type.Mu t'		=> typToLabs(s,t')
+	  | Type.Lambda(v,t')	=> typToLabs(s,t')
+	  | Type.Sum r		=> rowToLabs(s,r)
+	  | _			=> ()
+    and rowToLabs(s,r) =
+	case Type.inspectRow r
+	 of (Type.EmptyRow | Type.UnknownRow _)	=> ()
+	  |  Type.FieldRow(l,t,r')		=> (LabelSet.insert(s,l);
+						    rowToLabs(s,r'))
+
+  (* Simple objects *)
+
+    open Fixity
+
+    fun ppLab l			= text(Label.toString l)
+
+    fun ppFix NONFIX		= text "nonfix"
+      | ppFix(PREFIX n)		= text "prefix" ^/^ text(Int.toString n)
+      | ppFix(POSTFIX n)	= text "postfix"^/^ text(Int.toString n)
+      | ppFix(INFIX(n,LEFT))	= text "infix"  ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,RIGHT))	= text "infixr" ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,NEITHER))	= text "infixn" ^/^ text(Int.toString n)
+
+
+  (* Variables *)
+
+    fun parenPrec p (p',doc) =
+	if p > p'
+	then paren doc
+	else doc
+
+    fun ppVarAnnot(prec, doc0, k) =
+	case Type.inspectKind k
+	 of (Type.StarKind | Type.ExtKind) =>
+		(doc0, doc0)
+	  | Type.EqKind k' =>
+		ppVarAnnot(prec, doc0, k')
+	  | Type.ArrowKind _ =>
+	    let
+		val doc1 = PPType.ppKind k
+		val doc  = abox(below(nest(doc0 ^^ text " :" ^/^ doc1)))
+	    in
+		(doc0, parenPrec prec (0,doc))
+	    end
+	  | Type.SingKind t =>
+	    let
+		val doc1 = PPType.ppTyp t
+		val doc  = abox(below(nest(doc0 ^^ text " =" ^/^ doc1)))
+	    in
+		(doc1, parenPrec prec (0,doc))
+	    end
+
+    fun ppVar prec (n,a) =
+	let
+	    val doc0 = PPType.ppVar(n,a)
+	in
+	    ppVarAnnot(prec, doc0, Type.kindVar a)
+	end
+
+    fun ppVars vs =
+	let
+	    val m     = Type.Map.map()
+	    val prec  = case vs of ([] | [_]) => 1 | _ => 0
+	    val ddocs = List.mapi (ppVar prec) vs
+	    val doc   = ppCommaList #2 ddocs
+	in
+	    ListPair.app (fn(v, (doc,_)) =>
+			  Type.Map.insert(m, Type.canonical(Type.var v), doc))
+			 (vs, ddocs);
+	    (if prec = 1 then doc else paren doc, m)
+	end
+
+
+  (* Items *)
+
+    and ppItem (ls,str) (item,doc) =
+	case Inf.inspectItem item
+	 of Inf.FixItem(l,f) =>
+	    let
+	    in
+		LabelSet.removeAll ls;
+		doc ^/^
+		fbox(nest(
+		    ppFix f ^^ text " " ^^
+		    ppLab l
+		))
+	    end
+	  | Inf.ValItem(l,t) =>
+	    let
+		val s = Label.toString l
+	    in
+		if String.sub(s,0) = #"'" then
+		    let
+			val  l'     = Label.fromString(String.extract(s,1,NONE))
+			val (vs,t') = unquantifyTyp t
+			val (t1,t2) = Type.asArrow(#2(Type.asApply t'))
+			val  to     = unargTyp t1
+			val (_,m)   = ppVars vs
+			val    k    = List.length vs
+			val  isExn  = Type.equal(t2, PervasiveType.typ_exn)
+			val    n    = if Future.isFuture str
+				      then Name.InId
+				      else UnsafeValue.conName
+						(UnsafeValue.projPoly(str,l))
+		    in
+			LabelSet.removeAll ls;
+			LabelSet.insert(ls,l');
+			doc ^/^
+			fbox(nest(
+			    text(if isExn then "exception "
+					  else "constructor ") ^^
+			    ppLab l' ^/^
+			    (if n = Label.toName l' then
+				(case to
+				 of NONE     => empty
+				  | SOME t1' =>
+				    text "of" ^/^
+				    PPType.ppTyp' ([],k,m) t1'
+				) ^/^
+				(if isExn then empty else
+				    text ":" ^/^
+				    PPType.ppTyp' ([],k,m) t2
+				)
+			    else
+				text "=" ^/^
+				(if Future.isFuture str
+				 then PPValue.ppVal t dummyFuture
+				 else text(Name.toString n))
+			    )
+			))
+		    end
+		else if LabelSet.member(ls,l) then
+		    doc
+		else
+		    (LabelSet.removeAll ls;
+		    doc ^/^
+		    fbox(nest(
+			text "val " ^^
+			ppLab l ^/^
+			text ":" ^/^
+			PPType.ppTyp' ([],0,Type.Map.map()) t ^/^
+			text "=" ^/^
+			PPValue.ppVal t (if Future.isFuture str
+					 then dummyFuture
+					 else UnsafeValue.projPoly(str,l))
+		    )))
+	    end
+	  | Inf.TypItem(p,k) =>
+	    let
+		val (ks,k') = unarrowTKind k
+		val  vs     = List.map
+				(fn k => Type.newVar(k, Type.Unconstrained)) ks
+		val (vs',to,isDatatype) =
+				if not(Type.isSingKind k)
+				then (vs,NONE,false) else
+				let
+				    val t = Type.asSingKind k
+				    val t = if not(Type.isAbbrev t) then t else
+					    let val (t1,t2) = Type.asAbbrev t in
+						if Type.isCon t1 andalso
+						   Path.equal(Type.asCon t1, p)
+						then t2
+						else t
+					    end
+				in
+				    if Type.isAbbrev t
+				    then (vs, SOME t, false) else
+				    let
+					val (vs2,t') = unlambdaTyp t
+				    in
+					(vs@vs2, SOME t', Type.isMu t)
+				    end
+				end
+		val (doc1,m)  = ppVars vs'
+	    in
+		if isDatatype
+		then typToLabs(ls, Option.valOf to)
+		else LabelSet.removeAll ls;
+		doc ^/^
+		fbox(nest(
+		    text(case Type.inspectKind k'
+			 of Type.StarKind    => "type "
+			  | Type.ExtKind     => "exttype "
+			  | Type.EqKind _    => "eqtype "
+			  | Type.SingKind t  => if isDatatype
+						then "datatype "
+						else "type "
+			  | Type.ArrowKind _ => assert false
+		    ) ^^
+		    hbox(doc1 ^/^ text "") ^^
+		    ppLab(Path.toLab p) ^/^
+(*DEBUG
+		    PPPath.ppPath p ^/^
+*)
+		    (case to
+		     of NONE   => empty
+		      | SOME t =>
+			text "=" ^/^
+			PPType.ppTyp' ([], List.length vs', m) t
+		    )
+		))
+	    end
+	  | Inf.ModItem(p,j) =>
+	    let
+		val (j',po)   = if not(Inf.isSing j) then (j,NONE) else
+				let
+				    val (p,j') = Inf.asMod(Inf.asSing j)
+				in
+				    (j', SOME p)
+				end
+	    in
+		LabelSet.removeAll ls;
+		doc ^/^
+		fbox(nest(
+		    text(if Inf.isArrow j' then "functor " else "structure ") ^^
+		    ppLab(Path.toLab p) ^/^
+(*DEBUG
+		    PPPath.ppPath p ^/^
+*)
+		    text ":" ^/^
+		    PPInf.ppInf j' ^/^
+		    (case po
+		     of NONE   => empty
+		      | SOME p =>
+			text "=" ^/^
+			PPPath.ppPath p
+		    )
+		))
+	    end
+	  | Inf.InfItem(p,k) =>
+	    let
+		val (bds,k')  = unarrowKind k
+		val (bds',jo) = if not(Inf.isSingKind k') then (bds,NONE) else
+				let
+				    val j = Inf.asSingKind k'
+				    val j = if not(Inf.isAbbrev j) then j else
+					    let val (j1,j2) = Inf.asAbbrev j in
+						if Inf.isCon j1 andalso
+						   Path.equal(Inf.asCon j1, p)
+						then j2
+						else j
+					    end
+				in
+				    if Inf.isAbbrev j then (bds, SOME j) else
+				    let
+					val (bds2,j') = unlambda j
+				    in
+					(bds@bds2, SOME j')
+				    end
+				end
+	    in
+		LabelSet.removeAll ls;
+		doc ^/^
+		fbox(nest(
+		    text "signature " ^^
+		    ppLab(Path.toLab p) ^/^
+(*DEBUG
+		    PPPath.ppPath p ^/^
+*)
+		    abox(
+			List.foldr ppBind empty bds'
+		    ) ^/^
+		    (case jo
+		     of NONE   => empty
+		      | SOME j =>
+			text "=" ^/^
+			PPInf.ppInf j
+		    )
+		))
+	    end
+	  | Inf.HiddenItem item' =>
+		doc
+(*DEBUG
+		text "? " ^^ ppItem (ls,str) (item', doc)
+*)
+
+    and ppBind((p,j), doc) =
+	text "(" ^^
+	fbox(below(nest(
+	    PPPath.ppPath p ^^ text " :" ^/^
+	    PPInf.ppInf j
+	))) ^^
+	text ")" ^/^
+	doc
+
+
+  (* Components *)
+
+    fun ppComp(m,j) =
+	let
+	    val items = Inf.items(Inf.asSig j)
+	in
+	    vbox(below(
+		List.foldr (ppItem(LabelSet.set(),m)) empty items
+	    ))
+	end
+	handle Inf.Interface => PPInf.ppInf j
+end

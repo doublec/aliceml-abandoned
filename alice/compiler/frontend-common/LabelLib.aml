@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label     from "../../lib/rtt/Label"
+import signature LABEL_LIB from "LABEL_LIB-sig"
+
+structure LabelLib : LABEL_LIB =
+struct
+    fun vallab s	= Label.fromString s
+    fun typlab s	= Label.fromString s
+    fun modlab s	= Label.fromString s
+
+  (* Module and types *)
+
+    val modlab_label	= modlab "Label"
+    structure Label	= Label					(* verify *)
+
+    val typlab_lab	= typlab "lab"
+    type lab		= Label.lab				(* verify *)
+
+  (* Operations *)
+
+    val lab_fromString	= vallab "fromString"
+    val _		= Label.fromString : string -> lab	(* verify *)
+end

@@ -1,0 +1,235 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * Translation of sharing constraints.
+ *
+ * The algorithm takes a list of specs and a list of longids inducing sharing
+ * upon the specs and works as follows:
+ * 1. Build annotated specs, that pair each longid with the spec it refers to.
+ * 2. Look for the first spec now annotated with a longid, take this longid as
+ *    the original object.
+ * 3. Transform each remaining annotated spec to express the induced sharing
+ *    equivalence. For a type or signature spec this is done by replacing it
+ *    with an appropriate manifest spec (blindly overwriting the spec - there is
+ *    no check for either rigidness or kind consistency). For a structures its
+ *    signature is intersected with an appropriate specialisation. Note that
+ *    even type sharing constraints with longids effect only structure specs.
+ *)
+
+import structure Crash            from "../infrastructure/Crash"
+import structure Source           from "../infrastructure/Source"
+import structure Stamp            from "../common/Stamp"
+import structure Label            from "../../lib/rtt/Label"
+import structure AbstractGrammar  from "../frontend-common/AbstractGrammar"
+import structure AbstractionError from "AbstractionError"
+import signature SHARING          from "SHARING-sig"
+
+
+structure Sharing :> SHARING =
+struct
+
+    open AbstractGrammar
+
+    nonfix mod
+
+  (* Error handling *)
+
+    structure E = AbstractionError
+
+    fun error Err (ShortId(i,id))         = E.error(i, Err id)
+      | error Err (LongId(_,modlongid,_)) = error E.SharingExternalStr modlongid
+
+
+  (* Classified longids *)
+
+    datatype classified_longid =
+	  Typ of typlongid
+	| Inf of inflongid
+	| Mod of modlongid
+
+
+  (* Find ids in a list of longids *)
+
+    fun isRootedAt( ( Typ(ShortId(_, Id(_,stamp1,_)))
+		    | Inf(ShortId(_, Id(_,stamp1,_)))
+		    | Mod(ShortId(_, Id(_,stamp1,_))) ), stamp2) =
+	stamp1 = stamp2
+      | isRootedAt( ( Typ(LongId(_, modlongid, _))
+		    | Inf(LongId(_, modlongid, _))
+		    | Mod(LongId(_, modlongid, _)) ), stamp2) =
+        isRootedAt(Mod modlongid, stamp2)
+
+    fun findId(stamp, [], clongids') = NONE
+      | findId(stamp, clongid::clongids, clongids') =
+	if isRootedAt(clongid, stamp)
+	then SOME(clongid, clongids' @ clongids)
+	else findId(stamp, clongids, clongid::clongids')
+
+
+  (* Annotated specifications *)
+
+    datatype annotated_spec =
+	  Plain     of spec
+	| Annotated of spec * classified_longid
+	| Recursive of Source.region * annotated_spec list
+	(* UNFINISHED: what about ExtSpec? *)
+
+
+    fun cons1st(x, (xs,y)) = (x::xs, y)
+
+
+    fun annotate( spec as ( TypSpec(_, Id(_,stamp,_), _)
+			  | ModSpec(_, Id(_,stamp,_), _)
+			  | InfSpec(_, Id(_,stamp,_), _) ), clongids) =
+	(case findId(stamp, clongids, [])
+	   of SOME(clongid,clongids') => ( Annotated(spec,clongid), clongids' )
+	    | NONE                    => ( Plain(spec), clongids )
+	)
+      | annotate(RecSpec(i, specs), clongids) =
+	let
+	    val (specs',clongids') = annotateList(Vector.toList specs, clongids)
+	in
+	    ( Recursive(i, specs'), clongids' )
+	end
+      | annotate(spec, clongids) =
+	    ( Plain(spec), clongids )
+
+    and annotateList(    [],      clongids) = ([], clongids)
+      | annotateList(spec::specs, clongids) =
+	let val (spec',clongids') = annotate(spec, clongids) in
+	    cons1st(spec', annotateList(specs, clongids'))
+	end
+
+
+  (* Convert annotated spec to spec with where constraints *)
+
+    fun singleton(inf, modlongid) =
+	let
+	    val i   = Source.span(infoInf inf, infoLongid modlongid)
+	    val mod = AnnMod(i, VarMod(i, modlongid), inf)
+	in
+	    SingInf(i, mod)
+	end
+
+
+    fun buildSig(inf1, i, modlongid, spec) =
+	let
+	    val inf2  = buildSig'(modlongid, SigInf(infoSpec spec, #[spec]))
+	in
+	    InterInf(Source.span(infoInf inf1, i), inf1, inf2)
+	end
+
+    and buildSig'(ShortId(i, modid), inf) =
+	    inf
+      | buildSig'(LongId(_, modlongid, Lab(i,a)), inf) =
+	    SigInf(i, #[ModSpec(i, Id(i, Stamp.stamp(), Label.toName a), inf)])
+
+
+    fun constrain(inf1, Typ(LongId(i, modlongid', Lab(i1,a))), Typ typlongid) =
+	let
+	    val typid = Id(i1, Stamp.stamp(), Label.toName a)
+	    val typ   = ConTyp(infoLongid typlongid, typlongid)
+	    val spec  = TypSpec(i1, typid, typ)
+	in
+	    buildSig(inf1, i, modlongid', spec)
+	end
+      | constrain(inf1, Inf(LongId(i, modlongid', Lab(i1,a))), Inf inflongid) =
+	let
+	    val infid = Id(i1, Stamp.stamp(), Label.toName a)
+	    val inf   = ConInf(infoLongid inflongid, inflongid)
+	    val spec  = InfSpec(i1, infid, inf)
+	in
+	    buildSig(inf1, i, modlongid', spec)
+	end
+      | constrain(inf1, Mod(LongId(i, modlongid', Lab(i1,a))), Mod modlongid) =
+	let
+	    val i2    = infoLongid modlongid
+	    val modid = Id(i1, Stamp.stamp(), Label.toName a)
+	    val inf   = SingInf(i2, VarMod(i2, modlongid))
+	    val spec  = ModSpec(i1, modid, inf)
+	in
+	    buildSig(inf1, i, modlongid', spec)
+	end
+      | constrain(inf1, clongid', clongid) =
+	    raise Crash.Crash "Sharing.constrain"
+
+
+    (* UNFINISHED: no error checks for non-qualified types and interfaces *)
+
+    fun withWhere(TypSpec(i, typid, typ), _, Typ typlongid) =
+	    TypSpec(i, typid, ConTyp(infoLongid typlongid, typlongid))
+      | withWhere(InfSpec(i, infid, inf), _, Inf inflongid) =
+	    InfSpec(i, infid, ConInf(infoLongid inflongid, inflongid))
+      | withWhere(ModSpec(i, modid, inf), Mod(ShortId _), Mod modlongid) =
+	    ModSpec(i, modid, singleton(inf, modlongid))
+      | withWhere(ModSpec(i, modid, inf), clongid', clongid) =
+	    ModSpec(i, modid, constrain(inf, clongid', clongid))
+      | withWhere _ = raise Crash.Crash "Sharing.withWhere"
+
+
+  (* Map where constraints over list of annotated specs *)
+
+    (* find 1st annotation *)
+    fun mapWhere [] = raise Crash.Crash "Sharing.mapWhere"
+      | mapWhere(Plain(spec)::specs') =
+	    spec :: mapWhere specs'
+      | mapWhere(Annotated(spec, clongid)::specs') =
+	    spec :: mapWhere''(specs', clongid)
+      | mapWhere(Recursive(i, specs'')::specs') =
+	(case mapWhere' specs''
+	   of (specs, NONE) =>
+		RecSpec(i, Vector.fromList specs) :: mapWhere specs'
+	    | (specs, SOME clongid) =>
+		RecSpec(i, Vector.fromList specs) :: mapWhere''(specs', clongid)
+	)
+
+    (* find 1st annotation in nested lists *)
+    and mapWhere' [] = raise Crash.Crash "Sharing.mapWhere'"
+      | mapWhere'(Plain(spec)::specs') =
+	    cons1st(spec, mapWhere' specs')
+      | mapWhere'(Annotated(spec, clongid)::specs') =
+	    ( spec :: mapWhere''(specs', clongid), SOME clongid )
+      | mapWhere'(Recursive(i, specs'')::specs') =
+	(case mapWhere' specs''
+	   of (specs, NONE) =>
+		cons1st(RecSpec(i, Vector.fromList specs), mapWhere' specs')
+	    | (specs, some as SOME clongid) =>
+		( RecSpec(i, Vector.fromList specs)
+		      :: mapWhere''(specs', clongid), some )
+	)
+
+    (* transform remaining annotations *)
+    and mapWhere''([], clongid) = []
+      | mapWhere''(Plain(spec)::specs', clongid) =
+	    spec :: mapWhere''(specs', clongid)
+      | mapWhere''(Annotated(spec, clongid')::specs', clongid) =
+	    withWhere(spec, clongid', clongid) :: mapWhere''(specs', clongid)
+      | mapWhere''(Recursive(i, specs'')::specs', clongid) =
+	    RecSpec(i, Vector.fromList(mapWhere''(specs'', clongid)))
+		:: mapWhere''(specs', clongid)
+
+
+  (* Sharing *)
+
+    fun share(specs, clongids) =
+	case annotateList(specs, clongids)
+	  of (specs',              [] ) => mapWhere specs'
+	   | (specs', Typ typlongid::_) => error E.SharingExternalTy typlongid
+	   | (specs', Inf inflongid::_) => error E.SharingExternalSig inflongid
+	   | (specs', Mod modlongid::_) => error E.SharingExternalStr modlongid
+
+    fun shareTyp(specs, typlongids) = share(specs, List.map Typ typlongids)
+    fun shareSig(specs, inflongids) = share(specs, List.map Inf inflongids)
+    fun shareStr(specs, modlongids) = share(specs, List.map Mod modlongids)
+
+end

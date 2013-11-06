@@ -1,0 +1,77 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO              from "../../lib/system/TextIO"
+import structure Url                 from "../../lib/system/Url"
+import structure ComponentManager    from "../../lib/system/ComponentManager"
+import structure Source              from "../infrastructure/Source"
+import structure MkSwitches          from "../infrastructure/MkSwitches"
+import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
+import structure MkFrontendSML       from "../frontend-sml/MkFrontendSML"
+import structure MkBackendCommon     from "../backend-common/MkBackendCommon"
+import structure MkBackendDotNet     from "../backend-dotnet/MkBackendDotNet"
+import structure Error               from "../infrastructure/Error"
+import structure MkCompiler          from "MkCompiler"
+import structure MkRecursiveCompiler
+       structure InfLoader
+       structure ModLoader
+       structure ImportLoader        from "MkRecursiveCompiler"
+
+structure RecursiveCompiler =
+    let
+	structure Switches = MkSwitches()
+
+	val acquireSigRef: InfLoader.t ref = ref (fn _ => assert false)
+	val acquireModRef: ModLoader.t ref = ref (fn _ => assert false)
+	val acquireImportsRef: ImportLoader.t ref = ref (fn _ => assert false)
+
+	fun loadSig (desc, url) = !acquireSigRef (desc, url)
+	fun loadMod (desc, url) = !acquireModRef (desc, url)
+	fun loadImports (desc, url) = !acquireImportsRef (desc, url)
+
+	structure FrontendSML =
+	    MkFrontendSML(val loadSig = loadSig
+			  structure Switches = Switches)
+
+	structure FrontendCommon =
+	    MkFrontendCommon(val loadSig = loadSig
+			     val loadMod = loadMod
+			     val loadImports = loadImports
+			     structure Switches = Switches)
+
+	structure BackendDotNet =
+	    MkBackendDotNet(structure Switches = Switches)
+
+	structure BackendCommon =
+	    MkBackendCommon(val isCross = BackendDotNet.isCross
+			    val loadMod = loadMod
+			    structure Switches = Switches)
+
+	structure Compiler =
+	    MkCompiler(structure Switches         = Switches
+		       structure FrontendSpecific = FrontendSML
+		       structure FrontendCommon   = FrontendCommon
+		       structure BackendCommon    = BackendCommon
+		       structure BackendSpecific  = BackendDotNet)
+
+	structure RecursiveCompiler =
+	    MkRecursiveCompiler(structure ComponentManager = ComponentManager
+				structure Compiler = Compiler
+				val extension = "dll")
+
+	val _ = acquireSigRef := RecursiveCompiler.acquireSig
+	val _ = acquireModRef := RecursiveCompiler.acquireMod
+	val _ = acquireImportsRef := RecursiveCompiler.acquireImports
+    in
+	RecursiveCompiler
+    end

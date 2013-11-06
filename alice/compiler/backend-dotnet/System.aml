@@ -1,0 +1,29 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure IL
+from "IL"
+
+structure System =
+    struct
+	val Object = #["System", "Object"]
+	val Int32 = #["System", "Int32"]
+	val Int32Ty = IL.ClassTy Int32
+	val Char = #["System", "Char"]
+	val CharTy = IL.ClassTy Char
+	val String = #["System", "String"]
+	val Double = #["System", "Double"]
+	val DoubleTy = IL.ClassTy Double
+	val Guid = #["System", "Guid"]
+	val GuidTy = IL.ValueClassTy Guid
+    end

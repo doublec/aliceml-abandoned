@@ -1,0 +1,30 @@
+Group is
+
+    ../../lib/utility/sources.cm
+    ../../lib/rtt/type.cm
+    ../../lib/rtt/interface.cm
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+    ../backend-common/flat-grammar.cm
+    ../backend-common/intermediate-aux.cm
+    ../backend-common/arity.cm
+    ../../bootstrap/value.cm
+
+    abstract-code-grammar.cm
+
+    PRIM_PICKLE-sig.aml
+    PrimPickle.aml
+    OUTPUT_PICKLE-sig.aml
+    OutputPickle.aml
+    ENVIRONMENT-sig.aml
+    MkEnvironment.aml
+    LIVENESS-sig.aml
+    MkLiveness.aml
+    MINIMIZE-sig.aml
+    MkMinimize.aml
+    MkCodeGenContext.aml
+    CODE_GEN_PHASE-sig.aml
+    MkCodeGenPhase.aml
+    MkBackendSeamCross.aml
+    WORD8_BUFFER-sig.aml
+    Word8Buffer.aml

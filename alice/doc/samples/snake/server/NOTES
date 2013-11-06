@@ -1,0 +1,5 @@
+rework main loop logic.  must send at least one change diff BEFORE the first movement in each level!
+evaluate Highscore during the compilation process!
+fix numerous TODOS / FIXMEs
+
+do not move snakes which are half in gate

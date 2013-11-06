@@ -1,0 +1,48 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2004
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Gdk       from "x-alice:/lib/gtk/Gdk"
+import structure Gtk       from "x-alice:/lib/gtk/Gtk"
+
+local
+    val titles = ["Column1", "Column2"]
+    val row1   = ["Apple", "Orange"]
+    val row2   = ["Car", "Truck"]
+    val row3   = ["Airplane", "Bird"]
+
+    val null   = Gtk.null ()
+
+    val ctree = Gtk.ctreeNewWithTitles (2, 0, titles)
+    val n1    = Gtk.ctreeInsertNode(ctree, null, null, row1, 0,
+				    null, null, null, null,
+				    false, false)
+    val _     = Gtk.ctreeInsertNode(ctree, n1, null, row2, 0,
+				    null, null, null, null,
+				    false, false)
+    val _    = Gtk.ctreeInsertNode(ctree, null, null, row3, 0,
+				    null, null, null, null,
+				    false, false)
+    fun selectEvent args = Inspector.inspect ("tree_select_row_event", args)
+    val _ = Gtk.signalConnect(ctree, "tree-select-row", selectEvent)
+
+    val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+
+    fun delete _ = OS.Process.exit OS.Process.success
+    val _ = Gtk.signalConnect(window, "delete-event", delete)
+in
+    val _ = (Gtk.windowSetTitle(window, "ctree Test");
+	     Gtk.containerSetBorderWidth(window, 10);
+	     Gtk.containerAdd(window, ctree);
+	     Gtk.widgetShowAll window)
+end

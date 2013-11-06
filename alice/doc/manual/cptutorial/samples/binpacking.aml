@@ -1,0 +1,154 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/Tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+
+open Modeling
+
+
+type bin = {btype : FD.intvar, copper : FD.intvar, 
+            glass : FD.intvar,plastic : FD.intvar,
+            steel : FD.intvar, wood : FD.intvar}
+                  
+type packlist = 
+           {btype : FD.intvar, copper : FD.intvar, 
+            glass : FD.intvar,plastic : FD.intvar, 
+            steel : FD.intvar, wood : FD.intvar} list
+       
+type order = 
+           {copper : int, glass : int, plastic : int,
+            steel : int, wood : int}                  
+
+		       
+(* posts an implication of two relations *)  
+fun impl(space,v1,rel1,v1',v2,rel2,v2')= 
+    let
+        val tmp1 = FD.boolvar space
+        val tmp2 = FD.boolvar space
+        val tmp3 = FD.boolvar space
+        val tru = FD.intvar2boolvar(space,
+                     FD.range(space,(1,1)))
+    in
+        FD.Reified.rel(space,v1,rel1,v1',tmp1);
+        FD.Reified.rel(space,v2,rel2,v2',tmp2);
+        FD.impl(space,tmp1,tmp2,tru)
+    end
+		       
+		       	   
+fun makebin(space) =
+    let 
+        val cap = FD.range(space,(1,4))
+       (* b is the type of a bin *)
+        val b = FD.range(space,(0,2))
+        val components as #[g,p,s,w,c] = 
+                       FD.rangeVec(space,5,(0,4))
+        val bin = {btype = b,glass = g,plastic = p,
+                   steel = s,wood = w,copper = c}
+        val tru = FD.intvar2boolvar
+                  (space,FD.range(space,(1,1)))
+       (* posts an implication of two relations with 
+          constants*) 
+        fun implI(space,v1,rel1,const1,v2,rel2,const2)= 
+            let
+                val tmp1 = FD.boolvar space
+                val tmp2 = FD.boolvar space
+            in
+                FD.Reified.relI(space,v1,rel1,const1,tmp1);
+                FD.Reified.relI(space,v2,rel2,const2,tmp2);
+	        FD.impl(space,tmp1,tmp2,tru)
+	    end
+        fun implist(a as (a1,r1,a2),
+                    rellist as((b1,r2,b2)::bs))=
+                List.app(fn(x,y,z)=> 
+                      implI(space,a1,r1,a2,x,y,z))rellist
+    in
+       post(space,SUMV(components) `<= FD(cap),FD.DOM);
+       implI(space,w,FD.GR,0,p,FD.GR,0);
+       implI(space,g,FD.GR,0,c,FD.EQ,0);
+       implI(space,c,FD.GR,0,p,FD.EQ,0);
+       implist((b,FD.EQ,1),[(cap,FD.EQ,3),(p,FD.EQ,0),
+               (s,FD.EQ,0),(w,FD.LQ,1)]);
+       implist((b,FD.EQ,0),[(cap,FD.EQ,1),(p,FD.EQ,0),
+               (w,FD.EQ,0)]);
+       implist((b,FD.EQ,2),[(cap,FD.EQ,4),(g,FD.EQ,0),(s,FD.EQ,0),
+               (w,FD.LQ,2)]);
+       bin        
+    end    
+
+
+
+fun makepacklist list space = 
+    let
+        val packlist = List.map(fn x => makebin(space))list
+        fun order(space,(x:bin)::nil) = ()
+          | order(space,x::y::xs)=
+                (FD.rel(space,((#btype)x),FD.LQ,((#btype)y));
+                 impl(space,((#btype)x),FD.EQ,((#btype)y),
+               		    ((#glass)x),FD.GQ,((#glass)y))) 
+    in
+        order(space,packlist);
+        packlist
+    end   			   
+
+val order = {glass=2,plastic = 4,steel =3,
+             wood =6,copper =4}
+val order2 = {glass=2,plastic = 2,steel =1,
+              wood =1,copper =1} 
+
+fun match (packlist:packlist)(order:order)space = 
+    let
+        val order' = #[#glass(order),#plastic(order),
+             #steel(order),#wood(order),#copper(order)]
+        val a = List.map(fn x => ((#glass)x))packlist
+        val b = List.map(fn x => (#plastic)x)packlist
+        val c = List.map(fn x => (#steel)x)packlist
+        val d = List.map(fn x => (#wood)x)packlist
+        val e = List.map(fn x => (#copper)x)packlist
+    in 
+ 	Vector.appi(fn(i,x)=> post(space,SUMV(Vector.fromList x)
+ 	               `=  `(Vector.sub(order',i)),FD.DOM))
+ 	           (#[a,b,c,d,e])
+    end
+          
+              
+
+fun binpacking order mcap space =
+    let 
+        val nbcomp = #glass(order) + #plastic(order)+ 
+                     #steel(order) + #wood(order) + 
+                     #copper(order)
+        val list = List.tabulate(mcap,fn x => x)
+        val packlist = makepacklist list space
+        val branchlist = List.map(fn x =>
+                          [(#btype)x,(#copper)x,(#steel)x,
+                           (#glass)x,(#plastic)x,(#wood)x])
+                         packlist
+        val branchvec = Vector.fromList(List.concat(branchlist))
+    in 
+        match packlist order space;
+        FD.branch(space,branchvec,FD.B_SIZE_MIN,FD.B_MIN);
+        packlist
+    end
+        
+
+(* insert a value > 0 for x and findsolution finds the 
+   minimal number of bins *)
+
+(*
+ fun findsolution x =
+   let 
+      val res =  (Search.searchOne(binpacking order x))
+                    handle Space.InvalidSpace => NONE
+   in
+      case res of NONE => findsolution (x+1)
+                | SOME(s,r) => 
+               
+               List.map(fn y =>
+                 List.map(fn z => FD.Reflect.value(s,z))
+               ([(#btype)y,(#copper)y,(#steel)y,
+               (#glass)y,(#plastic)y,(#wood)y]))r
+   end
+*)
+
+        

@@ -1,0 +1,98 @@
+(* Alice Snake 2.0 - Operations on colors
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import signature COLOR     from "COLOR-sig"
+import structure OS        from "x-alice:/lib/system/OS"
+import structure Component from "x-alice:/lib/system/Component"
+
+structure Color :> COLOR = 
+struct
+
+    exception Unknown
+
+    type color = int
+
+    datatype color_rep = C of string * real * real * real
+
+    type t = color
+
+    val equal = Int.equal
+
+    val compare = Int.compare
+
+    
+    val all_rep = #[C("brown",      0.4,  0.4,  0.0),
+	       C("blue",       0.0,  0.0,  1.0),
+	       C("yellow",     1.0,  1.0,  0.0),
+	       C("turquoise",  0.24, 0.66, 0.61),
+	       C("violet",     0.66, 0.11, 0.48),
+	       C("silver",     0.75, 0.75, 0.75),
+	       C("lightblue",  0.4,  0.8,  1.0 ),
+	       C("orange",     1.0,  0.6,  0.0 ),
+	       C("neon-blue",  0.25, 1.0,  1.0 ),
+	       C("neon-green", 0.25, 1.0,  0.25),
+	       C("dark-violet",0.25, 0.0,  0.25),
+	       C("pig",        1.0,  0.75, 0.75)]
+    (** [all] is a list of all available colors *)
+
+    val all = List.tabulate (Vector.length all_rep, id)
+
+    fun toString' (C (s, _, _, _)) = s
+    (** [toString c] returns the [english] name of [c]. *)
+ 
+    fun toString r = toString' (Vector.sub (all_rep, r))
+
+    fun fromString s =
+	case Vector.findi (fn (i, x) => toString' x = s) all_rep of
+	    NONE        => raise Unknown
+          | SOME (i, _) => i
+    (** [fromString name] is the inverse operation of toString.
+        In case you apply ofString to a invalid/unknown color name
+        [Unknown] is raised.
+      *)
+
+    fun rgb' (C (_, r, g, b)) = (r, g, b)
+
+    fun rgb r = rgb' (Vector.sub (all_rep, r))
+
+    (** [rgb color] returns a triple [(red, green, blue)], with
+        the usual meaning and range [0.0 - 1.0]
+      *)
+
+    fun toHexStr color = 
+	let
+	    val (r, g, b) = rgb color
+	    fun colorConv x = Real.round (255.0 * x)
+	    val (r, g, b) = (colorConv r, colorConv g, colorConv b)
+	    val hexs = #[#"0", #"1", #"2", #"3", #"4", #"5", 
+			 #"6", #"7", #"8", #"9", #"A", #"B", 
+			 #"C", #"D", #"E", #"F"]
+
+	    fun digitToHex d =
+		assert (0 <= d andalso d < 16) do
+		Vector.sub (hexs, d)
+
+	    fun intToHex i = (Char.toString (digitToHex (i div 16))) ^ 
+                             (Char.toString (digitToHex (i mod 16)))
+	in
+	    "#" ^ (intToHex r) ^ (intToHex g) ^ (intToHex b)
+	end
+    
+
+end
+
+val ext = Component.extension
+
+val _ = Pickle.save ("Color." ^ ext, pack (structure Color = Color) 
+		                       :> (structure Color : COLOR))
+    
+
+val _ = OS.Process.exit OS.Process.success

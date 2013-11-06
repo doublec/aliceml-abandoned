@@ -1,0 +1,55 @@
+<?php include("macros.php3"); ?>
+<?php heading("The OS structure", "The <TT>OS</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature OS
+    structure OS : OS
+  </PRE>
+
+  <P>
+    The Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/os.html"><TT>OS</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="os-file-sys.html"><TT>OS.FileSys</TT></A>,
+    <A href="os-path.html"><TT>OS.Path</TT></A>,
+    <A href="os-process.html"><TT>OS.Process</TT></A>,
+    <A href="os-io.html"><TT>OS.IO</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature OS =
+    sig
+	eqtype syserror
+	exception SysErr of string * syserror option
+
+	val errorMsg :      syserror -> string
+	val errorName :     syserror -> string
+	val syserror :      string -> syserror option
+
+	structure Process : OS_PROCESS
+	structure Path :    OS_PATH
+	structure FileSys : OS_FILE_SYS
+	structure IO :      OS_IO
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Like the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/os.html"><TT>OS</TT></A> structure.
+  </P>
+
+<?php footing() ?>

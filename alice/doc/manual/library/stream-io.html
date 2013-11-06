@@ -1,0 +1,110 @@
+<?php include("macros.php3"); ?>
+<?php heading("The STREAM_IO signature", "The <TT>STREAM_IO</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature STREAM_IO
+    functor StreamIO (structure PrimIO : PRIM_IO
+                      structure Vector : MONO_VECTOR
+				where type elem   = PrimIO.elem
+				  and type vector = PrimIO.vector
+		      structure Array :  MONO_ARRAY
+				where type elem   = PrimIO.elem
+				  and type vector = PrimIO.vector
+				  and type array  = PrimIO.array
+                      structure VectorSlice : MONO_VECTOR_SLICE
+				where type elem   = PrimIO.elem
+				  and type vector = PrimIO.vector
+				  and type slice  = PrimIO.vector_slice
+		      structure ArraySlice :  MONO_ARRAY_SLICE
+				where type elem         = PrimIO.elem
+				  and type vector       = PrimIO.vector
+				  and type array        = PrimIO.array
+				  and type vector_slice = PrimIO.vector_slice
+				  and type slice        = PrimIO.array_slice
+                      val someElem : PrimIO.elem) :
+	    STREAM_IO where type elem   = PrimIO.elem
+	                and type vector = PrimIO.vector
+			and type pos    = PrimIO.pos
+			and type reader = PrimIO.reader
+			and type writer = PrimIO.writer
+  </PRE>
+
+  <P>
+    The Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/stream-io.html"><TT>STREAM_IO</TT></A> signature and
+    <A href="http://www.standardml.org/Basis/stream-io-fn.html"><TT>StreamIO</TT></A> functor.
+  </P>
+
+  <P>See also:
+    <A href="text-stream-io.html"><TT>TEXT_STREAM_IO</TT></A>,
+    <A href="prim-io.html"><TT>PRIM_IO</TT></A>,
+    <A href="imperative-io.html"><TT>IMPERATIVE_IO</TT></A>,
+    <A href="bin-io.html"><TT>BinIO</TT></A>,
+    <A href="text-io.html"><TT>TextIO</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature STREAM_IO =
+    sig
+	type elem
+	type vector
+
+	type instream
+	type pos
+	type reader
+
+	type outstream
+	type out_pos
+	type writer
+
+	val input :         instream -> vector * instream
+	val input1 :        instream -> (elem * instream) option
+	val inputN :        instream * int -> vector * instream
+	val inputAll :      instream -> vector * instream
+	val canInput :      instream * int -> int option
+	val closeIn :       instream -> unit
+	val endOfStream :   instream -> bool
+	val mkInstream :    reader * vector -> instream
+	val getReader :     instream -> reader * vector
+
+	val output :        outstream * vector -> unit
+	val output1 :       outstream * elem -> unit
+	val flushOut :      outstream -> unit
+	val closeOut :      outstream -> unit
+	val setBufferMode : outstream * IO.buffer_mode -> unit
+	val getBufferMode : outstream -> IO.buffer_mode
+	val mkOutstream :   writer * IO.buffer_mode -> outstream
+	val getWriter :     outstream -> writer * IO.buffer_mode
+	val getPosOut :     outstream -> out_pos
+	val setPosOut :     out_pos -> outstream
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Like the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/stream-io.html"><TT>STREAM_IO</TT></A> signature and
+    <A href="http://www.standardml.org/Basis/stream-io-fn.html"><TT>StreamIO</TT></A> functor.
+  </P>
+
+  <P>
+    <I>Limitations:</I> The following standard functions are
+    currently missing:
+  </P>
+
+  <UL>
+    <LI><TT>filePosIn</TT>, <TT>filePosOut</TT></LI>
+  </UL>
+
+<?php footing() ?>

@@ -1,0 +1,5 @@
+*.dll *.DLL
+*.exe *.EXE
+*.il
+*.pdb
+*.x86-win32

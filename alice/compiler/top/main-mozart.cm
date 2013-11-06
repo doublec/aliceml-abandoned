@@ -1,0 +1,12 @@
+Group is
+
+    ../frontend-sml/sources.cm
+    ../frontend-common/sources.cm
+    ../backend-common/sources.cm
+    ../backend-mozart/sources.cm
+
+    make-recursive-compiler.cm
+    make-batch-compiler.cm
+
+    SMLToMozartRecursiveCompiler.aml
+    SMLToMozartBatchCompiler.aml

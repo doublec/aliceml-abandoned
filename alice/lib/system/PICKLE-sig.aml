@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature PICKLE =
+sig
+    exception Sited
+    exception Corrupt
+
+    val extension : string
+
+    val save : string * package -> unit				(* Io *)
+    val load : string -> package				(* Io *)
+
+    functor Save(val file : string signature S structure X : S) : any (* Io *)
+    functor Load(val file : string signature S) : S		(* Io, Failure *)
+    functor SaveVal(val file : string type t val x : t) : any   (* Io *)
+    functor LoadVal(val file : string type t) : (val x : t)	(* Io, Failure *)
+end

@@ -1,0 +1,63 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature HTTP   from "../../system/HTTP-sig"
+import structure Http   from "../../system/Http"
+import signature POLICY from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure Http : HTTP =
+struct
+    structure StringMap = Http.StringMap
+
+    type request = Http.request
+    type response = Http.response
+    type simple_response = Http.simple_response
+
+    datatype word =
+        TOKEN of string
+      | SEPARATOR of char
+      | COMMENT of string
+      | QUOTED_STRING of string
+
+    exception Closed = Http.Closed
+    exception Format = Http.Format
+
+    fun readRequest socket =
+        let
+            do Policy.Unit.check ("readSocket", "Http.readRequest", ())
+        in
+            Http.readRequest socket
+        end
+
+    fun readResponse socket =
+        let
+            do Policy.Unit.check ("readSocket", "Http.readResponse", ())
+        in
+            Http.readResponse socket
+        end
+
+    fun writeRequest (socket, request) =
+        let
+            do Policy.Unit.check ("writeSocket", "Http.writeRequest", ())
+        in
+            Http.writeRequest (socket, request)
+        end
+
+    fun writeResponse (socket, response) =
+        let
+            do Policy.Unit.check ("writeSocket", "Http.writeResponse", ())
+        in
+            Http.writeResponse (socket, response)
+        end
+
+    val reasonPhrase = Http.reasonPhrase
+    val makeResponse = Http.makeResponse
+
+    val parseFieldValue = Http.parseFieldValue
+end

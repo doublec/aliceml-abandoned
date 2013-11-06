@@ -1,0 +1,657 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stream        from "Stream"
+import structure Debugger      from "../../lib/system/Debugger"
+import structure Debug         from "../../lib/system/Debug"
+import structure Reflect       from "../../lib/system/Reflect"
+import structure Type          from "../../lib/rtt/Type"
+import structure PervasiveType from "../../lib/rtt/PervasiveType"
+import structure TextIO        from "../../lib/system/TextIO"
+import signature MODEL         from "MODEL-sig"
+
+structure Model :> MODEL =
+    struct
+	exception Unknown_Thread
+	exception notImplemented
+
+	type value = Reflect.value
+	type position = Debugger.position
+	type step_point_type = Debugger.step_point_type
+
+	datatype thread_state =
+	    BLOCKED
+	  | RUNNABLE
+	  | STOPPED_RUNNABLE
+	  | STOPPED_BLOCKED 
+	  | TERMINATED 
+
+	datatype event =
+	    (* VM Events *)
+	    Entry      of Thread.thread * position * step_point_type
+	  | Exit       of Thread.thread * position * Reflect.value * Type.t option
+	  | Breakpoint of Thread.thread * position * step_point_type
+	  | UnCaught   of Thread.thread * exn
+	  | Blocked    of Thread.thread
+	  | Runnable   of Thread.thread
+	  | Terminated of Thread.thread
+
+	    (* User Events *) 
+	  | Step             of Thread.thread
+	  | Next             of Thread.thread
+	  | Continue         of Thread.thread
+	  | Suspend          of Thread.thread
+	  | Resume           of Thread.thread
+	  | SetBreakpoint    of Thread.thread * position
+	  | RemoveBreakpoint of Thread.thread * position
+	  | Detach           of Thread.thread
+	  | Unleash          of Thread.thread * int
+	  | SetType          of Thread.thread * string * Type.t
+	  | ResetType        of Thread.thread * string
+
+	datatype stackstp = 
+	    APP     of value * Type.t * (value * Type.t) list
+	  | COND    of value * Type.t
+	  | HANDLER of exn * Type.t
+	  | RAISE   of exn * Type.t
+	  | SPAWN
+	  | UNKNOWN  
+
+	datatype stackentry = 
+	    ENTRY    of Thread.thread * position * stackstp
+	  | BREAK    of Thread.thread * position * stackstp
+	  | EXIT     of Thread.thread * position * value * Type.t
+	  | UNCAUGHT of Thread.thread * exn * Type.t
+
+	(**
+	 * A model consists of 
+	 *   model = view list * controller list * thread list 
+	 *)
+	type model = (Thread.thread -> unit) list ref 
+	             * (unit -> unit) list ref
+	    * (Thread.thread * thread_state * (int * stackentry list) * position list * (string * Type.t) list) list ref
+
+	(**
+	 * this function returns a new model.
+	 *)
+	val new = fn () => (ref nil, ref nil, ref nil)
+
+	(**
+	 * this function adds a view's update function to the specified model. The update 
+	 * function is apllied whenever something has changed.
+	 *)
+	fun addView ((view_list, _, _), update) =
+	    view_list := update :: (!view_list)
+
+	(**
+	 * this function adds a controller's update function to the specified model. 
+	 * it is applied whenever something has changed.
+	 *)
+	fun addController ((_, controller_list, _), update) =
+	    controller_list := update :: (!controller_list)
+
+	(**
+	 * This function notifies all Observers of the specified model that something has
+	 * changed
+	 *)
+	fun notify ((view_list, controller_list, _), thread) = 
+	    (List.app (fn f => f thread) (!view_list);
+	     List.app (fn f => f()) (!controller_list))
+
+	(**
+	 * this function causes the Debugger to step the specified Thread
+	 *)
+	fun step(model, thread) = 
+	    Debugger.singleStep(thread) 
+	(**
+	 * Help functions
+	 *)
+
+	fun mapthread thread = fn (thr, _, _, _, _) => thr = thread
+
+	(**
+	 * This function stops a threads computation
+	 *)
+	fun stopThread (model as (_, _, thread_list), thread) = 
+	    let 
+		val mapfunction = 
+		    fn (thr, state, (frame, stack), brkpts, typs) => 
+		    if thr = thread 
+			then
+			    case state of
+				RUNNABLE => (thr, STOPPED_RUNNABLE, (0, stack), brkpts, typs)
+			      | BLOCKED  => (thr, STOPPED_BLOCKED, (0, stack), brkpts, typs)
+			      | _        => (thr, state, (frame, stack), brkpts, typs)
+			 else (thr, state, (frame, stack), brkpts, typs)
+		val _ = thread_list := map mapfunction (!thread_list)
+	    in
+		notify(model, thread)
+	    end
+
+	(**
+	 * this function resumes a threads computation
+	 *)
+	fun resumeThread (model as (_, _, thread_list), thread) = 
+	    let
+		val mapfunction = 
+		    fn (thr, state, stack, brkpts, typs) => 
+		    if thr = thread
+			then
+			    case state of
+				STOPPED_RUNNABLE => (thr, RUNNABLE, stack, brkpts, typs)
+			      | STOPPED_BLOCKED  => (thr, BLOCKED,  stack, brkpts, typs)
+			      | _                => (thr, state,    stack, brkpts, typs)
+			 else (thr, state, stack, brkpts, typs)
+		val _ = thread_list := map mapfunction (!thread_list)
+		val _ = notify(model, thread)
+	    in 
+		step(model, thread)
+	    end
+
+	(**
+	 *
+	 *)
+	fun unleash ((_,_,thread_list), thread, n) = 
+	    let 
+		val _ = thread_list := 
+		    map (fn (thr, state, (frame, stack), brkpts, typs) =>
+			 if thr = thread
+			     (* frame should be 0 *)
+			     then (thr, state, (n, stack), brkpts, typs)
+			 else (thr, state, (frame, stack), brkpts, typs)) (!thread_list)
+	    in
+		Debugger.singleStep(thread) 
+	    end
+
+
+	(**
+	 *
+	 *)
+	fun next(model, thread) = unleash (model, thread, 1)
+
+	(**
+	 *
+	 *)
+	fun detach(model as (_, _, thread_list), thread) = 
+	    let
+		val _ = thread_list := 
+		    List.filter (fn (thr, _, _, _, _) => thr <> thread) (!thread_list)
+		val _ = Debugger.detach(thread)
+	    in
+		notify(model, thread)
+	    end
+	    
+
+	(**
+	 * Causes the specified thread to continue its computation. The thread will 
+	 * not generate new events. The model no longer knows this thread.
+	 *)
+	fun continue(model as (_, _, thread_list), thread) = 
+	    let
+		val n = List.length(#2(#3(
+				    Option.valOf(List.find (mapthread thread) (!thread_list)))))
+		    handle Option.Option => raise Unknown_Thread
+	    in
+		unleash (model, thread, n+1)
+	    end
+
+	(**
+	 * Sets a breakpoint for the specified thread at the specified position
+	 *)
+	fun setBreakpoint(model as (_, _, thread_list), thread, position) = 
+	    let
+		val mapfunction = 
+		    fn entry as (thr, state, stack, brkpts, typs) =>
+		    if thr = thread 
+			then if List.exists (fn x => x = position) brkpts
+				 then entry
+			     else (thr, state, stack, position::brkpts, typs)
+		    else entry
+	    in
+		thread_list := map mapfunction (!thread_list)
+	    end
+			
+	(**
+	 * removes a breakpoint for the specified thread at the specified position
+	 *)
+	fun removeBreakpoint(model as (_, _, thread_list), thread, position) =
+	    let
+		fun mapfunction(entry as (thr, state, stack, brkpts, typs)) =
+		    if thr = thread
+			then (thr, state, stack,
+			      List.filter (fn x => x <> position) brkpts,
+			      typs)
+		    else entry
+	    in
+		thread_list := map mapfunction (!thread_list)
+	    end
+
+	(**
+	 * Computes the current position of the specified thread.
+	 *)
+	fun getCurrentposition ((_, _, thread_list), thread) = 
+	    let 
+		val thread_option = 
+		    List.find (mapthread thread) (!thread_list)
+		fun getPosFromStack ((UNCAUGHT e)::xs) = getPosFromStack xs
+		  | getPosFromStack (ENTRY(_, pos, _) :: xs) = pos
+		  | getPosFromStack (BREAK(_, pos, _) :: xs) = pos
+		  | getPosFromStack (EXIT(_, pos, _, _) :: xs) = pos
+		  | getPosFromStack( _ :: xs) = getPosFromStack xs
+		  | getPosFromStack _ = raise Unknown_Thread
+	    in
+		case thread_option of
+		    SOME(_, _, (_, stack), _, _) => getPosFromStack stack
+		  | NONE                         => raise Unknown_Thread
+	    end
+
+	fun getEnvironment((_, _, thread_list), thread) =
+	    Debugger.getRuntimeEnvironment thread
+
+
+	(**
+	 * returns the value of the specified identifier in the specified threads current
+	 * run-time-environment
+	 *)
+	fun lookup(model, thread, identifier) =
+	    Debugger.lookup(thread, identifier)
+
+	(**
+	 * returns the state of specified thread.
+	 *)
+	fun getThreadState(model as (_, _, thread_list), thread) =
+	    let 
+		val thread_option = 
+		    List.find (mapthread thread) (!thread_list)
+	    in
+		case thread_option of
+		    SOME(_, state, _, _, _) => state
+		  | NONE                    => raise Unknown_Thread
+	    end
+
+	(**
+	 * returns a list of all threads known by the specified model.
+	 *)
+	fun getThreadIDs (_, _, thread_list) =
+	    map (fn (a, _, _, _, _) => a) (!thread_list)
+    
+	(**
+	 * returns the current step point of the specified thread. 
+	 *)
+	fun getCurrentStepPoint((_,_,thread_list), thread) =
+	    let
+		fun getTopmostStepPointFromStack(ENTRY(_,_,stp)::stack |
+						 BREAK(_,_,stp)::stack) = stp
+		  | getTopmostStepPointFromStack(EXIT e::stack) =  
+		    getTopmostStepPointFromStack stack
+		  | getTopmostStepPointFromStack(UNCAUGHT e::stack) =
+		    getTopmostStepPointFromStack stack
+		  | getTopmostStepPointFromStack nil = raise Unknown_Thread
+		                                     (* should be something else *)
+		val thread_option =
+		    List.find (mapthread thread) (!thread_list)
+	    in
+		case thread_option of
+		    NONE => raise Unknown_Thread
+		  | SOME(_, _, (_, stack), _, _) => getTopmostStepPointFromStack stack
+	    end
+	(**
+	 *
+	 *)
+	fun getEventStack((_, _, thread_list), thread) =
+	    let 
+		val thread_option =
+		    List.find (mapthread thread) (!thread_list)
+	    in
+		case thread_option of
+		    SOME(_, _, (_, stack), _, _) => stack
+		  | NONE                         => raise Unknown_Thread
+	    end
+
+	(** 
+	 * 
+	 *)
+	fun setType(model as (_,_, thread_list), thread, id, typ) = 
+	    let
+		fun mapfunction (entry as (thr, stp, stack, brks, types)) = 
+		    if (thr = thread) 
+			then if List.exists (fn (id',t) => id = id') types
+				 then entry
+			     else (thread, stp, stack, brks, (id, typ)::types)
+		    else entry
+		val _ = thread_list := map mapfunction (!thread_list)
+	    in
+		notify (model, thread)
+	    end
+
+	(**
+	 *
+	 *)
+	fun resetType(model as (_, _, thread_list), thread, id) =
+	    let
+		fun mapfunction (entry as (thr, stp, stack, brks, types)) = 
+		    if (thr = thread) 
+			then (thread, 
+			      stp, stack, brks, 
+			      List.filter (fn (id',_) => id <> id') types)
+		    else entry
+		val _ = thread_list := map mapfunction (!thread_list)
+	    in
+		notify (model, thread)
+	    end
+
+	(**
+	 *
+	 *)
+	fun getType((_, _, thread_list), thread) id =
+	    let 
+		val thread_option =
+		    List.find (mapthread thread) (!thread_list)
+	    in
+		case thread_option of
+		    NONE                         => raise Unknown_Thread
+		  | SOME(_, _, _, _, types)      => 
+			(case List.find (fn (id', t) => id' = id) types of
+			     NONE      => NONE
+			   | SOME(_,t) => SOME t)
+	    end
+		
+
+	(**
+	 * This Function handles all events which are written to the input stream.
+	 * This could be either events from the Alice VM or events generated by the
+	 * user.
+	 *)
+	fun handleEvent (model as (_, _, thread_list)) event =
+	    let 
+		exception InvalidType
+		val initialStack = (0, nil)
+		
+		(* Converts a step_point_type step point to a stackstp step point 
+		 * by annotating and recontructing types 
+		 *)
+		fun stepPoint2Stackstp(Debugger.Application(value, typ, values) |
+				       Debugger.Constructor(value, typ, values)) =
+		    let
+			fun getOneArgTypes typ = 
+			    let 
+				fun argsToList typ =
+				    case Type.inspect typ of
+					Type.Var _    => [typ]
+				      | Type.Con _    => [typ]
+				      | Type.Apply _  => [typ]
+				      | Type.Arrow _  => [typ]
+				      | Type.Sum row  => (TextIO.print "Sum type\n"; raise InvalidType)
+               (* Row Records*)	      | Type.Prod row => Vector.toList(Type.asTupleRow row)
+		                      | _             => raise InvalidType
+			    in
+				case Type.inspect typ of
+				    Type.Arrow(argtyp, _) => argsToList argtyp
+	                          | Type.All(_, typ )     => getOneArgTypes typ
+				  | _                     => raise InvalidType
+			    end
+			fun getTupArgTypes typ = 
+			    let 
+				fun argsToList typ =
+				    case Type.inspect typ of
+					Type.Prod row => Vector.toList(Type.asTupleRow row)
+				      | _             => raise InvalidType
+			    in
+				case Type.inspect typ of
+				    Type.Arrow(argtyp, _) => argsToList argtyp
+	                          | Type.All(_, typ )     => getTupArgTypes typ
+				  | _                     => raise InvalidType
+			    end
+			val listvalues = Vector.toList values
+			val types = case listvalues of 
+			    [x] => getOneArgTypes typ
+			  |  _  => getTupArgTypes typ
+			(* Debugging *)
+			val _ = if List.length listvalues = List.length types
+				    then ()
+				else TextIO.output(TextIO.stdErr, "mismatch of Listlength\n" ^
+						   Int.toString(List.length listvalues) ^ " <> " ^
+						   Int.toString(List.length types) ^ "\n" )
+		        (* End debugging *)
+		    in
+			APP(value, typ, ListPair.zip(listvalues,types))
+		    end
+		  | stepPoint2Stackstp(Debugger.Conditional(value, typ)) = 
+		    COND(value, typ)
+		  | stepPoint2Stackstp(Debugger.Handler e) = 
+		    HANDLER(e, PervasiveType.typ_exn)
+		  | stepPoint2Stackstp(Debugger.Raise e)   = 
+		    RAISE(e, PervasiveType.typ_exn)
+		  | stepPoint2Stackstp(Debugger.Spawn)     = 
+		    SPAWN
+		  | stepPoint2Stackstp(Debugger.RecordSel(pos, value, typ)) = 
+		    UNKNOWN
+		  | stepPoint2Stackstp(Debugger.Strict (value, typ)) = 
+		    UNKNOWN
+		(* Registers a new thread at the model *)
+		fun registerThread (thread_list_entry as (thread, _, _, _, _)) =
+			if List.exists 
+			    (fn (thr, _, _, _, _) => thr = thread)
+			    (!thread_list)
+			    then ()
+			else thread_list := thread_list_entry :: (!thread_list)
+
+		(* Removes the topmost finished frame from the stack. If there 
+		 * is none nothing is done 
+		 *)
+		fun removeFrame thread = 
+		    let
+			val mapfunction = 
+			    fn entry as (thr, state, (frame, stack), brkpts, typs) => 
+			    if thr = thread 
+				then
+				    case stack of
+					(EXIT _):: event :: entries => 
+					    (thr, state, (frame, entries), brkpts, typs)
+				      | _ => entry
+			    else entry
+		    in
+			thread_list := map mapfunction (!thread_list)
+		    end
+
+		(* This function is applied whenever a breakpoint-event occurrs. *)
+		fun handleBreakpoint (e as (thread, pos, step_point)) =
+		    let 
+			val _ = registerThread (thread, RUNNABLE, initialStack, [pos], [])
+			val notify_observers = ref true
+			val _ = removeFrame thread
+			val stackstp = stepPoint2Stackstp step_point
+			val _ = thread_list :=
+			    map (fn entry as (thr, state, (frame, stack), brkpts, typs) =>
+				 if thr = thread 
+				     then if frame = 0 
+					      then (thr, 
+						    state, 
+						    (frame, 
+						     BREAK(thr, pos, stackstp) :: stack),
+						    brkpts,
+						    typs)
+					  else (notify_observers := false;
+						(thr, state, 
+						 (frame + 1, 
+						  BREAK(thr, pos, stackstp) :: stack),
+						 brkpts, typs))
+				 else entry ) (!thread_list)
+		    in 
+			if !notify_observers 
+			    then notify(model, thread)
+			else step(model, thread)
+		    end
+
+		(* this function is applied whenever an entry-event ocurrs *)
+		fun handleEntry(e as (thread, pos, step_point)) =
+		    let 
+			val notify_observers = ref true
+			val _ = registerThread(thread, RUNNABLE, initialStack, nil, nil)
+			val _ = removeFrame thread
+			val stackstp = stepPoint2Stackstp step_point
+			val _ = thread_list :=
+			    map (fn entry as (thr, state, (frame, stack), brkpts, typs) =>
+				 if thr = thread 
+				     then if (frame = 0 
+					      orelse (List.exists (fn x => x = pos) brkpts))
+					      then (thr, state, 
+						    (0 , 
+						     ENTRY(thr, pos, stackstp) :: stack), 
+						    brkpts, typs)
+					  else (notify_observers := false;
+						(thr, 
+						 state, 
+						 (frame + 1, 
+						  ENTRY(thr, pos, stackstp) :: stack), 
+						 brkpts, typs))
+				 else entry) (!thread_list)
+			    
+		    in 
+			if !notify_observers 
+			    then notify(model, thread)
+			else step(model, thread)
+		    end
+
+		(* this function is applied whenever an exit-event occurrs. *)
+		fun handleExit(e as (thread, 
+				     pos, result, resultTypeOption)) =
+		    let
+			fun reconstructResultTyp(ENTRY(_,_,APP(_, typ, _))|
+						 BREAK(_,_,APP(_, typ, _))) =
+			    let 
+				fun getResultTyp typ =
+				    case Type.inspect typ of
+					Type.Arrow(_, restyp) => restyp
+				      | Type.All(_, restyp)   => getResultTyp restyp
+				      | _                     => raise InvalidType
+			    in
+				getResultTyp typ
+			    end
+			  | reconstructResultTyp  _  = raise InvalidType
+			fun getResultType stack =
+			    case resultTypeOption of
+				SOME typ => typ
+			      | NONE     => reconstructResultTyp(hd stack)
+			(* .....think: should be removed *)
+(*			val _ = registerThread(thread, RUNNABLE, initialStack, nil, nil) *)
+			val _ = removeFrame thread
+			val notify_observers = ref true
+			val _ = thread_list :=
+			    map (fn entry as (thr, state, (frame, stack), brkpts, typs) =>
+				 if thr = thread 
+				     then (thr, 
+					   state, 
+					   (if frame <= 1
+						then 0
+					    else (notify_observers := false;
+						  frame-1), 
+						EXIT(thr, pos, result, 
+						     getResultType stack) :: stack), 
+					   brkpts, typs)
+				 else entry) (!thread_list)
+		    in
+			if !notify_observers
+			    then notify(model, thread)
+			else step(model, thread)
+		    end
+
+		(* This function is applied whenever a uncaught-event occurs. *) 
+		fun handleUnCaught(e as (thread, exn)) =
+		    let
+			val _ = thread_list := 
+			    map (fn (thr, state, (frame, stack), brkpts, typs) =>
+				 if thr = thread
+				     then (thr, state, 
+					   (0, 
+					    UNCAUGHT(thr, exn, PervasiveType.typ_exn) :: stack), 
+					   brkpts, typs)
+				 else (thr, state, (frame, stack), brkpts, typs)) (!thread_list)
+		    in
+			notify(model, thread)
+		    end
+
+		(* this function is applied whenever a blocked-event occurs. *)
+		fun handleBlocked thread = 
+		    let
+			val _ = thread_list := 
+			    map (fn entry as (thr, state, (frame, stack), brkpts, typs) =>
+				 if thr = thread
+				     then case state of
+					 RUNNABLE => (thr, BLOCKED, (0, stack), brkpts, typs)
+				       | _        => entry
+				 else entry) (!thread_list)
+	    in
+			notify(model, thread)
+		    end
+
+		(* this function is applied whenever a runnable-event occurs. *)
+		fun handleRunnable thread = 
+		    let
+			val _ = thread_list := 
+			    map (fn entry as (thr, state, stack, brkpts, typs)=>
+				 if thr = thread
+				     then case state of 
+					 BLOCKED => (thr, RUNNABLE, stack, brkpts, typs)
+				       | _       => entry
+				 else entry) (!thread_list)
+		    in
+			notify(model, thread)
+		    end
+
+		(* this function is applied whenever a terminated-event occurs. *)
+		fun handleTerminated thread = 
+		    let
+			val _ = thread_list := 
+			    map (fn entry as (thr, state, stack, brkpts, typs) =>
+				 if thr = thread
+				     then (thr, TERMINATED, stack, brkpts, typs)
+				 else entry) (!thread_list)
+		    in
+			notify(model, thread)
+		    end
+
+	    in
+		case event of
+		    Entry e      => handleEntry e
+		  | Exit e       => handleExit e
+		  | Breakpoint e => handleBreakpoint e
+		  | UnCaught e   => handleUnCaught e
+		  | Blocked e    => handleBlocked e 
+		  | Runnable e   => handleRunnable e
+		  | Terminated e => handleTerminated e
+		  | Step(thread)                               => 
+			step(model, thread) 
+		  | Next(thread)                               => 
+			 next(model, thread)
+		  | Continue(thread)                           => 
+			 continue(model, thread)
+		  | Suspend(thread)                            => 
+			 stopThread(model, thread)
+		  | Resume(thread)                             => 
+			 resumeThread(model, thread)
+		  | SetBreakpoint(thread, position)            => 
+			 setBreakpoint(model, thread, position)
+		  | RemoveBreakpoint(thread, position)         =>
+			 removeBreakpoint(model, thread, position)
+		  | Detach(thread)                             =>
+			 detach(model, thread)
+		  | Unleash(thread, nbframes)                  =>
+			 unleash(model, thread, nbframes)
+		  | SetType(thread, id, typ)                   =>
+			 setType(model, thread, id, typ)
+		  | ResetType(thread, id)                      =>
+			 resetType(model, thread, id)
+	    end
+		
+    end
+

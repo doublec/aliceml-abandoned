@@ -1,0 +1,6 @@
+*.alc
+JACKE_PARSER-sig.aml
+Lexer.aml
+JackeParser.aml
+jacke.grm.sml
+Makefile.depend

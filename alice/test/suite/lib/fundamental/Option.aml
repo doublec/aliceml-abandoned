@@ -1,0 +1,158 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestOption :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun testIsSome () =
+	(Test.test (fn x => Option.isSome x = true) (SOME 0);
+	 Test.test (fn x => Option.isSome x = false) NONE)
+
+    fun testIsNone () =
+	(Test.test (fn x => Option.isNone x = true) NONE;
+         Test.test (fn x => Option.isNone x = false) (SOME 0))
+
+    fun testValOf () =
+       (Test.test (fn x => Option.valOf x = 0) (SOME 0);
+	Test.test (fn x => (Option.valOf x handle Option.Option => true)) NONE)
+
+    fun testJoin () = 
+	(Test.test (fn x => Option.join x = SOME 0) (SOME (SOME 0));
+	 Test.test (fn x => Option.join x = NONE) (SOME NONE);
+	 Test.test (fn x => Option.join x = NONE) NONE)
+
+    fun testGetOpt () =
+	(Test.test (fn x => Option.getOpt x = 2) (NONE, 2);
+	 Test.test (fn x => Option.getOpt x = 3) (SOME 3, 2))
+
+    fun testEqual () =
+	let
+	    val t = Int.equal
+	in
+	    (Test.test (fn x => Option.equal t x = true) (NONE, NONE);
+	     Test.test (fn x => Option.equal t x = false) (SOME 0, NONE);
+	     Test.test (fn x => Option.equal t x = false) (NONE, SOME 0);
+	     Test.test (fn x => Option.equal t x = true) (SOME 0, SOME 0);
+	     Test.test (fn x => Option.equal t x = false) (SOME 0, SOME 1))
+	end
+
+    fun testCollate () =
+	let
+	    val t = Int.compare
+	in
+	    (Test.test (fn x => Option.collate t x = EQUAL) (NONE, NONE);
+	     Test.test (fn x => Option.collate t x = GREATER) (SOME 0, NONE);
+	     Test.test (fn x => Option.collate t x = LESS) (NONE, SOME 0);
+	     Test.test (fn x => Option.collate t x = EQUAL) (SOME 0, SOME 0);
+	     Test.test (fn x => Option.collate t x = LESS) (SOME 0, SOME 1);
+	     Test.test (fn x => Option.collate t x = GREATER) (SOME 1, SOME 0))
+	end
+
+    fun testFilter () = 
+	let 
+	    fun test x = x <= 15 andalso x > 5
+	in
+	    Gen.try 20 Gen.int (Test.test 
+				    (fn x => if x <= 15 andalso x > 5 
+					    then Option.filter test x = SOME x 
+					    else Option.filter test x = NONE))
+	end
+
+    fun testApp () = 
+	let
+	    val xs = ref []
+	    fun test x = xs := [x]
+	in
+	    (Test.test (fn x => (Option.app test x = ();
+				 List.null (!xs) = true)) NONE;
+	     Test.test (fn x => (Option.app test x = ();
+				 List.null (!xs) = false)) (SOME 4))
+	end
+
+    fun testMap () = 
+	let
+	    fun g x = Real.round x
+	    fun test x = if x = NONE then NONE else SOME (g (valOf x))
+	in
+	    Gen.try 100 (Gen.option Gen.real) 
+	    (Test.test (fn x => Option.map g x = test x))
+	end
+
+    fun testMapPart () = 
+	let
+	    fun g x = if x >= 10.0 then SOME (Real.round x) else NONE
+	    fun test x = if x = NONE orelse (valOf x) < 10.0 
+			 then NONE 
+			 else g (valOf x)
+	in
+	    Gen.try 100 (Gen.option Gen.real) 
+	    (Test.test (fn x => Option.mapPartial g x = test x))
+	end
+
+    fun testFold () = 
+	let
+	    fun f (v, b) = b + Real.round v 
+	    fun test (x, opt) = if opt = NONE then x else f (valOf opt, 10)
+	in
+	    Gen.try 100 (Gen.option Gen.real) 
+	    (Test.test (fn x => Option.fold f 10 x = test (10, x)))
+	end
+
+    fun testCompose () = 
+	let
+	    fun f x = x >= 5 andalso x <= 15
+	    fun g x = if x > 10.0 then SOME (Real.round x) else NONE
+	    fun test x = 
+		let
+		    val t = g x
+		in
+		    if t = NONE then NONE else SOME (f (valOf t))
+		end
+	in
+	    Gen.try 100 Gen.real (Test.test 
+				  (fn x => Option.compose (f, g) x = test x))
+	end
+
+    fun testComposePart () = 
+	let
+	    fun f x = if x >= 12 then SOME (x >= 5 andalso x <= 15) else NONE
+	    fun g x = if x > 10.0 then SOME (Real.round x) else NONE
+	    fun test x = 
+		let
+		    val t = g x
+		in
+		    if t = NONE then NONE else SOME (f (valOf t))
+		end
+	in
+	    Gen.try 100 Gen.real (Test.test 
+				  (fn x => Option.compose (f, g) x = test x))
+	end
+
+    val suite = ("Option", [("isSome", testIsSome),
+			    ("isNone", testIsNone),
+			    ("valOf", testValOf),
+			    ("filter", testFilter),
+			    ("join", testJoin),
+			    ("app", testApp),
+			    ("map", testMap),
+			    ("mapPart", testMapPart),
+			    ("fold", testFold),
+			    ("compose", testCompose),
+			    ("composePart", testComposePart)])
+end

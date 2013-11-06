@@ -1,0 +1,24 @@
+(*
+ * Interpreter for F+rec - Tokens
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+structure Token =
+struct
+    datatype token =
+	  ID  of string		(* identifier *)
+	| CON of int		(* constant *)
+	| IF			(* `if' *)
+	| THEN			(* `then' *)
+	| ELSE			(* `else' *)
+	| FN			(* `fn' *)
+	| REC			(* `rec' *)
+	| COLON			(* `:' *)
+	| DARROW		(* `=>' *)
+	| LPAR			(* `(' *)
+	| RPAR			(* `)' *)
+	| BOOL			(* `bool' *)
+	| INT			(* `int' *)
+	| ARROW			(* `->' *)
+end

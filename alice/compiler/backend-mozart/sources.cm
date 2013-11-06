@@ -1,0 +1,20 @@
+Group
+
+    structure PickleFlatGrammar
+    functor MkBackendMozart
+
+is
+
+    ../../lib/utility/sources.cm
+    ../../lib/rtt/name.cm
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+    ../backend-common/flat-grammar.cm
+    ../backend-common/arity.cm
+    ../backend-common/engine.cm
+
+    (* Externalisation (into Oz syntax) *)
+
+    pickle-out-stream.cm
+    PickleFlatGrammar.aml
+    MkBackendMozartCross.aml

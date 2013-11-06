@@ -1,0 +1,29 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SPACE        from "SPACE-sig"
+import structure UnsafeGecode from "UnsafeGecode"
+
+structure Space :> SPACE =
+struct
+    eqtype space
+   eqtype description
+
+    datatype status = BRANCH of int * description | FAILED | SOLVED
+
+    open UnsafeGecode
+    val new = makespace
+end

@@ -1,0 +1,303 @@
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Canvas         from "x-alice:/lib/gtk/Canvas"
+import signature MAIN_WINDOW    from "MAIN_WINDOW-sig"
+import signature BOARD          from "BOARD-sig"
+import structure MkCanvasDriver from "MkCanvasDriver"
+import structure MkGrTree       from "MkGrTree"
+import structure MkSelection    from "MkSelection"
+import structure MkUpdate       from "MkUpdate"
+import structure GrTypes        from "GrTypes"
+import structure Prefs          from "../Prefs"
+import structure Common         from "../Common"
+import structure AbsTree        from "../AbsTree"
+import structure MkLayoutList   from "MkLayoutList"
+
+functor MkBoard (MainWindow: MAIN_WINDOW) (QueuePut:Common.QUEUE_PUT)
+     :> BOARD =
+struct
+
+  (* Counter for generating unique ids. *)
+  val idCounter = ref 2  (* 1 is reserved. *)
+  fun newid () = (idCounter := !idCounter + 1 ; !idCounter)
+
+  datatype stack = Nil
+                 | Cons of {id     : int ,
+                            tree   : GrTypes.tree ,
+                            group  : Gtk.object ,
+                            x      : int,     (* xpos of the group. *)
+                            y      : int ref, (* ypos of the group. *) 
+                            line   : Gtk.object ,
+                            yline  : int ref,
+                            tail   : stack ref}
+
+  (* Stack containing all the entries. *)
+  val entries = ref Nil
+  val last    = ref entries
+
+  (* Push a new entry. *)
+  fun push x =
+    let val newlast = #tail x
+    in 
+      assert !newlast of Nil ;
+      !last := Cons x ;
+      last := newlast
+    end
+
+  (* App. *)
+  fun app (f, Nil) = ()
+    | app (f, Cons x) = (f x ; app (f, !(#tail x)))
+
+  fun getEntry' (id, Nil) =
+      (Common.warning ("MkBoard.getEntry': id-" ^ (Int.toString id)
+		       ^ " not found") ; assert false)
+    | getEntry' (id', Cons x) =
+      if id' = #id x then x else getEntry' (id', !(#tail x))
+
+  fun getEntry id =
+    let
+      val entry = getEntry' (id, !entries)
+      val tree  = GrTypes.getSonOf (#tree entry)
+      val next  = case !(#tail entry) of
+                     Nil => NONE
+                   | Cons x => SOME (#id x)
+    in
+      (tree, next)
+    end
+
+  structure Driver    = MkCanvasDriver MainWindow
+  structure GrTree    = MkGrTree Driver QueuePut
+  structure Selection = MkSelection Driver MainWindow QueuePut
+  structure Update    = MkUpdate GrTree
+  structure Monitors  = GrTree.Monitors
+  structure LayoutList = MkLayoutList Driver GrTree Update
+
+  val _ = Promise.fulfill (Selection.getEntryP, getEntry)
+  val _ = Promise.fulfill (Update.replaceListTailP, LayoutList.replaceListTail)
+
+  fun resizeAllLines () = 
+    app ((fn {line, yline, ...} => Driver.resizeLine (line, !yline)), !entries)
+
+  fun removeAll () =
+    (Selection.deselect () ;
+     Monitors.purge () ;
+     app (fn {group, ...} => Gtk.Object.destroy group, !entries) ;
+     Driver.height := Prefs.margin ;
+     Driver.width  := 0 ;
+     entries       := Nil ;
+     last          := entries ;
+     Driver.lineWidth := MainWindow.canvasWidth ;
+     resizeAllLines () ;
+     Driver.resizeCanvas ())
+
+  fun updateCanvasWidth width =
+      (if !Driver.width < width
+       then (Driver.width := width ;
+	     if !Driver.lineWidth < width
+	     then (Driver.lineWidth := width ; resizeAllLines ())
+	     else ())
+       else () ;
+       Driver.resizeCanvas ())
+
+  fun updateWidth' tree =
+      let val (width, _) = GrTypes.getSize tree
+      in
+	if !Driver.width < width then Driver.width := width else ()
+      end
+
+  fun updateBoardWidth () = 
+      let val oldwidth = !Driver.width
+      in
+	Driver.width := 0 ;
+	app (fn {tree, ...} => updateWidth' tree, !entries) ;
+	if oldwidth < !Driver.width then (Driver.lineWidth := !Driver.width ;
+					  resizeAllLines ())
+	else () ;
+	Driver.resizeCanvas ()
+      end
+
+  fun translate (dy, Nil) = Driver.height := !Driver.height + dy 
+    | translate (dy, Cons {group, y, tail, ...}) = (y := !y + dy ;
+                                                    Driver.mvByY (group, dy) ;
+                                                    translate (dy, !tail))
+       
+  (* Remove an entry with id. *)
+  fun stackRemove (aid, currentRef) =
+    case !currentRef of
+      Nil => Common.warning "MkBoard.stackRemove: id not found.\n"
+    | Cons {id, group, y, tail, tree, ...} =>
+        if id = aid then
+          let val (width, _) = GrTypes.getSize tree
+	  in
+	    currentRef := !tail ;
+            Monitors.destroy (GrTypes.getSonOf tree) ;
+	    Gtk.Object.destroy group ;
+
+            (* Move the elements below. *)
+            (case !tail of
+               Nil => (* We removed the last element. *)
+	       (last := currentRef ;
+		Driver.height := !y)
+             | Cons {y = y', ...} => translate (!y - !y', !tail)) ;
+	   
+	    if !Driver.width = width then updateBoardWidth ()
+	    else Driver.resizeCanvas ()
+	  end
+          
+        else stackRemove (aid, tail)
+	     
+  fun remove id = stackRemove (id, entries)
+
+  val canvas = Driver.canvas
+
+  val leftx = real Prefs.margin
+		  
+  (* Create a new top-level group. *)
+  fun newGroup () = 
+    let
+      val height = !Driver.height
+      val id = newid ()
+      val group = Driver.newGroup' (Driver.rootGroup, leftx, real height)
+    in 
+      (group, id)
+    end
+      
+  fun add (group, id, tree, width, height) =
+    let
+      val oldh = !Driver.height
+      val yline = height + Prefs.sepsep
+      val newheight = oldh + yline + Prefs.sepsep
+      val _ = Driver.height := newheight
+      val _ = updateCanvasWidth width
+      val line = Driver.createDashedLine (group, yline)
+      val entry = {id, tree, group, line, yline = ref yline,
+                   x = Prefs.margin, y = ref oldh, tail = ref Nil}
+    in
+      Canvas.scrollTo (canvas, 0, !Driver.height) ;
+      push entry
+    end
+
+  fun selectEntryAt (mx, my, Nil) = () (* No Entry. *)
+    | selectEntryAt (mx, my, Cons {x, y, tree, tail, ...}) =
+      let
+        val (width, height) = GrTypes.getSize tree
+        val x1 = x
+        val x2 = x1 + width
+        val y1 = !y
+        val y2 = y1 + height
+        val sontree = GrTypes.getSonOf tree
+      in
+	if my >= y1 andalso my <= y2 then
+          if mx >= x1 andalso mx <= x2
+            andalso Selection.selectAt (sontree, mx - x1, my - y1)
+            then () (* The above selection has succeeded. *)
+          else Selection.selectTree sontree
+	else selectEntryAt (mx, my, !tail)
+      end
+
+  fun clic (x, y, m) = (Selection.modifier := Word.fromInt m ;
+                        MainWindow.setStatus "" ;
+                        selectEntryAt (x, y, !entries))
+
+  fun infoEntryAt (mx, my, Nil, _) = () (* No Entry. *)
+    | infoEntryAt (mx, my, Cons {x, y, tree, tail, ...}, glob) =
+      let
+        val (width, height) = GrTypes.getSize tree
+        val x1 = x
+        val x2 = x1 + width
+        val y1 = !y
+        val y2 = y1 + height
+        val sontree = GrTypes.getSonOf tree
+      in
+	if my >= y1 andalso my <= y2 then
+          if mx >= x1 andalso mx <= x2
+            then if Selection.isCtrl () then Common.inspect sontree
+		 else Selection.infoAt (sontree, mx - x1, my - y1, glob)
+          else MainWindow.setStatus "Not in the entry (H)."
+	else infoEntryAt (mx, my, !tail, glob)
+      end
+  fun info (x, y, m) = (Selection.modifier := Word.fromInt m ;
+                        MainWindow.setStatus "" ;
+                        infoEntryAt (x, y, !entries, Selection.isShift ()))
+
+  fun refont () =
+    (MainWindow.setStatus "Applying the new font" ;
+     app ((fn {tree, ...} => Update.refont tree), !entries) ;
+     MainWindow.setStatus Prefs.ready)
+
+  val refIdItem = (Prefs.refIdL, Prefs.refStyle)
+  val refItem = (Prefs.refL, Prefs.refStyle)
+
+  fun updRefIdentifier id (GrTypes.Container {kids, ...} as parent) =
+         let
+	   val kids = !kids
+	   val _ = assert Array.length kids = 1
+	   val kid = Array.sub (kids, 0)
+	 in
+	   case kid of
+	     GrTypes.Prefix row =>
+	         let
+		   val prefix = #prefix row
+		   val (_, prefixWidth, prefixHeight) = 
+		       case prefix of
+			 [(item, (txt, _))] =>
+			 (assert txt = Prefs.refL ;
+			  if !Prefs.identifiers
+			  then Driver.addId (item, refIdItem, id)
+			  else Driver.updItem (item, refItem))
+		       | _ => assert false
+		   val kid = GrTypes.Prefix {row where prefixWidth,
+					               prefixHeight}
+		 in
+		   Array.update (kids, 0, kid) ;
+		   Update.Layout.propagateDirty (parent, 0)
+		 end
+	   | _ => assert false
+	 end
+    | updRefIdentifier _ _ = assert false
+
+  fun updFutureIdentifier tree = Update.reinspect tree
+
+  fun identifiers () =
+    (MainWindow.setStatus "Updating futures and references identifiers" ;
+     Monitors.identifiers (updRefIdentifier, updFutureIdentifier) ;
+     MainWindow.setStatus Prefs.ready)
+
+  fun layout e =
+    let
+      val _ = MainWindow.setStatus "Updating the layout" ;
+      val entry = getEntry' (e, !entries)
+      val tree  = #tree entry
+      val (oldwidth, oldheight) = GrTypes.getSize tree
+      val (width, height) = GrTree.Layout.layout tree
+      val yline = #yline entry
+      val dy = height - oldheight
+    in
+      yline := !yline + dy ;
+      Driver.resizeLine (#line entry, !yline) ;
+      translate (dy, !(#tail entry)) ;
+      (* If this entry is narrower, update the width of the whole canvas. *)
+      if !Driver.width = oldwidth andalso width < oldwidth
+        then updateBoardWidth () else updateCanvasWidth width ;
+      MainWindow.setStatus Prefs.ready
+    end
+
+  (**** Dynamic changes : futures or references. ****)
+
+  fun replace abstree =
+   (Selection.reselect () ;
+    fn tree => 
+    (* Is it a list tail ? *)
+    (case tree of
+       GrTypes.Container {desc = AbsTree.ListTail _, parent, index,...} => 
+         LayoutList.replaceListTail (abstree, !parent, !index, tree)
+     | _ => Update.updateWith (tree, abstree)))      
+   
+  val updateFuture = Monitors.updateFuture replace
+  val monitor = Monitors.monitor replace
+
+  (* To avoid the latency when selecting an item. *)
+  val _ = Future.await GrTypes.destroy
+
+end
+
+

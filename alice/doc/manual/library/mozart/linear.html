@@ -1,0 +1,208 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Linear structure", "The <TT>Linear</TT> structure"); ?>
+
+<P></P>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature LINEAR
+    structure Linear : LINEAR</PRE>
+
+  <P>
+    The <TT>Linear</TT> structure provides functionality to post
+    linear equality constraints using a convenient infix operator syntax.
+  </P>
+
+  <P class=node><EM>Notes:</EM>
+  </P>
+    The linear module maps linear constraints onto regular sum constraints
+    of the FD module. This transformation is not always optimal, that is,
+    one might be able to devise a better constraint manually.
+  <P>
+    Note also that since the linear module extensively
+    performs folding of constant expressions,
+    it eventually might exceed the implementation specific
+    integer constant limit of finite domain constraints.
+    In such a case, folding can be prevented by introducing a finite domain
+    variable that is assigned a singleton value.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature LINEAR from "x-alice:/lib/constraints/LINEAR-sig"
+    import structure Linear from "x-alice:/lib/constraints/Linear"</PRE>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+    signature LINEAR =
+    sig
+	infix 7 `*
+	infix 6 `+ `-
+	infix 5 `#
+	infix 4 `= `&lt;&gt; `> `>= `&lt; `&lt;=
+	infix 3 `&lt;->
+
+	datatype domain_element =
+	    `` of int
+	  | `# of int * int
+
+	type domain = domain_element list
+
+	datatype term =
+	    FD of FD.fd
+	  | `  of int
+	  | `+ of term * term
+	  | `- of term * term
+	  | `* of term * term
+
+	datatype rel =
+	    `&lt;   of term * term
+	  | `&lt;=  of term * term
+	  | `=   of term * term
+	  | `&lt;&gt;  of term * term
+	  | `>=  of term * term
+	  | `>   of term * term
+	  | `&lt;-> of rel * term
+
+	val var : domain option -> term
+	val bin : unit -> term
+	val vec : int * domain -> term vector
+
+	val distribute : FD.dist_mode * term vector -> unit
+	val distinct : term vector -> unit
+	val post : rel -> unit
+    end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>datatype domain_element = `` of int | `# of int *int<BR>
+          type domain = domain_element list</TT>
+    </DT>
+    <DD>
+      <P>Used to describe domains of finite domain variables. <TT>`` i</TT>
+         denotes the single integer value <TT>i</TT>
+         and <TT>>`#(l,h)</TT> denotes all
+         integer values between <TT>l</TT> and <TT>h</TT>. For example,
+         <TT>[``3,`#(5,10)]</TT> denotes <TT>[3,5,6,7,8,9,10]</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>datatype term =<BR>
+          &nbsp;&nbsp;&nbsp;&nbsp;FD of FD.fd<BR>
+          &nbsp;&nbsp;| `&nbsp;&nbsp;of int<BR>
+          &nbsp;&nbsp;| `+ of term * term<BR>
+          &nbsp;&nbsp;| `- of term * term<BR>
+          &nbsp;&nbsp;| `* of term * term</TT>
+    </DT>
+    <DD>
+      <P>This datatype is used to post arithmetic constraints.
+      </P>
+      <UL>
+        <LI><TT>FD <I>x</I></TT> injects the finite domain
+            variable <I>x</I> into a term.
+        <LI><TT>` <I>i</I></TT> injects a integer value <I>i</I> into a term.
+        <LI><TT>`+(<I>x</I>,<I>y</I>)</TT> denotes the sum
+            of <I>x</I> and <I>y</I>.
+        <LI><TT>`-(<I>x</I>,<I>y</I>)</TT> denotes
+            the difference of <I>x</I> and <I>y</I>.
+        <LI><TT>`*(<I>x</I>,<I>y</I>)</TT> denotes the
+            product of <I>x</I> and <I>y</I>.
+      </UL>
+      <P></P>
+    </DD>
+
+    <DT>
+      <TT>datatype rel =<BR>
+	  &nbsp;&nbsp;&nbsp;&nbsp;`&lt;&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&lt;=&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `=&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&lt;&gt;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `>=&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `>&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&lt;-> of rel * term</TT>
+    </DT>
+    <DD>
+      <P>This datatype is used to post linear equations.
+      </P>
+      <UL>
+        <LI><TT>`&lt;(<I>x</I>,<I>y</I>)</TT> denotes that
+            <I>x</I> is less than <I>y</I>.
+        <LI><TT>`&lt;=(<I>x</I>,<I>y</I>)</TT> denotes that
+            <I>x</I> is less than or equal to <I>y</I>.
+        <LI><TT>`=(<I>x</I>,<I>y</I>)</TT> denotes that
+            <I>x</I> equals <I>y</I>.
+        <LI><TT>`&lt;&gt;(<I>x</I>,<I>y</I>)</TT> denotes that
+            <I>x</I> is not equal to <I>y</I>.
+        <LI><TT>`>=(<I>x</I>,<I>y</I>)</TT> denotes that
+            <I>x</I> is greater than or equal to <I>y</I>.
+        <LI><TT>`>(<I>x</I>,<I>y</I>)</TT> denotes that
+            <I>x</I> is greater than <I>y</I>.
+        <LI><TT>`&lt;->(<I>e</I>,<I>c</I>)</TT> reifies
+            the equation <I>e</I> into <I>c</I>.
+      </UL>
+      <P></P>
+    </DD>
+
+    <DT>
+      <TT>var <I>dom</I></TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created finite domain variable term initialized
+         with <I>dom</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>bin ()</TT>
+    </DT>
+    <DD>
+      <P>returns a freshly created <TT>0/1</TT> variable term which can be used
+         for reification.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>vec (<I>n</I>,<I>dom</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a vector of size <I>n</I> of
+         freshly created finite domain variable terms. Each variable
+         is initialized with <I>dom</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>distribute (<I>s</I>,<I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P>distributes the variables in <I>v</I> according to the
+         given strategy <I>s</I>. For details, see
+         <A HREF="fd.html">here</A>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>distinct <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>posts the distinct constraint on all variables in <I>v</I>.
+         For details, see <A HREF="fd.html">here</A>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>post <I>r</I></TT>
+    </DT>
+    <DD>
+      <P>post the constraint denoted by <I>r</I>.
+      </P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

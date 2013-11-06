@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Model from "Model"
+
+signature DEBUGGUI =
+sig
+    type view
+	
+    val new        : unit  -> view
+    val initialize : view * Model.model -> unit
+    val update     : view -> Thread.thread -> unit
+
+    val run        : (unit -> 'a) -> 'a
+    val breakpoint : unit -> unit
+end

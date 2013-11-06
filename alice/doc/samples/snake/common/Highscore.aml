@@ -1,0 +1,73 @@
+(* Alice Snake 2.0 - Highscore
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import signature HIGHSCORE from "HIGHSCORE-sig"
+import structure Color     from "Color"
+
+
+structure Highscore :> HIGHSCORE =
+struct
+
+    type entry = 
+	{
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,
+	 player:     int,
+	 level:      int
+	 }
+
+    type highscore = entry list
+    type t = highscore
+
+    type points = 
+	{ 
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,        (* total points (excluding gamePoints) *)
+	 gamePoints: int,        (* points made this game 
+				  but not yet taken home *)
+         lives :     int option  (* lives left *)
+	 }
+
+    val empty = nil
+
+    fun merge (high, p, level) = 
+	let
+            val player  = List.length p
+	    val convert = 
+		List.foldl (fn ({name,
+				 color,
+				 points,
+				 gamePoints,
+                                 lives}, xs) => {name, color, points, 
+                                                    player, level} :: xs) nil
+
+	    fun order (e1 : entry, e2 : entry) = 
+		if #points e1 < #points e2 
+		    then LESS
+		else
+		    if #points e1 > #points e2
+			then GREATER
+		    else EQUAL
+	    (* if highscore should be sorted another way,
+	     only change this procedure *)
+
+	    val sorted = List.sort order ((convert p) @ high)
+
+	in
+	    List.take (sorted, 10) handle Subscript => sorted
+	end
+
+    val foldl = List.foldl (* TODO: implementation *)
+
+end
+

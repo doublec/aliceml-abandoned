@@ -1,0 +1,33 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure IntInf1 : REGRESSION =
+struct
+
+val name = "int-inf.1"
+
+val ok = SOME "int-inf.1.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val big: IntInf.int = IntInf.fromInt (valOf Int.maxInt) + IntInf.fromInt 1
+
+fun try (barg: IntInf.int): unit =
+   let
+      val bstr = IntInf.toString barg
+      val _ = concatResult (concat ["trying ", bstr, "\n"])
+   in concatResult (if ~ big <= barg
+		then if barg < big
+			then "ok\n"
+		     else "positive\n"
+	     else "negative\n")
+   end
+
+val _ = try (IntInf.fromInt 0)
+val _ = try (IntInf.fromInt 1)
+
+val result = !result
+
+end

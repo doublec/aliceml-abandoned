@@ -1,0 +1,37 @@
+(*
+ * Compile with
+ *    alicec HttpClientExample.aml
+ * and run as
+ *    alicerun HttpClientExample http://www.ps.uni-sb.de/alice/
+ *)
+
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import structure CommandLine from "x-alice:/lib/system/CommandLine"
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Http        from "x-alice:/lib/system/Http"
+import structure HttpClient  from "x-alice:/lib/system/HttpClient"
+
+fun usage () =
+    TextIO.output (TextIO.stdErr,
+		   "Usage: " ^ CommandLine.name () ^ " &lt;url&gt;\n")
+
+fun main [url] =
+    let
+	val response = HttpClient.get (Url.fromString url)
+    in
+	TextIO.output
+	    (TextIO.stdErr, Int.toString (#statusCode response) ^ " " ^
+			    #reasonPhrase response ^ "\n");
+	Http.StringMap.appi
+	    (fn (name, value) =>
+		TextIO.output (TextIO.stdErr,
+			       name ^ ": " ^ value ^ "\n"))
+	    (#headers response);
+	TextIO.output (TextIO.stdErr, "\n");
+	TextIO.print (#body response);
+	OS.Process.success
+    end
+  | main _ = (usage (); OS.Process.failure)
+
+val _ = OS.Process.exit (main (CommandLine.arguments ()))

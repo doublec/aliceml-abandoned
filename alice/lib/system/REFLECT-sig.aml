@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Type from "../rtt/Type"
+import structure Inf  from "../rtt/Inf"
+
+signature REFLECT =
+sig
+    type value
+    type module
+
+    val reflect : 'a -> value
+    val reify :   value -> 'a				(* Unsafe! *)
+
+    val reflectPackage : package -> module * Inf.t
+    val reifyPackage :   module * Inf.t -> package	(* Unsafe! *)
+
+    functor Reflect(signature S structure X : S) : (val x : module)
+    functor Reify(val x : module signature S) : S	(* Unsafe! *)
+    functor ReflectSig(signature S) : (val x : Inf.t)
+    functor ReifySig(val x : Inf.t) : (signature S)	(* Unsafe! *)
+    functor ReflectType(type t) : (val x : Type.t)
+    (*functor ReifyType(val x : Type.t) : (type t)	(*Unsafe!*)*)
+
+    functor LiftPackage(val package : package) : (signature S structure X : S)
+end

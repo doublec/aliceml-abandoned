@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Rand   from "../system/Rand"
+import structure Time   from "../system/Time"
+import signature RANDOM from "RANDOM-sig"
+
+(* Quick & dirty *)
+
+structure Random : RANDOM =
+struct
+    val  _           = Rand.srand 0
+    fun randomize () = Rand.srand (Time.hash (Time.now ()))
+    val (min, max)   = Rand.randLimits()
+    val range        = max - min
+    val bigInt       = 536870912 (* 2 ^ 29 *)
+
+    fun int limit  = if limit = 0 then 0 else (Rand.rand() mod limit)
+	
+    fun real limit =
+        if limit = 0.0 then 0.0 
+        else Real.fromInt (int bigInt) * limit / (Real.fromInt bigInt)
+
+    val largeInt   = Int.toLarge o int o LargeInt.toInt
+    val largeReal  = real
+end

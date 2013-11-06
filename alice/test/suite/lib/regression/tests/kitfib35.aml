@@ -1,0 +1,27 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure KitFib35 : REGRESSION =
+struct
+
+val name = "kitfib35"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+(*kitfib35.sml*)
+
+val _ = 
+let
+  infix + - <
+  fun fib n = if n < 1 then 1 else fib (n-1) + fib (n-2)
+in
+  fib 35; ()
+end
+  
+val result = !result
+
+end

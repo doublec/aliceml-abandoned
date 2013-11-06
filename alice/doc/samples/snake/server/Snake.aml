@@ -1,0 +1,146 @@
+(* Alice Snake 2.0 - Snake abstract data type (impl)
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import signature SNAKE      from "SNAKE-sig"
+import structure Protocol   from "../common/Protocol"
+import structure Pos        from "../common/Pos"
+import structure Color      from "../common/Color"
+import structure ImpQueue   from "ImpQueue"
+
+
+structure Snake :> SNAKE =
+struct
+
+    structure P = Protocol
+    structure Q = ImpQueue
+
+    datatype snake = SN of {
+        direction : P.direction ref,
+        belly :     int ref,
+        id :        int,
+        color :     Color.color,
+        body :      Pos.pos Q.queue 
+    }
+
+    type t = snake
+    
+    val startSize = 3
+
+    fun valid (SN { body, ... }) =
+        let
+            val r = Q.fold ( fn (p, NONE) => SOME (true, p)
+                  | (p1, SOME (f, p2)) =>
+                     SOME (f andalso (Pos.above p1 = p2
+                              orelse Pos.below p1 = p2
+                              orelse Pos.left p1 = p2
+                              orelse Pos.right p1 = p2), p1) ) NONE body
+        in
+            isSome r andalso #1 (valOf r)
+        end
+
+    fun snake (capacity, id, c, pos, d) = 
+        let
+            val q = Q.queue capacity
+            val _ = Q.add (q, pos);
+            val s = SN { 
+                direction   = ref d, 
+                belly       = ref (startSize - 1), 
+                color       = c,
+                id          = id,
+                body        = q
+            }
+        in
+            assert valid s do s
+        end
+        
+    fun color (SN { color = c, ... }) = c
+    
+    fun id    (SN { id = id, ... }) = id
+
+    fun belly (SN { belly = ref b, ... })   = b
+
+    fun eat (SN { belly, ... }, food)       = belly := !belly + food
+
+    fun direction (SN { direction, ... })   = !direction
+
+    fun move (s as SN {  direction = direction as ref old_dir, 
+                    belly,
+                    body,
+                    ...
+                 }, new_dir) =
+        let 
+            (* determine new head position:
+               if requested turn is impossible (ie.e new-dir 180° old-dir)
+               then do not turn at all. 
+             *)
+            val head    = Q.head body
+
+            val (newHead, dir) = 
+               case (old_dir, new_dir) of
+                    ((P.UP, P.DOWN) |    
+                     (non P.DOWN, P.UP)) =>
+                    (Pos.above head, P.UP)
+                |   ((P.DOWN, P.UP) |
+                     (non P.UP, P.DOWN)) =>
+                    (Pos.below head, P.DOWN)
+                |   ((P.LEFT, P.RIGHT) |
+                     (non P.RIGHT, P.LEFT)) =>
+                    (Pos.left head, P.LEFT)
+                |   ((P.RIGHT, P.LEFT) |
+                     (non P.LEFT, P.RIGHT)) =>
+                    (Pos.right head, P.RIGHT)
+            
+            val _   = Q.add (body, newHead);
+        in
+            if !belly > 0 
+                then belly := !belly - 1
+                else (Q.remove body; ());
+            direction := dir;
+            assert valid s
+        end
+
+    fun head (SN { body, ... }) = Q.head body
+
+    fun body (SN { body, ... }) = 
+        let val l = Q.fold op:: [] body
+        in
+            List.tl l
+        end
+
+    fun appBody f (s as SN { body = b,  ... }) = 
+        let
+            val n   = Q.size b - 1
+            val _   = assert List.length (body s) = n
+        in
+            Q.fold (fn (x, i) =>
+                if i > n then i
+                else (f x; i + 1)) 1 b;
+            ()
+        end
+
+    fun length (SN { body, ... }) = Q.size body
+
+    fun shrink (s as SN { body, ... }) = (Q.remove body; assert valid s; ())
+
+    fun hit (SN { id = id1, body = b1, ... }, SN { id=id2, body = b2, ... }) =
+        let
+            val head1   = Q.head b1 
+            val head2   = Q.head b2            
+            val bodyLen = Q.size b2 - 1
+        in
+            (id1 <> id2 andalso head1 = head2) orelse
+                #1 ( Q.fold (fn (x, (f, i)) =>
+                    if f orelse i > bodyLen
+                        then (f, i)
+                        else (head1 = x, i + 1)) (false, 1) b2 )
+        end
+
+end

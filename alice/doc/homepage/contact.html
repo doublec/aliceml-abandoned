@@ -1,0 +1,107 @@
+<?php include("macros.php3"); ?>
+<?php heading("Alice Contact", "contact\ninformation") ?>
+
+
+<?php section("mailinglist", "Mailing lists") ?>
+
+<P>We provide several mailing lists about Alice.  The <I>announce</I> list
+covers announcements regarding releases of the Alice programming system
+and related documentation, tools, and libraries.  The <I>users'</I> list
+is intended for questions, comments, and discussions regarding the Alice ML
+language and the Alice programming system.  Announcements are also sent
+to this list, so you need not subscribe to both.</P>
+
+<P>You can send messages to the lists by mailing to</P>
+
+<PRE class=code>
+<A href="mailto:alice-announce@ps.uni-sb.de">alice-announce@ps.uni-sb.de</A>
+<A href="mailto:alice-users@ps.uni-sb.de">alice-users@ps.uni-sb.de</A></PRE>
+
+<P>Please do not send bug reports to the mailing list.  Instead, submit them
+to the <A href="#bugzilla">bug tracking system</A>.</P>
+
+<?php subsection("subscription", "Subscription") ?>
+
+<P>To subscribe to or unsubscribe from the respective mailing list, go to:</P>
+
+<PRE class=code>
+<A href="/mailman/listinfo/alice-announce">http://ps.uni-sb.de/mailman/listinfo/alice-announce</A>
+<A href="/mailman/listinfo/alice-users">http://ps.uni-sb.de/mailman/listinfo/alice-users</A></PRE>
+
+<?php subsection("archives", "Archives") ?>
+
+<P>The mailing lists are archived on-line:</P>
+
+<PRE class=code>
+<A href="/pipermail/alice-announce/">http://ps.uni-sb.de/pipermail/alice-announce</A>
+<A href="/pipermail/alice-users">http://ps.uni-sb.de/pipermail/alice-users</A></PRE>
+
+<?php subsection("news", "Newsgroups") ?>
+
+<P>The mailing lists are also available as a newsgroup on our public news
+server <TT>news.ps.uni-sb.de</TT>, along with some other groups that may
+be of interest to you:</P>
+
+<BLOCKQUOTE>
+  <TABLE border=1 cellpadding=4>
+    <TR><TH align=left>Group<TH align=left>Description
+    <TR>
+      <TD><TT><A href="news://news.ps.uni-sb.de/alice.announce"
+	>alice.announce</A></TT>
+      <TD>announcements list
+    <TR>
+      <TD><TT><A href="news://news.ps.uni-sb.de/alice.users"
+	>alice.users</TT>
+      <TD>users' list
+<!--
+    <TR>
+      <TD><TT><A href="news://news.ps.uni-sb.de/alice.devel"
+	>alice.devel</TT>
+      <TD>developers' list
+-->
+    <TR>
+      <TD><TT><A href="news://news.ps.uni-sb.de/alice.bugs"
+	>alice.bugs</TT>
+      <TD>messages from the bug-tracking system
+    <TR>
+      <TD><TT><A href="news://news.ps.uni-sb.de/alice.cvs"
+	>alice.cvs</TT>
+      <TD>CVS check-in log messages
+<!--
+    <TR>
+      <TD><TT><A href="news://news.ps.uni-sb.de/alice.test"
+	>alice.test</TT>
+      <TD>reserved for news server testing purposes
+-->
+  </TABLE>
+</BLOCKQUOTE>
+
+<?php subsection("mozart-lists", "Mozart-related news") ?>
+
+<P>You may also be interested in subscribing to the mailing lists on
+Mozart, or read them as newsgroups.  For more information, see the <A
+href="http://www.mozart-oz.org/lists/">contact page</A> on the Mozart site.</P>
+
+
+<?php section("wiki", "Wiki") ?>
+
+<P>To provide users with a more persistent way to collect and make available
+information or miscellaneous material to other Alice users we have opened
+the <A href="wiki/">Alice Wiki</A>.</P>
+
+<P>A Wiki is collaborative hypertext environment that anybody can access and
+modify in a very easy way. You will find more information on the Wiki page
+itself.</P>
+
+
+<?php section("bugzilla", "Bug reports") ?>
+
+<P>If you discover bugs in the Alice system, please report them to the
+<A href="bugzilla/">bug tracking system</A>. If we can reproduce them,
+we will try to fix them as soon as possible.</P>
+
+<P>If possible, check whether bugs have already been recorded in the
+database before submitting. Please also check whether it is a <A
+href="manual/limitations.html">known limitation</A> of the current release.</P>
+
+<?php footing() ?>

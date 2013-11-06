@@ -1,0 +1,5 @@
+*.alc
+Makefile.depend
+HOSE_PARSER-sig.aml
+HoseParser.aml
+HoseLexer.aml

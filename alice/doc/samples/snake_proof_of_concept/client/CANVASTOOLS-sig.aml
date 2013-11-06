@@ -1,0 +1,35 @@
+import structure Gtk structure Canvas from "Gtk"
+
+signature CANVASTOOLS = 
+sig
+    datatype color =
+	C_RGB of int * int * int 
+      | C_RGBA of int * int * int * int
+      | C_NAMED of string
+      | C_COLOR of Canvas.object
+      | C_TRANSPARENT
+
+    val fillColor : color -> string * Canvas.arg
+
+    val outlineColor : color -> string * Canvas.arg
+
+    val drawGroup : Canvas.object  * int * int -> Canvas.object
+
+    val drawEllipse : Canvas.object * int * int * int * int *
+	color * color -> Canvas.object
+
+    val drawText : Canvas.object * int * int * Gtk.GtkAnchorType * string * string * color->
+	Canvas.object
+    (* [drawText (groupe, x1, y1, anchor, text, font, fill_color)] *)
+
+    val drawLine : Canvas.object * int * int * int * int * color -> 
+	Canvas.object
+
+    val drawRectangle: Canvas.object * int * int * int * int * color *
+	color -> Canvas.object
+(* [drawRectangle (group, x1, y1, x2, y2, outline_color, fill_color)] *)
+
+    val drawTransient : Canvas.object * 
+	(Canvas.object -> Canvas.object) * Time.time -> Canvas.object
+
+end

@@ -1,0 +1,281 @@
+import structure Type          from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Atom          from "x-alice:/lib/data/Atom"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Common        from "Common"
+import structure AbsTree       from "AbsTree"
+import structure Prefs         from "Prefs"
+import structure Basic         from "BasicTypeMappers"
+import structure ModuleMapper  from "ModuleMapper"
+
+(* Type mappers for builtin types : ints, strings, chars, ... *)
+
+structure Builtin =
+struct
+
+  type aitem = AbsTree.absitem
+  type tree = AbsTree.tree
+  type 'a type_mapper = int * aitem * Type.typ * Type.typ list * 'a -> tree
+
+  datatype tree = datatype AbsTree.tree
+  datatype item = datatype AbsTree.item
+  datatype flag = datatype AbsTree.flag
+
+  (* Generic type_mapper. *)
+  fun generic (toString, style) =
+    ((fn (depth, item, path, targs, value) =>
+                          AbsTree.simpleText (item, toString value, style))
+     : 'a type_mapper)
+    
+  infix ^+ +^
+  fun prefix ^+ map = fn v => prefix ^ (map v)
+  fun map +^ suffix = fn v => (map v) ^ suffix
+
+  (*** INT, INTINF, WORD ***)
+  val int    = generic (Int.toString, Prefs.intStyle)
+  val intInf = generic (IntInf.toString, Prefs.intStyle)
+  val word   = generic ("0wx" ^+ Word.toString, Prefs.wordStyle) 
+  val word8  = generic ("0wx" ^+ Word8.toString, Prefs.wordStyle) 
+  val word32 = generic ("0wx" ^+ Word32.toString, Prefs.wordStyle) 
+
+  (*** REAL ***)
+  val real = generic (Real.toString, Prefs.realStyle)
+
+  (*** CHAR ***)
+  val char = generic ("#\"" ^+ Char.toString +^ "\"", Prefs.charStyle)
+
+  (*** STRING ***)
+  fun string (depth, item, path, targs, value) =
+    let
+      val width = 4 * !Prefs.widthLimit
+      val value = String.toString value
+      val label = (if String.size value <= width then value
+                   else String.substring (value, 0, width) ^ "\\...") ^ "\""
+    in
+      AbsTree.simpleText (item, "\"" ^ label, Prefs.strStyle)
+    end
+
+  (*** REFERENCES ***)
+  (* Indices may be dynamically enabled/disabled in the gui.
+   * As a consequence, the prefix for references is split into
+   * two prefixes, namely 'ref' and the parenthesis. *)
+  val refPrefix = (Prefs.refL, Prefs.refStyle) :: []
+
+  fun reference (depth, item, path, targs, value) =
+    let
+      val argType = case targs of [t] => t | _ => assert false
+      val x     = !value
+      val item' = Common.Value (argType, x)
+      val tree  = AbsTree.mapValue (depth - 1, item', argType, x)
+      val item  = case item of AbsTree.Value (t,v,_) => Value (t,v, Reference)
+                             | _ => assert false
+      val tree = Concat {prefix = AbsTree.openParenthesisL,
+			 tree,
+			 suffix = AbsTree.closeParenthesisL,
+			 orient = AbsTree.orientParent}
+    in
+      AbsTree.makeBox {prefix = refPrefix, tree, suffix = [], item}
+    end
+
+  (*** PROMISE ***)
+  fun promise (depth, item, path, targs, value) =
+    let
+      val argType = case targs of [t] => t | _ => assert false
+      val x       = Promise.future value
+      val item'   = Common.Value (argType, x)
+      val tree    = AbsTree.mapValue (depth - 1, item', argType, x)
+    in
+      AbsTree.makeAbsBox {label = "promise", tree, item}
+    end
+  
+  (*** LIST ***)
+
+  (* Indicate the status of the list.  *)
+  datatype list_desc = Full | Limited | Undetermined
+  val undefinedListKid = Common.undefined "LIST-KID"
+  val consL = [("::", Prefs.consStyle)]
+
+  fun list' (width, depth, item, path, targs, value) =
+    let
+      val (itemTyp, rval) = case item of Value (t,r,_) => (t,r)
+                                       | _ => assert false
+      val item' = AbsTree.Value (itemTyp, rval, AbsTree.Noflag)
+      val item' = item
+      val depth = depth - 1
+      val argType = case targs of [t] => t | _ => assert false
+
+      (* Returns an array, the status, and a flag "last element". *)
+      fun loop (index, l) =
+        if index >= width
+        then
+	  let
+            val array = Array.array (index + 1, undefinedListKid)
+            val last = WidthLimit (AbsTree.ListLimit (itemTyp, l))
+	  in
+	    Array.update (array, index, last) ;
+	    (array, Limited, false)
+	  end
+	else if Hole.isHole l then
+          let
+            val array = Array.array (index + 1, undefinedListKid)
+            val desc = AbsTree.ListTail (itemTyp, l, Future ())
+          in
+            Array.update (array, index, Basic.future (desc, l)) ;
+            (array, Undetermined, false)
+          end
+
+        else case Future.status l of
+          Future.FUTURE =>
+          let
+            val array = Array.array (index + 1, undefinedListKid)
+            val desc = AbsTree.ListTail (itemTyp, l, Future ())
+          in
+            Array.update (array, index, Basic.future (desc, l)) ;
+            (array, Undetermined, false)
+          end
+
+        | Future.FAILED =>
+            let
+              val array = Array.array (index + 1, undefinedListKid)
+              val elem = Basic.failedFuture (NestedRow (SOME itemTyp),depth,l)
+            in
+              Array.update (array, index, elem) ;
+              (array, Undetermined, false)
+            end
+
+        | Future.DETERMINED =>
+            (case l of
+               []      => (Array.array (index, undefinedListKid), Full, true)
+             | x :: l' =>
+                 let
+                   val (array, status, last) = loop (index + 1, l')
+                   val item = Common.Value (argType, x)
+                   val subtree = AbsTree.mapValue (depth, item, argType, x)
+                   val tree =
+                     if status = Limited orelse status = Undetermined
+                       then (* We use the :: constructor. *)
+                         Concat {prefix = [],
+                                 tree = subtree,
+                                 suffix = consL,
+				 orient = AbsTree.orientParent}
+                     else
+                       if last then subtree
+                       else (* We use the "," concatenation. *)
+                         Concat {prefix = [],
+                                 tree = subtree,
+                                 suffix = AbsTree.commaL,
+				 orient = AbsTree.orientSonStrict}
+                 in
+                   Array.update (array, index, tree) ;
+                   (array, status, false)
+                 end)
+
+      val (kids, status, empty) = loop (0, value)
+    in
+      case status of
+        Limited      => Container {desc = item', limit = true, kids}
+      | Undetermined => Container {desc = item', limit = false, kids}
+      | Full         =>
+          if empty then AbsTree.simpleText (item', "[]", Prefs.brackStyle)
+          else
+               Concat {prefix = AbsTree.openSBracketL,
+                       tree   = Container {desc = item', limit = false, kids},
+                       suffix = AbsTree.closeSBracketL,
+		       orient = AbsTree.orientSon}
+
+    end
+
+  fun list (depth, item, path, targs, value) =
+      list' (!Prefs.widthLimit, depth, item, path, targs, value)  
+
+  (*** ATOMS ***)
+  val stringType =
+    let structure T = Reflect.ReflectType (type t = string) in T.x end
+
+  fun atom (depth, item, path, targs, value) =
+    let
+      val x     = Reflect.reflect (Atom.toString value)
+      val item' = Common.Value (stringType, x)
+      val tree  = AbsTree.mapValue (depth - 1, item', stringType, x)
+    in
+      AbsTree.makeAbsBox {label = "atom", tree, item}
+    end
+
+  (*** THREADS ***)
+  val threadStateType =
+    let structure T = Reflect.ReflectType (type t = Thread.state) in T.x end
+
+  fun thread (depth, item, path, targs, value) =
+    let
+      val x     = Reflect.reflect (Thread.state value)
+      val item' = Common.Value (threadStateType, x)
+      val tree  = AbsTree.mapValue (depth - 1, item', threadStateType, x)
+    in
+      AbsTree.makeAbsBox {label = "thread", tree, item}
+    end
+
+  (*** TIME ***)
+  fun time (depth, item, path, targs, value) =
+    let
+      val text = LargeInt.toString (Time.toMicroseconds value) ^ "us"
+      val tree = AbsTree.simpleText (item, text, Prefs.defaultStyle)
+    in
+      AbsTree.makeAbsBox {label = "atom", tree, item}
+    end
+
+  (*** ARRAY / VECTOR ***)
+  val undefinedKid = Common.undefined "Builtin-KID"
+
+  fun genArray (prefix, suffix, getLength, sub, getArgType) : _ type_mapper =
+    fn (depth, item, path, targs, value) =>
+    let val length = getLength value
+    in
+      if length > 0 then
+      let
+        val argType = getArgType targs
+        val widthLimit = !Prefs.widthLimit
+        val (limit, width) =
+          if length > widthLimit
+            then (true, widthLimit + 1) else (false, length)
+        val kids = Array.array (width, undefinedKid)
+        val tree = Container {desc = item, limit, kids}
+      in
+        AbsTree.makeVecArray (fn i => sub (value, i), length,
+                              depth - 1, limit, kids, value, 0, argType) ;
+        Concat {prefix, tree, suffix, orient = AbsTree.orientSon}
+      end
+      else Concat {prefix, tree = Simple {desc = item, rep = hd suffix},
+                   suffix = tl suffix, orient = AbsTree.orientSon}
+    end
+
+  val arrayPrefix = ("array", Prefs.vecStyle)::AbsTree.openAbsBracketL
+  val vectorPrefix = ("vector", Prefs.vecStyle)::AbsTree.openAbsBracketL
+  val arraySuffix = AbsTree.closeAbsBracketL
+  val vectorSuffix = AbsTree.closeAbsBracketL
+
+  fun polyType [t] = t | polyType _ = assert false
+  val charType = Fn.const PervasiveType.typ_char
+  val word8Type = Fn.const (PervasiveType.lookup "Word8.word")
+
+  val array = genArray (arrayPrefix, arraySuffix, Array.length, Array.sub,
+			polyType)
+  val vector = genArray ([("#[", Prefs.vecStyle)], [("]", Prefs.vecStyle)],
+			 Vector.length, Vector.sub, polyType)
+  val charArray = genArray (arrayPrefix, arraySuffix, CharArray.length,
+			    Reflect.reflect o CharArray.sub, charType)
+  val word8Array = genArray (arrayPrefix, arraySuffix, Word8Array.length,
+			     Reflect.reflect o Word8Array.sub, word8Type)
+  val word8Vector = genArray (vectorPrefix, vectorSuffix, Word8Vector.length,
+			      Reflect.reflect o Word8Vector.sub, word8Type)
+
+  (*** PACKAGES ***)
+  fun package (depth, item, path, targs, value) =
+    let
+      val (modl, intf) = Reflect.reflectPackage value
+      val item' = AbsTree.Module (intf, modl, AbsTree.Noflag)
+      val tree = ModuleMapper.module (depth - 1, item', intf, modl)
+    in
+      AbsTree.makeAbsBox {label = "package", tree, item}
+    end
+
+end

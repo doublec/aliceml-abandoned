@@ -1,0 +1,36 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url from "../../lib/system/Url"
+import structure Inf from "../../lib/rtt/Inf"
+
+signature MY_COMPONENT =
+    sig
+	type component
+	type t = component
+
+	type inf = Inf.t option
+	type mod
+
+	val load: Url.t -> t option               (* IO.Io *)
+	val save: string * t -> unit              (* IO.Io *)
+
+	val imports: t -> (string * inf) vector
+	val body: t -> (mod vector -> mod)
+	val inf: t -> inf
+
+	val component: {imports: (string * inf) vector,
+			body: mod vector -> mod,
+			inf: inf} -> t
+
+	val stripImportInfs: t -> t
+    end

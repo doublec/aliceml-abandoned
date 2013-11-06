@@ -1,0 +1,204 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label   from "x-alice:/lib/rtt/Label"
+import structure Path    from "x-alice:/lib/rtt/Path"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import signature STORE_MAP from "STORE_MAP-sig"
+
+
+signature TYPE =
+sig
+    (* Types *)
+
+    type lab  = Label.t					(* [lab,l] *)
+    type path = Path.t					(* [pi,p] *)
+
+    type kind						(* [kappa,k] *)
+    type typ						(* [tau,t] *)
+    type var						(* [alpha,a] *)
+    type row						(* [rho,r] *)
+    type t = typ
+
+    type rea = typ PathMap.t
+
+    datatype constraint =
+	     Unconstrained
+	   | Intensional
+	   | Extensional of path * path list
+
+
+  (* Maps of types *)
+
+    type canonical_typ
+
+    val canonical :	typ -> canonical_typ
+    val fromCanonical :	canonical_typ -> typ
+
+    structure Map :	STORE_MAP
+
+
+    (* Kinds *)
+
+    exception Kind
+
+    val starKind :	unit -> kind
+    val extKind :	unit -> kind
+    val arrowKind :	kind * kind -> kind
+    val singKind :	typ -> kind
+
+    datatype kind_desc =
+	     StarKind
+	   | ExtKind
+	   | ArrowKind of kind * kind
+	   | SingKind  of typ
+
+    val inspectKind :	kind -> kind_desc
+
+    val isStarKind :	kind -> bool			(* modulo subkind...*)
+    val isExtKind :	kind -> bool
+    val isArrowKind :	kind -> bool
+    val isSingKind :	kind -> bool
+    val asArrowKind :	kind -> kind * kind		(* Kind *)
+    val asSingKind :	kind -> typ			(* Kind *)
+
+    val equalKind :	kind * kind -> bool
+
+    val kind :		typ -> kind			(* Kind *)
+    val kindVar :	var -> kind
+
+    val constraintVar :	var -> constraint
+
+
+    (* Injections *)
+
+    exception Type
+    exception Fix
+
+    val newVar :	kind * constraint -> var
+
+    val unknown :	kind      -> typ
+    val var :		var       -> typ
+    val con :		path * kind -> typ
+    val arrow :		typ * typ   -> typ		(* Kind *)
+    val tuple :		typ vector  -> typ		(* Kind *)
+    val prod :		row       -> typ
+    val sum :		row       -> typ
+    val all :		var * typ -> typ		(* Type, Kind *)
+    val exist :		var * typ -> typ		(* Type, Kind *)
+    val lambda :	var * typ -> typ		(* Type *)
+    val apply :		typ * typ -> typ		(* Kind *)
+    val abbrev :	typ * typ -> typ		(* Kind *)
+
+    val fix :		(typ * typ) vector -> unit	(* Fix *)
+    val unroll :	typ -> typ
+
+    (* Inspection *)
+
+    datatype desc =
+	     Unknown of constraint
+	   | Var	  of var
+	   | Con	  of path
+	   | Arrow	  of typ * typ
+	   | Prod	  of row
+	   | Sum	  of row
+	   | Mu	  of typ
+	   | All	  of var * typ
+	   | Exist	  of var * typ
+	   | Lambda  of var * typ
+	   | Apply	  of typ * typ
+
+    val inspect :	typ -> desc
+
+    val isUnknown :	typ -> bool
+    val isVar :		typ -> bool
+    val isCon :		typ -> bool
+    val isArrow :	typ -> bool
+    val isTuple :	typ -> bool
+    val isProd :	typ -> bool
+    val isSum :		typ -> bool
+    val isMu :		typ -> bool
+    val isAll :		typ -> bool
+    val isExist :	typ -> bool
+    val isLambda :	typ -> bool
+    val isApply :	typ -> bool
+
+    val asVar :		typ -> var			(* Type *)
+    val asCon :		typ -> path			(* Type *)
+    val asArrow :	typ -> typ * typ		(* Type *)
+    val asTuple :	typ -> typ vector		(* Type *)
+    val asProd :	typ -> row			(* Type *)
+    val asSum :		typ -> row			(* Type *)
+    val asMu :		typ -> typ			(* Type *)
+    val asAll :		typ -> var * typ		(* Type *)
+    val asExist :	typ -> var * typ		(* Type *)
+    val asLambda :	typ -> var * typ		(* Type *)
+    val asApply :	typ -> typ * typ		(* Type *)
+
+    val isAbbrev :	typ -> bool
+    val asAbbrev :	typ -> typ * typ		(* Type *)
+
+    (* Operations on rows *)
+
+    exception Row
+
+    val emptyRow :	unit -> row
+    val extendRow :	lab * typ * row -> row		(* Row *)
+
+    datatype row_desc =
+	     UnknownRow
+	   | EmptyRow
+	   | FieldRow of lab * typ * row
+
+    val inspectRow :	row -> row_desc
+    val lookupRow :	row * lab -> typ		(* Row *)
+
+    val isEmptyRow :	row -> bool			(* subsumes unknown *)
+    val asFieldRow :	row -> lab * typ * row		(* Row *)
+
+    val isTupleRow :	row -> bool
+    val asTupleRow :	row -> typ vector		(* Row *)
+
+
+    (* Copying and instantiation *)
+
+    val instance :	typ -> typ
+    val skolem :	typ -> typ
+
+    val realise :	rea * typ -> typ			(* Kind *)
+    val realiseKind :	rea * kind -> kind			(* Kind *)
+
+    type realise_context
+    val realiseStart :	unit -> realise_context
+    val realiseCont :	realise_context * rea * typ -> typ	(* Kind *)
+    val realiseKindCont: realise_context * rea * kind -> kind	(* Kind *)
+
+    (* Comparison *)
+
+    type mismatch      = typ * typ
+    type kind_mismatch = mismatch option
+    exception Mismatch     of mismatch
+    exception KindMismatch of kind_mismatch
+
+    val equal :		typ * typ -> bool
+    val match :		typ * typ -> unit		(* Mismatch *)
+    val matchKind :	kind * kind -> unit		(* KindMismatch *)
+
+    type match_context
+    val matchStart :	unit -> match_context
+    val matchBranch :	match_context -> match_context
+    val matchCont :	match_context * rea * typ * typ -> unit	(* Mismatch *)
+    val equalCont :	match_context * rea * typ * typ -> unit	(* Mismatch *)
+    val matchKindCont :	match_context * rea * kind * kind -> unit (* KindM. *)
+    val equalKindCont :	match_context * rea * kind * kind -> unit (* KindM. *)
+
+end

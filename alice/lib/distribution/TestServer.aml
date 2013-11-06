@@ -1,0 +1,52 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure CommandLine from "x-alice:/lib/system/CommandLine"
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import signature URL         from "x-alice:/lib/system/URL-sig"
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Remote      from "Remote"
+
+signature TEST_SERVER =
+    sig
+	val main: string list -> OS.Process.status
+    end
+
+structure TestServer :> TEST_SERVER =
+    struct
+	fun usage () =
+	    (TextIO.output
+	     (TextIO.stdErr,
+	      "Usage: " ^ CommandLine.name () ^ "\n");
+	     OS.Process.failure)
+
+	val blackHole: OS.Process.status = Promise.future (Promise.promise ())
+
+	fun main nil =
+	    let
+		structure T1 =
+		    Remote.Offer(signature S = URL structure X = Url)
+		structure T2 =
+		    Remote.Offer(signature S =
+				     (val print: string -> unit)
+				 structure X =
+				     (val print = Remote.proxy TextIO.print))
+	    in
+		TextIO.print ("Url is at " ^ T1.ticket ^ "\n");
+		TextIO.print ("Print is at " ^ T2.ticket ^ "\n");
+		blackHole
+	    end
+	  | main (_::_) = usage ()
+    end
+
+val _ = OS.Process.exit (TestServer.main (CommandLine.arguments ()))

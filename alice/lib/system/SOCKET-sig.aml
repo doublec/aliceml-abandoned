@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature SOCKET =
+    sig
+	eqtype socket
+	type t = socket
+	type vector = string
+	type elem = char
+
+	type host = string
+	type port = int
+
+	val server: port option * (socket * host * port -> unit) ->
+	    socket * port
+	val client: host * port -> socket
+
+	val input1: socket -> char option
+	val inputN: socket * int -> vector
+	val inputLine: socket -> vector option
+	val output: socket * vector -> unit
+	val output1: socket * char -> unit
+
+	val close: socket -> unit
+    end

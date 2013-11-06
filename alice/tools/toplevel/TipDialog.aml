@@ -1,0 +1,118 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2007
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Gui         from "Gui"
+import structure Config      from "Config"
+import structure DialogUtils from "DialogUtils"
+
+structure TipDialog =
+struct
+    val tips =
+    #[
+	"You can retrieve and edit your previous interpreter input \
+	\by pressing <tt>Ctrl-Up</tt> (or selecting <i>Eval/Back in History</i>) in the interpreter pane?",
+
+	"In an edit buffer, you can feed the paragraph surrounding the cursor \
+	\by pressing <tt>Ctrl-Return</tt> (or selecting <i>Eval/Feed Selection</i>)?",
+
+	"You can browse arbitrary ML values \
+	\by applying the function <tt>inspect : 'a -> unit</tt>?",
+
+	"You can interrupt a computation \
+	\by pressing <tt>Ctrl-I</tt> (or selecting <i>Eval/Interrupt</i>)?\n\
+	\\n\
+	\You can also put it into background \
+	\by pressing <tt>Ctrl-B</tt> (or selecting <i>Eval/Background</i>), \
+	\and all declared identifiers will be bound to futures.",
+
+	"You can jump directly to the position of an error \
+	\by pressing <tt>Ctrl-E</tt> (or selecting <i>Edit/Go to Error</i>)?",
+
+	"After compilation, \
+	\the types of identifiers are shown in the status bar \
+	\when you place the cursor on them?\n\
+	\\n\
+	\If the type information does not fit a single line, \
+	\you can move the mouse pointer over the status bar \
+	\to see the full type as a tool tip.",
+
+	"You can reset the interpreter \
+	\by selecting <i>Eval/Reset Environment</i>?",
+
+	"You can compile a file into a component \
+	\by pressing <tt>Ctrl-K</tt> (or selecting <i>Eval/Compile</i>)?",
+
+	"Alice was once called Stockhausen?"
+    ]
+
+    val configFile = Config.configDir ^ "/tip." ^ Pickle.extension
+
+    val onStartup = ref true
+    val lastPage  = ref ~1
+
+    signature TIP =
+    sig
+	val onStartup : bool
+	val lastPage : int
+    end
+
+    fun load() =
+	let
+	    structure T = unpack Pickle.load configFile : TIP
+	in
+	    onStartup := T.onStartup;
+	    lastPage := T.lastPage mod Vector.length tips
+	end
+	handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) => ()
+
+    fun save() =
+	let
+	    structure T = (val onStartup = !onStartup val lastPage = !lastPage)
+	in
+	    Config.createConfigDir();
+	    Pickle.save(configFile, pack T : TIP)
+	end
+	handle (OS.SysErr _ | IO.Io _) => ()
+
+    do load()
+
+    fun close _ =
+	(
+	    Gtk.Widget.hide Gui.tip_dialog;
+	    onStartup := Gtk.ToggleButton.getActive Gui.startuptipButton;
+	    save()
+	)
+
+    fun turn n _ =
+	(
+	    lastPage := (!lastPage + n) mod Vector.length tips;
+	    Gtk.Label.setMarkup(Gui.tip_msg, Vector.sub(tips, !lastPage));
+	    Gtk.Widget.setSizeRequest(Gui.tip_msg, 400, 120)
+	)
+
+    do ignore(Gtk.signalConnect(Gui.tip_dialog, "delete-event", close))
+    do ignore(Gtk.signalConnect(Gui.button1tip, "clicked", turn ~1))
+    do ignore(Gtk.signalConnect(Gui.button2tip, "clicked", close))
+    do ignore(Gtk.signalConnect(Gui.button3tip, "clicked", turn 1))
+
+    fun openDialog() =
+	(
+	    Gtk.ToggleButton.setActive(Gui.startuptipButton, !onStartup);
+	    turn 1 ();
+	    DialogUtils.moveToMouse Gui.tip_dialog;
+	    Gtk.Widget.showAll Gui.tip_dialog
+	)
+
+    fun startup() = if !onStartup then openDialog() else ()
+end

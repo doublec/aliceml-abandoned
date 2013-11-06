@@ -1,0 +1,118 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*******************************************************************************
+
+Paths are primarily globally unique stamps that identify objects like abstract
+type constructors etc. They carry some additional location information for
+purposes like pretty printing. See Inf for a description of their use.
+
+On Equality:
+
+Since paths must be unique across process boundaries (we pickle them), equality
+is defined in terms of an additional global stamp. Two paths with equal stamp
+should always contain the same location.
+
+On Hiding:
+
+We allow for hidden paths, i.e. such denoting unaccessible (shadowed) entities.
+They are marked by a magic prefix in the corresponding label/name in order to
+allow a pretty printer to perform some special action.
+
+*******************************************************************************)
+
+import structure GlobalStamp from "../data/GlobalStamp"
+import structure Name        from "Name"
+import structure Label       from "Label"
+import signature PATH        from "PATH-sig"
+
+
+structure Path :> PATH =
+struct
+    structure Stamp = GlobalStamp
+
+  (* Types *)
+
+    type name	= Name.t
+    type lab	= Label.t
+    type stamp	= GlobalStamp.t
+
+    datatype path' = NAME of name | HIDDEN of name | DOT of path * lab
+    withtype path  = stamp * path' ref
+    type t = path
+
+
+  (* Creation *)
+
+    fun pervasive s	= (Stamp.fromString s, ref(NAME(Name.ExId s)))
+    fun new p'		= (Stamp.stamp(), ref p')
+
+    fun invent()	= new(NAME(Name.InId))
+    fun name n		= new(NAME n)
+    fun hidden n	= new(HIDDEN n)
+    fun dot pl		= new(DOT pl)
+    fun fromLab l	= new(NAME(Label.toName l))
+    fun fromString s	= new(NAME(Name.ExId s))
+
+    fun instance (_, ref p') = new p'
+
+
+  (* Inspection *)
+
+    datatype desc =
+	  Name   of name
+	| Hidden of name
+	| Dot    of path * lab
+
+    exception Path
+
+    fun isPervasive (z, ref(NAME n))	= Stamp.toString z = Name.toString n
+      | isPervasive _			= false
+
+    fun inspect (_, ref p')		= inspect' p'
+    and inspect' (NAME n)		= Name n
+      | inspect' (HIDDEN n)		= Hidden n
+      | inspect' (DOT pl)		= Dot pl
+
+    fun isName (_, ref(NAME _))		= true
+      | isName  _			= false
+    fun isHidden (_, ref(HIDDEN _))	= true
+      | isHidden  _			= false
+    fun isDot  (_, ref(DOT _))		= true
+      | isDot   _			= false
+
+    fun asName (_, ref(NAME n))		= n
+      | asName  _			= raise Path
+    fun asHidden (_, ref(HIDDEN n))	= n
+      | asHidden  _			= raise Path
+    fun asDot  (_, ref(DOT pl))		= pl
+      | asDot   _			= raise Path
+
+    fun toLab (_, ref p')		= toLab' p'
+    and toLab' (DOT(_,l))		= l
+      | toLab' (HIDDEN _)		= raise Path
+      | toLab' (NAME n)			= Label.fromName n
+					  handle Domain => raise Path
+
+  (* Comparison and hashing *)
+
+    fun equal((stamp1,_), (stamp2,_))	= stamp1 = stamp2
+    fun hash (stamp, _)			= Stamp.hash stamp
+
+
+  (* Hiding *)
+
+    fun hide (_, r as ref p')		= r := hide' p'
+    and hide'(NAME name)		= HIDDEN name
+      | hide'(p' as HIDDEN _)		= p'
+      | hide'(DOT(_,l))			= HIDDEN(Label.toName l)
+end

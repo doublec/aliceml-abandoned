@@ -1,0 +1,246 @@
+<?php include("macros.php3"); ?>
+
+<?php heading("Extensions to the SML type language",
+		"type\nlanguage\nextensions") ?>
+
+
+
+<?php section("overview", "overview") ?>
+
+<P>Alice ML has an extended type language featuring:</P>
+
+<UL>
+<!--
+  <LI> <A href="#rebind">Overloaded rebinding</A> </LI>
+-->
+  <LI> <A href="#datatype">Structural datatypes</A> </LI>
+  <LI> <A href="#exttype">Extensible datatypes</A> </LI>
+  <LI> <A href="#wildcards">Type wildcards</A> </LI>
+  <LI> <A href="#packages">Dynamic typing</A> </LI>
+</UL>
+
+
+<!--
+<?php section("rebind", "overloaded rebinding") ?>
+
+<P>A value declaration that is merely a renaming of a (possibly qualified)
+overloaded identifier assigns the same overloaded type to the bound
+identifier:</P>
+
+<PRE class=code>
+val plus = op+
+val n = plus(1,2)
+val r = plus(1.0, 2.0)</PRE>
+
+<P>The same applies to implicit rebinding via <TT>open</TT> declarations:</P>
+
+<PRE class=code>
+structure M = struct val plus = op+ end
+open M
+val n = plus(1,2)
+val r = plus(1.0,2.0)</PRE>
+-->
+
+
+<?php section("datatype", "structural datatypes") ?>
+
+<P>Datatype declarations are <EM>not generative</EM>: all datatypes
+that have structurally equivalent definitions are compatible. For example, the
+following program will elaborate:</P>
+
+<PRE class=code>
+datatype 'a t = A | B of 'a | C of 'a t
+val x = C (B 0)
+
+datatype 'a u = B of 'a | C of 'a u | A
+val y = B 20
+
+datatype 'a v = B of 'a | C of 'a t | A
+val z = A
+
+val l = [x,y,z]</PRE>
+
+<P>This relaxation is particularly interesting for
+<A href="distribution.html">distributed programming</A>.</P>
+
+
+
+<?php section("exttype", "extensible types") ?>
+
+<P>Extensible types are a generalization of SML's exception type. In effect,
+the programmer can arbitrarily introduce new sum types similar to <TT>exn</TT>,
+which have a potentially unlimited set of constructors.</P>
+
+<P>An extensible type is declared as follows:</P>
+
+<PRE class=code>
+exttype 'a message</PRE>
+
+<P>Fresh constructors are introduced as follows:</P>
+
+<PRE class=code>
+constructor DoThis of int : 'a message
+constructor DoThat of bool * 'a : 'a message
+constructor StopIt : 'a message
+constructor Abort = StopIt</PRE>
+
+<P>Constructors can be added at any point. Like exceptions in SML, constructor
+declarations are dynamically generative, i.e., the following function returns a
+different constructor on each call:</P>
+
+<PRE class=code>
+fun genMsg() = let constructor C : 'a message in C end</PRE>
+
+<P>Note that - like exceptions - extensible types do not admit equality, since
+it is unknown whether there will be any constructors prohibiting that.</P>
+
+
+<?php subsection("exttype-syntax", "Extensible types syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>dec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extbind</I> </TD>
+    <TD> extensible datatype </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econbind</I> </TD>
+    <TD> generative constructor </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>extbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
+    <TD> extensible datatype </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>econbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
+    <TD> new constructor </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
+	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
+    <TD> synonym </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>spec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extdesc</I> </TD>
+    <TD> extensible datatype </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econdesc</I> </TD>
+    <TD> generative constructor </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>extdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
+    <TD> extensible datatype </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>econdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+	 &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
+    <TD> new constructor </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
+	 &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
+    <TD> synonym </TD>
+-->
+  </TR>
+</TABLE>
+
+<P>Exception declarations and specifications are derived forms in Alice ML,
+e.g.</P>
+
+<TABLE class="bnf df">
+  <TR>
+    <TD> <TT>exception</TT>&nbsp;<I>vid</I>&nbsp;&lt;<TT>of</TT>&nbsp;<I>ty</I>&gt; </TD>
+    <TD> <TT>constructor</TT>&nbsp;<I>vid</I>&nbsp;&lt;<TT>of</TT>&nbsp;<I>ty</I>&gt;&nbsp;<TT>: exn</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>exception</TT>&nbsp;<I>vid</I><SUB>1</SUB>&nbsp;<TT>=</TT>&nbsp;<I>vid</I><SUB>2</SUB> </TD>
+    <TD> <TT>constructor</TT>&nbsp;<I>vid</I><SUB>1</SUB>&nbsp;<TT>=</TT>&nbsp;<I>vid</I><SUB>2</SUB> </TD>
+  </TR>
+</TABLE>
+
+
+
+<?php section("wildcards", "type wildcards") ?>
+
+<P>Type annotations may contain underscores as unspecified subcomponents:</P>
+
+<PRE class=code>
+fun mapSnd (f : _ -> _ * _) l = List.map (#2 o f) l</PRE>
+
+<P>Unlike type variables, type wildcards do not enforce polymorphic typing. They
+are thus suitable to leave out any part of a type annotation:</P>
+
+<PRE class=code>
+(3,4,[]) : (_ * int * _ list)</PRE>
+
+
+<?php subsection("wildcards-syntax", "Wildcard syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>ty</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> </TD>
+    <TD> wildcard </TD>
+  </TR>
+</TABLE>
+
+<P>As a restriction, wildcards may not appear in any <I>ty</I> which is part of
+a <I>typbind</I>, <I>datbind</I>, <I>econbind</I>, <I>exbind</I> or
+<I>sigexp</I>.</P>
+
+
+
+<?php section("packages", "dynamic typing") ?>
+
+<P>The most fundamental extension with respect to the typing discipline of SML
+is the <TT>package</TT> type. Values of that type may encapsulate arbitrary
+values (or modules) along with their type (resp., signature), which is dynamically checked upon
+extraction of the value. Packages provide a rich form of dynamic typing within
+the statically typed framework of ML. See the section on <A
+href="packages.html">packages</A>.</P>
+
+
+<?php footing() ?>

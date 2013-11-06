@@ -1,0 +1,40 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Error handling. *)
+
+import structure Url         from "../../lib/system/Url"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure Source      from "Source"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+
+signature ERROR =
+sig
+    (* Import *)
+
+    type region = Source.region
+    type doc    = PrettyPrint.doc
+
+    (* Export *)
+
+    exception Error of region * doc
+
+    val setCurrentUrl :	Url.t option -> unit
+    val setOutstream :	TextIO.StreamIO.outstream -> unit
+    val setOutWidth :	int -> unit
+
+    val error :		region * doc -> 'a
+    val warn :		bool * region * doc -> unit
+    val error' :	region * string -> 'a
+    val warn' :		bool * region * string -> unit
+    val unfinished :	region * string * string -> 'a
+ end

@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Trace from "Trace"
+
+signature BEST_WORKER =
+    sig
+	type sol
+	type trace = sol Trace.trace
+
+	val start : trace list * int -> unit
+	val explore : unit -> unit
+	val steal : (trace list * int * int) option Promise.promise -> unit
+	val constrain : sol -> unit
+	val stop : unit -> unit
+	val shutdown : unit -> unit
+    end

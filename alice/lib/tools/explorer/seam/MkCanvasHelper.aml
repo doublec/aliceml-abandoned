@@ -1,0 +1,91 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure Canvas  from "x-alice:/lib/gtk/Canvas"
+
+import structure Defaults     from "Defaults"
+
+import signature SPACE         from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature GTK_NODE      from "GTK_NODE-sig"
+import signature EVENT_HANDLER from "EVENT_HANDLER-sig"
+import signature CANVAS_HELPER from "CANVAS_HELPER-sig"
+
+
+functor MkCanvasHelper (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    (EventHandler : EVENT_HANDLER
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space)
+    :
+    CANVAS_HELPER
+    where type explorer_state = Types.explorer_state
+    =
+  struct
+      type explorer_state = Types.explorer_state
+
+  fun createCanvas (state, serve, xDim, yDim) =
+      let
+	  val canvas = Canvas.newAa()
+	  val rootGroup = GtkNode.makeGroup (Canvas.root canvas)
+	  val shadowGroup = GtkNode.makeGroup rootGroup
+	  val actionGroup = GtkNode.makeGroup rootGroup
+          val actionHandler =
+              Gtk.signalConnect(actionGroup, "event",
+			        EventHandler.nodeEvent (state, serve));
+      in
+	   Gtk.Widget.setSizeRequest(canvas, xDim, yDim);
+	   Canvas.setScrollRegion(canvas, 0.0, 0.0,
+				       Real.fromInt xDim, Real.fromInt yDim);
+	   Canvas.setPixelsPerUnit(canvas, 1.0);
+           Gtk.Widget.modifyBg (canvas, Gtk.StateType.NORMAL, GtkNode.white);
+	   (canvas, ref rootGroup,ref shadowGroup, ref actionGroup,
+            ref actionHandler)
+      end
+
+  fun resetCanvas serve (s as
+			   (ref (SOME {gtk={rootGroup=rootGroup,
+				            actionGroup=actionGroup,
+                                            actionHandler=actionHandler,
+				            canvas=canvas,...},...}
+				 : Types.explorer_state option)))=
+      (Gtk.signalDisconnect(!actionGroup, !actionHandler);
+       Gtk.Object.destroy (!rootGroup);
+       rootGroup := GtkNode.makeGroup (Canvas.root canvas);
+       actionGroup := GtkNode.makeGroup (!rootGroup);
+       actionHandler := Gtk.signalConnect(!actionGroup, "event",
+                                          EventHandler.nodeEvent (s, serve));
+       ())
+    | resetCanvas _ _ = ()
+
+  fun scaleCanvasHandler (serve,
+			  ref (SOME({gtk={canvas,scale,...},
+                                     ...}
+				    : Types.explorer_state)),
+			  scaleWidget) _ =
+      (serve (fn () =>
+		 let
+		     val x = Gtk.Range.getValue scaleWidget
+		 in
+		     Canvas.setPixelsPerUnit(canvas, x);
+		     scale := x / Defaults.floatScaleBase
+		 end))
+    | scaleCanvasHandler _ _ = ()
+  end

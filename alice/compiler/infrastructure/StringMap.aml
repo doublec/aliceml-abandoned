@@ -1,0 +1,15 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import functor MkHashImpMap  from "../../lib/data/MkHashImpMap"
+
+structure StringMap = MkHashImpMap(String)

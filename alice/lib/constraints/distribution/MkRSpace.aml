@@ -1,0 +1,143 @@
+(*
+ * RSpace = Recomputable Space
+ *
+ * Its interface is almost equivalent to the one of Space,
+ * but the underlying implementation is supposedly smarter.
+ * For instance, the 'clone' operation is (most of the time) cheap
+ *)
+
+import structure Space  from "x-alice:/lib/gecode/Space"
+import signature RSPACE from "RSPACE-sig"
+import "Path"
+
+exception NotBranching
+
+structure MkRSpace :> RSPACE = 
+    fct (type a
+	 val root   : Space.space
+	 val order  : Space.space * a -> unit
+	 val rdist  : int ) =>
+struct
+
+    (* a source is a space used for recomputation only:
+     *   a space and its corresponding absolute internalized path, reversed. *)
+    type source = Space.space * a Path.t
+
+    type rspace =
+	{path   : a Path.t ref,   (* The full internalized path, reversed. *)
+	 space  : Space.space option ref , (* The real space, if available *)
+	 source : source ref ,    (* The space to use as a starting point
+				   * for recomputation. *)
+	 diff   : a Path.t ref}   (* The diff path between source
+				   * and current also reversed. *)
+	
+    fun path (rspace:rspace) = !(#path rspace)
+
+    (* When rdist = 1, cloning is simpler but always expansive. *)
+    fun cloneAlways (rspace:rspace) =
+	let
+	    val path = !(#path rspace)
+	    val space = !(#space rspace)
+	    val cspace = Space.clone (Option.valOf space)
+	    val source = #source rspace
+	in
+	    {path = ref path ,
+	     space = ref (SOME cspace) ,
+	     source = source ,
+	     diff = ref [] }  (* Meaningless in this case. *)
+	end
+
+    (* When rdist <> 1, cloning is not always expansive. *)
+    fun cloneWithRecomputation (rspace:rspace) =
+	let
+	    val path = !(#path rspace)
+	    val rdiff = #diff rspace
+	    val diff = !rdiff
+	    val space = !(#space rspace)
+	    val source = #source rspace
+	    val realCopy =
+		rdist > 0
+		andalso List.length diff >= rdist
+		andalso (Option.isSome space
+			 orelse
+			 (raise NotBranching))
+	in
+	    if realCopy
+		then
+		    let val cspace = Space.clone (Option.valOf space)
+		    in
+			((* Also update given rspace. *)
+			 rdiff := [] ;
+			 source := (cspace, path) ;
+			 {path = ref path ,
+			  space = ref NONE ,
+			  source = ref (cspace, path) ,
+			  diff = ref [] })
+		    end
+	    else
+		{path = ref path ,
+		 space = ref NONE ,
+		 source = ref (!source) ,
+		 diff = ref diff}
+	end
+
+    val clone = if rdist = 1 then cloneAlways else cloneWithRecomputation
+
+    (* Apply *)
+    fun apply space itm =
+	case itm of
+	    Path.Commit ch   => Space.commit (space, ch)
+	  | Path.Constrain c => order(space, c)
+
+    (* Append the path item to this rspace. Generalises 'commit' *)
+    fun append (rspace:rspace, itm) =
+	(#path rspace := itm :: !(#path rspace) ;
+	 #diff rspace := itm :: !(#diff rspace) ;
+	 case !(#space rspace) of
+	     NONE => ()
+	   | SOME sp => apply sp itm)
+
+    fun testClone space =
+	if Space.status space = Space.FAILED
+	    then raise (Fail "RSpace.space : the given root space is failed.")
+	else Space.clone space
+
+    (* Builds a new rspace corresponding to path 'path'. *)
+    fun space path =
+	let val localSpace =
+	    {path   = ref [] ,
+	     space  = ref (SOME (testClone space)) ,
+	     source = ref (space, path, ref 2) ,
+	                     (* ref 2 so that this space is never discarded. *)
+	     diff   = ref [] }
+	in
+	    List.app (fn it => append (localSpace, it)) path ;
+	    localSpace
+	end
+
+    fun getSpace (rspace:rspace) =
+	case !(#space rspace) of
+	    SOME sp => sp
+	  | NONE => (* Recomputation needed. *)
+		let val (srcSpace, srcPath, _) = !(#source rspace)
+		    val newSpace = Space.clone srcSpace
+		    val diffs = List.rev (! (#diff rspace))
+		in
+		    assert (!(#diff rspace) @ srcPath = !(#path rspace)) ;
+		    List.app (apply newSpace) diffs ;
+		    #space rspace := SOME newSpace ;
+		    newSpace
+		end	
+
+    (* Returns the status of this rspace. Recomputation is possible. *)
+    fun status rspace = Space.status (getSpace rspace)
+
+    fun getLeft rspace =
+	if status rspace <> Space.BRANCH then raise NotBranching
+	else append (clone rspace, Path.Commit 1)
+
+    fun getRight rspace =
+	if status rspace <> Space.BRANCH then raise NotBranching
+	else append (clone rspace, Path.Commit 2)
+
+end

@@ -1,0 +1,24 @@
+(* Alice Snake 2.0 - QuestionWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk       from "GtkSupport"
+
+
+signature QUESTION =
+sig
+
+    type answers = {yes    : unit -> unit,
+		    no     : unit -> unit,
+		    cancel : unit -> unit }
+
+    val mkQuestionBox : Gtk.object * string * string * answers -> unit
+
+end

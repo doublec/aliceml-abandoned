@@ -1,0 +1,73 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                          from "Pervasive"
+import __primitive datatype bool and order and option from "ToplevelTypes"
+import __primitive signature OPTION                   from "OPTION-sig"
+
+
+structure Option : OPTION =
+struct
+    datatype option		= datatype option
+    type  'a t			= 'a option				(**)
+
+    __primitive exception Option = "Option.Option"
+
+    fun getOpt(SOME x, _)	= x
+      | getOpt(NONE,   x)	= x
+
+    fun isNone NONE		= true					(**)
+      | isNone(SOME x)		= false
+
+    fun isSome(SOME x)		= true
+      | isSome NONE		= false
+
+    fun valOf(SOME x)		= x
+      | valOf NONE		= raise Option
+
+    fun filter f x if (f x)	= SOME x
+      | filter f x		= NONE
+
+    fun join NONE		= NONE
+      | join(SOME x)		= x
+
+    fun app f  NONE		= ()
+      | app f (SOME x)		= f x
+
+    fun map f  NONE		= NONE
+      | map f (SOME x)		= SOME(f x)
+
+    fun mapPartial f  NONE	= NONE
+      | mapPartial f (SOME x)	= f x
+
+    fun fold f b  NONE		= b					(**)
+      | fold f b (SOME a)	= f(a,b)
+
+    fun compose (f,g) x		= case g x of NONE   => NONE
+					    | SOME y => SOME(f y)
+
+    fun composePartial (f,g) x	= case g x of NONE   => NONE
+					    | SOME y => f y
+
+    fun equal eq (NONE,   NONE)		= true				(**)
+      | equal eq (SOME x, SOME y)	= eq(x,y)
+      | equal eq _			= false
+
+    fun collate cmp (NONE,   NONE)	= EQUAL				(**)
+      | collate cmp (NONE,   SOME _)	= LESS
+      | collate cmp (SOME _, NONE)	= GREATER
+      | collate cmp (SOME x, SOME y)	= cmp(x,y)
+end

@@ -1,0 +1,103 @@
+From: "Fergus Henderson" <fjh@cs.mu.oz.au>
+To: "Project 7" <p7talk@list.research.microsoft.com>
+Subject: CfP: Babel01 Workshop on Multi-Language Infrastructure and Interoperability
+Date: Thursday, March 22, 2001 10:36
+
+
+                               BABEL'01
+                           CALL FOR PAPERS
+                                      
+                   First Workshop on Multi-Language
+                 Infrastructure and Interoperability
+ 
+           http://research.microsoft.com/~nick/babel01.htm
+ 
+                         Satellite to PLI'01
+ 
+                  Firenze, Italy, 8th September 2001
+ 
+ 
+AIMS AND SCOPE
+ 
+Recent years have seen a resurgence of interest in multi-language
+tools and intermediate languages, and in interoperability between
+programs and components written in different programming
+languages. Shared infrastructure such as code generators, analysis
+tools and garbage collectors can greatly ease the task of producing a
+high-quality implementation of a new programming language, whilst
+being able to interoperate easily with code written in existing
+languages is essential for such an implementation to be useful in
+practice.  This workshop aims to bring together researchers and
+developers working on multi-language integration. Contributions are
+welcome on topics including, but not limited to: 
+ 
+ 
+* Compilation of high level languages to common executable formats
+  such as Sun's Java Virtual Machine, the DRA's ANDF or Microsoft's
+  .NET Common Language Runtime.
+ 
+* Defining and using bindings for component middleware such as OMG's
+  CORBA or Microsoft's COM.
+ 
+* Language constructs to support interoperability between different
+  languages, particularly from different paradigms (e.g. OO/functional).
+ 
+* Multi-language backends for compilation and/or analysis
+  (e.g. MLRISC, FLINT, C--, TAL, SUIF).  
+ 
+* Type theoretic and semantic foundations for multi-language work.  
+ 
+* Multi-language development environments and tools (e.g. debuggers,
+  profilers).
+ 
+Submissions may address any programming paradigm.  Experience papers
+which describe the use of multiple languages in application
+development are also welcome. Authors unsure of the appropriateness of
+a potential submission should email the PC chair (nick@microsoft.com).
+ 
+ 
+PROGRAMME COMMITTEE
+ 
+Nick Benton (chair)          Microsoft Research
+Fergus Henderson             University of Melbourne
+Andrew Kennedy (organiser)   Microsoft Research
+Greg Morrisett               Cornell University
+Martin Odersky               Ecole Polytechnique Federale de Lausanne
+John Reppy                   Bell Labs
+Andrew Tolmach               Portland State University
+David Wakeling               University of Exeter
+ 
+ 
+INVITED SPEAKERS
+ 
+Zhong Shao                   Yale University
+ 
+ 
+IMPORTANT DATES
+ 
+Deadline for submission      1st June 2001
+Notification of acceptance   9th July 2001
+Final version due            10th August 2001
+ 
+ 
+SUBMISSION DETAILS
+ 
+Papers should be at most 14 pages and should be submitted in
+Ghostscript-compatible PostScript or PDF format and be printable on
+both US letter and A4 paper.  Authors are strongly encouraged to use
+ENTCS style files (see http://math.tulane.edu/~entcs/).  Papers should
+be submitted electronically from the workshop website given above.
+Submissions should not overlap significantly with work which has
+already been published or submitted to any other conference or
+journal.  An informal proceedings will be published as a technical
+report and distributed at the workshop.  It is intended that a final
+proceedings will be published in a volume of ENTCS.
+
+-- 
+Fergus Henderson <fjh@cs.mu.oz.au>  |  "I have always known that the pursuit
+                                    |  of excellence is a lethal habit"
+WWW: <http://www.cs.mu.oz.au/~fjh>  |     -- the last words of T. S. Garp.
+
+---
+You are currently subscribed to p7talk as: kornstae@ps.uni-sb.de
+To unsubscribe send a blank email to leave-p7talk-86O@list.research.microsoft.com

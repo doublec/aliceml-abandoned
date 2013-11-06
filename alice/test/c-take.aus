@@ -1,0 +1,78 @@
+__prebound Prebound
+
+(*
+import
+val show: 'a -> {}
+from "../../vm-mozart/Debug.ozf"
+*)
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+type     int    = Prebound.int
+type     bool   = Prebound.bool
+type     string = Prebound.string
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
+
+type unit = {}
+
+__primitive constructor Promise: exn = "Transient.Promise"
+__primitive constructor Future: exn = "Transient.Future"
+__primitive constructor Fulfill: exn = "Transient.Fulfill"
+__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
+
+__primitive val op=  : ''a * ''a -> bool = "="
+
+__primitive val op+ : int * int -> int = "+"
+__primitive val op- : int * int -> int = "-"
+__primitive val op* : int * int -> int = "*"
+__primitive val op< : int * int -> bool = "<"
+
+__primitive val exchange: 'a ref * 'a -> 'a = "General.exchange"
+
+__primitive val spawn: (unit -> 'a) -> unit = "Thread.spawn"
+__primitive val sleep: int -> unit = "Thread.sleep"
+
+__primitive val promise: unit -> 'a = "Transient.promise"
+__primitive val future: 'a -> 'a = "Transient.future"
+__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+__primitive val await: 'a -> 'a = "Transient.await"
+__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+
+structure TextIO =
+    struct
+	type instream
+
+	__primitive val openIn: string -> instream = "TextIO.openIn"
+	__primitive val inputAll: instream -> string = "TextIO.inputAll"
+	__primitive val closeIn: instream -> unit = "TextIO.closeIn"
+    end
+
+structure Connection =
+    struct
+	type ticket = string
+
+	__primitive val offer: 'a -> ticket = "Connection.offer"
+	__primitive val take: ticket -> 'a = "Connection.take"
+    end
+
+__primitive val show: 'a -> unit = "show"
+
+val q = TextIO.openIn "ticket"
+val ticket = TextIO.inputAll q
+val _ = TextIO.closeIn q
+
+val _ = show ticket
+
+local
+    val x = Connection.take ticket
+    val _ = show (x ())
+in
+    val _ = show "done"
+end

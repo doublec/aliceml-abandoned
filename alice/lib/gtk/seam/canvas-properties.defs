@@ -1,0 +1,116 @@
+;;
+;; Author:
+;;   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+;;
+;; Copyright:
+;;   Benedikt Grundmann, 2005
+;;
+;; Last Change:
+;;   $Date$ by $Author$
+;;   $Revision$
+;;
+
+
+(define-prop "parent" GnomeCanvasItem object)
+
+;; ------------------------ Group ---------------------
+(define-prop "x"                GnomeCanvasGroup gdouble)
+(define-prop "y"                GnomeCanvasGroup gdouble)
+
+;; ------------------------ Shape ----------------------
+(define-enum-prop "cap-style"        GnomeCanvasShape "Gdk.CapStyle")
+(define-prop "fill-color-gdk"   GnomeCanvasShape object)
+(define-prop "fill-color"       GnomeCanvasShape string)
+(define-prop "fill-stipple"     GnomeCanvasShape object)
+(define-enum-prop "join-style"       GnomeCanvasShape "Gdk.JoinStyle")
+(define-prop "miterlimit"       GnomeCanvasShape gdouble)
+(define-prop "outline-color"    GnomeCanvasShape string)
+(define-prop "outline-color-gdk"        GnomeCanvasShape object)
+(define-prop "outline-stipple"  GnomeCanvasShape object)
+(define-prop "width-pixels"     GnomeCanvasShape guint)
+(define-prop "width-units"      GnomeCanvasShape gdouble)
+(define-prop "wind"             GnomeCanvasShape guint)
+
+;; ------------------------ RE -------------------------
+(define-prop "x1"       GnomeCanvasRE gdouble)
+(define-prop "x2"       GnomeCanvasRE gdouble)
+(define-prop "y1"       GnomeCanvasRE gdouble)
+(define-prop "y2"       GnomeCanvasRE gdouble)
+
+;; ------------------------ Line -----------------------
+(define-prop "arrow-shape-a"    GnomeCanvasLine gdouble)
+(define-prop "arrow-shape-b"    GnomeCanvasLine gdouble)
+(define-prop "arrow-shape-c"    GnomeCanvasLine gdouble)
+(define-prop "fill-color-gdk"   GnomeCanvasLine object)
+(define-prop "fill-color"       GnomeCanvasLine string)
+(define-prop "fill-stipple"     GnomeCanvasLine object)
+(define-prop "first-arrowhead"  GnomeCanvasLine bool)
+(define-prop "last-arrowhead"   GnomeCanvasLine bool)
+(define-enum-prop "join-style"       GnomeCanvasLine "Gdk.JoinStyle")
+(define-enum-prop "line-style"       GnomeCanvasLine "Gdk.LineStyle")
+(define-enum-prop "cap-style"       GnomeCanvasLine "Gdk.CapStyle")
+(define-prop "smooth"           GnomeCanvasLine bool)
+(define-prop "spline-steps"     GnomeCanvasLine guint)
+(define-prop "width-pixels"     GnomeCanvasLine guint)
+(define-prop "width-units"      GnomeCanvasLine gdouble)
+(define-property 
+        "points"           GnomeCanvasLine
+  (type "(real * real) list")
+  (to-value "(fn points => 
+                let val pts = Points.new (List.length points)
+                in
+                    List.appi (fn (ndx, (a, b)) =>
+                                (Points.set (pts, ndx * 2, a);
+                                 Points.set (pts, ndx * 2 + 1, b))) points;
+                    Value.object pts
+                end)")
+  (from-value "fn v => assert false")
+)
+
+; ----------------------- Text ----------------------------
+(define-enum-prop "anchor"          GnomeCanvasText "Gtk.AnchorType")
+(define-prop "attributes"      GnomeCanvasText object)
+(define-prop "clip"             GnomeCanvasText bool)
+(define-prop "clip-height"      GnomeCanvasText guint)
+(define-prop "clip-width"       GnomeCanvasText guint)
+(define-prop "family"           GnomeCanvasText string)
+(define-prop "family-set"       GnomeCanvasText bool)
+(define-prop "fill-color"       GnomeCanvasText string)
+(define-prop "fill-color-gdk"   GnomeCanvasText object)
+(define-prop "fill-stipple"     GnomeCanvasText object)
+(define-prop "font"             GnomeCanvasText string)
+(define-prop "font-desc"        GnomeCanvasText object)
+(define-enum-prop "justification"    GnomeCanvasText "Gtk.Justification")
+(define-prop "markup"           GnomeCanvasText string)
+(define-prop "rise"             GnomeCanvasText gint)
+(define-prop "rise-set"         GnomeCanvasText bool)
+(define-prop "scale"            GnomeCanvasText gdouble)
+(define-prop "scale-set"        GnomeCanvasText bool)
+(define-prop "size"             GnomeCanvasText gint)
+(define-prop "size-points"      GnomeCanvasText gdouble)
+(define-prop "size-set"         GnomeCanvasText bool)
+(define-enum-prop "stretch"         GnomeCanvasText "Pango.Stretch")
+(define-prop "stretch-set"      GnomeCanvasText bool)
+(define-prop "strikethrough"    GnomeCanvasText bool)
+(define-prop "strikethrough-set" GnomeCanvasText bool)
+(define-enum-prop "style"            GnomeCanvasText "Pango.Style")
+(define-prop "style-set"        GnomeCanvasText bool)
+(define-prop "text"             GnomeCanvasText string)
+(define-prop "text-height"      GnomeCanvasText gdouble)
+(define-prop "text-width"       GnomeCanvasText gdouble)
+(define-enum-prop "underline"        GnomeCanvasText "Pango.Underline")
+(define-prop "underline-set"    GnomeCanvasText bool)
+(define-enum-prop "variant"          GnomeCanvasText "Pango.Variant")
+(define-prop "variant-set"      GnomeCanvasText bool)
+(define-prop "weight"           GnomeCanvasText gint)
+(define-prop "weight-set"       GnomeCanvasText bool)
+(define-prop "x"                GnomeCanvasText gdouble)
+(define-prop "x-offset"         GnomeCanvasText gdouble)
+(define-prop "y"                GnomeCanvasText gdouble)
+(define-prop "y-offset"         GnomeCanvasText gdouble)
+
+
+;(define-property "parent" CanvasItem
+;  (type "object")
+;  (to-value   "Value.object $0")
+;  (from-value "Value.toObject $0"))

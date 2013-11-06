@@ -1,0 +1,8 @@
+Group
+	signature PP_MISC
+	structure PPMisc
+is
+	../utility/sources.cm
+
+	PP_MISC-sig.aml
+	PPMisc.aml

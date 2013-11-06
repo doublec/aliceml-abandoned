@@ -1,0 +1,348 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Store from "x-alice:/lib/system/Store"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import structure Print from "x-alice:/lib/system/Print"
+import structure Compiler from "x-alice:/lib/system/Compiler"
+import structure Evaluator    from "Evaluator"
+import structure Gtk  from "x-alice:/lib/gtk/Gtk"
+import structure Gdk  from "x-alice:/lib/gtk/Gdk"
+(*import structure GLib from "x-alice:/lib/gtk/GLib"*)
+import structure Pango from "x-alice:/lib/gtk/Pango"
+(* import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums" *)
+import structure FileDialog from "FileDialog"
+
+signature USER_CONFIG_1 =
+   sig
+      val reservedColor : (int * int * int)
+      val errorColor : (int * int * int)
+      val stringColor : (int * int * int)
+      val plainColor : (int * int * int)
+      val commentColor : (int * int * int)
+      val historySize : int
+      val stdFontName : string
+   end
+
+signature USER_CONFIG_2 =
+   sig
+      include USER_CONFIG_1
+      val loadFileHistory : bool
+   end
+
+signature USER_CONFIG_3 =
+   sig
+      include USER_CONFIG_2
+      val warnings : Compiler.warnings
+      val printDepth : int
+      val printWidth : int
+      val heapLimit : int
+      val heapLimited : bool
+      val port : int
+      val portStatic : bool
+   end
+
+signature USER_CONFIG = USER_CONFIG_3
+
+signature GEOMETRY =
+   sig
+       val geometry : {x : int, y : int, w : int, h : int,
+		       bufferPane : int, ioPane : int}
+   end
+
+structure Config =
+   struct
+
+      val configDir    = OS.FileSys.getApplicationConfigDir "Toplevel"
+      val instanceFile = configDir ^ "/instance.lock"
+      
+      fun createConfigDir () =
+	  let
+	      val parent = OS.Path.getParent configDir
+	  in
+	      OS.FileSys.mkDir parent handle OS.SysErr _ => ();
+	      OS.FileSys.mkDir configDir handle OS.SysErr _ => ()
+	  end
+
+      val editorHeight = 500
+
+      val sizeX = 800
+      val sizeY = 800
+
+      val heapLimited = ref true
+      val heapLimit = ref 200
+      val heapHandler = ref ignore
+
+      val port = ref 22935
+      val portStatic = ref false
+
+      val warnings = ref Compiler.warnings
+      val historySize = ref 100
+      val useTabs = ref true
+      val loadFileHistory = ref true
+
+      val cmap   = Gdk.Colormap.getSystem ()
+      val ugly = Gdk.Color.new { red = 0xf0f0, green = 0x2020, blue = 0xa0a0 }
+      val black = Gdk.Color.new { red = 0, green = 0, blue = 0 }
+      val red = Gdk.Color.new { red = 0xffff, green = 0, blue = 0 }
+      val orange = Gdk.Color.new { red = 0xffff, green = 0x8000, blue = 0 }
+      val blue = Gdk.Color.new { red = 0, green = 0, blue = 0xe000 }
+      val green = Gdk.Color.new { red = 0, green = 0x8000, blue = 0 }
+      val white = Gdk.Color.new { red = 0xffff, green = 0xffff, blue = 0xffff }
+
+      val reservedColor = ref blue
+      val errorColor = ref red
+      val stringColor = ref orange
+      val plainColor = ref black
+      val commentColor = ref green
+
+      val _ = Gdk.Colormap.allocColor(cmap, black, false, true)
+      val _ = Gdk.Colormap.allocColor(cmap, white, false, true)
+      val _ = Gdk.Colormap.allocColor(cmap, ugly, false, true)
+      val _ = Gdk.Colormap.allocColor(cmap, red, false, true)
+      val _ = Gdk.Colormap.allocColor(cmap, orange, false, true)
+      val _ = Gdk.Colormap.allocColor(cmap, green, false, true)
+      val _ = Gdk.Colormap.allocColor(cmap, blue, false, true)
+
+      val stdFontName = ref "Courier 11"
+      val stdFont = ref (Pango.FontDescription.fromString (!stdFontName))
+
+      type tags = {err : Gtk.object,
+                   log : Gtk.object,
+                   plain : Gtk.object,
+                   comment : Gtk.object,
+                   string : Gtk.object,
+                   reserved : Gtk.object,
+		   bold : Gtk.object,
+                   noedit : Gtk.object}
+
+      fun makeTags buf =
+          let
+              fun createTag (buf, name, props) =
+                  let
+                      val tag = Gtk.TextTag.new name
+                      val tt  = Gtk.TextBuffer.getTagTable buf
+                  in
+                      Gtk.Prop.setL tag props;
+                      Gtk.TextTagTable.add (tt, tag);
+                      tag
+                  end
+
+              infix 3 ::= 
+
+              open Gtk.TextTag
+              val op ::= = Gtk.Prop.prop 
+
+              fun createTagWithColor (buf, name, color) =
+                  createTag (buf, name, [
+                    foregroundGdk ::= color
+                  ])
+              val boldProp = weight ::= (Pango.Weight.toInt Pango.Weight.BOLD)
+
+              val err = createTagWithColor(buf, "error", !errorColor)
+              val log = createTag(buf, "log", [
+                    style ::= Pango.Style.NORMAL
+                ])
+              val plain = createTagWithColor(buf, "plain", !plainColor)
+
+              val comment = createTagWithColor (buf, "comment", !commentColor)
+              val string  = createTagWithColor (buf, "string", !stringColor)
+              val reserved = createTag (buf, "reserved", [
+                    foregroundGdk ::= !reservedColor,
+                    boldProp
+                ])
+
+              val noedit = createTag (buf, "noedit", [
+                    editable ::= false
+                ])
+              val bold = createTag (buf, "bold", [boldProp])
+          in
+              {err, log, plain, comment, string, reserved, bold, noedit} : tags
+          end
+
+      fun changeColor (tag, color) =
+          Gtk.Prop.set Gtk.TextTag.foregroundGdk (tag, color)
+
+
+      fun getRgbColor color =
+	  (Gdk.Color.getFieldRed color,
+	   Gdk.Color.getFieldGreen color,
+	   Gdk.Color.getFieldBlue color)
+
+      fun mkRgbColor (r,g,b) =
+	  let val c = Gdk.Color.new { red = r , green = g , blue = b }
+	  in
+	      Gdk.Colormap.allocColor(cmap, c, false, true);
+	      c
+	  end
+
+      fun changeColors buf =
+	  let
+	      val tt = Gtk.TextBuffer.getTagTable buf
+	      val plain = Gtk.TextTagTable.lookup(tt, "plain")
+	      val error = Gtk.TextTagTable.lookup(tt, "error")
+	      val string = Gtk.TextTagTable.lookup(tt, "string")
+	      val reserved = Gtk.TextTagTable.lookup(tt, "reserved")
+	      val comment = Gtk.TextTagTable.lookup(tt, "comment")
+	  in
+	      changeColor(plain, !plainColor);
+	      changeColor(error, !errorColor);
+	      changeColor(string, !stringColor);
+	      changeColor(reserved, !reservedColor);
+	      changeColor(comment, !commentColor)
+	  end
+
+      val configDir = OS.FileSys.getApplicationConfigDir "Toplevel"
+      val preferencesFile = configDir ^ "/preferences." ^ Pickle.extension
+      val historyFile = configDir ^ "/history." ^ Pickle.extension
+      val geometryFile = configDir ^ "/geometry." ^ Pickle.extension
+
+      val workDir = ref (OS.FileSys.getDir ())
+
+      val mb = Int.toLarge(1024*1024)
+      fun initHeapHandler () =
+	  if !heapLimited
+	  then Store.signal(SOME(Int.toLarge(!heapLimit)*mb, !heapHandler))
+	  else Store.signal NONE
+
+      fun init() =
+	  let
+	      val p = Pickle.load preferencesFile
+	      structure C = unpack p : USER_CONFIG_1
+	  in
+	      stdFontName := C.stdFontName;
+	      stdFont := Pango.FontDescription.fromString (!stdFontName);
+
+	      plainColor := mkRgbColor C.plainColor;
+	      errorColor := mkRgbColor C.errorColor;
+	      stringColor := mkRgbColor C.stringColor;
+	      reservedColor := mkRgbColor C.reservedColor;
+	      commentColor := mkRgbColor C.commentColor;
+
+	      historySize := C.historySize;
+	      (* Extensions - try incrementally *)
+	      let
+	          (* Alice 1.2 *)
+		  structure C = unpack p : USER_CONFIG_2
+		  do loadFileHistory := C.loadFileHistory
+	          (* Alice 1.4 *)
+	          structure C = unpack p : USER_CONFIG_3
+	          do warnings := C.warnings
+		  do Evaluator.setWarnings C.warnings
+		  do Print.depth := C.printDepth
+		  do Print.width := C.printWidth
+		  do heapLimited := C.heapLimited
+		  do heapLimit := C.heapLimit
+		  do initHeapHandler()
+		  do port := C.port
+		  do portStatic := C.portStatic
+		  do if C.portStatic then Remote.setPort C.port
+		     handle Remote.Port => ()
+	      in
+		  ()
+	      end
+	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) =>
+		     OS.FileSys.remove preferencesFile
+	             handle OS.SysErr _ => ()
+
+      fun save () =
+	  let
+	      structure C = 
+	      struct
+		  val warnings = !warnings
+		  val printDepth = !Print.depth
+		  val printWidth = !Print.width
+		  val reservedColor = getRgbColor (!reservedColor)
+		  val errorColor = getRgbColor (!errorColor)
+		  val stringColor = getRgbColor (!stringColor)
+		  val plainColor = getRgbColor (!plainColor)
+		  val commentColor = getRgbColor (!commentColor)
+		  val historySize = !historySize
+		  val stdFontName = !stdFontName
+		  val loadFileHistory = !loadFileHistory
+		  val heapLimited = !heapLimited
+		  val heapLimit = !heapLimit
+		  val port = !port
+		  val portStatic = !portStatic
+	      end
+	  in
+	      createConfigDir ();
+	      Pickle.save(preferencesFile, pack C : USER_CONFIG)
+	  end handle (OS.SysErr _ | IO.Io _) =>
+	      FileDialog.message "Could not save preferences."
+
+     (* Window geometry *)
+
+      fun loadGeometry() =
+	  let
+	      structure C = unpack Pickle.load geometryFile : GEOMETRY
+	  in
+	      SOME C.geometry
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => NONE
+
+      fun saveGeometry geometry =
+	  let
+	      structure G = (val geometry = geometry)
+	  in
+	      createConfigDir ();
+	      Pickle.save(geometryFile, pack G : GEOMETRY)
+	  end handle (OS.SysErr _ | IO.Io _) =>
+	      FileDialog.message "Could not save window geometry."
+
+
+     (* History management *)
+      fun loadHistory() =
+	  let
+	      structure C = unpack Pickle.load historyFile
+	      			 : (val history : string list)
+	  in
+	      C.history
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => []
+
+      fun saveHistory (history, openFiles) =
+	  let
+	      structure C =
+	      struct
+		  val history = List.take(history, !historySize)
+				handle Subscript => history
+		  val openFiles = openFiles
+		  val workDir = !workDir
+	      end
+	  in
+	      createConfigDir ();
+	      Pickle.save(historyFile,
+			  pack C : (val history : string list
+				    val openFiles : string list
+				    val workDir : string))
+	  end handle (OS.SysErr _ | IO.Io _) =>
+	      FileDialog.message "Could not save history."
+
+     (* Restore open files *)
+      fun loadOpenFiles() =
+	  let
+	      val p = Pickle.load historyFile
+	      structure O = unpack p : (val openFiles : string list)
+	  in
+	      (* unpack seperately, for backward compatibility *)
+	      workDir :=
+	      (let
+		 structure D = unpack p : (val workDir : string)
+	      in
+		 D.workDir
+	      end handle Package.Mismatch _ => OS.FileSys.getHomeDir ());
+	      if !loadFileHistory then O.openFiles else nil
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
+		| e => (TextIO.output(TextIO.stdErr,
+				    "** error loading history: uncaught \
+				    \exception " ^ Exn.name e ^ "\n"); nil)
+   end

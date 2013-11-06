@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint  from "../../lib/utility/PrettyPrint"
+import structure Source       from "../infrastructure/Source"
+import signature CONTEXT      from "../infrastructure/CONTEXT-sig"
+import signature FLAT_GRAMMAR from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar  from "FlatGrammar"
+
+signature VALUE_PROPAGATION_PHASE =
+    sig
+	structure C: CONTEXT
+	structure I: FLAT_GRAMMAR = FlatGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
+
+	val translate: Source.desc * C.t * I.t -> C.t * O.t
+	val dumpContext: C.t -> PrettyPrint.doc
+    end

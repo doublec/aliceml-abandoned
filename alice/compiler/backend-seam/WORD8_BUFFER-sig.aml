@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Word8Vector from "../../lib/fundamental/Word8Vector"
+import structure Word8 from "../../lib/fundamental/Word8"
+
+signature WORD8_BUFFER =
+    sig
+	type t
+	val output1 : t * Word8.word -> unit
+	val buffer : unit -> t
+	val getVector : t -> Word8Vector.vector
+	val bufferSize : t -> int
+    end

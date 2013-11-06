@@ -1,0 +1,79 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stream            from "Stream"
+import structure Model             from "Model"
+import structure Eventlistener     from "Eventlistener"
+import structure TextView          from "TextView"
+import structure EnvView           from "EnvView"
+import structure SourceView        from "SourceView"
+import structure Type              from "../../lib/rtt/Type"
+import structure Debugger          from "../../lib/system/Debugger"
+import signature DEBUGGER_CONTROLS from "DEBUGGER_CONTROLS-sig"
+
+structure DebuggerControls :> DEBUGGER_CONTROLS =
+    struct
+	type position = Model.position
+	type id       = string
+	type typ      = Type.t
+	type thread   = Thread.thread
+
+	(**
+	 * global variables
+	 *)
+	val stream = ref (Stream.new())
+	val model = Model.new()
+	val view = TextView.new()
+	val eview = EnvView.new()
+	val sview = SourceView.new()
+	val listener = Eventlistener.new(!stream)
+	val _ = Eventlistener.addModel(Model.handleEvent model, listener)
+	val _ = TextView.initialize(view, model)
+	val _ = EnvView.initialize(eview, model)
+	val _ = SourceView.initialize(sview, model)
+
+	(**
+	 * helper functions
+	 *)
+	fun write event = 
+	    stream := Stream.write(!stream, event)
+
+	(**
+	 * interface functions
+	 *)
+	val step = fn thread => write (Model.Step (thread))
+	val next = fn thread => write (Model.Next (thread))
+	val continue = fn thread => write (Model.Continue (thread))
+	val suspend  = fn thread => write (Model.Suspend (thread))
+	val resume   = fn thread => write (Model.Resume (thread))
+	val setBreakpoint = 
+	    fn (thread,pos) => write (Model.SetBreakpoint(thread, pos))
+	val removeBreakpoint = 
+	    fn (thread, pos) => write (Model.RemoveBreakpoint(thread, pos))
+	val detach = fn thread => write (Model.Detach (thread))
+	val unleash = fn (thread, n) => write (Model.Unleash (thread, n))
+	val setType = 
+	    fn (thread, id, typ) => write (Model.SetType (thread, id, typ))
+	val resetType = fn (thread, id) => write (Model.ResetType (thread, id))
+	val getThreads = fn () => Model.getThreadIDs model
+
+	fun runUnderDebuggerControl f =
+	    let 
+		val promise = Promise.promise()
+		val thread = Promise.future(promise)
+		val _ = spawn (Promise.fulfill(promise, Thread.current()); 
+			       Debugger.breakpoint(); 
+			       f())
+	    in
+		thread
+	    end
+    end

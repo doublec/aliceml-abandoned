@@ -1,0 +1,491 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GtkTreeTypes  from "GtkTreeTypes"
+import structure Util          from "Util"
+import signature TYPE_MANAGER  from "TYPE_MANAGER-sig"
+import signature WRAPPER       from "WRAPPER-sig"
+
+functor MkWrapper(structure TypeManager : TYPE_MANAGER
+		  val space : string
+		  val funcs : GtkTreeTypes.tree_item list) :> WRAPPER =
+    struct
+	open GtkTreeTypes
+	open TypeManager
+
+	(* This file will be created *)
+	val file = TextIO.openOut ((case space of
+					"gdk"        => "UnsafeGdk.oz"
+				      | "gtk"        => "UnsafeGtk.oz"
+				      | "gtk_canvas" => "UnsafeGtkCanvas.oz"
+				      | _            => raise Match))
+
+	(* Printing abstractions *)
+	fun ps s   = TextIO.output(file, s)
+	fun psl ls = List.app ps ls
+
+	(* Printing conversion *)
+	val iToS = Int.toString
+
+	(* Compute Function Name *)
+	local
+	    val module = (case space of
+			      "gdk"        => "GdkNative."
+			    | "gtk"        => "GtkNative."
+			    | "gtk_canvas" => "GtkCanvasNative."
+			    | _            => raise Match)
+	in
+	    fun computeFuncName str = (module ^ (Util.translateName str))
+	end
+	
+	(* Allocate Out Parameters: isVoid, args, haveOut *)
+	fun emitAllocOutParams (true, nil, false) = ()
+	  | emitAllocOutParams (true, nil, true)  =
+	    psl [Util.indent 1, "in\n"]
+	  | emitAllocOutParams (false, nil, _) =
+	    psl [Util.indent 2, "R\n", Util.indent 1, "in\n"]
+	  | emitAllocOutParams (isVoid, (_, IN(_), _)::ar, flag) =
+	    emitAllocOutParams (isVoid, ar, flag)
+	  | emitAllocOutParams (isVoid, (i, OUT(typ), conv)::ar, _) =
+	    let
+		val iStr   = iToS i
+		val alloc  = ("GOZCore.alloc" ^ (Util.firstUpper typ))
+		val argIn  = ("A" ^ iStr)
+		val argOut = ("AO" ^ iStr)
+		val argPtr = ("AP" ^ iStr)
+		val indent = Util.indent 2
+	    in
+		(psl [indent, argOut, " ",
+		      argPtr, " = {", alloc, " ", argIn, "}\n"];
+		 emitAllocOutParams (isVoid, ar, true))
+	    end
+
+	(* Create Function Call *)
+	local
+	    fun emitArg (_, IN("void"), _)   = ()
+	      | emitArg (i, IN(_), "none")   = psl ["A", iToS i, " "]
+	      | emitArg (i, IN(_), "string") = psl ["A", iToS i, " "]
+	      | emitArg (i, IN(_), "object") = psl ["{O2P A", iToS i, "} "]
+	      | emitArg (i, IN(_), "glist")  =
+		psl ["{ExportList A", iToS i, "} "]
+	      | emitArg (i, OUT(_), _)    = psl ["AP", (iToS i), " "]
+	in
+	    fun emitCall (true, func, args)  =
+		(psl [Util.indent 2, "{", func, " "];
+		 List.app emitArg args;
+		 ps "}\n")
+	      | emitCall (false, func, args) =
+		(psl [Util.indent 2, "R = {", func, " "];
+		 List.app emitArg args;
+		 ps "}\n")
+	end
+
+	(* Create Argument Declaration *)
+	fun emitArgDecl (_, IN("void"), _) = ps "_ "
+	  | emitArgDecl (i, _, _)          = psl ["A", iToS i, " "]
+
+	(* Handle Out Parameter *)
+	fun emitFreeOutParam (_, IN(_), _)    = ()
+	  | emitFreeOutParam (i, OUT(typ), _) =
+	    let
+		val iStr   = iToS i
+		val argPtr = ("AP" ^ iStr)
+		val argOut = ("AO" ^ iStr)
+		val indent = Util.indent 2
+	    in
+		(psl [indent, argOut, " = {GOZCore.get",
+		      Util.firstUpper typ, " ", argPtr, "}\n"];
+		 psl [indent, "{GOZCore.freeData ", argPtr, "}\n"])
+	    end
+
+	(* Convert Result *)
+	fun importResult arg =
+	    let
+		val [(_, par, conv)] = prepareArgs (0, [arg])
+	    in
+		(case par of
+		     IN(tStr) =>
+			 (case conv of
+			      "object" => "{P2O " ^ (getClassType tStr) ^ " R}"
+			    | "glist"  => "{ImportList R}"
+			    | "string" => "{ByteString.make R}"
+			    | _        => "R")
+		   | OUT(tStr) => "{P2O none R}")
+	    end
+
+	(* Create Result *)
+	local
+	    fun emitResult' nil                  = ""
+	      | emitResult' ((_, IN(_), _)::ar)  = emitResult' ar
+	      | emitResult' ((i, OUT(_), _)::ar) =
+		let
+		    val iStr   = iToS i
+		    val argOut = ("AO" ^ iStr)
+		in
+		    "#" ^ argOut ^ (emitResult' ar)
+		end
+	in
+	    fun emitResult (_, TYPE("void", ""), args) =
+		(case emitResult' args of
+		     ""   => psl [Util.indent 2, "Ret = unit"]
+		   | args => psl ([Util.indent 2, "Ret = ",
+				   Util.cutPrefix("#", args)]))
+	      | emitResult (name, ret, args) =
+		     let
+			 val args = emitResult' args
+			 val func = importResult (ARG(ret, ""))
+		     in
+			 psl [Util.indent 2, "Ret = ", func, args]
+		     end
+	end
+       
+	(* Function Decl Emitter *)
+	fun emitDecl (FUNCTION("gtk_canvas_new", _)) =
+	    psl [Util.indent 3, "'new' : CanvasNew\n",
+		 Util.indent 3, "'popVisual' : PopVisual\n",
+		 Util.indent 3, "'imageItemNew' : ImageItemNew\n"]
+	  | emitDecl (FUNCTION(name, _)) =
+	    let
+		val name = Util.computeWrapperName (space, name)
+	    in
+		psl [Util.indent 3,
+		     "'", Util.firstLower name, "' : ", name, "\n"]
+	    end
+	  | emitDecl _ = ()
+
+	(* Widget Get Function Code *)
+	val widgetGetCode =
+	    ["   proc {WidgetGet Object String Result}\n",
+	     "      Arg = {GOZCore.makeEmptyArg String}\n",
+	     "   in\n",
+	     "      {GtkNative.gtkWidgetGet {P2O Object} Arg}\n",
+	     "      Result = {GOZCore.getAliceArg Arg}\n",
+	     "      {GOZCore.freeData Arg}\n",
+	     "   end\n"]
+
+	(* ColorSelectionGetColor Function Code *)
+	val colorSelectionGetColorCode =
+	    ["   proc {ColorSelectionGetColor Object Result}\n",
+	     "      Array = {GOZCore.makeColorArr [0.0 0.0 0.0 0.0]}\n",
+	     "   in\n",
+	     "      {GtkNative.gtkColorSelectionGetColor ",
+	     "{P2O Object} Array}\n",
+	     "      Result = {GOZCore.getColorList Array}\n",
+	     "   end\n"]
+
+	(* ColorSelectionSetColor Function Code *)
+	val colorSelectionSetColorCode =
+	    ["   proc {ColorSelectionSetColor Object Cols Result}\n",
+	     "      Array = {GOZCore.makeColorArr Cols}\n",
+	     "   in\n",
+	     "      {GtkNative.gtkColorSelectionSetColor ",
+	     "{P2O Object} Array}\n",
+	     "      Result = unit\n",
+	     "   end\n"]
+
+	(* CanvasNew, PopVisual and CanvasImageItemNew Code *)
+	val canvasNewCode =
+	    ["  proc {CanvasNew WithImages Result}\n",
+             "    Flag = (WithImages == 1)\n",
+	     "  in\n",
+	     "     Result = {New GTKCANVAS.canvas new(Flag)}\n",
+	     "  end\n",
+	     "   proc {PopVisual Canvas Result}\n",
+	     "      {Canvas popvisual}\n",
+	     "      Result = unit\n",
+	     "   end\n",
+	     "   proc {ImageItemNew Canvas Group Image X Y W H A Result}\n",
+	     "      Result = {Canvas newImageItem(Group Image X Y W H A)}\n",
+	     "   end\n"]
+
+	(* CanvasItemNew, and -Set Code *)
+	val canvasItemCode =
+	    ["   proc {ItemNew Group Type Args Result}\n",
+	     "      Result = {GOZCore.canvasItemNew Group Type Args}\n",
+	     "   end\n",
+             "   proc {ItemSet Item Type Arg Result}\n",
+	     "      Result = {GOZCore.canvasItemSet Item Type Arg}\n",
+	     "   end\n"
+	     ]
+
+	(* Function Emitter *)
+	fun emit (FUNCTION("gtk_signal_connect", _))         = ()
+	  | emit (FUNCTION("gtk_signal_disconnect", _))      = ()
+	  | emit (FUNCTION("gtk_signal_emit", _))            = ()
+	  | emit (FUNCTION("gtk_signal_handler_block", _))   = ()
+	  | emit (FUNCTION("gtk_signal_handler_unblock", _)) = ()
+	  | emit (FUNCTION("gtk_canvas_item_set", _))        = ()
+	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
+	  | emit (FUNCTION("gtk_canvas_new", _))        = psl canvasNewCode
+	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
+	  | emit (FUNCTION("gtk_color_selection_get_color", _)) =
+	    psl colorSelectionGetColorCode
+	  | emit (FUNCTION("gtk_color_selection_set_color", _)) =
+	    psl colorSelectionSetColorCode
+	  | emit (FUNCTION(name, {ret, args, ...}))     =
+	    let
+		val isVoid   = (ret = TYPE("void", ""))
+		val callArgs = prepareArgs (0, args)
+		val func     = computeFuncName name
+	    in
+		(psl [Util.indent 1, "proc {",
+		      Util.computeWrapperName (space, name), " "];
+		 List.app emitArgDecl callArgs;
+		 ps "Ret}\n";
+		 emitAllocOutParams (isVoid, callArgs, false);
+		 emitCall (isVoid, func, callArgs);
+		 List.app  emitFreeOutParam callArgs;
+		 emitResult(name, ret, callArgs);
+		 psl ["\n", (Util.indent 1), "end\n"])
+	    end
+	  | emit _ = ()
+
+	(* Field Emitter *)
+	local
+	    val (module, prefix) =
+		(case space of
+		     "gdk"        => ("GdkFieldNative.gdk", "gdk")
+		   | "gtk"        => ("GtkFieldNative.gtk", "gtk")
+		   | "gtk_canvas" => ("GtkCanvasFieldNative.gtk", "gtkCanvas")
+		   | _            => raise Match)
+
+	    fun emitFieldDecl' p  {field, ptrs, alias} =
+		let
+		    val alias = Util.firstUpper (Util.translateName alias)
+		    val name  = (p ^ "GetField" ^ alias)
+		in
+		    psl [Util.indent 3,
+			 "'", Util.firstLower name, "' : ", name, "\n"]
+		end
+
+	    fun emitField' p {field, ptrs, alias} =
+		let
+		    val alias    = Util.firstUpper (Util.translateName alias)
+		    val procName = (p ^ "GetField" ^ alias)
+		    (* Access translation due to bug in Mozart Binding *)
+		    val modName  = (case p of
+					"Canvas" => "gtk" ^ procName
+				      | _        => procName)
+		    val arg      = ARG(TYPE(field, ptrs), "")
+		in
+		    (psl [Util.indent 1, "proc {", procName, " A0 Ret}\n"];
+		     psl [Util.indent 2, "R\n", Util.indent 1, "in\n"];
+		     psl [Util.indent 2, "R = {",
+			  module, modName, " {O2P A0}}\n"];
+		     psl [Util.indent 2, "Ret = ", importResult arg, "\n"];
+		     psl [Util.indent 1, "end\n"])
+		end
+	in
+	    fun emitFieldDecl (STRUCTURE(name, cs)) =
+		let
+		    val p' = Util.translateName (Util.cutPrefix ("_", name))
+		    val p  = (case prefix of
+				  "gtkCanvas" => Util.cutPrefix ("gtk", p')
+				| _           => Util.cutPrefix (prefix, p'))
+		in
+		    if isClassName name then
+			List.app (emitFieldDecl' p) cs
+		    else ()
+		end
+	      | emitFieldDecl _ = ()
+	    
+	    fun emitField (STRUCTURE(name, cs)) =
+		let
+		    val p' = Util.translateName (Util.cutPrefix ("_", name))
+		    val p  = (case prefix of
+				  "gtkCanvas" => Util.cutPrefix ("gtk", p')
+				| _           => Util.cutPrefix (prefix, p'))
+		in
+		    if isClassName name then
+			List.app (emitField' p) cs
+		    else ()
+		end
+	      | emitField _ = ()
+	end
+
+	(* Constant Decl Emitter *)
+	local
+	    val prefix = (case space of
+			      "gdk"        => "GDK_"
+			    | "gtk"        => "GTK_"
+			    | "gtk_canvas" => "GTK_CANVAS_"
+			    | _            => raise Match)
+
+	    fun makeName field =
+		(case Util.cutPrefix (prefix, field) of
+		     "2BUTTON_PRESS" => "TWO_BUTTON_PRESS"
+		   | "3BUTTON_PRESS" => "THREE_BUTTON_PRESS"
+		   | Id              => Id)
+
+	    fun emitDecl {field, value} =
+		let
+		    val name = makeName field
+		in
+		    psl [Util.indent 3, "'" , name, "'", " : ", name, "\n"]
+		end
+
+	    fun emitConst' {field, value} =
+		let
+		    val fieldVal = (case value of
+					NONE   => "0"
+				      | SOME v => Int.toString v)
+		in
+		    psl [Util.indent 1, makeName field, " = ", fieldVal, "\n"]
+		end
+	in
+	    fun emitConstDecl (ENUM(_, cs)) = List.app emitDecl cs
+	      | emitConstDecl _             = ()
+
+	    fun emitConst (ENUM(_, cs)) = List.app emitConst' cs
+	      | emitConst _             = ()
+	end
+
+	(* File Prefix Constant Data *)
+	val gdkPrefix =
+	    ["%%\n",
+	     "%% This file is generated. Please do not edit.\n",
+	     "%%\n\n",
+	     "functor $\n",
+	     "import\n",
+	     "   System(show)\n",
+	     "   GdkNative at 'x-oz://system/gtk/GdkNative.so{native}'\n",
+	     "   GdkFieldNative at ",
+	     "'x-oz://system/gtk/GdkFieldNative.so{native}'\n",
+	     "   GOZCoreComponent('GOZCore' : GOZCore) at ",
+	     "'x-oz://system/gtk/GOZCore.ozf'\n",
+	     "   GDK at 'x-oz://system/gtk/GDK.ozf'\n",
+	     "export\n",
+	     "   'UnsafeGdk$' : Interface\n",
+	     "define\n",
+	     "   P2O = GOZCore.pointerToObject\n",
+	     "   O2P = GOZCore.objectToPointer\n",
+	     "   ImportList = GOZCore.importList\n",
+	     "   ExportList = GOZCore.exportList\n",
+	     "   fun {AllocColor R G B}\n",
+	     "      {New GDK.color new(R G B)}\n",
+             "   end\n"
+	     ]
+
+	val gtkPrefix =
+	    ["%%\n",
+	     "%% This file is generated. Please do not edit.\n",
+	     "%%\n\n",
+	     "functor $\n",
+	     "import\n",
+	     "   System(show)\n",
+	     "   GtkNative at 'x-oz://system/gtk/GtkNative.so{native}'\n",
+	     "   GtkFieldNative at ",
+	     "'x-oz://system/gtk/GtkFieldNative.so{native}'\n",
+	     "   GOZCoreComponent('GOZCore' : GOZCore) at ",
+	     "'x-oz://system/gtk/GOZCore.ozf'\n",
+	     "   GDK at 'x-oz://system/gtk/GDK.ozf'\n",
+	     "   GTK at 'x-oz://system/gtk/GTK.ozf'\n",
+	     "export\n",
+	     "   'UnsafeGtk$' : Interface\n",
+	     "define\n",
+	     "   {GOZCore.setMode alice}\n",
+	     "   P2O = GOZCore.pointerToObject\n",
+	     "   O2P = GOZCore.objectToPointer\n",
+	     "   ImportList = GOZCore.importList\n",
+	     "   ExportList = GOZCore.exportList\n",
+	     "   fun {ToA BS}\n",
+	     "      {String.toAtom {ByteString.toString BS}}\n",
+	     "   end\n",
+	     "   fun {Null _}\n",
+	     "      {GOZCore.null}\n",
+	     "   end\n",
+	     "   fun {SignalConnect Object Signal Handler}\n",
+             "      proc {OzHandler Arg}\n",
+             "         {Handler Arg _}\n",
+             "      end\n",
+             "   in\n",
+             "      {Object signalConnect({ToA Signal} OzHandler $)}\n",
+             "   end\n",
+	     "   fun {SignalDisconnect Object SignalId}\n",
+	     "      {Object signalDisconnect(SignalId)}\n",
+             "      unit\n",
+             "   end\n",
+	     "   fun {SignalHandlerBlock Object SignalId}\n",
+	     "      {Object signalBlock(SignalId)}\n",
+             "      unit\n",
+             "   end\n",
+	     "   fun {SignalHandlerUnblock Object SignalId}\n",
+	     "      {Object signalUnblock(SignalId)}\n",
+             "      unit\n",
+             "   end\n",
+	     "   fun {SignalEmit Object Signal}\n",
+	     "      {Object signalEmit(Signal)}\n",
+             "      unit\n",
+             "   end\n"
+	     ]
+
+	val canvasPrefix =
+	    ["%%\n",
+	     "%% This file is generated. Please do not edit.\n",
+	     "%%\n\n",
+	     "functor $\n",
+	     "import\n",
+	     "   System(show)\n",
+	     "   GtkCanvasNative at ",
+	     "'x-oz://system/gtk/GtkCanvasNative.so{native}'\n",
+	     "   GtkCanvasFieldNative at ",
+	     "'x-oz://system/gtk/GtkCanvasFieldNative.so{native}'\n",
+	     "   GOZCoreComponent('GOZCore' : GOZCore) at ",
+	     "'x-oz://system/gtk/GOZCore.ozf'\n",
+	     "   GDK at 'x-oz://system/gtk/GDK.ozf'\n",
+	     "   GTK at 'x-oz://system/gtk/GTK.ozf'\n",
+	     "   GTKCANVAS at 'x-oz://system/gtk/GTKCANVAS.ozf'\n",
+	     "export\n",
+	     "   'UnsafeGtkCanvas$' : Interface\n",
+	     "define\n",
+	     "   P2O = GOZCore.pointerToObject\n",
+	     "   O2P = GOZCore.objectToPointer\n",
+	     "   ImportList = GOZCore.importList\n"
+	     ]
+
+	(* File Init Constant Data *)
+	val gdkInit    = ["   Interface = 'UnsafeGdk'(\n",
+			  "         'allocColor' : AllocColor\n"]
+	val gtkInit    = ["   Interface = 'UnsafeGtk'(\n",
+			  "         'null' : Null\n"]
+	val canvasInit = ["   Interface = 'UnsafeGtkCanvas'(\n"]
+
+	(* File End Constant Data *)
+	val gdkEnd    = [ "                                )\n",
+			 "end\n"]
+	val gtkEnd    = gdkEnd
+	val canvasEnd = gdkEnd
+
+	(* Create Wrapper Core *)
+	fun create () =
+	    let
+		val (funcs, fields, consts)         = splitTypes funcs
+		val (filePrefix, fileInit, fileEnd) =
+		    (case space of
+			 "gdk"        => (gdkPrefix, gdkInit, gdkEnd)
+		       | "gtk"        => (gtkPrefix, gtkInit, gtkEnd)
+		       | "gtk_canvas" => (canvasPrefix, canvasInit, canvasEnd)
+		       | _            => raise Match)
+	    in
+		(psl filePrefix;
+		 List.app emit funcs;
+		 List.app emitField fields;
+		 List.app emitConst consts;
+		 psl fileInit;
+		 List.app emitDecl funcs;
+		 List.app emitFieldDecl fields;
+		 List.app emitConstDecl consts;
+		 psl fileEnd;
+		 TextIO.closeOut file)
+	    end
+    end

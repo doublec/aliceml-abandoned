@@ -1,0 +1,85 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                         from "Pervasive"
+import __primitive type unit and int                 from "ToplevelTypes"
+import __primitive
+       infix 4 = < <= infix 6 + -
+       val op = and op < and op <= and op + and op - from "ToplevelValues"
+import __primitive structure General                 from "General"
+import __primitive functor MkArray                   from "MkArray"
+import functor MkSlice                               from "MkSlice"
+
+functor MkArraySlice(__eqeqtype 'a array
+		     type 'a vector
+		     type 'a vector_slice
+		     type 'a elem
+		     val alength :   'a array -> int
+		     val asub :      'a array * int -> 'a elem
+		     val aupdate :   'a array * int * 'a elem -> unit
+		     val aextract :  'a array * int * int -> 'a vector
+		     val vtabulate : int * (int -> 'a elem) -> 'a vector
+		     val vsllength : 'a vector_slice -> int
+		     val vslsub :    'a vector_slice * int -> 'a elem) =
+struct
+    structure Slice = MkSlice(type row     = array
+			      type vector  = vector
+			      type elem    = elem
+			      val rlength  = alength
+			      val rsub     = asub
+			      val rextract = aextract)
+
+    fun update(sl,j,x) =
+	let
+	    val (r,i,n) = Slice.base sl
+	in
+	    if j < 0 orelse n <= j
+	    then raise General.Subscript
+	    else aupdate(r,i+j,x)
+	end
+
+    structure Array = MkArray(type dst_array  = array
+			      type array      = Slice.t
+			      type dst_vector = vector
+			      type vector     = vector_slice
+			      type elem       = elem
+			      val maxLen      = 0
+			      val length      = Slice.length
+			      val sub         = Slice.sub
+			      val uSub        = Slice.sub
+			      val update      = update
+			      val uUpdate     = update
+			      val dlength     = alength
+			      val dupdate     = aupdate
+			      val dextract    = aextract
+			      val vlength     = vsllength
+			      val vsub        = vslsub
+			      val uVsub       = vslsub)
+    open Array
+    open Slice
+
+    (* Copying has to take extra care for overlapping ranges *)
+
+    fun copy{src, dst, di} =
+	if di < 0 orelse alength dst < di + length src
+	then raise General.Subscript
+	else if di < #2 src then copy'(src, dst, di, 0, length src, 1)
+			    else copy'(src, dst, di, length src - 1, ~1, ~1)
+    and copy'(src, dst, di, i, to, by) =
+	if i = to then () else
+	( aupdate(dst, di+i, sub(src, i));
+	  copy'(src, dst, di, i+by, to, by) )
+end

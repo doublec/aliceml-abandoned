@@ -1,0 +1,38 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+signature ENGINE =
+    sig
+	structure C: CONTEXT
+
+	type code
+	type component
+
+	type exportDesc = (Label.t * FlatGrammar.id) vector
+
+	exception Format of string
+
+	val link: C.t -> code * string option -> component   (* Format *)
+	val save: C.t -> component * string -> unit          (* Format *)
+    end

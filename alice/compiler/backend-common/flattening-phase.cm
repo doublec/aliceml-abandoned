@@ -1,0 +1,28 @@
+Group
+
+    functor MkFlatteningPhase
+
+is
+
+    ../../lib/utility/sources.cm
+    ../../lib/rtt/type.cm
+    ../../lib/rtt/interface.cm
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+    ../common/intermediate-grammar.cm
+
+    flat-grammar.cm
+    arity.cm
+
+    LABEL_SORT-sig.aml
+    LabelSort.aml
+
+    intermediate-aux.cm
+
+    SIMPLIFY_MATCH-sig.aml
+    SimplifyMatch.aml
+    SIMPLIFY_REC-sig.aml
+    SimplifyRec.aml
+
+    FLATTENING_PHASE-sig.aml
+    MkFlatteningPhase.aml

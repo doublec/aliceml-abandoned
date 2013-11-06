@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature CANVAS_HELPER =
+    sig
+	type explorer_state
+
+	val createCanvas :
+	    explorer_state option ref * ((unit -> unit) -> unit) * int * int ->
+            Gtk.object * Gtk.object ref * Gtk.object ref
+	    * Gtk.object ref * int ref
+	val resetCanvas :
+	    ((unit -> unit) -> unit) -> explorer_state option ref -> unit
+	val scaleCanvasHandler :
+	    ((unit -> unit) -> unit) * explorer_state option ref
+	    * Gtk.object -> 'a -> unit
+    end

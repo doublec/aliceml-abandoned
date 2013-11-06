@@ -1,0 +1,78 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type unit and int and vector
+       type bool and order and option and list  from "ToplevelTypes"
+
+signature VECTOR_SLICE =
+sig
+    type 'a slice
+    type 'a t = 'a slice						(**)
+
+    val full :		'a vector -> 'a slice
+    val slice :		'a vector * int * int option -> 'a slice
+    val subslice :	'a slice * int * int option -> 'a slice
+    val vector :	'a slice -> 'a vector
+    val toVector :	'a slice -> 'a vector				(**)
+    val toList :	'a slice -> 'a list				(**)
+
+    val length :	'a slice -> int
+    val isEmpty :	'a slice -> bool
+    val base :		'a slice -> 'a vector * int * int
+    val sub :		'a slice * int -> 'a
+    val getItem :	'a slice -> ('a * 'a slice) option
+
+    val triml :		int -> 'a slice -> 'a slice			(**)
+    val trimr :		int -> 'a slice -> 'a slice			(**)
+    val splitAt :	'a slice * int -> 'a slice * 'a slice		(**)
+    val splitl :	('a -> bool) -> 'a slice -> 'a slice * 'a slice	(**)
+    val splitr :	('a -> bool) -> 'a slice -> 'a slice * 'a slice	(**)
+    val dropl :		('a -> bool) -> 'a slice -> 'a slice		(**)
+    val dropr :		('a -> bool) -> 'a slice -> 'a slice		(**)
+    val takel :		('a -> bool) -> 'a slice -> 'a slice		(**)
+    val taker :		('a -> bool) -> 'a slice -> 'a slice		(**)
+
+    val concat :	'a slice list -> 'a vector
+    val rev :		'a slice -> 'a vector				(**)
+
+    val app :		('a -> unit) -> 'a slice -> unit
+    val appr :		('a -> unit) -> 'a slice -> unit		(**)
+    val map :		('a -> 'b) -> 'a slice -> 'b vector
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val all :		('a -> bool) -> 'a slice -> bool
+    val exists :	('a -> bool) -> 'a slice -> bool
+    val find :		('a -> bool) -> 'a slice -> 'a option
+
+    val appi :		(int * 'a -> unit) -> 'a slice -> unit
+    val appri :		(int * 'a -> unit) -> 'a slice -> unit		(**)
+    val mapi :		(int * 'a -> 'b) -> 'a slice -> 'b vector
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val alli :		(int * 'a -> bool) -> 'a slice -> bool		(**)
+    val existsi :	(int * 'a -> bool) -> 'a slice -> bool		(**)
+    val findi :		(int * 'a -> bool) -> 'a slice -> (int * 'a) option
+
+    val contains :	''a slice -> ''a -> bool			(**)
+    val notContains :	''a slice -> ''a -> bool			(**)
+
+    val equal :		('a * 'a -> bool) -> 'a slice * 'a slice -> bool (**)
+    val collate :	('a * 'a -> order) -> 'a slice * 'a slice -> order
+
+    val isSorted :	('a * 'a -> order) -> 'a slice -> bool		(**)
+    val sort :		('a * 'a -> order) -> 'a slice -> 'a vector	(**)
+end

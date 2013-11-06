@@ -1,0 +1,56 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GuiMain from "GuiMain"
+import structure Evaluator from "Evaluator"
+import functor GuiSignals from "GuiSignals"
+import structure EventHandler from "EventHandler"
+import structure Config from "Config"
+import structure MkSingleInstance from "MkSingleInstance"
+
+
+(*
+ * Starts the Alice Editor, unless another instance is already
+ * open, in which case that instance is used to open the
+ * requested files instead.
+ *)
+structure GuiToplevel =
+struct
+  
+    fun runServer (files, loadSession) =
+	let
+	    structure EH = GuiSignals (structure S = EventHandler)
+	in
+	    Config.init ();
+	    GuiMain.init EH.notebook1_on_notebook1_switch_page;
+	    Evaluator.init ();
+	    GuiMain.initDone loadSession;
+	    List.app (GuiMain.openGivenFile GuiMain.COMMANDLINE) files;
+        end
+
+
+    fun run files =
+        let
+            structure SingleInstance = MkSingleInstance (type request = string list)
+            val files'      = List.filter (fn f => f <> "-") files
+            val loadSession = (length files' = length files)
+            val openRemote  = app (GuiMain.openGivenFile GuiMain.COMMANDLINE)
+        in
+            case SingleInstance.init (Config.instanceFile, files')
+            of NONE          => OS.Process.exit OS.Process.success
+            |  SOME requests => (runServer (files', loadSession); app openRemote requests)
+        end
+
+end
+

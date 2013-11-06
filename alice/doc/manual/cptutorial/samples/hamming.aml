@@ -1,0 +1,59 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+open Modeling
+ 
+val distance = 2
+val bits = 7
+val numsymbols = 16 
+ 
+fun hamming bits distance numsymbols space =
+    let
+       val xs = List.tabulate(numsymbols,(fn x => 
+                    FS.upperBound(space,#[(1,bits)])))
+       val tmp = FS.Value.make(space,#[(1,bits)])
+       fun minDist(x,y)= 
+           let
+    	      val tmp1 = FS.setvar space
+    	      val tmp2 = FS.setvar space
+    	      val tmp3 = FS.setvar space
+    	      val tmp4 = FD.intvar(space,#[(0,bits)])
+    	      val tmp5 = FD.intvar(space,#[(0,bits)])
+    	   in
+    	     (FS.relOp(space,x,FS.INTER,y,FS.SEQ,tmp1);
+    	      FS.relOp(space,x,FS.UNION,y,FS.SEQ,tmp2);
+    	      FS.relOp(space,tmp,FS.MINUS,tmp2,FS.SEQ,tmp3);
+    	      FS.cardinality(space,tmp1,tmp4);
+    	      FS.cardinality(space,tmp3,tmp5);
+    	      post(space,`bits `- FD(tmp4) `- FD(tmp5) 
+    	                 `>= `distance,FD.DOM))
+    	   end 
+       fun forallTail([y])= ()
+    	 | forallTail(y::ys) = (List.app(fn x => 
+    	                  minDist(y,x))(ys);forallTail ys)
+    in
+       forallTail(xs);
+       FS.setvarbranch(space,Vector.fromList xs,
+                             FS.FSB_NONE,FS.FSB_MIN);
+       xs
+    end
+    	
+(* Explorer.exploreOne(hamming bits distance numsymbols) *)  
+
+(*
+ 
+let 
+    val(s,r) = valOf(Search.searchOne
+                (hamming bits distance numsymbols))
+in
+    List.map(fn y => FD.domainToList y)
+     (List.map(fn x =>FS.Reflect.upperBound(s,x))r)
+end 	
+
+ *)          
+
+           

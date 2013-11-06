@@ -1,0 +1,61 @@
+We are happy to announce version 1.3 of the Alice programming
+system:
+
+     http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with extensive
+support for type-safe programming of concurrent, distributed
+and open systems. It also features cutting-edge constraint
+programming technology based on the Gecode library.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and entire modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     constraint propagation and programmable search for
+     solving hard combinatorial problems with Gecode
+  Virtual Machine
+     portable implementation with just-in-time compilation
+  Interactive tools
+     graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  Constraint Tutorial
+     an extensive tutorial on Constraint Programming using the
+     Alice binding to the Gecode library [www.gecode.org] has
+     been added to the documentation
+  New Byte Code Jitter
+     internal byte code jitting is now the default, with smaller
+     memory footprint and more aggressive dynamic optimizations
+  Successor ML
+     integrated proposals for Successor ML [www.successor-ml.org],
+     in particular extensible records and line comments
+  Bug Fixes
+     as always, bug fixes and minor improvements everywhere
+
+For a detailed list of changes please see:
+
+     http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Alice is open source under a BSD-style license. Source and binary
+packages are currently available for Linux, Mac OS, and Windows.
+
+Enjoy,
+
+        - The Alice Team

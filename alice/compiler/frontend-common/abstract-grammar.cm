@@ -1,0 +1,16 @@
+Group is
+
+	../../lib/rtt/name.cm
+	../../lib/rtt/label.cm
+	../../lib/rtt/fixity.cm
+	../infrastructure/source.cm
+	../infrastructure/pp-misc.cm
+	../common/id-stamp.cm
+
+	ABSTRACT_GRAMMAR-sig.aml
+	MkAbstractGrammar.aml
+
+	PP_ABSTRACT_GRAMMAR-sig.aml
+	MkPPAbstractGrammar.aml
+
+	AbstractGrammar.aml

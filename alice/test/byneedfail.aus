@@ -1,0 +1,33 @@
+__prebound Prebound
+
+(*
+import
+val show: 'a -> {}
+from "../../vm-mozart/Debug.ozf"
+*)
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+type     int    = Prebound.int
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
+
+type unit = {}
+
+__primitive val promise: unit -> 'a = "Transient.promise"
+__primitive val future: 'a -> 'a = "Transient.future"
+__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+__primitive val await: 'a -> 'a = "Transient.await"
+__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+
+__primitive val show: 'a -> unit = "show"
+
+val f: unit = byNeed (fn () => raise Prebound.Match)
+
+val _ = show (await f)

@@ -1,0 +1,177 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Debug structure", "The <TT>Debug</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature DEBUG
+    structure Debug : DEBUG</PRE>
+
+   <P>A structure that prints debug information according to a specified debug level.
+   </P>
+
+ <P>
+    See also:
+    <A href="sf-problem.html"><TT>PROBLEM</TT></A>,
+    <A href="sf-search.html"><TT>SEARCH</TT></A>.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature DEBUG from "x-alice:/lib/gecode/search-factory/DEBUG-sig"
+    import structure Debug from "x-alice:/lib/gecode/search-factory/Debug"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature DEBUG =
+sig
+
+  type <A href="#mask">db_mask</A> = Word31.t
+
+  infix &&
+  infix ||
+  val <A href="#andand">&&</A> : db_mask * db_mask -> db_mask
+  val <A href="#oror">||</A> : db_mask * db_mask -> db_mask
+
+  val <A href="#newDB">newDB</A> : unit -> db_mask
+
+  val <A href="#dbExc">dbExc</A>    : db_mask
+  val <A href="#dbRecomp">dbRecomp</A> : db_mask
+  val <A href="#dbClone">dbClone</A>  : db_mask
+  val <A href="#dbBaB">dbBaB</A>    : db_mask
+  val <A href="#dbSearch">dbSearch</A> : db_mask
+  val <A href="#dbSlow">dbSlow</A>   : db_mask
+
+  val <A href="#dbZero">dbZero</A>   : db_mask
+  val <A href="#dbZero">dbNone</A>   : db_mask
+  val <A href="#dbAll">dbAll</A>    : db_mask
+
+  val <A href="#localPrint">localPrint</A> : (string -> unit) ref
+  val <A href="#dbPrint">dbPrint</A>  : db_mask * db_mask * string -> unit
+
+end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="mask">db_mask</A></TT>
+    </DT>
+    <DD>
+      <P>The type of debug masks (a word).
+      </P>
+    </DD>
+
+    <DT>
+      <TT><I>mask1</I> <A name="andand">&&</A> <I>mask2</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a mask equal to the logical and operation on masks.
+         Note that if you want to have a mask containing two masks <I>m1</I> and <I>m2</I>,
+         you have to use <TT>||</TT> instead.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><I>mask1</I> <A name="oror">||</A> <I>mask2</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a mask equal to the logical or operation on masks.
+         Use this operator to combine two masks.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="newDB">newDB</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a new mask.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbExc">dbExc</A></TT>
+    </DT>
+    <DD>
+      <P>A mask for printing exceptions.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbRecomp">dbRecomp</A></TT>
+    </DT>
+    <DD>
+      <P>A mask for printing information related to recomputation.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbClone">dbClone</A></TT>
+    </DT>
+    <DD>
+      <P>A mask for printing information related to cloning of constraint spaces.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbBaB">dbBab</A></TT>
+    </DT>
+    <DD>
+      <P>A mask for printing information related to Branch & Bound.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbSearch">dbSearch</A></TT>
+    </DT>
+    <DD>
+      <P>A mask for printing information related to search.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbSlow">dbSlow</A></TT>
+    </DT>
+    <DD>
+      <P>A mask that considerably slows down the search (a 800 millisecond pause is inserted between each node).
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbZero">dbZero</A></TT>
+      <TT><A name="dbNone">dbNone</A></TT>
+    </DT>
+    <DD>
+      <P>The empty mask (no bit active).
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbAll">dbAll</A></TT>
+    </DT>
+    <DD>
+      <P>The full mask (all bits active).
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="localPrint">localPrint</A></TT>
+    </DT>
+    <DD>
+      <P>A reference to the function used to print stuff. By default, contains <TT>print</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="dbPrint">dbPrint</A> <I>(mask1, mask2, message)</I></TT>
+    </DT>
+    <DD>
+      <P>Prints the given <I>message</I> (using <TT>!localPrint</TT>)
+         only if <TT><I>mask1 || mask2</I></TT> is not empty.
+      </P>
+    </DD>
+
+  </DL>
+  
+<?php footing(); ?>

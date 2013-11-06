@@ -1,0 +1,35 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature DEBUG =
+    sig
+	val setPrintDepth: int -> unit
+	val setPrintWidth: int -> unit
+
+	val toString: 'a -> string
+
+	val print: 'a -> unit
+	val inspect: 'a -> unit
+	val disassemble: ('a -> 'b) -> unit
+
+	structure Print: fct(S: any) -> sig end
+	functor Inspect(signature S structure X: S): any
+
+	functor InspectType(type t): any
+	functor InspectSig(signature S): any
+
+	val byteCompile : ('a -> 'b) -> unit
+	val lazyByteCompile : ('a -> 'b) -> unit
+
+	val numberOfNodes : ('a -> 'b) -> int
+	val containsAppVar : ('a -> 'b) -> bool 
+    end

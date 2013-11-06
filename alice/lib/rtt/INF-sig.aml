@@ -1,0 +1,268 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label   from "Label"
+import structure Path    from "Path"
+import structure PathSet from "PathSet"
+import structure PathMap from "PathMap"
+import structure Type    from "Type"
+import structure Fixity  from "Fixity"
+import signature IMP_MAP from "../data/IMP_MAP-sig"
+
+signature INF =
+sig
+  (* Types *)
+
+    type lab   = Label.t
+    type path  = Path.t
+    type typ   = Type.t
+    type tkind = Type.kind
+    type fix   = Fixity.t
+
+    type kind						(* [kappa,k] *)
+    type sign						(* [sigma,s] *)
+    type item
+    type inf						(* [jota,j] *)
+    type mod						(* [mod] *)
+    type t = inf
+
+    structure Map :	IMP_MAP where type key = inf
+    structure KindMap :	IMP_MAP where type key = kind
+
+    type bound_paths = {typ : (path list option * tkind) PathMap.t,
+			mod : (path list option * inf) PathMap.t,
+			inf : (path list option * kind) PathMap.t}
+
+  (* Realisations *)
+
+    type typ_rea = typ PathMap.t
+    type mod_rea = mod PathMap.t
+    type inf_rea = inf PathMap.t
+
+    type rea	 = { typ_rea : typ_rea
+		   , mod_rea : mod_rea
+		   , inf_rea : inf_rea
+		   }
+
+    val rea :		unit -> rea
+    val isEmptyRea :	rea -> bool
+    val cloneRea :	rea -> rea
+    val unionRea :	rea * rea -> unit
+
+
+  (* Kinds *)
+
+    datatype kind_desc =
+	  GroundKind
+	| SingKind of inf
+	| DepKind  of path * inf * kind
+
+    exception Kind
+
+    val groundKind :	unit -> kind
+    val singKind :	inf  -> kind
+    val depKind :	path * inf * kind -> kind
+
+    val inspectKind :	kind -> kind_desc
+
+    val isGroundKind :	kind -> bool			(* modulo subkinding *)
+    val isSingKind :	kind -> bool
+    val isDepKind :	kind -> bool
+
+    val asSingKind :	kind -> inf			(* Kind *)
+    val asDepKind :	kind -> path * inf * kind	(* Kind *)
+
+    val kind :		inf -> kind
+
+
+  (* Modules *)
+
+    val mod :		path * inf -> mod
+    val asMod :		mod -> path * inf
+
+
+  (* Injections *)
+
+    val top :		unit		 -> inf
+    val con :		path * kind	 -> inf
+    val sign :		sign		 -> inf
+    val arrow :		path * inf * inf -> inf
+    val exist :		path * inf * inf -> inf
+    val lambda :	path * inf * inf -> inf
+    val apply :		inf * mod        -> inf		(* Mismatch *)
+    val sing :		mod              -> inf
+    val abbrev :	inf * inf        -> inf		(* Mismatch *)
+
+  (* Inspection *)
+
+    datatype desc =
+	  Top
+	| Con    of path
+	| Sig    of sign
+	| Arrow  of path * inf * inf
+	| Exist  of path * inf * inf
+	| Lambda of path * inf * inf
+	| Apply  of inf * mod
+	| Sing   of mod
+
+    exception Interface
+
+    val inspect :	inf -> desc
+
+    val isTop :		inf -> bool
+    val isCon :		inf -> bool			(* modulo subtyping...*)
+    val isSig :		inf -> bool
+    val isArrow :	inf -> bool
+    val isExist :	inf -> bool
+    val isLambda :	inf -> bool
+    val isApply :	inf -> bool
+    val isSing :	inf -> bool
+
+    val asCon :		inf -> path			(* Interface *)
+    val asSig :		inf -> sign			(* Interface *)
+    val asArrow :	inf -> path * inf * inf		(* Interface *)
+    val asExist :	inf -> path * inf * inf		(* Interface *)
+    val asLambda :	inf -> path * inf * inf		(* Interface *)
+    val asApply :	inf -> inf  * mod		(* Interface *)
+    val asSing :	inf -> mod			(* Interface *)
+
+    val isAbbrev :	inf -> bool
+    val asAbbrev :	inf -> inf  * inf		(* Interface *)
+
+  (* Instantiation, realisation, etc. *)
+
+    val instance :	path * inf -> inf * rea
+    val realise :	rea  * inf -> inf		(* Mismatch *)
+
+    val splitExist :	inf -> (path * inf) list * inf
+
+    val compress :	inf  -> unit
+    val compressSig :	sign -> unit
+
+    val same :		inf * inf -> bool	(* for efficiency hacks... *)
+
+  (* Matching and intersection *)
+
+    datatype mismatch =
+	  MissingFix       of lab
+	| MissingVal       of lab
+	| MissingTyp       of lab
+	| MissingMod       of lab
+	| MissingInf       of lab
+	| MismatchFix      of lab * fix * fix
+	| MismatchVal      of lab * typ * typ * Type.mismatch
+	| MismatchTyp      of lab * tkind * tkind * Type.kind_mismatch
+	| MismatchMod      of lab * mismatch
+	| MismatchInf      of lab * kind_mismatch
+	| MismatchDom      of mismatch
+	| MismatchRan      of mismatch
+	| MismatchParam    of mismatch
+	| MismatchBody     of mismatch
+	| MismatchFun      of mismatch
+	| MismatchArg      of mismatch
+	| Incompatible     of inf * inf
+	| IncompatibleMod  of path * path
+
+    and kind_mismatch =
+	  MismatchKindDom  of mismatch
+	| MismatchKindRan  of kind_mismatch
+	| IncompatibleKind of kind * kind
+	| IncompatibleInf  of mismatch
+
+    exception Mismatch of mismatch
+    exception KindMismatch of kind_mismatch
+
+    val equal :		inf * inf -> bool
+    val match :		inf * inf -> rea		(* Mismatch *)
+    val matchWith :	rea * inf * inf -> unit		(* Mismatch *)
+    val matchKind :	kind * kind -> unit		(* KindMismatch *)
+    val infimum :	inf * inf -> inf		(* Mismatch *)
+    val narrow :	inf * inf -> inf		(* Mismatch *)
+    val narrowMod :	mod * inf -> mod		(* Mismatch *)
+    val narrowSig :	sign * sign -> sign		(* Mismatch *)
+    val narrowExt :	inf * inf -> inf		(* Mismatch *)
+    val narrowSigExt :	sign * sign -> sign		(* Mismatch *)
+
+    val avoid :		bound_paths * inf -> inf option
+
+  (* Signature construction *)
+
+    val emptySig :	unit -> sign
+
+    val extendFix :	sign * lab  * fix   -> unit	(* Path.Path *)
+    val extendVal :	sign * lab  * typ   -> unit	(* Path.Path *)
+    val extendTyp :	sign * path * tkind -> unit	(* Path.Path *)
+    val extendMod :	sign * path * inf   -> unit	(* Path.Path *)
+    val extendInf :	sign * path * kind  -> unit	(* Path.Path *)
+
+    val extendHiddenTyp : sign * path * tkind -> unit	(* Path.Path *)
+    val extendHiddenMod : sign * path * inf -> unit	(* Path.Path *)
+    val extendHiddenInf : sign * path * kind -> unit	(* Path.Path *)
+
+    val avoidHidden :	sign -> sign
+
+  (* Signature inspection *)
+
+    val items :		sign -> item list		(* reversed! *)
+
+    datatype item_desc =
+	  FixItem of lab * fix
+	| ValItem of lab * typ
+	| TypItem of path * tkind
+	| ModItem of path * inf
+	| InfItem of path * kind
+	| HiddenItem of item
+
+    exception Item
+
+    val inspectItem :	item -> item_desc
+
+    val isFixItem :	item -> bool			(* modulo hidden... *)
+    val isValItem :	item -> bool
+    val isTypItem :	item -> bool
+    val isModItem :	item -> bool
+    val isInfItem :	item -> bool
+    val isHiddenItem :	item -> bool
+
+    val asFixItem :	item -> lab * fix		(* Item *)
+    val asValItem :	item -> lab * typ		(* Item *)
+    val asTypItem :	item -> path * tkind		(* Item *)
+    val asModItem :	item -> path * inf		(* Item *)
+    val asInfItem :	item -> path * kind		(* Item *)
+    val asHiddenItem :	item -> item			(* Item *)
+
+    exception Lookup of lab
+
+    val lookupFix :	sign * lab -> fix		(* Lookup *)
+    val lookupVal :	sign * lab -> typ		(* Lookup *)
+    val lookupTyp :	sign * lab -> tkind		(* Lookup *)
+    val lookupMod :	sign * lab -> inf		(* Lookup *)
+    val lookupInf :	sign * lab -> kind		(* Lookup *)
+
+    val lookupTyp' :	sign * lab -> typ		(* Lookup, Type.Kind *)
+    val lookupMod' :	sign * lab -> mod		(* Lookup, Interface *)
+    val lookupInf' :	sign * lab -> inf		(* Lookup, Kind *)
+
+    val pathTyp :	sign * lab -> path		(* Lookup *)
+    val pathMod :	sign * lab -> path		(* Lookup *)
+    val pathInf :	sign * lab -> path		(* Lookup *)
+
+  (* Closure check *)
+
+    exception Unclosed of lab * typ
+
+    val close :		sign -> unit			(* Unclosed *)
+
+    val paths :		inf  -> PathSet.t
+    val pathsKind :	kind -> PathSet.t
+    val boundPaths :	inf -> bound_paths
+end

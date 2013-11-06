@@ -1,0 +1,336 @@
+import signature ANTE from "ANTE-sig"
+import structure Instructions from "Instructions"
+import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+
+structure Ante : ANTE =
+struct
+    exception Debug of string
+
+    open Promise
+
+    type marker		= int
+    datatype side	= left | right
+    datatype dir	= here | ahead | leftahead | rightahead
+    datatype condition	= friend | foe | friendwithfood | foewithfood |
+			  food | rock | marker of marker | foemarker |
+			  home | foehome
+
+    type label		= string
+    type state		= int
+    datatype yesno	= ifyes | ifnot
+    datatype otherwise	= otherwise
+    datatype instr	= Fail | Concat of instr * instr |
+			  Goto of label | Label of label * instr |
+			  Mark of marker * instr | Unmark of marker * instr |
+			  Turn of side * instr | Move of instr * instr |
+			  Pick of instr * instr | Drop of instr |
+			  Sense of dir * condition * instr * instr |
+			  Flip of int * instr * instr
+    type cont		= state -> instr
+    type stmt		= int * (cont -> cont)
+    type 'a branch	= 'a * stmt
+
+
+  (* New turn labels *)
+
+    val labcount = ref 0
+
+    fun newlabel s =
+	s ^ "$" ^ Int.toString (!labcount) before (labcount := !labcount+1)
+
+  (* Primitives *)
+
+    exception Malformed of string
+
+    fun expandlabel z l = l ^ "/" ^ Int.toString z
+
+    val fail		= (0, fn k => fn z => Fail)
+    fun goto l		= (0, fn k => fn z => Goto (expandlabel z l))
+    val nop		= (1, fn k => fn z => k z)
+
+    fun label l		= (1, fn k => fn z => Label(expandlabel z l, k z))
+    fun mark m		= (1, fn k => fn z => Mark(m, k z))
+    fun unmark m	= (1, fn k => fn z => Unmark(m, k z))
+    val drop		= (1, fn k => fn z => Drop (k z))
+
+    fun letlabel (f : label -> stmt) =
+	let
+	    val (n,_) = f "dummy"
+	in
+	    (n, fn k => #2 (f (newlabel "let")) k)
+	end
+
+    fun turn s =
+	(1, fn k =>
+	    let	val l = newlabel "turn" in
+		fn z =>
+		let
+		    val z' = (z + (case s of left => 5 | right => 1)) mod 6
+		in
+		    Turn(s, Concat(Goto(expandlabel z' l),
+				   Label(expandlabel z l, k z)))
+		end
+	    end)
+
+    infixr ++
+    fun (0,f1) ++ (n2,f2) =
+	(n2, fn k =>
+	     let
+		 val k1 = f1 k
+		 val k2 = f2 k
+	     in
+		 fn z => Concat(k1 z, k2 z)
+	     end)
+      | (1,f1) ++ (n2,f2) =
+	(n2, fn k => f1 (f2 k))
+      | (_,f1) ++ (n2,f2) =
+	(n2, fn k =>
+	     let
+		 val l = newlabel "++"
+		 val k1 = f1 (fn z => Goto (expandlabel z l))
+		 val k2 = f2 k
+	     in
+		 fn z => Concat(k1 z, Label(expandlabel z l, k2 z))
+	     end)
+
+    fun join g (n1,f1) (n2,f2) =
+	(n1+n2, fn k =>
+		let
+		    val k1 = f1 k
+		    val k2 = f2 k
+		in
+		    fn z => g (k1 z, k2 z)
+		end)
+
+    fun move2 ifyes b1 ifnot b2		= join Move b1 b2
+      | move2 ifnot b1 ifyes b2		= join Move b2 b1
+      | move2 _     _  _     _		= raise Malformed "move"
+
+    fun pick2 ifyes b1 ifnot b2		= join Pick b1 b2
+      | pick2 ifnot b1 ifyes b2		= join Pick b2 b1
+      | pick2 _     _  _     _		= raise Malformed "pick"
+
+    fun sense2 d c ifyes b1 ifnot b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b1 b2
+      | sense2 d c ifnot b1 ifyes b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b2 b1
+      | sense2 _ _ _     _  _     _	= raise Malformed "sense"
+
+    fun flip2 n ifyes b1 ifnot b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b1 b2
+      | flip2 n ifnot b1 ifyes b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b2 b1
+      | flip2 n _     _  _     _	= raise Malformed "flip"
+
+    fun negate ifnot = ifyes
+      | negate ifyes = ifnot
+
+    fun move yesno b			= move2 yesno b (negate yesno) nop
+    fun pick yesno b			= pick2 yesno b (negate yesno) nop
+    fun sense d c yesno b		= sense2 d c yesno b (negate yesno) nop
+    fun flip i yesno b			= flip2 i yesno b (negate yesno) nop
+
+    fun switch (bs : stmt list) =
+	(1, fn k =>
+	    let
+		val l1 = newlabel "switch"
+		val l2 = newlabel "switchout"
+		val k' = List.foldri (fn (i,(_,f),k) =>
+			     let
+				 val l = expandlabel i l1
+				 val k' = f (fn z => Goto(expandlabel z l2))
+			     in
+				 fn z => Concat(Label(expandlabel z l, k' z), k z)
+			     end
+			 ) (fn z => Label(expandlabel z l2, k z)) bs
+	    in
+		fn z => Concat(Goto(expandlabel z (expandlabel z l1)), k' z)
+	    end)
+
+
+  (* Combinators *)
+
+    fun on x y = (x,y)
+
+    fun flipn bs		= flipn' (List.length bs) bs
+    and flipn' _ []		= nop
+      | flipn' _ [b]		= b
+      | flipn' _ [b1,b2]	= flip2 2 ifyes b1 ifnot b2
+      | flipn' n (b::bs)	= flip2 n ifyes b ifnot (flipn' (n-1) bs)
+
+    fun sensen [] otherwise b	= b
+      | sensen (((d,c),b')::bs) otherwise b =
+	    sense2 d c ifyes b' ifnot (sensen bs otherwise b)
+
+    fun loop b = letlabel (fn l => label l ++ b ++ goto l)
+
+    fun loopx f =
+	letlabel (fn l1 =>
+	letlabel (fn l2 =>
+	label l1 ++ f (goto l2) ++ goto l1 ++ label l2))
+
+    fun times 0 b = nop
+      | times n b = b ++ times (n-1) b
+
+    fun timesi n f = timesi' n n f
+    and timesi' size 1 f = f (size-1)
+      | timesi' size n f = f (size-n) ++ timesi' size (n-1) f
+
+    fun repeat n b = loopx (fn break => flip2 n ifnot b ifyes break)
+
+    fun try f otherwise b =
+	letlabel (fn l1 =>
+	letlabel (fn l2 =>
+	f (goto l1) ++ goto l2 ++ label l1 ++ b ++ label l2))
+
+    fun proc l b = label l ++ b
+
+
+  (* Complex abstractions *)
+
+    fun turnto c ifyes b =
+	letlabel (fn l1 =>
+	letlabel (fn l2 => 
+	    sensen [
+		on(ahead, c) nop
+	    ,
+		on(leftahead, c) (turn left)
+	    ,
+		on(rightahead, c) (turn right)
+	    ] otherwise (goto l2) ++
+	    label l1 ++ b ++
+	    label l2
+	))
+      | turnto c ifnot b =
+	    sensen [
+		on(ahead, c) nop
+	    ,
+		on(leftahead, c) (turn left)
+	    ,
+		on(rightahead, c) (turn right)
+	    ] otherwise b
+	
+
+  (* Compilation *)
+
+    structure I = Instructions
+    structure E = MkRedBlackMap String
+
+    fun traverse n e a i =
+	case i
+	 of Fail =>
+	    (n, [I.Flip(1,n,n,a)], n+1, e)
+	  | Concat(i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse n e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(s1, l1@l2, n2, e2)
+	    end
+	  | Goto l =>
+	    (case E.lookup (e,l)
+	     of SOME (p,b) => (future p, [], n, e)
+	      | NONE =>
+		let
+		    val p = promise ()
+		in
+		    (future p, [], n, E.insert (e,l,(p,false)))
+		end
+	    )
+	  | Label(l,i') =>
+	    let
+		val p = case E.lookup (e,l)
+			 of SOME (p,true) => raise Malformed ("label " ^ l)
+			  | SOME (p,false) => p
+			  | NONE => promise ()
+		val e = E.insert(e,l,(p,true))
+		val result as (s',l',n',e') = traverse n e a i'
+	    in
+		(* Ugh! Wild hack because Future.Cyclic does not work... *)
+		if UnsafeValue.same (s', future p)
+		then (fulfill(p, n); (n, I.Flip(1,n,n,a)::l', n'+1, e'))
+		else (fulfill(p, s'); result)
+	    end
+	  | Mark(m,i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+	    in
+		(n, I.Mark(m,s',a)::l', n', e')
+	    end
+	  | Unmark(m,i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+	    in
+		(n, I.Unmark(m,s',a)::l', n', e')
+	    end
+	  | Turn(t,i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+		val t' = case t of left => I.Left | right => I.Right
+	    in
+		(n, I.Turn(t',s',a)::l', n', e')
+	    end
+	  | Move(i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(n, I.Move(s1,s2,a)::l1@l2, n2, e2)
+	    end
+	  | Pick(i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(n, I.PickUp(s1,s2,a)::l1@l2, n2, e2)
+	    end
+	  | Drop(i') =>
+	    let
+		val (s',l',n',e') = traverse (n+1) e a i'
+	    in
+		(n, I.Drop(s',a)::l', n', e')
+	    end
+	  | Sense(d,c,i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+		val d' = case d of here => I.Here
+				 | ahead => I.Ahead
+				 | leftahead => I.LeftAhead
+				 | rightahead => I.RightAhead
+		val c' = case c of friend => I.Friend
+				 | foe => I.Foe
+				 | friendwithfood => I.FriendWithFood
+				 | foewithfood => I.FoeWithFood
+				 | food => I.Food
+				 | rock => I.Rock
+				 | marker m => I.Marker m
+				 | foemarker => I.FoeMarker
+				 | home => I.Home
+				 | foehome => I.FoeHome
+	    in
+		(n, I.Sense(d',s1,s2,c',a)::l1@l2, n2, e2)
+	    end
+	  | Flip(y,i1,i2) =>
+	    let
+		val (s1,l1,n1,e1) = traverse (n+1) e a i1
+		val (s2,l2,n2,e2) = traverse n1 e1 a i2
+	    in
+		(n, I.Flip(y,s1,s2,a)::l1@l2, n2, e2)
+	    end
+
+    fun compile (_,f) =
+	let
+	    val g = f (fn z => Fail)
+	    val instr = Concat(g 0,
+			Concat(g 1,
+			Concat(g 2,
+			Concat(g 3,
+			Concat(g 4,
+			Concat(g 5,Fail))))))
+	    val (_,l,n,e) = traverse 0 E.empty () instr
+	in
+	    assert n <= 10_000 do
+	    E.appi (fn (l,(p,_)) =>
+			if Future.isDetermined (future p) then ()
+			else raise Malformed ("goto " ^ l)) e;
+	    Vector.fromList l
+	end
+end

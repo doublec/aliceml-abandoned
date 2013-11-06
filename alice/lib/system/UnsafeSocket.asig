@@ -1,0 +1,29 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_SOCKET_COMPONENT =
+    sig
+	structure UnsafeSocket:
+	    sig
+		val server: 'port -> 'socket * 'port
+		val accept: 'socket -> 'socket * 'host * 'port
+		val client: 'host * 'port -> 'socket
+		val checkError: 'socket -> unit (* SysErr *)
+
+		val input1: 'socket -> 'elem option
+		val inputN: 'socket * int -> 'vector
+		val output1: 'socket * 'elem -> unit
+		val output: 'socket * 'vector * int -> int
+
+		val close: 'socket -> unit
+	    end
+    end

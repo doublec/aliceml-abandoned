@@ -1,0 +1,63 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date: 2004/05/04 07:53:07 $ by $Author: tack $
+ *   $Revision: 1.3 $
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Linear    from "x-alice:/lib/gecode/Linear"
+import structure Print     from "x-alice:/lib/system/Print"
+open Linear
+
+fun appTail f nil = ()
+  | appTail f (x::xr) = (f x xr;
+                         appTail f xr)
+
+fun cardProd f = appTail (fn x => List.app (fn y => f(x,y)))
+
+
+fun hamming bits dist num space =
+    let
+        val root = List.tabulate (num,
+                                  fn _ => FS.upperBound(space,#[(0,bits-1)]))
+    in
+        cardProd (fn (x,y) =>
+                       let
+                           val d1 = FS.setvar space
+                           val d2 = FS.setvar space   
+                           val d1c = FD.range (space,(0,dist))
+                           val d2c = FD.range (space,(0,dist))
+                       in
+                       
+                      	   FS.difference(space,d1,x,y);
+                       	   FS.difference(space,d2,y,x);
+                       
+                       	   FS.Int.card(space,d1,d1c);
+                     	   FS.Int.card(space,d2,d2c);
+                       	   post(space, FD(d1c) `+ FD(d2c)`>= `dist, FD.DEF );
+                       	   
+                       	   ()
+                       end) root;
+        (* distribution *)
+        FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
+        (Vector.fromList root)
+     end
+
+val (SOME (sol, root)) = Search.searchOne (hamming 7 2 8)
+val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
+val _ = Print.printVal s
+val _ = print "\n"
+val _ = OS.Process.exit OS.Process.success

@@ -1,0 +1,198 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Space structure", "The <TT>Space</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature SPACE
+    structure Space : SPACE</PRE>
+
+  <P>
+    The <TT>Space</TT> structure provides access to first class computation
+    spaces. First class computation spaces can be used to program inference
+    engines for problem solving.
+  </P>
+  <P>
+    For example, simple depth-first one solution search can be done as follows.
+  </P>
+  <PRE>
+    fun searchOne s =
+	case Space.status s of
+	     Space.FAILED          => NONE
+	   | Space.SOLVED          => SOME s
+	   | Space.BRANCH(2,desc) =>
+		 let
+		     val c = Space.clone s
+		 in
+		     Space.commit(s, desc, 0);
+		     case searchOne s of
+			  NONE   => (Space.commit(c, desc, 1); searchOne c)
+			| SOME s => SOME s
+		 end</PRE>
+   <P>
+     Given the
+     <A href="../constraints.html#fd">money script</A>,
+     a solution can be searched by invoking
+   </P>
+   <PRE>
+    val s = Space.new()
+    val moremoney = money s
+    val SOME solution = searchOne s</PRE>
+
+   <P>
+     The solution is itself again a space. You can use the functions from
+     <TT>FD.Reflect</TT> together with the
+     variables in <TT>moremoney</TT> to extract the actual values from
+     the solution space.
+   </P>
+
+   <P>
+     More sophisticated search engines are provided by the
+     structure
+     <TT><A HREF="search.html">Search</A></TT>.
+   </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
+    import structure Space from "x-alice:/lib/gecode/Space"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+    signature SPACE =
+    sig
+        eqtype space
+        type description
+
+	exception InvalidSpace
+	exception InvalidVar
+	exception Description
+	exception InternalException
+
+	datatype status = BRANCH of int * description | FAILED | SOLVED
+	val new         : unit -> space
+	val status      : space -> status
+	val commit      : space * description * int -> unit
+	val clone       : space -> space
+	val discard     : space -> unit
+	val alive       : space -> bool
+	val fail        : space -> unit
+    end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>eqtype space</TT>
+    </DT>
+    <DD>
+      <P>The type of computation spaces.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>type description</TT>
+    </DT>
+    <DD>
+      <P>A branch description. 
+      </P>
+    </DD>
+    
+    <DT>
+      <TT>datatype status = BRANCH of int * description | FAILED | SOLVED</TT>
+    </DT>
+    <DD>
+      <P>This datatype is used to communicate the state of a
+      computation space. If the status is <TT>BRANCH(x,d)</TT>, the
+      <I>x</I> is the number of alternatives, and <I>d</I> is a
+      branching description that can be used for commiting to an
+      alternative.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>new</TT>
+    </DT>
+    <DD>
+      <P>returns a newly created space.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>status <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>runs propagation in <I>s</I> until it reaches a fixed point and then
+         returns the status of <I>s</I>.
+      </P>
+      <P>If <I>s</I> is failed, <TT>FAILED</TT> is returned.
+      </P>
+      <P>If <I>s</I> is not failed and there are no active distributors
+         in <I>s</I> waiting for choices, <TT>SOLVED</TT> is returned.
+      </P>
+      <P>If <I>s</I> is not failed and there is at least one active distributor
+         in <I>s</I> which is waiting for a choice,
+         <TT>BRANCH(<I>x, d)</I></TT> is returned, where <I>x</I> is
+         the number of alternatives and <I>d</I> is an abstract
+         description of the choice.
+      </P>
+      <P>Raises <TT>InvalidSpace</TT> if the space <I>s</I> has already been
+         discarded.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>clone <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>returns a new space which is a copy of <I>s</I>. 
+      </P>
+      <P>Raises <TT>InvalidSpace</TT> if the space <I>s</I> has already been
+         discarded.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>commit (<I>s</I>, <I>d</I>, <I>i</I>)</TT>
+    </DT>
+    <DD>
+      <P>commits to alternative <I>i</I> of <I>s</I>,
+         using branching description <I>d</I>. The first alternative
+         is 0.
+      </P>
+      <P>Raises <TT>InvalidSpace</TT> if the space <I>s</I> has already been
+         discarded, or <TT>Description</TT> if <I>d</I> is invalid for
+         this space.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>discard <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>discards the space <I>s</I>, freeing up the memory it uses. Subsequent
+         operations on this space will raise a runtime error.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>alive <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>tests whether the space <I>s</I> is still alive, i.e. whether it has
+         not been discarded.
+      </P>
+    </DD>
+  
+    <DT>
+      <TT>fail <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>injects a failure into <I>s</I>.
+      </P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,100 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeSocket from "UnsafeSocket"
+import structure IO           from "IO"
+import signature SOCKET       from "SOCKET-sig"
+
+structure Socket :> SOCKET =
+    struct
+	eqtype socket
+	type t = socket
+	type vector = string
+	type elem = char
+
+	type host = string
+	type port = int
+
+	fun raiseIo (function, cause) =
+	    raise IO.Io {name = "Socket", function, cause}
+
+	fun server (portOpt, acceptFun) =
+	    let
+		val serverPort = Option.getOpt (portOpt, 0)
+		val (serverSocket, serverPort) = UnsafeSocket.server serverPort
+		fun acceptLoop () =
+		    let
+			val (clientSocket, clientHost, clientPort) =
+			    UnsafeSocket.accept serverSocket
+		    in
+			acceptFun (clientSocket, clientHost, clientPort);
+			acceptLoop ()
+		    end
+	    in
+		spawn acceptLoop ();
+		(serverSocket, serverPort)
+	    end
+	    handle e => raiseIo ("server", e)
+
+	fun client (host, port) =
+	    let
+		    val s = UnsafeSocket.client (host, port)
+	    in
+		    UnsafeSocket.checkError s
+			handle e =>
+			  (UnsafeSocket.close s; raise e);
+			s
+	    end
+	    handle e => raiseIo ("client", e)
+
+	fun input1 socket =
+	    UnsafeSocket.input1 socket
+	    handle e => raiseIo ("input1", e)
+
+	fun inputN (socket, n) =
+	    String.concat (inputN' (socket, n))
+	    handle e => raiseIo ("inputN", e)
+	and inputN' (socket, n) =
+	    let
+		val s = UnsafeSocket.inputN (socket, n)
+		val i = String.size s
+	    in
+		if i = 0 orelse i = n then [s]
+		else s::inputN' (socket, n - i)
+	    end
+
+	fun inputLine socket =
+	    (case UnsafeSocket.input1 socket of
+		 SOME c => SOME (String.implode (c::inputLine' socket))
+	       | NONE => NONE)
+	    handle e => raiseIo ("inputLine", e)
+	and inputLine' socket =
+	    case UnsafeSocket.input1 socket of
+		SOME #"\n" => [#"\n"]
+	      | SOME c => c::inputLine' socket
+	      | NONE => [#"\n"]
+
+	fun output1 (socket, c) =
+	    UnsafeSocket.output1 (socket, c)
+	    handle e => raiseIo ("output1", e)
+
+	fun output (socket, s) =
+	    output' (socket, s, 0)
+	    handle e => raiseIo ("output", e)
+	and output' (socket, s, i) =
+	    if i = String.size s then ()
+	    else output' (socket, s, i + UnsafeSocket.output (socket, s, i))
+
+	fun close socket =
+	    UnsafeSocket.close socket
+	    handle e => raiseIo ("close", e)
+    end

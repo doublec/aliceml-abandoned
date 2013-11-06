@@ -1,0 +1,67 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Config       from "../../lib/system/Config"
+import structure OS           from "../../lib/system/OS"
+import structure TextIO       from "../../lib/system/TextIO"
+import structure MkMakeDepend from "MkMakeDepend"
+import signature MAKE_DEPEND  from "MAKE_DEPEND-sig"
+
+local
+    structure SMLToMozartMakeDepend = MkMakeDepend(val extension = "ozf")
+    structure SMLToSeamMakeDepend   = MkMakeDepend(val extension = "alc")
+    structure SMLToDotNetMakeDepend = MkMakeDepend(val extension = "dll")
+in
+    structure MakeDepend :> MAKE_DEPEND =
+	struct
+            fun version () =
+                (TextIO.print "alicedep 1.4\n\n\
+                              \Copyright (C) 2003  Programming Systems Lab.\n\
+                              \See the source for copying conditions.\n";
+                 OS.Process.success)
+
+	    fun usage(s, flag) =
+		(TextIO.output (if flag then TextIO.stdErr
+                                else TextIO.stdOut,
+                                (if flag then
+                                     "alicedep: "^s^"\n"
+                                 else "")^
+				"Usage: alicedep \
+			        \[--mozart|--seam|--dotnet] \
+				\<file> ...\n\n\
+                                \Report bugs using our online bug-tracking system:\n\
+                                \http://www.ps.uni-sb.de/alice/bugzilla/\n");
+		 if flag then OS.Process.failure
+                 else OS.Process.success)
+
+            fun depend (("--help"|"-h"|"-?")::_) =
+                usage("", false)
+              | depend ("--version"::_) =
+                version ()
+	      | depend ("--mozart"::args) =
+		SMLToMozartMakeDepend.depend args
+	      | depend ("--seam"::args) =
+		SMLToSeamMakeDepend.depend args
+	      | depend ("--dotnet"::args) =
+		SMLToDotNetMakeDepend.depend args
+	      | depend args =
+		case Config.vm of
+		    "mozart" =>
+			SMLToMozartMakeDepend.depend args
+		  | "seam" =>
+			SMLToSeamMakeDepend.depend args
+		  | "dotnet" =>
+			SMLToDotNetMakeDepend.depend args
+		  | _ =>
+			usage("unknown runtime environment", true)
+	end
+end

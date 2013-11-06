@@ -1,0 +1,32 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
+
+
+structure GlobalStamp : GLOBAL_STAMP =
+struct
+    __primitive eqtype stamp = "''GlobalStamp.stamp"
+    type t = stamp
+
+    (*TODO: For Mozart it may be desirable to optimise by sharing
+            a per-process name and use ordinary stamps as deltas. *)
+
+    __primitive val stamp :	unit -> stamp		= "GlobalStamp.new"
+    __primitive val fromString:	string -> stamp		= "GlobalStamp.fromString"
+    __primitive val toString :	stamp -> string		= "GlobalStamp.toString"
+
+    __primitive val compare :	stamp * stamp -> order	= "GlobalStamp.compare"
+    __primitive val hash :	stamp -> int		= "GlobalStamp.hash"
+
+    val equal = op =
+end

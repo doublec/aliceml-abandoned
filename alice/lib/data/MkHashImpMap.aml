@@ -1,0 +1,202 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature HASHABLE from "HASHABLE-sig"
+import signature IMP_MAP  from "IMP_MAP-sig"
+
+functor MkHashImpMap(Key: HASHABLE) :> IMP_MAP where type key = Key.t =
+struct
+
+    type key    = Key.t
+    type 'a map = (key * 'a) list array ref * int ref
+    type 'a t   = 'a map
+
+    exception Unknown   of key
+    exception Collision of key
+
+
+    val initialSize		= 19
+
+    fun map()			= (ref(Array.array(initialSize,[])), ref 0)
+    fun removeAll (m,k)		= if !k = 0 then () else
+				  ( m := Array.array(initialSize,[]) ; k := 0 )
+
+    fun size(_, ref n)		= n
+    fun isEmpty(_, ref n)	= n = 0
+
+    fun appi f (ref t, _)	= Array.app (List.app f) t
+    fun modifyi f (ref t, _)	= Array.modify
+				    (List.map (fn ka as (k,a) => (k, f ka))) t
+    fun foldi f b (ref t, _)	= let fun f'((k,a),b) = f(k,a,b) in
+				      Array.foldl (fn(kas,b) =>
+							List.foldl f' b kas
+						  ) b t
+				  end
+    fun alli p (ref t, _)	= Array.all (List.all p) t
+    fun existsi p (ref t, _)	= Array.exists (List.exists p) t
+    fun filteri p (ref t, n)	= Array.modify (List.filter
+				    (fn ka => p ka orelse (n := !n-1; false))) t
+    fun findi p (ref t, _)	= let val size   = Array.length t
+				      fun iter i =
+					  if i = size then NONE else
+					  case List.find p (Array.sub(t,i))
+					    of NONE => iter(i+1)
+					     | some => some
+				  in iter 0 end
+    fun choosei m		= findi (fn _ => true) m
+
+    fun app f			= appi(fn(k,a) => f a)
+    fun modify f		= modifyi(fn(k,a) => f a)
+    fun fold f			= foldi(fn(k,a,b) => f(a,b))
+    fun all p			= alli(fn(k,a) => p a)
+    fun exists p		= existsi(fn(k,a) => p a)
+    fun filter p		= filteri(fn(k,a) => p a)
+    fun find p m		= Option.map #2 (findi (fn(k,a) => p a) m)
+    fun choose m		= find (fn _ => true) m
+
+
+    fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
+				  in
+				      Array.copy{src=t, dst=t', di=0};
+				      (ref t', ref n)
+				  end
+
+    fun cloneWithi f (ref t, ref n)
+                                = let val t' =
+                                      Array.tabulate (Array.length t, fn i =>
+                                        List.map (fn (k, v) => (k, f (k, v))) (Array.sub (t, i)))
+                                  in
+                                      (ref t', ref n)
+                                  end
+
+    fun cloneWith f             = cloneWithi (fn (_, v) => f v)
+
+    fun hash(t,k)		= Key.hash k mod Array.length t
+    fun isEntryFor k (k',_)	= Key.equal(k,k')
+
+    fun member((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
+				    List.exists (isEntryFor k) kas
+				  end
+
+    fun lookup((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
+				    case List.find (isEntryFor k) kas
+				      of NONE      => NONE
+				       | SOME(k,a) => SOME a
+				  (*Option.map #2 (List.find (isEntryFor k) kas)
+				   *)
+				  end
+
+    fun lookupExistent((ref t,_), k)
+    				= let val kas = Array.sub(t, hash(t,k)) in
+				    case List.find (isEntryFor k) kas
+				      of NONE      => raise Unknown k
+				       | SOME(k,a) => a
+				  end
+
+    exception Remove
+
+    fun remove'(  [],    k)	= raise Remove
+      | remove'(ka::kas, k)	= if Key.equal(#1 ka, k)
+				  then kas : (key * 'a) list
+				  else ka :: remove'(kas,k)
+
+    fun removeWith f (m,k)	= let val (ref t,n) = m
+				      val i    = hash(t,k)
+				      val kas  = Array.sub(t,i)
+				      val kas' = remove'(kas,k) before n := !n-1
+						 handle Remove => (f k ; kas)
+				  in
+				      Array.update(t, i, kas')
+				  end
+
+    fun remove x		= removeWith ignore x
+    fun removeExistent x	= removeWith(fn k => raise Unknown k) x
+
+    fun reinsert t (ka as(k,_))	= let val i = hash(t,k) in
+				      Array.update(t, i, ka::Array.sub(t,i))
+				  end
+
+    fun resize(r as ref t,ref n)= if 3 * n < 2 * Array.length t then () else
+				  let
+				      val t'= Array.array(2*Array.length t-1,[])
+				  in
+				      Array.app(List.app (reinsert t')) t ;
+				      r := t'
+				  end
+
+    fun insertWithi f (m,k,a)	= let val _  = resize m
+				      val (ref t,n) = m
+				      val i    = hash(t,k)
+				      val kas  = Array.sub(t,i)
+				      val kas' =
+					case List.find (isEntryFor k) kas
+					  of NONE =>
+						(k,a)::kas before n := !n+1
+					   | SOME(k,a') =>
+						(k, f(k,a',a))::remove'(kas,k)
+				  in
+				      Array.update(t, i, kas')
+				  end
+
+    fun insertWith f		= insertWithi(fn(k,a1,a2) => f(a1,a2))
+    fun insert x		= insertWithi #3 x
+    fun insertDisjoint x	= insertWithi(fn(k,_,_) => raise Collision k) x
+
+    fun lookupOrInsert f (m, k)
+                                = lookupExistent (m, k)
+                                  handle Unknown _ => let val v = f k
+                                                      in (insert (m, k, v); v) end
+
+    fun union' insert (m1,m2)	= appi (fn(k,a) => insert(m1,k,a)) m2
+    fun union x			= union' insert x
+    fun unionDisjoint x		= union' insertDisjoint x
+    fun unionWith f		= union'(insertWith f)
+    fun unionWithi f		= union'(insertWithi f)
+
+    fun difference (m1,m2)	= appi (fn(k,_) => remove(m1,k)) m2
+
+    fun intersect' insert (m1,m2)
+				= let
+				      val (rs,is) =
+					  foldi (fn(k,_,(rs,is)) =>
+						 case lookup(m2,k)
+						  of NONE   => (k::rs, is)
+						   | SOME a => (rs, (k,a)::is)
+						) ([],[]) m1
+				  in
+				      List.app (fn k => remove(m1,k)) rs;
+				      List.app (fn(k,a) => insert(m1,k,a)) is
+				  end
+    fun intersect x		= intersect' insert x
+    fun intersectWith f		= intersect'(insertWith f)
+    fun intersectWithi f	= intersect'(insertWithi f)
+
+    fun disjoint (m1,m2)	= alli (fn(k,_) => not(member(m2,k))) m1
+    fun submap eq (m1,m2)	= alli (fn(k,a) => case lookup(m2,k)
+						    of NONE => false
+						     | SOME a' => eq(a,a')) m1
+    fun equal eq (m1,m2)	= size m1 = size m2 andalso submap eq (m1,m2)
+
+    fun fromList kas		= let val m = map() in
+				      List.app (fn (k,a) =>
+						insertDisjoint(m,k,a)) kas;
+				      m
+				  end
+    fun toList m		= foldi (fn(k,a,kas) => (k,a)::kas) nil m
+
+    fun fromVector kas		= let val m = map() in
+				      Vector.app (fn (k,a) =>
+						  insertDisjoint(m,k,a)) kas;
+				      m
+				  end
+    fun toVector m		= Vector.fromList(toList m)
+end

@@ -1,0 +1,49 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature TEXT_ITERATOR from "TEXT_ITERATOR-sig"
+
+structure StringTextIterator :> TEXT_ITERATOR where type elem = string =
+    struct
+
+    type elem = string
+    type iter = string * int ref
+
+    fun iter s = (s, ref 0)
+    fun forwardChar (s, pos) =
+        if (!pos)+1 < String.size s then true before pos:=(!pos)+1
+        else false before pos:=String.size s
+
+    fun backwardChar (s, pos) =
+        if (!pos) > 0 then true before pos:=(!pos)-1
+        else false before pos := ~1
+
+    fun isFinished (s, pos) = (!pos) >= String.size s
+    fun isAtEnd (s, pos) = (!pos) = String.size s - 1
+
+    fun getChar (s, pos) = String.sub(s, !pos)
+    fun lookAhead ((s, pos), howFar) =
+        if (howFar+(!pos) < String.size s) then
+            SOME (String.sub(s, howFar + (!pos)))
+        else NONE
+
+    fun getText ((s,pos1),(_,pos2)) =
+        Substring.substring (s, !pos1, (!pos2)-(!pos1))
+
+    fun getPos (_, ref pos) = pos
+
+    fun move ((_, pos), (_, ref to)) = pos := to
+
+    fun clone (s, pos) = (s, ref (!pos))
+
+    end

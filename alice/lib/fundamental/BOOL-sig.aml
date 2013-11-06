@@ -1,0 +1,38 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                     from "Pervasive"
+import __primitive
+       type char and string and order and option from "ToplevelTypes"
+
+local
+structure StringCvt = struct type ('a,'b) reader = 'b -> ('a * 'b) option end
+in
+signature BOOL =
+sig
+    datatype bool = false | true
+    type     t    = bool						(**)
+
+    val equal :		bool * bool -> bool				(**)
+    val compare :	bool * bool -> order				(**)
+
+    val not :		bool -> bool
+
+    val toString :	bool -> string
+    val fromString : 	string -> bool option
+    val scan :		(char,'a) StringCvt.reader -> (bool,'a) StringCvt.reader
+end
+end (* local *)

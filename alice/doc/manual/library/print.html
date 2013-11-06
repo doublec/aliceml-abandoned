@@ -1,0 +1,136 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Print structure", "The <TT>Print</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis") ?>
+  <PRE>
+    signature PRINT
+    structure Print : PRINT</PRE>
+
+  <P>
+    This structure provides generic printers for values and types.
+    It is solely intended as a debugging aid.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import structure Print from "x-alice:/lib/system/Print"
+    import signature PRINT from "x-alice:/lib/system/PRINT-sig"</PRE>
+
+  <P>
+    In the <A href="../interactive.html">interactive toplevel</A> the
+    functions <TT>printVal</TT> and <TT>printType</TT> are available
+    unqualified.
+  </P>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+    signature PRINT =
+    sig
+	val depth :       int ref
+	val width :       int ref
+	val layoutWidth : int ref
+
+	val printVal :   'a -> unit
+	val printType :  'a -> unit
+	val outputVal :  TextIO.outstream * 'a * int -> unit
+	val outputType : TextIO.outstream * 'a * int -> unit
+
+	exception Type
+	val register :   ('a -> string) -> unit
+    end
+  </PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>exception Type</TT>
+    </DT>
+    <DD>
+      <P>
+        Raised by function <TT>register</TT> when the passed printer does
+	not operate on a suitable abstract type.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>depth</TT> <BR>
+      <TT>width</TT>
+    </DT>
+    <DD>
+      <P>
+        Control up to which depth and width nested and aggregated
+	data structures are printed by <TT>printVal</TT>. Sub-structures
+	beyond the depth limit are output as <TT>_</TT>, items of collections
+	(e.g. lists) beyond the width limit are abbreviated to <TT>...</TT>
+	in the output.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>layoutWidth</TT>
+    </DT>
+    <DD>
+      <P>
+        Controls the width of the layout as performed by <TT>printVal</TT>
+	and <TT>printType</TT>, i.e. the maximum number of characters on each
+	line.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>outputVal (<I>strm</I>, <I>x</I>, <I>w</I>)</TT> <BR>
+      <TT>printVal <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Pretty prints the value <TT><I>x</I></TT> to the stream
+      <TT><I>strm</I></TT> in ML syntax. If the output exceeds <TT><I>w</I></TT>
+      characters, output is broken into multiple lines appropriately.</P>
+
+      <P>The second form is equivalent to:</P>
+      <PRE>
+      outputVal (TextIO.stdOut, <I>x</I>, !printWidth)</PRE>
+    </DD>
+
+    <DT>
+      <TT>outputType (<I>strm</I>, <I>x</I>, <I>w</I>)</TT> <BR>
+      <TT>printType <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Pretty prints the type of value <TT><I>x</I></TT> to the stream
+      <TT><I>strm</I></TT> in ML syntax. If the output exceeds <TT><I>w</I></TT>
+      characters, output is broken into multiple lines appropriately.</P>
+
+      <P>The second form is equivalent to:</P>
+      <PRE>
+      outputType (TextIO.stdOut, <I>x</I>, !printWidth)</PRE>
+    </DD>
+
+    <DT>
+      <TT>register <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>
+        Adds function <TT><I>f</I></TT> as a printer. The function must have
+	a concrete type <I>tyvarseq</I> <TT><I>t</I> -> string</TT>, where
+	<TT><I>t</I></TT>
+	has to be an abstract type. Further calls to <TT>outputVal</TT> use
+	this function to transform values of any type <I>tyseq <TT>t</TT></I>
+	to a printable string representation. In the
+	<A href="../interactive.html">interactive toplevel</A>, this also
+	affects how evaluation results are printed. Raises <TT>Type</TT> if
+	the type of <TT><I>f</I></TT> is not of the required form.
+	This includes the case that <TT><I>t</I></TT> is not an abstract type,
+	or that <TT><I>f</I></TT> is not fully polymorphic in the type
+	arguments <I>tyseq</I> to <TT><I>t</I></TT>.
+	Note that these rules also preclude <TT><I>f</I></TT> from being
+	<EM>too polymorphic</EM>, i.e. being of type <TT>'a -> string</TT>,
+	because in that case no type name could be derived.
+      </P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

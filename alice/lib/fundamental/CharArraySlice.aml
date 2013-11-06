@@ -1,0 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                 from "Pervasive"
+import __primitive
+       type unit and string and char and int from "ToplevelTypes"
+import __primitive structure CharArray       from "CharArray"
+import __primitive structure CharVectorSlice from "CharVectorSlice"
+import functor MkMonoArraySlice              from "MkMonoArraySlice"
+
+structure CharArraySlice = MkMonoArraySlice(
+    type elem         = char
+    type vector       = string
+    type array        = CharArray.t
+    type vector_slice = CharVectorSlice.t
+    __primitive type slice = "CharArraySlice.slice"
+    __primitive val alength :   array -> int = "CharArray.length"
+    __primitive val asub :      array * int -> elem = "CharArray.sub"
+    __primitive val aupdate :   array * int * elem -> unit = "CharArray.update"
+    __primitive val aextract :  array * int * int -> vector = "CharArray.extract"
+    __primitive val vtabulate : int * (int -> elem) -> vector = "CharVector.tabulate"
+    val vsllength = CharVectorSlice.length
+    val vslsub    = CharVectorSlice.sub
+)

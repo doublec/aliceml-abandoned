@@ -1,0 +1,78 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE         from "../../src/TESTSUITE-sig"
+
+import structure Test              from "../../src/Test"
+
+import signature GEN               from "x-alice:/lib/test/GEN-sig"
+import structure Url               from "x-alice:/lib/system/Url"
+import structure Component         from "x-alice:/lib/system/Component"
+import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
+
+structure TestCompiler :> TESTSUITE = (* the compiler test suite *)
+struct
+
+    fun randomize () = ()
+
+    val url = Url.fromString "x-alice:/lib/test/Gen"
+
+    val com = Component.load url
+
+
+    fun testInitialEnv () =
+	Test.test (fn x => true) Compiler.initialEnv
+
+    fun testCompile () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+(*
+
+val initialEnv :      env
+
+	val compile :         string -> Component.t
+	val compileWith :     env * string -> Component.t
+	val compileFile :     string * string option -> unit
+	val compileFileWith : env * string * string option -> unit
+
+	val eval :            string -> package
+	val evalWith :        env * string -> env * package
+	val evalFile :        string -> package
+	val evalFileWith :    env * string -> env * package
+
+	val withStreams :     {out : TextIO.outstream option,
+	                       err : TextIO.outstream option,
+	                       trace : TextIO.outstream option,
+	                       annot : TextIO.outstream option}
+	                       -> ('a -> 'b) -> 'a -> 'b
+	val withWidths :      {out : int, err : int, trace : int}
+	                       -> ('a -> 'b) -> 'a -> 'b
+
+*)
+
+
+    fun testEval' () = 
+	let
+	    structure X = ComponentManager.Eval (
+		                       val component = com 
+				       val url = url
+				       signature S = (structure Gen : GEN))
+	in
+	    true
+	end
+	       
+    fun testEval () = 
+	(Test.test (fn _ => testEval' ()) ())
+
+
+    val suite = ("Compiler", [("Eval", testEval)])
+end

@@ -1,0 +1,67 @@
+(* Trail going away from home: tm1, tm2, tm1+tm2, tm1, tm2, tm1+tm2, ... *)
+val trailmarker1 = 1
+val trailmarker2 = 2
+
+val foodmarker = 3
+val boringmarker = 4
+
+val todo = loop (flip 123 ifyes nop)
+val lost = loop (flip 124 ifyes nop)
+
+fun nextstep step = (step+1) mod 3
+fun prevstep step = (step+2) mod 3
+
+fun sync_trail action0 action1 action2 otherwise failaction =
+    sense2 here (marker trailmarker1) ifyes (
+	sense2 here (marker trailmarker2) ifyes action2 ifnot action0
+    ) ifnot (
+	sense2 here (marker trailmarker2) ifyes action1 ifnot failaction
+    )
+
+fun turnto_trail step success otherwise failure =
+    turnto_trail' (Vector.sub(#[(ifnot,ifyes), (ifyes,ifnot), (ifnot,ifnot)],
+			      step)) success failure
+and turnto_trail' (if1,if2) success failure =
+    letlabel (fn sense_trail_ahead =>
+    letlabel (fn sense_trail_next =>
+	sense leftahead (marker trailmarker1) if1 (goto sense_trail_ahead) ++
+	sense leftahead (marker trailmarker2) if2 (goto sense_trail_ahead) ++
+	turn left ++
+	success ++
+	label sense_trail_ahead ++
+	sense ahead (marker trailmarker1) if1 (goto sense_trail_next) ++
+	sense ahead (marker trailmarker2) if2 (goto sense_trail_next) ++
+	success ++
+	label sense_trail_next ++
+	turn right ++
+	goto sense_trail_ahead
+    ))
+
+fun towards_hill' trailstep trailaction homeaction blockaction =
+    letlabel (fn l =>
+	turnto_trail (prevstep trailstep) (
+	    move ifnot blockaction ++
+	    trailaction ++
+	    sense here home ifyes homeaction ++
+	    goto l
+	) otherwise (lost) ++
+	label l
+    )
+
+fun towards_hill (l0,l1,l2) trailaction homeaction blockaction =
+    loop (
+	label l2 ++ (* we are on mark 2 *)
+	towards_hill' 2 trailaction homeaction blockaction ++
+	label l1 ++ (* we are on mark 1 *)
+	towards_hill' 1 trailaction homeaction blockaction ++
+	label l0 ++ (* we are on mark 0 *)
+	towards_hill' 0 trailaction homeaction blockaction
+    )
+
+fun sync_towards_hill trailaction homeaction blockaction otherwise failaction =
+    letlabel (fn l0 =>
+    letlabel (fn l1 =>
+    letlabel (fn l2 =>
+	sync_trail (goto l0) (goto l1) (goto l2) otherwise failaction ++
+	towards_hill (l0,l1,l2) trailaction homeaction blockaction
+    )))

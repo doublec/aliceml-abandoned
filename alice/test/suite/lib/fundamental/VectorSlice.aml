@@ -1,0 +1,677 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestVectorSlice :> TESTSUITE = (* the vectorslice test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun testSlice () =
+	let
+	    fun t'' (a, i, asl, j) = 
+		if j = VectorSlice.length asl then true
+		else if Vector.sub (a, i + j) = 
+			VectorSlice.sub (asl, j) then
+		    t'' (a, i, asl, j + 1) else false
+
+	    fun t' (a, i, NONE, asl)   = VectorSlice.length asl = 
+					 (Vector.length a - i) andalso
+					 t'' (a, i, asl, 0)
+	      | t' (a, i, SOME j, asl) = VectorSlice.length asl = j andalso
+					 t'' (a, i, asl, 0)
+
+	    fun t (a, i, sz) = t' (a, i, sz, VectorSlice.slice (a, i, sz))
+			         handle Subscript => 
+					if Option.isSome sz then 
+					    i < 0 orelse
+					    (valOf sz) < 0 orelse
+					    Vector.length a < i + (valOf sz)
+					else i < 0 orelse
+					     Vector.length a < i
+	in
+	    Gen.try 1000 (Gen.triple (Gen.vector Gen.int,
+				      Gen.int,
+				      Gen.option Gen.int)) (Test.test t)
+	end
+
+    fun testConcat () = 
+	let
+	    fun t'' xsl = 
+		List.foldl (fn (a, b) => VectorSlice.length a + b) 0 xsl
+
+	    fun t' xsl =
+		Vector.fromList (List.concat (List.map VectorSlice.toList xsl))
+
+	    fun t xsl = if t'' xsl <= Vector.maxLen
+			then VectorSlice.concat xsl = t' xsl
+			else (VectorSlice.concat xsl; false) 
+			       handle Size => true
+	in
+	    Gen.try 100 (Gen.list (Gen.vectorSlice Gen.int)) (Test.test t)
+	end
+
+    fun testFull () =
+	let
+	    fun t a = VectorSlice.slice (a, 0, NONE)
+	in
+	    Gen.try 1000 (Gen.vector Gen.int) 
+	      (Test.test (fn a => VectorSlice.equal Int.equal 
+						   (VectorSlice.full a, t a)))
+	end
+
+    fun testLength () =
+	let
+	    fun t (a, i, NONE, j)   = ((Vector.sub (a, i + j);
+				       t (a, i, NONE, j + 1)) 
+		                             handle Subscript => j)
+	      | t (a, i, SOME x, j) = x
+	in
+	    Gen.try 1000 (Gen.triple (Gen.vector Gen.int,
+				      Gen.int, 
+				      Gen.option Gen.int))
+	      (Test.test (fn (a, i, sz) => 
+			     let
+				 val asl = SOME (VectorSlice.slice (a, i, sz)) 
+					     handle Subscript => NONE
+			     in
+				 if Option.isSome asl
+				 then t (a, i, sz, 0) = 
+				      VectorSlice.length (valOf asl)
+				 else if Option.isSome sz then 
+					    i < 0 orelse
+					    (valOf sz) < 0 orelse
+					    Vector.length a < i + (valOf sz)
+					else i < 0 orelse
+					     Vector.length a < i
+			     end))
+	end
+
+    fun testBase () =
+	let
+	    fun t (a, i, sz) = 
+		VectorSlice.base (VectorSlice.slice (a, i, sz)) = 
+		(a, i, VectorSlice.length (VectorSlice.slice (a, i, sz)))
+	in
+	    Gen.try 1000 (Gen.triple (Gen.vector Gen.int, 
+				      Gen.int,
+				      Gen.option Gen.int))
+		    (Test.test (fn (a, i, sz) => t (a, i, sz)
+		                      handle Subscript =>
+					     if Option.isSome sz then 
+						 i < 0 orelse
+						 (valOf sz) < 0 orelse
+						 Vector.length a < 
+						 i + (valOf sz)
+					     else i < 0 orelse
+						  Vector.length a < i))
+	end
+
+    fun testSub () = 
+	let
+	    fun t (asl, i) = if i < 0 orelse VectorSlice.length asl <= i 
+			     then NONE
+			     else SOME (List.nth (VectorSlice.toList asl, i))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.vectorSlice Gen.int, Gen.int))
+	      (Test.test (fn x => let
+				    val r = SOME (VectorSlice.sub x)
+					      handle Subscript => NONE
+			          in
+				    r = t x
+			          end))
+	end
+
+    fun testSubslice () = 
+	let
+	    fun t'' (a, sl, i, sz) = 
+		let
+		    val r1 = SOME (VectorSlice.slice (a, i, sz)) 
+			        handle Subscript => NONE
+		    val r2 = SOME (VectorSlice.subslice (sl, i, sz))
+			        handle Subscript => NONE
+		in
+		    Option.equal (VectorSlice.equal Int.equal) (r1, r2)
+		end
+	    fun t' (sl, a, i) = if i = Vector.length a
+				then a
+				else t' (sl, Vector.update (a, i, 
+					      VectorSlice.sub (sl, i)), i + 1)
+	    fun t (sl, i, sz) = 
+		let
+		    val a = Vector.fromList (Array.toList 
+						 (Array.array 
+						      (VectorSlice.length sl, 
+						       0)))
+		in
+		     t'' (t' (sl, a, 0), sl, i, sz)
+		end
+	in
+	    Gen.try 100 (Gen.triple (Gen.vectorSlice Gen.int,
+				      Gen.int,
+				      Gen.option Gen.int))
+		    (Test.test t)
+	end
+
+    fun testVector () = 
+	let
+	    fun t asl = Vector.tabulate (VectorSlice.length asl,
+					 fn i => VectorSlice.sub (asl, i))
+	in 
+	    Gen.try 1000 (Gen.vectorSlice Gen.int) 
+		    (Test.test (fn asl => VectorSlice.vector asl = 
+					  t asl))
+	end 
+
+    fun testIsEmpty () = 
+	let
+	    fun t asl = #3 (VectorSlice.base asl) = 0 = 
+			VectorSlice.isEmpty asl
+	in
+	    Gen.try 1000 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testApp () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; a + 1; ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.app (f xs) sl;
+		 List.app (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testAppi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; a + i; ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.appi (f xs) sl;
+		 List.appi (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testAppr () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; a + 1; ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.appr (f xs) sl;
+		 List.appr (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testAppri () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; a + i; ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.appri (f xs) sl;
+		 List.appri (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testMap () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; a + 1)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.map (f xs) sl;
+		 List.map (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testMapi () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; a + i)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.mapi (f xs) sl;
+		 List.mapi (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldl () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := a :: !x; a + b)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.foldl (f xs) 0 sl;
+		 List.foldl (f ys) 0 (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldli () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a, b) = (x := a :: !x; a + b + i)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.foldli (f xs) 0 sl;
+		 List.foldli (f ys) 0 (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldr () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := a :: !x; a + b)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.foldr (f xs) 0 sl;
+		 List.foldr (f ys) 0 (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldri () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a, b) = (x := a :: !x; a + b + i)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.foldri (f xs) 0 sl;
+		 List.foldri (f ys) 0 (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testFind () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; a = 42)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.find (f xs) sl;
+		 List.find (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end     
+
+    fun testFindi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; a = 42 andalso i <= a)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 VectorSlice.findi (f xs) sl;
+		 List.findi (f ys) (VectorSlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end 
+
+    fun testExists () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = VectorSlice.exists f asl = 
+			List.exists f (VectorSlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testAll () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = VectorSlice.all f asl = 
+			List.all f (VectorSlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testAlli () =
+	let
+	    fun f (i, x) = x > i
+
+	    fun t asl = VectorSlice.alli f asl = 
+			List.alli f (VectorSlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testExistsi () =
+	let
+	    fun f (i, x) = x > 0
+
+	    fun t asl = VectorSlice.existsi f asl = 
+			List.existsi f (VectorSlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testCollate () = 
+	let
+	    fun t (asl1, asl2) = 
+		VectorSlice.collate Int.compare (asl1, asl2) = 
+		List.collate Int.compare (VectorSlice.toList asl1,
+					  VectorSlice.toList asl2)
+	in 
+	    Gen.try 100 (Gen.pair (Gen.vectorSlice Gen.int,
+				   Gen.vectorSlice Gen.int)) (Test.test t)
+	end
+
+    fun testToVector () = 
+	let
+	    fun t asl = VectorSlice.toVector asl =
+			VectorSlice.vector asl
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testToList () = 
+	let
+	    fun t asl = Vector.toList (VectorSlice.toVector asl)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) 
+	    (Test.test (fn asl => VectorSlice.toList asl = t asl))
+	end
+
+    fun testRev () = 
+	let
+	    fun t' sl = 
+		let
+		    val (a, x, y) = VectorSlice.base sl
+		in
+		    VectorSlice.slice (Vector.rev a, 
+				       (Vector.length a) - x - y, SOME y)
+		end
+	    fun t (sl, csl) = VectorSlice.equal Int.equal 
+		  (VectorSlice.full (VectorSlice.rev sl), t' csl)
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int) 
+		    (Test.test (fn sl => 
+			       let
+				   val (a, x, y) = VectorSlice.base sl
+				   val b = Vector.fromList (Vector.toList a)
+				   val csl = VectorSlice.slice (b, x, SOME y)
+			       in 
+				   t (sl, csl)
+	                       end))
+	end
+
+    fun testTriml () = 
+	let
+	    fun t' (sl, a, i, j, k) = 
+		       if k > j 
+		       then VectorSlice.subslice (sl, j, SOME 0)
+		       else VectorSlice.slice (a, i + k, SOME (j - k))
+
+	    fun t (sl, k) = VectorSlice.equal Int.equal (
+			            VectorSlice.triml k sl,
+				    t' (sl, 
+					#1 (VectorSlice.base sl),
+					#2 (VectorSlice.base sl),
+					#3 (VectorSlice.base sl), k))
+			      handle Subscript => k < 0
+	in
+	    Gen.try 1000 (Gen.pair (Gen.vectorSlice Gen.int,
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testTrimr () = 
+	let
+	    fun t' (sl, a, i, j, k) = 
+		       if k > j 
+		       then VectorSlice.subslice (sl, j, SOME 0)
+		       else VectorSlice.slice (a, i, SOME (j - k))
+
+	    fun t (sl, k) = VectorSlice.equal Int.equal (
+			            VectorSlice.trimr k sl,
+				    t' (sl, 
+					#1 (VectorSlice.base sl),
+					#2 (VectorSlice.base sl),
+					#3 (VectorSlice.base sl), k))
+			      handle Subscript => k < 0
+	in
+	    Gen.try 1000 (Gen.pair (Gen.vectorSlice Gen.int,
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testSplitAt () = 
+	let
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		VectorSlice.equal Int.equal (sl1, sl3) andalso
+		VectorSlice.equal Int.equal (sl2, sl4)
+
+	    fun t' (sl, i) = SOME (VectorSlice.subslice (sl, 0, SOME i),
+				   VectorSlice.subslice (sl, i, NONE))
+			       handle Subscript => NONE
+	    fun t (sl, i) = 
+		let
+		    val r = t' (sl, i)
+		in 
+		    eq (VectorSlice.splitAt (sl, i), valOf r)
+			       handle Subscript => Option.isNone r
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.vectorSlice Gen.int, 
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testSplitl () = 
+	let
+	    val xs = ref []
+	    val ys = ref []
+
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		VectorSlice.equal Int.equal (sl1, sl3) andalso
+		VectorSlice.equal Int.equal (sl2, sl4)
+
+	    fun t' (sl, f, i) = if i = VectorSlice.length sl
+				then i
+				else if Bool.not (f (VectorSlice.sub (sl, i)))
+				     then i
+				     else t' (sl, f, i + 1)
+
+	    fun f y x = (y := x :: !y; x = 42)
+
+	    fun t sl = eq (VectorSlice.splitl (f xs) sl, 
+			   VectorSlice.splitAt (sl, t' (sl, f ys, 0))) andalso
+		       !xs = !ys
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int)
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+	
+    fun testSplitr () = 
+	let
+	    val xs = ref []
+	    val ys = ref []
+
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		VectorSlice.equal Int.equal (sl1, sl3) andalso
+		VectorSlice.equal Int.equal (sl2, sl4)
+
+	    fun t' (sl, f, i) = if i < 0
+				then 0
+				else if Bool.not (f (VectorSlice.sub (sl, i)))
+				     then i + 1
+				     else t' (sl, f, i - 1)
+
+	    fun f y x = (y := x :: !y; x >= 42)
+
+	    fun t sl = 
+		eq (VectorSlice.splitr (f xs) sl, 
+		    VectorSlice.splitAt (sl, t' (sl, f ys, 
+						VectorSlice.length sl - 1))) 
+		andalso !xs = !ys
+	in
+	    Gen.try 100 (Gen.vectorSlice Gen.int)
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+
+    fun testContains () = 
+	let
+	    fun t asl = VectorSlice.contains asl 3= 
+			List.contains (VectorSlice.toList asl) 3
+	in 
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testNotContains () = 
+	let
+	    fun t asl = VectorSlice.notContains asl 3 = 
+			Bool.not (VectorSlice.contains asl 3)
+	in 
+	    Gen.try 100 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testIsSorted () = 
+	let
+	    fun t' (f, sl, i) = if (i + 1) >= VectorSlice.length sl
+			       then true
+			       else (case f (VectorSlice.sub (sl, i),
+					     VectorSlice.sub (sl, i + 1)) of
+					 EQUAL   => t' (f, sl, i + 1)
+				       | LESS    => t' (f, sl, i + 1)
+				       | GREATER => false)
+
+	    val f = Int.compare
+	    fun t sl = VectorSlice.isSorted f sl = t' (f, sl, 0)
+	in
+	    Gen.try 1000 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+    fun testSort () = 
+	let
+	    fun t sl = VectorSlice.isSorted Int.compare 
+					    (VectorSlice.full 
+				             (VectorSlice.sort Int.compare sl))
+	in
+	    Gen.try 1000 (Gen.vectorSlice Gen.int) (Test.test t)
+	end
+
+
+    val suite = ("VectorSlice", [("slice", testSlice),
+				("subslice", testSubslice),
+				("full", testFull),
+				("length", testLength),
+				("sub", testSub),
+				(*("update", testUpdate),*)
+				("base", testBase),
+				("vector", testVector),
+				(*("swap", testSwap),*)
+				("rev", testRev),
+				("toVector", testToVector),
+				("isEmpty", testIsEmpty),
+				("toList", testToList),
+				("concat", testConcat),
+				("app", testApp),
+				("appi", testAppi),
+				("appr", testAppr),
+				("appri", testAppri),
+				("map", testMap),
+				("mapi", testMapi),
+				("foldl", testFoldl),
+				("foldr", testFoldr),
+				("foldli", testFoldli),
+				("foldri", testFoldri),
+				("find", testFind),
+				("findi", testFindi),
+				("all", testAll),
+				("alli", testAlli),
+				("exists", testExists),
+				("existsi", testExistsi),
+				("contains", testContains),
+				("notContains", testNotContains),
+				("splitAt", testSplitAt),
+				("splitl", testSplitl),
+				("splitr", testSplitr),
+				("triml", testTriml),
+				("trimr", testTrimr),
+				("collate", testCollate),
+				("isSorted", testIsSorted),
+				("sort", testSort)])
+end

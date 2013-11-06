@@ -1,0 +1,52 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                     from "Pervasive"
+import __primitive type string type int type ref from "ToplevelTypes"
+
+signature GENERAL =
+sig
+    eqtype unit
+    exttype exn
+
+    exception Bind
+    exception Chr
+    exception Div
+    exception Domain
+    exception Fail of string
+    exception Match
+    exception Overflow
+    exception Size
+    exception Span
+    exception Subscript
+    exception Unordered						(**)
+    exception Assert of string * int				(**)
+
+    val exnName :	exn -> string
+    val exnMessage :	exn -> string
+
+    datatype order =	LESS | EQUAL | GREATER
+
+    val inverse :	order -> order				(**)
+
+    val ! :		'a ref -> 'a
+    val op := :		'a ref * 'a -> unit
+    val op :=: :	'a ref * 'a ref -> unit			(**)
+
+    val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
+    val before :	'a * unit -> 'a
+    val ignore :	'a -> unit
+end

@@ -1,0 +1,186 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature NAMING =
+sig
+    val enumValueToAlice : string -> string
+    
+    val ctypeToCFunPrefix : string -> string
+
+    val cFunPrefixToCType : string -> string
+
+    val removePrefix : string -> string -> string
+
+    val removeSuffix : string -> string -> string option
+
+    val toCamelCase :  string -> string
+
+    val nativeEnumToWord :       string list * string -> string
+    val nativeEnumFromWord :     string list * string -> string
+    val nativeFlagToWord :       string list * string -> string
+    val nativeFlagFromWord :     string list * string -> string
+
+    val nativeEnumToInt :       string list * string -> string
+    val nativeEnumFromInt :     string list * string -> string
+    val nativeFlagToInt :       string list * string -> string
+    val nativeFlagFromInt :     string list * string -> string
+
+
+    val fieldNameToAlice : string -> string * string (* accessor * setter *)
+
+    val capitalize :    string -> string
+
+    val propNameToAlice : string -> string
+end
+
+structure Naming : NAMING =
+struct
+
+    val upper = String.map Char.toUpper
+    val lower = String.map Char.toLower
+
+
+    fun enumValueToAlice s =
+        (* convert foo-bar to FOO_BAR *)
+        let val s = String.concatWith "_" 
+                        (map upper (String.tokens (Fn.curry op= #"-") s))
+        in
+            (* HACK alert: just fix 2 known corner cases by hand *)
+            if s = "2BUTTON_PRESS" then "BUTTON2_PRESS"
+            else if s = "3BUTTON_PRESS" then "BUTTON3_PRESS"
+            else s
+        end
+        
+
+    fun splitAtUpper s = 
+        fixsplit (splitAtUpper' (explode s, [], []))
+
+    and splitAtUpper' ([], [], r)   = rev r
+      | splitAtUpper' ([], t, r)    = rev (implode (rev t) :: r)
+      | splitAtUpper' (x::xs, [], r) =
+        if Char.isUpper x then splitAtUpper' (xs, [Char.toLower x], r)
+        else splitAtUpper' (xs, [x], r)
+      | splitAtUpper' (x::xs, t, r) =
+        if Char.isUpper x then 
+            splitAtUpper' (xs, [Char.toLower x], implode (rev t) :: r)
+        else
+            splitAtUpper' (xs, x :: t, r)
+
+    and fixsplit l    = fixsplit' (l, [])
+
+    and fixsplit' ([], r)           = List.rev r
+      | fixsplit' ([x], r)          = fixsplit' ([], x :: r)
+      | fixsplit' (s :: x :: xs, r) = if size s = 1 then
+					  fixsplit' (xs, (s ^ x) :: r)
+				      else
+					  fixsplit' (x :: xs, s :: r)
+
+
+    fun isVocal #"a" = true
+      | isVocal #"e" = true
+      | isVocal #"i" = true
+      | isVocal #"o" = true
+      | isVocal #"u" = true
+      | isVocal #"y" = true
+      | isVocal _    = false
+
+
+    fun capitalize ""   = ""
+      | capitalize "ui" = "UI"
+      | capitalize "im" = "IM"
+      | capitalize "gc" = "GC"
+      | capitalize s  =
+        if (String.sub (s, 0) = #"v" orelse String.sub (s, 0) = #"h") andalso
+                String.size s > 2 andalso not (isVocal (String.sub (s, 1))) then
+            String.str (Char.toUpper (String.sub (s, 0))) ^
+            String.str (Char.toUpper (String.sub (s, 1))) ^ 
+            String.extract (s, 2, NONE)
+        else
+            String.str (Char.toUpper (String.sub (s, 0))) ^
+            String.extract (s, 1, NONE)
+
+    (*
+    fun uncapitalize "" = ""
+      | uncapitalize s  =
+        String.str (Char.toLower (String.sub (s, 0))) ^
+        String.extract (s, 1, NONE)
+    *)
+
+    fun ctypeToCFunPrefix t =
+        (* convert GtkWidget to gtk_widget_ *)
+        String.concatWith "_" (splitAtUpper t) ^ "_"
+
+    fun cFunPrefixToCType t =
+        (* convert gtk_widget_ to GtkWidget *)
+        String.concat (map capitalize (String.tokens (Fn.curry op= #"_") t))
+
+    fun removePrefix pre s =
+        if String.isPrefix pre s then
+            String.extract (s, String.size pre, NONE)
+        else 
+            s
+
+    fun removeSuffix suf s =
+        if String.isSuffix suf s then
+            SOME (String.substring (s, 0, String.size s - String.size suf))
+        else 
+            NONE
+            
+    fun toCamelCase s = 
+        (* convert foo_bar_baz to fooBarBaz *)
+        case String.tokens (Fn.curry op = #"_") s of
+            []          => ""
+          | [x]         => x
+          | x::xs       => String.concat (x :: map capitalize xs)
+
+    fun propNameToAlice s =
+        (* convert foo-bar to fooBar *)
+        case String.tokens (Fn.curry op= #"-") s of
+            []          => ""
+          | [x]         => x
+          | x :: xs     => String.concat (x :: map capitalize xs)
+
+
+    fun nativeFlagToWord (path, name) =
+        String.concat path ^ name ^ "FlagToWord"
+
+    fun nativeFlagFromWord (path, name) =
+        String.concat path ^ name ^ "FlagFromWord"
+
+    fun nativeEnumFromWord (path, name) =
+        String.concat path ^ name ^ "FromWord"
+
+    fun nativeEnumToWord (path, name) =
+        String.concat path ^ name ^ "ToWord"
+
+    fun nativeFlagToInt (path, name) =
+        String.concat path ^ name ^ "FlagToInt"
+
+    fun nativeFlagFromInt (path, name) =
+        String.concat path ^ name ^ "FlagFromInt"
+
+    fun nativeEnumFromInt (path, name) =
+        String.concat path ^ name ^ "FromInt"
+
+    fun nativeEnumToInt (path, name) =
+        String.concat path ^ name ^ "ToInt"
+
+    fun fieldNameToAlice field =
+        let 
+            val f = capitalize (toCamelCase field)
+        in
+            ("getField" ^ f, "setField" ^ f)
+        end
+        
+end
+
+

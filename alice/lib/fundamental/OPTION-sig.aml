@@ -1,0 +1,43 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type unit and bool and order from "ToplevelTypes"
+
+
+signature OPTION =
+sig
+    datatype 'a option = NONE | SOME of 'a
+    type     'a t      = 'a option					(**)
+
+    exception Option
+
+    val equal :		('a * 'a -> bool) -> 'a option * 'a option -> bool (**)
+    val collate :	('a * 'a -> order) -> 'a option * 'a option -> order (**)
+
+    val getOpt :	'a option * 'a -> 'a
+    val isSome :	'a option -> bool
+    val isNone :	'a option -> bool				(**)
+    val valOf :		'a option -> 'a
+    val filter :	('a -> bool) -> 'a -> 'a option
+    val join :		'a option option -> 'a option
+    val app :		('a -> unit) -> 'a option -> unit
+    val map :		('a -> 'b) -> 'a option -> 'b option
+    val mapPartial :	('a -> 'b option) -> 'a option -> 'b option
+    val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b	(**)
+    val compose :	('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
+    val composePartial:	('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
+end

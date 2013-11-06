@@ -1,0 +1,78 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+*******************
+This file is deprecated, but could possibly be updated.
+*******************
+
+
+
+import structure Remote  from "x-alice:/lib/distribution/Remote"
+import structure Space   from "x-alice:/lib/gecode/Space"
+import structure FD      from "x-alice:/lib/gecode/FD"
+import structure FS      from "x-alice:/lib/gecode/FS"
+
+import signature MANAGER   from "MANAGER-sig"
+import structure MkManager from "MkManager"
+import structure Common    from "Common"
+import structure MkGRSpace from "MkGRSpace"
+
+(* A graphical manager draws the solutions. *)
+
+functor GManager (ScriptGen : Common.SCRIPT_GEN) :> MANAGER =
+struct
+
+  structure Manager = MkManager ScriptGen
+  structure ScriptGen = ScriptGen
+
+  structure Script = ScriptGen.MkScript Space FD FS
+  val rootSpace = Script.root
+  val _ = Script.script rootSpace
+
+  val (isBestMode, iOrder) =
+    case Script.searchMode of
+      Common.BEST (order, _) => (true, fn (s,a) => order (s, a))
+    | _ => (false, fn (_,_) => assert false) (* Is not used *)
+
+  structure GRSpace = MkGRSpace (val name = "Manager")
+    (type      a = int vector (* ScriptGen.sol *)
+     val   order = iOrder
+     val    root = rootSpace
+     val   rdist = 0)
+
+  fun draw path = 
+    let val space = GRSpace.space path
+    in
+      ignore (GRSpace.status space)
+    end
+    
+  fun new (verbosity, n, searchMode, printSol) =
+    let
+      val (managerIntf, shutdown, solutions) =
+        Manager.new (verbosity, n, searchMode, printSol)
+        
+      fun collect (sol, id, path) = (draw path ;
+                                     #collect managerIntf (sol, id, path))
+        
+      val newInterface = {register = #register managerIntf,
+                          find     = #find managerIntf,
+                          collect  = Remote.proxy collect,
+                          log      = #log managerIntf}
+    in
+      (newInterface, shutdown, solutions)
+    end
+  
+end

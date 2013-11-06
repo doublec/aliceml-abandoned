@@ -1,0 +1,85 @@
+(*
+ * Authors:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan and Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+import structure Gui            from "Gui"
+*)
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Config         from "x-alice:/lib/system/Config"
+import structure DialogUtils    from "DialogUtils"
+
+structure AboutDialog =
+    struct
+       val dialog = Gtk.AboutDialog.new ()
+       
+       val _      = Gtk.AboutDialog.setName (dialog, "Alice Interactive Toplevel")
+       val v      = Config.version
+       val vstr   = Int.toString (#major v) ^ "." ^ Int.toString (#minor v) ^ 
+                        (if #revision v <> 0 then 
+                            " (rev " ^ Int.toString (#revision v) ^ ")"
+                         else
+                            "")
+       val _      = Gtk.AboutDialog.setVersion (dialog, vstr)
+       val _      = Gtk.AboutDialog.setCopyright (dialog, "The Alice Team")
+
+       val authors = #[
+            "Guido Tack <tack@ps.uni-sb.de>",
+            "Andreas Rossberg <rossberg@ps.uni-sb.de>"
+       ]
+
+       val _      = Gtk.AboutDialog.setAuthors (dialog, authors) 
+       val _      = Gtk.AboutDialog.setWebsite (dialog, "http://www.ps.uni-sb.de/alice")
+       (*
+       newWithButtons ("About",
+                                              Gui.mainwidget,
+                                              [Gtk.DialogFlags.DESTROY_WITH_PARENT],
+                                              "    Close    ")
+
+       val vbox = Gtk.Dialog.getFieldVbox dialog
+       val label1 = Gtk.Label.new ""
+       val label2 = Gtk.Label.new "by"
+       val label3 = Gtk.Label.new "The Alice Team"
+       val label4 = Gtk.Label.new ""
+       val text1  =
+           "      <span size=\"large\" foreground=\"blue\">" ^
+           "Alice Interactive Toplevel</span>      "
+       val text4 = "     <tt><u>http://www.ps.uni-sb.de/alice/</u></tt>     "
+        *)
+       fun close _ =
+           Gtk.Widget.hide dialog
+       val _ =
+           ((*
+            Gtk.Label.setMarkup (label1, text1) ;
+            Gtk.Label.setMarkup (label4, text4) ;
+            Gtk.Label.setSelectable (label4, true) ;
+     
+            Gtk.Box.packStart (vbox, label1, false, false, 10) ;
+            Gtk.Box.packStart (vbox, label2, false, false, 10) ;
+            Gtk.Box.packStart (vbox, label3, false, false, 10) ;
+            Gtk.Box.packStart (vbox, label4, false, false, 10) ;
+            
+            (* Gtk.Window.setPolicy (dialog, 0, 0, 1) ; *)
+            *)
+            Gtk.Window.setKeepAbove (dialog, true);
+   
+            Gtk.signalConnect(dialog, "delete-event", close);
+            Gtk.signalConnect (dialog, "response", close)
+            )
+
+       fun openDialog() =
+               (Gtk.Window.setPosition (dialog, Gtk.WindowPosition.MOUSE);
+                DialogUtils.moveToMouse dialog;
+		Gtk.Widget.showAll dialog)
+
+    end

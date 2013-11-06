@@ -1,0 +1,57 @@
+Submission for 3rd ICFP Functional Programming Contest
+
+Team:		Helikopter
+Captain:	Andreas Rossberg <rossberg@ps.uni-sb.de>
+First Officer:	Leif Kornstaedt  <kornstae@ps.uni-sb.de>
+Snail Mail:	Universität des Saarlandes
+		Postfach 15 11 50 
+		66041 Saarbrücken
+		Germany
+Language:	SML
+System:		SML/NJ 110.0.6
+
+
+Description:
+
+General --
+* We implemented all tiers. 
+* We tried to do a clean (modular, strongly typed & functional) design,
+  efficiency was only of secondary concern.
+* Total LOC is around 1300 (not counting generated files).
+
+Modularization --
+* The renderer kernel is completely independent of the abstract machine
+  (actually the machine could be functorized over the renderer).
+  Surface functions are passed as ordinary SML functions.
+* Likewise, the Machine completely encapsulates knowledge of the renderer.
+* The set of builtin operations (including names) is encapsulated in the
+  machine.
+* Toplevel control loop for rendering is factored out of the renderer
+  (would allow future optimizations of the rendering process by recalculating
+  bounding boxes for example).
+
+Frontend and GML Machine --
+* The parser does complete static binding analysis.
+* Error positions during parsing are only given in absolute character positions.
+* Most primitive operations are encoded in a datatype carrying the
+  corresponding SML implementations as higher-order functions, the
+  actual evaluator is therefore very simple.
+* False, true, if, and apply are treated as ordinary operators.
+* Constant surface functions are recognized and optimized.
+* We thought about partial evaluation, but didn't have the time to finish
+  it, so it didn't make it into the submission... :-(
+
+Renderer --
+* Cubes, cones, and cylinders are decomposed into intersections
+  of simpler objects (planes, infinite cones & cylinders).
+* All rotational objects are treated uniformingly by parameterization.
+* Dealing with rounding errors:
+  - Intersection ignores objects closer than some eps.
+  - Difference ignores eps sized slices.
+* Optimizations:
+  - Illumination equation simplified for kd=0 or ks=0.
+  - Intersection and difference perform shortcut evaluation.
+
+Examples:
+
+In helikopter.gml you'll find a neat example. ;-)

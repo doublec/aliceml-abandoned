@@ -1,0 +1,41 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source from "../infrastructure/Source"
+
+signature PARSING_ERROR =
+sig
+    datatype error =
+	(* Lexer *)
+	  UnclosedComment
+	| InvalidChar		of char
+	| InvalidString
+	| IntTooLarge
+	| WordTooLarge
+	| RealTooLarge
+	| CharLengthInvalid	of string
+	| EscapeCharTooLarge	of bool
+	(* Parser *)
+	| SyntaxError		of string
+	(* Derived forms *)
+	| UpdExpInvalid
+	| ExpRowEllipses
+	| PatRowEllipses
+	| TyRowEllipses
+	| WithtypeInvalid
+	| WithtypeArityMismatch
+
+    type warning	(* yet empty *)
+
+    val error :	 Source.region * error -> 'a
+    val warn :	 bool * Source.region * warning -> unit
+end

@@ -1,0 +1,449 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Gdk            from "x-alice:/lib/gtk/Gdk"
+import structure Canvas    from "x-alice:/lib/gtk/Canvas"
+
+import structure Defaults       from "Defaults"
+import structure ExplorerGUI    from "ExplorerGUI"
+
+import signature SPACE           from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES           from "TYPES-sig"
+import signature TREE_NODE       from "TREE_NODE-sig"
+import signature VISUAL_NODE     from "VISUAL_NODE-sig"
+import signature GTK_NODE        from "GTK_NODE-sig"
+import signature EXPLORER_NODE   from "EXPLORER_NODE-sig"
+import signature EXPLORER_SEARCH from "EXPLORER_SEARCH-sig"
+import signature OPTIONS_WINDOW  from "OPTIONS_WINDOW-sig"
+import signature SAVE_WINDOW     from "SAVE_WINDOW-sig"
+import signature MENU_MANAGER    from "MENU_MANAGER-sig"
+
+import signature EVENT_HANDLER   from "EVENT_HANDLER-sig"
+
+functor MkEventHandler (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    (VisualNode : VISUAL_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    (MenuManager : MENU_MANAGER
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    (ExplorerSearch : EXPLORER_SEARCH
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space)
+    (OptionsWindow : OPTIONS_WINDOW
+     where type explorer_state = Types.explorer_state)
+    (SaveWindow : SAVE_WINDOW
+     where type explorer_state = Types.explorer_state)
+    :
+    EVENT_HANDLER
+    where type explorer_state = Types.explorer_state
+    where type tree = Types.tree
+    where type space = Space.space
+    =
+  struct
+
+      type explorer_state = Types.explorer_state
+      type tree = Types.tree
+      type space = Space.space
+
+      open Types
+
+  fun nodeEvent (st, serve) event =
+      case (!st) of
+	  SOME(state as ({gtk={canvas,scale,...},
+                          tree={tree=tree,
+			        currentNode=currentNode,
+                                ...},
+			  inspect=inspect,
+                          curInspAction=curInspAction,
+			  ...}:
+			 Types.explorer_state)) =>
+	  (case event of
+	       (_, [Gdk.EVENT event]) =>
+	       serve (fn () =>
+                 case event of
+		     Gdk.EVENT_BUTTON_PRESS {x=x,y=y,...} =>
+		     let
+			 val (findX, depth) =
+                             GtkNode.findByXY(canvas,!scale,
+					      x,y)
+			 val t = !tree
+			 val n = TreeNode.findByX (t, depth, 0, findX)
+			 val (x,y) = TreeNode.getCenter n
+		     in
+                         case ExplorerNode.curNodeStatus n of
+                             Types.FAILED => ()
+                           | _ => 
+			     (currentNode := SOME n;
+			      GtkNode.drawShadow (state, x, y, n);
+                              MenuManager.updateMenus n)
+		     end
+                   | Gdk.EVENT_2BUTTON_PRESS {x=x,y=y,...} =>
+		     let
+			 val (findX, depth) =
+                             GtkNode.findByXY(canvas,!scale,
+					      x,y)
+			 val t = !tree
+			 val n = TreeNode.findByX (t, depth, 0, findX)
+			 val (x,y) = TreeNode.getCenter n
+		     in
+                         case ExplorerNode.curNodeStatus n of
+                             (Types.FAILED | Types.UNKNOWN) => ()
+                           | _ =>
+                             if ExplorerNode.isHidden n then () else
+			     (currentNode := SOME n;
+			      GtkNode.drawShadow (state, x, y, n);
+                              List.app
+                                  (fn (i,s) => 
+                                    if s= !curInspAction then
+                                      i (ExplorerNode.getClone(st, n))
+				    else ()) (!inspect))
+		     end
+		   | _ => ())
+	     | _ => ())
+	| _ => ()
+
+  val itr = Real.fromInt
+
+  fun destroyMainWindow (resetCanvas,
+                         serve,
+                         state as ref (SOME {gtk={window,...},
+                                             tree={rootSpace,tree,...},
+                                             ...})
+			 : explorer_state option ref) =
+      (Gtk.Widget.hide window;
+       rootSpace := NONE;
+       resetCanvas serve state;
+       Types.resetSearchState state;
+       Types.resetCancelSearch state;
+       MenuManager.refreshStatusbar state;
+       ExplorerNode.discardTree (!tree) )
+    | destroyMainWindow _ = ()
+
+  fun setBBox (ref (SOME ({gtk={canvas=canvas,...}, ...}: explorer_state)),
+	       (minx, maxx, depth)) =
+      let
+	  val xMin   = Real.round((itr minx)* (TreeNode.defScale))
+	  val xMax   = Real.round((itr maxx)* (TreeNode.defScale))
+	  val xDim   = abs xMin + (abs xMax)
+	  val yDim   = Real.round((itr((depth+1)*TreeNode.verSpaceI) *
+				   TreeNode.defScale))
+      in
+	  Canvas.setScrollRegion(canvas, (itr xMin) - 30.0, 0.0,
+				      (itr xMax) + 30.0, Real.fromInt yDim)
+      end
+    | setBBox _ = ()
+
+
+  fun zoomToFit (state : Types.explorer_state option ref) =
+      case !state of
+          SOME {gtk={canvas,scale,...},
+                tree={tree=ref tree,...},
+                ...} =>
+          let
+              val shape = TreeNode.getShape tree
+	      val (minx, maxx, depth) = TreeNode.getBBox shape
+	      val xSize = Gtk.Adjustment.getFieldPageSize
+                              (Gtk.ScrolledWindow.getHadjustment ExplorerGUI.scrolledwindow)
+	      val ySize = Gtk.Adjustment.getFieldPageSize
+                              (Gtk.ScrolledWindow.getVadjustment ExplorerGUI.scrolledwindow)
+	      val xMin   = Real.round((itr minx)*(TreeNode.defScale))
+	      val xMax   = Real.round((itr maxx)*(TreeNode.defScale))
+	      val xDim   = itr (abs xMin + (abs xMax))
+	      val yDim   = (itr((depth+1)*TreeNode.verSpaceI) *
+			    TreeNode.defScale)
+                           
+              val xScale = ySize / yDim
+              val yScale = xSize / xDim
+                           
+              val scaleTo = Real.min(xScale,yScale)
+              val scaleTo = Real.max(0.1,scaleTo)
+              val scaleTo = Real.min(3.0,scaleTo)
+          in
+	      Canvas.setPixelsPerUnit(canvas, scaleTo);
+              Gtk.Range.setValue(ExplorerGUI.scale,scaleTo);
+	      scale := scaleTo / Defaults.floatScaleBase
+          end
+        | _ => ()
+
+
+  fun refresh (cmw, serve, state) =
+      case !state of
+          (SOME (rstate as {gtk={canvas,window,scale,...},
+                            tree={tree=ref tree,
+			          currentNode=ref cn,
+                                  ...},
+                            ...}
+		 : explorer_state)) =>
+          let
+	      val shape = TreeNode.layoutNode tree
+	      val (minx, maxx, depth) = TreeNode.getBBox shape
+          in
+              Gtk.Widget.showAll window;
+              MenuManager.refreshStatusbar state;
+              setBBox (state, (minx, maxx, depth));
+              Gtk.Layout.freeze canvas;
+	      VisualNode.adjust (rstate, tree, 0, 0, TreeNode.verSpaceI, 0);
+	      (case cn of NONE => ()
+		        | SOME cn =>
+		          let
+			      val (x,y) = TreeNode.getCenter cn
+		          in
+			      GtkNode.drawShadow (rstate, x, y, cn)
+		          end);
+              Gtk.Layout.thaw canvas;
+              Canvas.setPixelsPerUnit(canvas,
+                                           (!scale)*Defaults.floatScaleBase);
+              if Types.getZoomFollows state then
+                  zoomToFit state
+              else ()
+          end
+        | NONE =>(state := !(cmw serve);
+		  refresh (cmw, serve, state))
+
+  fun refreshAfterSearch (node, cmw) (serve, state) =
+      (if getHideFailed state then
+           VisualNode.hideFailed node
+       else (); refresh (cmw, serve, state))
+
+  fun exitHandler (resetCanvas, serve, state) _ =
+      serve (fn () => destroyMainWindow (resetCanvas, serve, state))
+  fun nodeHideHandler (cmw, serve, state) _ = 
+      serve (fn () =>
+		(VisualNode.toggleHide state;
+                 Option.app MenuManager.updateMenus (Types.getCurrentNode state);
+		 refresh (cmw, serve, state)))
+  fun nodeUnhideHandler (cmw, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={tree=ref tree,
+                                currentNode=ref cn,...},...} =>
+		    (VisualNode.unhideAll (Option.getOpt(cn,tree));
+                     Option.app MenuManager.updateMenus (Types.getCurrentNode state);
+		     refresh (cmw, serve, state))
+                  | _ => ())
+  fun hideFailedHandler (cmw, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={tree=ref tree,
+                                currentNode=ref cn,...},...} =>
+		    (VisualNode.hideFailed (Option.getOpt(cn,tree));
+                     Option.app MenuManager.updateMenus (Types.getCurrentNode state);
+		     refresh (cmw, serve, state))
+                  | _ => ())
+
+  fun exploreOneHandler (cmw, setStatusMsg, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=ref (SOME cn),...},...} =>
+                    ExplorerSearch.search
+                        (serve, state, refreshAfterSearch (cn, cmw),
+                         setStatusMsg, 1, SOME cn)
+                  | _ => ())
+
+  fun exploreAllHandler (cmw, setStatusMsg, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=ref (SOME cn),...},...} =>
+                    ExplorerSearch.search
+                        (serve, state, refreshAfterSearch (cn, cmw),
+                         setStatusMsg, 0, SOME cn)
+                  | _ => ())
+
+  fun exploreNHandler (cmw, setStatusMsg, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=ref (SOME cn),...},
+                          breakAfter=ref breakAfter,
+                          ...} =>
+                    ExplorerSearch.search
+                        (serve, state, refreshAfterSearch (cn, cmw),
+                         setStatusMsg, breakAfter, SOME cn)
+                  | _ => ())
+                                                
+  fun exploreStepHandler (cmw, setStatusMsg, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=ref (SOME cn),...},
+                          ...} =>
+                    ExplorerSearch.searchStep
+                        (serve, state, refreshAfterSearch (cn, cmw),
+                         setStatusMsg, SOME cn)
+                  | _ => ())
+
+  fun resetHandler (cmw, resetCanvas, serve, state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={rootSpace=ref (SOME rs),constrain,...},...} =>
+                    (Types.resetSearchState state;
+                     Types.resetCancelSearch state;
+                     MenuManager.refreshStatusbar state;
+                     ExplorerSearch.initSearch (serve, state,
+                                                fn (x,y) => refresh (cmw,x,y),
+                                                resetCanvas, rs, !constrain))
+                  | _ => ())
+
+  fun selectInspectionAction (serve,
+                              state : explorer_state option ref) event = 
+      serve (fn () =>
+                case !state of
+                    SOME {curInspAction=curInspAction,...} =>
+                    (case event of (obj, _) =>
+                       if Gtk.CheckMenuItem.getFieldActive obj then
+                           let
+                               val label = Gtk.Bin.getChild obj
+                           in
+                               curInspAction := Gtk.Label.getText label
+                           end
+                       else
+                           ())
+                  | _ => ())
+
+  fun viewOptionsHandler (mw, serve, state) _ =
+      let
+          val configure = OptionsWindow.newViewOptionsWindow (mw, serve, state)
+      in
+          Gtk.Window.setPosition(configure, Gtk.WindowPosition.MOUSE);
+          Gtk.Widget.showAll configure
+      end
+
+  fun searchOptionsHandler (mw, serve, state) _ =
+      let
+          val configure = OptionsWindow.newSearchOptionsWindow
+	      (mw, serve, state)
+      in
+          Gtk.Window.setPosition(configure, Gtk.WindowPosition.MOUSE);
+          Gtk.Widget.showAll configure
+      end
+
+  fun zoomToFitHandler (serve, state : Types.explorer_state option ref) _ =
+      serve (fn () => zoomToFit state)
+
+  fun saveHandler (serve, state : Types.explorer_state option ref) _ =
+      serve (fn () => SaveWindow.newSaveWindow(serve, state))
+
+  fun findNonFailure(parent, node, index, max, dir) =
+      if index=max orelse index= ~1 then node else
+	  let val newNode = ExplorerNode.getChild parent index in
+	      case ExplorerNode.curNodeStatus newNode of
+		  Types.FAILED => findNonFailure(parent,node,
+						 dir(index,1),max,dir)
+		| _ => newNode
+	  end
+
+  fun goToChild (serve,state) _ = 
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    if TreeNode.noOfChildren cn>0 then
+			let
+			    val n = findNonFailure(cn, ExplorerNode.getChild cn 0,
+						   0, TreeNode.noOfChildren cn, op+)
+			    val (x,y) = TreeNode.getCenter n
+			in
+			    case ExplorerNode.curNodeStatus n of
+				Types.FAILED => ()
+			      | _ => 
+				    (currentNode := SOME n;
+				     GtkNode.drawShadow (valOf (!state), x, y, n);
+				     MenuManager.updateMenus n)
+			end
+		    else ()
+                  | _ => ())
+
+  fun goToParent (serve,state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    (case ExplorerNode.getParent cn of
+			 NONE => ()
+		       | SOME n =>
+			let
+			    val (x,y) = TreeNode.getCenter n
+			in
+			    currentNode := SOME n;
+			    GtkNode.drawShadow (valOf (!state), x, y, n);
+			    MenuManager.updateMenus n
+			end)
+                  | _ => ())
+
+  fun goToRight (serve,state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    (case ExplorerNode.getParent cn of
+			 NONE => ()
+		       | SOME n =>
+			     if TreeNode.noOfChildren n>ExplorerNode.getAlternative cn+1 then
+				 let
+				     val n = findNonFailure(n,cn,
+							    ExplorerNode.getAlternative cn+1,
+							    TreeNode.noOfChildren n,
+							    op+)
+				     val (x,y) = TreeNode.getCenter n
+				 in
+				     case ExplorerNode.curNodeStatus n of
+					 Types.FAILED => ()
+				       | _ => 
+					     (currentNode := SOME n;
+					      GtkNode.drawShadow (valOf (!state), x, y, n);
+					      MenuManager.updateMenus n)
+				 end
+			     else ())
+                  | _ => ())
+
+  fun goToLeft (serve,state) _ =
+      serve (fn () =>
+                case !state of
+                    SOME {tree={currentNode=currentNode as ref (SOME cn),...},
+                          ...} =>
+		    (case ExplorerNode.getParent cn of
+			 NONE => ()
+		       | SOME n =>
+			     if ExplorerNode.getAlternative cn>0 then
+				 let
+				     val n = findNonFailure(n,cn,
+							    ExplorerNode.getAlternative cn-1,
+							    TreeNode.noOfChildren n,
+							    op-)
+				     val (x,y) = TreeNode.getCenter n
+				 in
+				     case ExplorerNode.curNodeStatus n of
+					 Types.FAILED => ()
+				       | _ => 
+					     (currentNode := SOME n;
+					      GtkNode.drawShadow (valOf (!state), x, y, n);
+					      MenuManager.updateMenus n)
+				 end
+			     else ())
+                  | _ => ())
+
+  end

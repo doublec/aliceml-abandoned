@@ -1,0 +1,53 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt & Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_OS_COMPONENT =
+    sig
+	structure UnsafeOS:
+	    sig
+		exception SysErr of string * int option
+
+		val errorMsg: int -> string
+
+		structure FileSys:
+		    sig
+			val openDir: string -> 'dirstream	(* OS.SysErr *)
+			val readDir: 'dirstream -> string option (* OS.SysErr *)
+			val rewindDir: 'dirstream -> unit	(* OS.SysErr *)
+			val closeDir: 'dirstream -> unit	(* OS.SysErr *)
+			val chDir: string -> unit		(* OS.SysErr *)
+			val getDir: unit -> string		(* OS.SysErr *)
+			val mkDir: string -> unit		(* OS.SysErr *)
+			val rmDir: string -> unit		(* OS.SysErr *)
+			val isDir: string -> bool		(* OS.SysErr *)
+			val fileSize: string -> Position.int	(* OS.SysErr *)
+			val modTime: string -> Time.time	(* OS.SysErr *)
+			val remove: string -> unit		(* OS.SysErr *)
+			val tmpName: unit -> string		(* OS.SysErr *)
+			val getHomeDir : unit -> string         (* OS.SysErr *)
+			val getApplicationConfigDir :
+			                 unit -> string         (* OS.SysErr *)
+		    end
+
+		structure Process:
+		    sig
+			val success: 'status
+			val failure: 'status
+
+			val system: string -> 'status
+			val terminate: 'status -> 'a
+			val getEnv: string -> string option
+			val atExn: (Exn.packet -> unit) -> unit
+		    end
+	    end
+    end

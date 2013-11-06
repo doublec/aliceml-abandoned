@@ -1,0 +1,93 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature IMP_SET        from "../data/IMP_SET-sig"
+import signature SCOPED_IMP_SET from "SCOPED_IMP_SET-sig"
+
+
+functor MkScopedImpSet(ImpSet: IMP_SET) :>
+    SCOPED_IMP_SET where type item = ImpSet.item =
+struct
+
+    type item = ImpSet.item
+    type set  = ImpSet.t list ref
+    type t    = set
+
+    exception Unknown   = ImpSet.Unknown
+    exception Collision = ImpSet.Collision
+
+
+    val scopeSize = 19
+
+    fun set()			= ref[ImpSet.set()]
+    fun clone(ref ss)		= ref(List.map ImpSet.clone ss)
+    fun cloneScope(ref ss)	= ref[ImpSet.clone(List.hd ss)]
+    fun insertScope r		= r := ImpSet.set() :: !r
+    fun removeScope r		= r := List.tl(!r)
+    fun removeAll r		= r := [ImpSet.set()]
+    fun splitScope(r as ref ss)	= ( removeScope r ; ref[List.hd ss] )
+    fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
+
+    fun mergeScope' unionSet (r as ref ss)
+				= let val ss' = List.tl ss in
+				      unionSet(List.hd ss', List.hd ss) ;
+				      r := ss'
+				  end
+
+    fun mergeScope r		= mergeScope' ImpSet.union r
+    fun mergeDisjointScope r	= mergeScope' ImpSet.unionDisjoint r
+    fun mergeScopeWith f	= mergeScope'(ImpSet.unionWith f)
+
+
+    fun member'( [],   i)	= false
+      | member'(s::ss, i)	= ImpSet.member(s,i) orelse member'(ss,i)
+
+    fun member(ref ss, i)	= member'(ss,i)
+
+    fun memberScope(ref ss, i)	= ImpSet.member(List.hd ss, i)
+
+    fun isEmptyScope(ref ss)	= ImpSet.isEmpty(List.hd ss)
+    fun isEmpty(ref ss)		= List.all ImpSet.isEmpty ss
+
+    fun sizeScope(ref ss)	= ImpSet.size(List.hd ss)
+    fun size(ref ss)		= List.foldl (fn(s,n) => n + ImpSet.size s) 0 ss
+
+    fun appScope f (ref ss)	= ImpSet.app f (List.hd ss)
+    fun app f (ref ss)		= List.app (ImpSet.app f) (List.rev ss)
+    fun foldScope f a (ref ss)	= ImpSet.fold f a (List.hd ss)
+    fun fold f a (ref ss)	= List.foldr (fn(s,a') => ImpSet.fold f a' s)
+					     a ss
+    fun findScope p (ref ss)	= ImpSet.find p (List.hd ss)
+    fun find p (ref ss)		= let fun iter  []     = NONE
+					| iter(s::ss') = case ImpSet.find p s
+							   of NONE => iter ss'
+							    | some => some
+				  in iter ss end
+
+    fun remove(ref ss, i)		= ImpSet.remove(List.hd ss, i)
+    fun removeExistent(ref ss, i)	= ImpSet.removeExistent(List.hd ss, i)
+    fun removeWith f (ref ss, i)	= ImpSet.removeWith f (List.hd ss, i)
+
+    fun insert(ref ss, i)		= ImpSet.insert(List.hd ss, i)
+    fun insertDisjoint(ref ss, i)	= ImpSet.insertDisjoint(List.hd ss, i)
+    fun insertWith f (ref ss, i)	= ImpSet.insertWith f (List.hd ss, i)
+
+    fun union' setUnion (ref ss1, ref ss2)
+				= let val s1 = List.hd ss1 in
+				      List.app (fn s2 => setUnion(s1,s2)) ss2
+				  end
+
+    fun union x			= union' ImpSet.union x
+    fun unionDisjoint x		= union' ImpSet.unionDisjoint x
+    fun unionWith f		= union'(ImpSet.unionWith f)
+
+end

@@ -1,0 +1,19 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label from "../../lib/rtt/Label"
+
+signature PERVASIVE_TYPE_LIB =
+sig
+    val modlab_pervasiveType :	Label.t
+    val lab_lookup :		Label.t
+end

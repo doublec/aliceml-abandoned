@@ -1,0 +1,16 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label         from "Label"
+import structure MkHashImpSet  from "../data/MkHashImpSet"
+
+structure LabelSet = MkHashImpSet(Label)

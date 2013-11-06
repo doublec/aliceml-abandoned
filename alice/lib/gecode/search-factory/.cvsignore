@@ -1,0 +1,4 @@
+Makefile.depend
+Makefile.predepend
+*.alc
+*.dll

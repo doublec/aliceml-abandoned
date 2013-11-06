@@ -1,0 +1,53 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Path  from "Path"
+import structure Debug from "Debug"
+
+signature TREENODE = 
+sig
+  exception Child
+
+  (* Debug level *)
+  val mask : Debug.db_mask
+
+  type tree_node
+  type t = tree_node
+  type solution  (* Only needed for Branch & Bound. Otherwise, can be unit. *)
+
+  (* Returns a tree_node corresponding to the root space. *)
+  val root : tree_node
+  val fromPath : solution Path.t -> tree_node
+
+  (* Returns the left (right) child, raise Child if no child. *)
+  val getLeft  : tree_node -> tree_node
+  val getRight : tree_node -> tree_node
+
+  (* getSpace node
+   * returns the computation space associated with this node. *)
+  val getSpace : tree_node -> Space.space
+
+  (* Like Space.status. *)
+  val status : tree_node -> Space.status
+
+  (* Returns the path corresponding to this node. *)
+  val getPath : tree_node -> solution Path.t
+
+  (* B&B : Signals a solution found elsewhere (e.g. distributed search) *)
+  val addSolution : solution -> unit
+
+end

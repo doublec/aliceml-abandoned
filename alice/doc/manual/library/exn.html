@@ -1,0 +1,143 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Exn structure", "The <TT>Exn</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature EXN
+    structure Exn : EXN
+  </PRE>
+
+  <P>
+    The structure <TT>Exn</TT> provides first-class access to raised exceptions,
+    which allows controlling the generation of exception backtraces for
+    debugging purposes.
+  </P>
+
+  <P>See also:
+    <A href="general.html"><TT>General</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature EXN =
+    sig
+	exttype exn
+	type t = exn
+	type packet
+
+	exception NoCurrentPacket
+
+	val name :          exn -> string
+	val message :       exn -> string
+
+	val currentPacket : unit -> packet
+	val fromPacket :    packet -> exn
+	val update :        packet * exn -> packet
+	val reraise :       packet -> 'a
+
+	val trace :         packet -> string
+	val dumpTrace :     packet -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>exttype exn</TT> <BR>
+      <TT>type t = exn</TT>
+    </DT>
+    <DD>
+      <P>The type of exceptions. Equivalent to the toplevel <TT>exn</TT>
+      type.</P>
+    </DD>
+
+    <DT>
+      <TT>type packet</TT>
+    </DT>
+    <DD>
+      <P>The type of raised exception packets. Along with the exception
+      proper, a packet carries information about its origin and a trace
+      of its propagation history.</P>
+    </DD>
+
+    <DT>
+      <TT>name <I>ex</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a name for the exception <TT><I>ex</I></TT>. Equivalent to
+      <TT><A href="general.html">General.exnName</A> <I>ex</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>message <I>ex</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a message corresponding to exception <TT><I>ex</I></TT>.
+      Equivalent to <TT><A href="general.html">General.exnMessage</A>
+      <I>ex</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>currentPacket ()</TT>
+    </DT>
+    <DD>
+      <P>Retrieves the packet for the innermost (i.e. the first to be
+      encountered when walking down the stack) handle expression that is
+      being evaluated by the current thread. If no handle expression is
+      currently being evaluated, raise <TT>NoCurrentPacket</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fromPacket <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Retrieves the exception contained in the packet <TT><I>p</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>update (<I>p</I>, <I>ex</I>)</TT>
+    </DT>
+    <DD>
+      <P>Constructs a new packet by replacing the exception in packet
+      <TT><I>p</I></TT> by <TT><I>ex</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>reraise <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Re-raises the packet <TT><I>p</I></TT>, without dropping its
+      backtrace. Semantically equivalent to <TT>raise fromPacket
+      <I>p</I></TT>, but a backtrace of the raised exception will, when
+      caught with <TT>catch</TT>, include the history of <TT><I>p</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>trace <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Retrieves the backtrace of packet <TT><I>p</I></TT> in some
+      implementation-dependent format.</P>
+    </DD>
+
+    <DT>
+      <TT>dumpTrace <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Writes the output of <TT>trace <I>p</I></TT> to some
+      implementation-dependent output (e.g. <TT>stderr</TT>). This function
+      is provided solely for debugging convenience, the format and
+      the destination of the dump is left unspecified.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,208 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestOSFileSys :> TESTSUITE = (* the osfilesys test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    structure O = OS.FileSys
+
+    fun testIsLink () = 
+      Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testReadLink () =
+      Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testFullPath () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+	
+    fun testRealPath () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testAccess () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testSetTime () =
+      Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testFileId () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testHash () =
+        Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testCompare () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testOpenDir () =
+        (Test.test (fn s => (O.openDir s; true) handle _ => false) ".";
+	 Test.test (fn s => (O.openDir s; true) handle _ => false) "..";
+	 Test.test (fn s => (O.openDir s; true) handle _ => false) "lib/";
+	 Test.test (fn s => (O.openDir s; false) handle _ => true) 
+		                                                "lib/Makefile";
+	 Test.test (fn s => (O.openDir s; false) handle _ => true) 
+		                                             "/var/run/sudo";
+	 Test.test (fn s => (O.openDir s; false) handle _ => true) 
+		                                             "notexisting")
+
+    fun getStream () = O.openDir "lib/"
+
+    fun testReadDir () = 
+	let
+	    val content = ref []
+
+	    fun t' xs = (not (List.exists (fn x => x = ".") xs)) andalso
+			(not (List.exists (fn x => x = "..") xs)) andalso
+			((List.exists (fn x => x = "Makefile") xs))
+	    
+	    fun t str = case O.readDir str of
+			    NONE   => t' (!content)
+			  | SOME s => (content := s :: !content; t str)
+
+	in
+	    Test.test t (getStream ())
+	end
+
+    fun testCloseDir () = 
+	let
+	    val content = ref []
+
+	    fun t'''' str = 
+		(O.closeDir str; O.closeDir str; true) handle _ => false
+
+
+	    fun t''' str = 
+		(O.closeDir str;
+		 O.readDir str; false) handle _ => true
+						     
+	    fun t'' str = 
+		(O.closeDir str;
+		 O.rewindDir str; false) handle _ => true
+
+	    fun t' str = case O.readDir str of
+			 NONE   => ((O.closeDir str; true) handle _ => false)
+		       | SOME _ => ((O.closeDir str; true) handle _ => false)
+
+	    fun t str = case O.readDir str of
+			 NONE   => ((O.closeDir str; true) handle _ => false)
+		       | SOME _ => t str
+
+	in
+	    (Test.test t (getStream ());
+	     Test.test t' (getStream ());
+	     Test.test t'' (getStream ());
+	     Test.test t''' (getStream ());
+	     Test.test t'''' (getStream ()))
+	end
+
+    fun testRewindDir () = 
+	let
+	    val content = ref []
+	    val content2 = ref []
+
+	    fun t str = case O.readDir str of
+			    NONE   => if List.null (!content2)
+				      then (content2 := !content;
+					    content := [];
+					    O.rewindDir str;
+					    t str)
+				      else !content = !content2
+			  | SOME s => (content := s :: !content; t str)
+
+	in
+	    Test.test t (getStream ())
+	end
+
+    fun testChDir () =
+	let
+	    fun cleanUp () =
+		(OS.FileSys.remove "test/suite/tmpfile"; true)
+	in 
+	    (Test.test (fn s => (O.chDir s; true) handle _ => false) "..";
+	     Test.test (fn s => (O.chDir s;
+				 TextIO.closeOut (TextIO.openOut "tmpfile"); 
+				 true) handle _ => false) "suite";
+	     Test.test (fn s => (O.chDir s; false) handle _ => true) 
+		       "/var/run/sudo";
+	     Test.test (fn s => (O.chDir s; true) handle _ => false) "..";
+	     Test.test (fn s => (O.chDir s; true) handle _ => false) "..";
+	     Test.test cleanUp ())
+	end
+
+    fun testGetDir () =
+	Test.test (fn s => s = "/home/germi/alice/alice/test/suite") 
+		                                               (O.getDir ())
+
+
+    fun testMkDir () =
+	(Test.test (fn s => (O.mkDir s; true) handle _ => false) "tmp"; 
+	 Test.test (fn s => (O.mkDir s; true) handle _ => false) "tmp/tmp2"; 
+	 Test.test (fn s => (O.mkDir s; false) handle _ => true) "tmp2/tmp2")
+
+    fun testRmDir () =
+	(Test.test (fn s => (O.rmDir s; false) handle _ => true) "tmp"; 
+	 Test.test (fn s => (O.rmDir s; true) handle _ => false) "tmp/tmp2"; 
+	 Test.test (fn s => (O.rmDir s; true) handle _ => false) "tmp")
+
+    fun testIsDir () =
+	(Test.test (fn s => (O.isDir s = true) handle _ => false) "lib";
+	 Test.test (fn s => (O.isDir s = false) handle _ => true) "Makefile";
+	 Test.test (fn s => (O.isDir s = false) handle _ => true) 
+	                                                         "notexisting")
+	
+    fun testFileSize () =
+	(Test.test (fn s => (O.fileSize s; true) handle _ => false) "lib";
+	 Test.test (fn s => (O.fileSize s = 0) handle _ => true) "lib2")
+
+    fun testTmpName () =
+	Test.test (fn (s1, s2) => s1 <> s2) (O.tmpName (), O.tmpName ())
+
+    fun testModTime () =
+	(Test.test (fn s => (Time.< (O.modTime s, Time.now ()))) "Makefile";
+	 Test.test (fn s => (Time.< (O.modTime s, Time.now ()))
+		                   handle _ => true) "notexisting") 
+
+    fun testRemove () =
+	(Test.test (fn s => (TextIO.closeOut (TextIO.openOut "tmpfile");
+			     O.remove s; true) handle _ => false) "tmpfile";
+	 Test.test (fn s => (O.remove s; false) handle _ => true)
+		                                                 "notexisting")
+
+    val suite = ("OSFileSys", [("openDir", testOpenDir),
+			       ("readDir", testReadDir),
+			       ("closeDir", testCloseDir),
+			       ("rewindDir", testRewindDir),
+			       ("mkDir", testMkDir),
+			       ("rmDir", testRmDir),
+			       ("isDir", testIsDir),
+			       ("fileSize", testFileSize),
+			       ("modTime", testModTime),
+			       ("remove", testRemove),
+			       ("tmpName", testTmpName),
+			       ("isLink", testIsLink),
+			       ("readLink", testReadLink),
+			       ("fullPath", testFullPath),
+			       ("realPath", testRealPath),
+			       ("access", testAccess),
+			       ("setTime", testSetTime),
+			       ("fileId", testFileId),
+			       ("hash", testHash),
+			       ("compare", testCompare),
+			       ("chDir", testChDir)])
+
+end

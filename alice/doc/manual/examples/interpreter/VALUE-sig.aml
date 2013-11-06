@@ -1,0 +1,25 @@
+(*
+ * Interpreter for F+rec - Values
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Env    from "Env"
+
+signature VALUE =
+sig
+    type oper
+
+    datatype value =
+	  Num     of int
+	| Op      of oper
+	| Proc    of Syntax.id * Syntax.exp * value Env.env
+	| RecProc of Syntax.id * Syntax.id * Syntax.exp * value Env.env
+
+    exception Error
+
+    val constant : Syntax.con -> value
+    val applyOp :  oper * value -> value		(* [Error] *)
+    val base :     value Env.env
+end

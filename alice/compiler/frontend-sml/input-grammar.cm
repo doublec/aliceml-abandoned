@@ -1,0 +1,16 @@
+Group is
+
+	../infrastructure/source.cm
+
+	SCON-sig.aml
+	SCon.aml
+	LAB-sig.aml
+	Lab.aml
+	ID-sig.aml
+	MkId.aml
+
+	Ids.aml
+
+	INPUT_GRAMMAR-sig.aml
+	MkInputGrammar.aml
+	InputGrammar.aml

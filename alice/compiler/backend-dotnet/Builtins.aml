@@ -1,0 +1,95 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure StringMap
+from "../infrastructure/StringMap"
+
+import
+    signature BUILTINS
+from "BUILTINS-sig"
+
+structure Builtins :> BUILTINS =
+    struct
+	structure Map = StringMap
+
+	val builtinTable =
+	    let
+		val map = Map.map ()
+	    in
+		Map.insert (map, "op=", "op_Equality");
+		Map.insert (map, "op<>", "op_Inequality");
+		Map.insert (map, "Char.<", "Char_op_LessThan");
+		Map.insert (map, "Char.>", "Char_op_GreaterThan");
+		Map.insert (map, "Char.<=", "Char_op_LessThanOrEqual");
+		Map.insert (map, "Char.>=", "Char_op_GreaterThanOrEqual");
+		Map.insert (map, "Future.alarm'", "Future_alarmQuote");
+		Map.insert (map, "Int.~", "Int_op_UnaryNegation");
+		Map.insert (map, "Int.+", "Int_op_Addition");
+		Map.insert (map, "Int.-", "Int_op_Subtraction");
+		Map.insert (map, "Int.*", "Int_op_Multiply");
+		Map.insert (map, "Int.<", "Int_op_LessThan");
+		Map.insert (map, "Int.>", "Int_op_GreaterThan");
+		Map.insert (map, "Int.<=", "Int_op_LessThanOrEqual");
+		Map.insert (map, "Int.>=", "Int_op_GreaterThanOrEqual");
+		Map.insert (map, "Real.~", "Real_op_UnaryNegation");
+		Map.insert (map, "Real.+", "Real_op_Addition");
+		Map.insert (map, "Real.-", "Real_op_Subtraction");
+		Map.insert (map, "Real.*", "Real_op_Multiply");
+		Map.insert (map, "Real./", "Real_op_Division");
+		Map.insert (map, "Real.<", "Real_op_LessThan");
+		Map.insert (map, "Real.>", "Real_op_GreaterThan");
+		Map.insert (map, "Real.<=", "Real_op_LessThanOrEqual");
+		Map.insert (map, "Real.>=", "Real_op_GreaterThanOrEqual");
+		Map.insert (map, "Ref.:=", "Ref_op_Assignment");
+		Map.insert (map, "String.^", "String_op_Concatenation");
+		Map.insert (map, "String.<", "String_op_LessThan");
+		Map.insert (map, "String.>", "String_op_GreaterThan");
+		Map.insert (map, "String.<=", "String_op_LessThanOrEqual");
+		Map.insert (map, "String.>=", "String_op_GreaterThanOrEqual");
+		Map.insert (map, "Word8.+", "Word8_op_Addition");
+		Map.insert (map, "Word8.-", "Word8_op_Subtraction");
+		Map.insert (map, "Word8.*", "Word8_op_Multiply");
+		Map.insert (map, "Word8.<<", "Word8_op_LeftShift");
+		Map.insert (map, "Word8.>>", "Word8_op_UnsignedRightShift");
+		Map.insert (map, "Word8.~>>", "Word8_op_SignedRightShift");
+		Map.insert (map, "Word8.<", "Word8_op_LessThan");
+		Map.insert (map, "Word8.>", "Word8_op_GreaterThan");
+		Map.insert (map, "Word8.<=", "Word8_op_LessThanOrEqual");
+		Map.insert (map, "Word8.>=", "Word8_op_GreaterThanOrEqual");
+		Map.insert (map, "Word31.+", "Word31_op_Addition");
+		Map.insert (map, "Word31.-", "Word31_op_Subtraction");
+		Map.insert (map, "Word31.*", "Word31_op_Multiply");
+		Map.insert (map, "Word31.<<", "Word31_op_LeftShift");
+		Map.insert (map, "Word31.>>", "Word31_op_UnsignedRightShift");
+		Map.insert (map, "Word31.~>>", "Word31_op_SignedRightShift");
+		Map.insert (map, "Word31.<", "Word31_op_LessThan");
+		Map.insert (map, "Word31.>", "Word31_op_GreaterThan");
+		Map.insert (map, "Word31.<=", "Word31_op_LessThanOrEqual");
+		Map.insert (map, "Word31.>=", "Word31_op_GreaterThanOrEqual");
+		map
+	    end
+
+	fun lookup name =
+	    case Map.lookup (builtinTable, name) of
+		SOME res => res
+	      | NONE =>
+		    let
+			val res = String.map (fn #"." => #"_" | c => c) name
+		    in
+			Map.insertDisjoint (builtinTable, name, res); res
+		    end
+
+	fun lookupClass name = #["Alice", "Builtins", lookup name]
+
+	fun lookupField name = (#["Alice", "Prebound"], lookup name)
+    end

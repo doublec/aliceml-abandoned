@@ -1,0 +1,116 @@
+import
+    val nativeInspect
+    val makeArrowType
+    val makeBasicType
+    val makeListType
+    val makeRecordType
+    val makeTupleType
+from "x-alice:/Canvas.dll"
+
+signature TOOLS =
+    sig
+  	type label = string
+
+	datatype ty =
+	    IntTy | WordTy | CharTy | StringTy | RealTy
+	  | TupleTy of ty vector | RecordTy of (label * ty) vector
+	  | SumTy of (string * ty option) vector
+	  | ArrayTy of ty | VectorTy of ty
+	  | ArrowTy of ty * ty
+	  | ListTy of ty | BoolTy
+
+(*UNFINISHED
+	val toString: 'a * ty -> string
+*)
+	val inspect:  'a * ty -> unit
+    end
+
+structure Tools :> TOOLS =
+    struct
+ 	type label = string
+
+	datatype ty =
+	    IntTy | WordTy | CharTy | StringTy | RealTy
+	  | TupleTy of ty vector | RecordTy of (label * ty) vector
+	  | SumTy of (string * ty option) vector
+	  | ArrayTy of ty | VectorTy of ty
+	  | ArrowTy of ty * ty
+	  | ListTy of ty | BoolTy
+
+(*UNFINISHED
+	__primitive val cast: 'a -> 'b = "Unsafe.cast"
+	__primitive val getTag: 'a -> int = "Unsafe.getTag"
+	__primitive val getValue: 'a -> 'b = "Unsafe.getValue"
+
+	fun sep1 (f, xv) =
+	    let
+		fun f' i = f (Vector.sub (xv, i))
+		fun sep' 0 = f' 0
+		  | sep' i = sep' (i - 1) ^ ", " ^ f' i
+	    in
+		sep' (Vector.length xv)
+	    end
+
+	fun sep2 (f, xv, yv) =
+	    let
+		fun f' i = f (Vector.sub (xv, i), Vector.sub (yv, i))
+		fun sep' 0 = f' 0
+		  | sep' i = sep' (i - 1) ^ ", " ^ f' i
+	    in
+		sep' (Vector.length xv)
+	    end
+
+	fun toString' (x, IntTy) = Int.toString (cast x)
+	  | toString' (x, WordTy) = "0wx" ^ Word.toString (cast x)
+	  | toString' (x, CharTy) = "#\"" ^ Char.toString (cast x) ^ "\""
+	  | toString' (x, StringTy) = "\"" ^ String.toString (cast x) ^ "\""
+	  | toString' (x, RealTy) = Real.toString (cast x)
+	  | toString' (x, TupleTy tyv) =
+	    "(" ^ sep2 (toString, cast x, tyv) ^ ")"
+	  | toString' (x, RecordTy labelTyVector) =
+	    "{" ^ sep2 (fn (x, (label, ty)) => label ^ ": " ^ toString (x, ty),
+			cast x, labelTyVector) ^ "}"
+	  | toString' (x, SumTy labelTyOptVector) =
+	    (case Vector.sub (labelTyOptVector, getTag x) of
+		 (label, NONE) => label
+	       | ("::", SOME (TupleTy #[ty1, ty2])) =>
+		     let
+			 val value = getValue x
+		     in
+			 toString (Vector.sub (value, 0), ty1) ^ "::" ^
+			 toString (Vector.sub (value, 1), ty2)
+		     end
+	       | (label, SOME ty) =>
+		     label ^ " (" ^ toString (getValue x, ty) ^ ")")
+	  | toString' (x, ArrayTy ty) =
+	    "[|" ^ sep1 (fn y => toString (y, ty), cast x) ^ "|]"
+	  | toString' (x, VectorTy ty) =
+	    "#[" ^ sep1 (fn y => toString (y, ty), cast x) ^ "]"
+	  | toString' (x, ArrowTy _) =
+	    (* Since we use `cast x' as a string, the System.Object::ToString
+	     * method is called on it, returning the procedure's class name -
+	     * this information can be helpful for debugging.
+	     *)
+	    "<Fun " ^ cast x ^ ">"
+
+	and toString (x, ty) where (Future.isFuture x) =
+		if Future.isFailed x then "<Failed>" else "<Future>"
+	  | toString (x, ty) where (Hole.isHole x) = "<Hole>"
+	  | toString (x, ty) = toString' (x, ty)
+*)
+
+	fun tyToTy IntTy		= makeBasicType "int"
+	  | tyToTy WordTy		= makeBasicType "word"
+	  | tyToTy CharTy		= makeBasicType "char"
+	  | tyToTy StringTy		= makeBasicType "string"
+	  | tyToTy RealTy		= makeBasicType "real"
+	  | tyToTy(TupleTy tys)		= makeTupleType(Vector.map tyToTy tys)
+	  | tyToTy(RecordTy tys)        = makeRecordType(Vector.map recordHelper tys)
+	  | tyToTy(ArrowTy(ty1,ty2))	= makeArrowType(tyToTy ty1, tyToTy ty2)
+	  | tyToTy BoolTy		= makeBasicType "bool"
+	  | tyToTy(ListTy ty)		= makeListType(tyToTy ty)
+	  | tyToTy _			= raise Domain
+        and recordHelper(l,t)           = makeTupleType(#[makeBasicType(l), tyToTy(t)])
+
+	fun inspect (x, ty) = nativeInspect (x, tyToTy ty)
+    end

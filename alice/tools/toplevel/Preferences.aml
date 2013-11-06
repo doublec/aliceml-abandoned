@@ -1,0 +1,279 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gdk          from "x-alice:/lib/gtk/Gdk"
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure Pango        from "x-alice:/lib/gtk/Pango"
+import structure Gui          from "Gui"
+import structure DialogUtils  from "DialogUtils"
+import structure Config       from "Config"
+import structure Evaluator    from "Evaluator"
+import structure Buffer       from "Buffer"
+import structure Print        from "x-alice:/lib/system/Print"
+import structure Remote       from "x-alice:/lib/distribution/Remote"
+
+structure Preferences =
+    struct
+
+	val plain_label = Gtk.Label.new ""
+	val error_label = Gtk.Label.new ""
+	val keyword_label = Gtk.Label.new ""
+	val string_label = Gtk.Label.new ""
+	val comment_label = Gtk.Label.new ""
+	val log_label = Gtk.Label.new ""
+
+	fun formatHex x =
+	    let
+		val s = Int.fmt StringCvt.HEX x
+	    in
+		if String.size s = 1 then "0"^s else s
+	    end
+	    
+
+	fun mkLabel(txt, color) =
+	    let
+		val r = Gdk.Color.getFieldRed color div 256
+		val g = Gdk.Color.getFieldGreen color div 256
+		val b = Gdk.Color.getFieldBlue color div 256
+	    in
+		"<span foreground=\"#"^
+                formatHex r^
+                formatHex g^
+                formatHex b^
+                "\">"^txt^"</span>"
+	    end
+
+	val plain_color_button = Gtk.Button.new ()
+	val error_color_button = Gtk.Button.new ()
+	val keyword_color_button = Gtk.Button.new ()
+	val string_color_button = Gtk.Button.new ()
+	val comment_color_button = Gtk.Button.new ()
+
+	val _ = Gtk.Container.add(plain_color_button, plain_label)
+	val _ = Gtk.Container.add(error_color_button, error_label)
+	val _ = Gtk.Container.add(keyword_color_button, keyword_label)
+	val _ = Gtk.Container.add(string_color_button, string_label)
+	val _ = Gtk.Container.add(comment_color_button, comment_label)
+	    
+	val _ = Gtk.Table.attach(Gui.table1,plain_color_button,1,2,0,1,
+                    [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,error_color_button,1,2,1,2,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,keyword_color_button,1,2,2,3,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,string_color_button,1,2,3,4,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,comment_color_button,1,2,4,5,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+
+	val plainColor = ref (!Config.plainColor)
+	val errorColor = ref (!Config.errorColor)
+	val reservedColor = ref (!Config.reservedColor)
+	val stringColor = ref (!Config.stringColor)
+	val commentColor = ref (!Config.commentColor)
+	val colorsChanged = ref false
+
+	fun colorDialog(label, color) _ =
+	    let
+		val dia = Gtk.ColorSelectionDialog.new "Select colour"
+		val cs = Gtk.ColorSelectionDialog.getFieldColorsel dia
+		val _ = Gtk.ColorSelection.setCurrentColor(cs, !color)
+                val response = Gtk.Dialog.run dia
+	    in
+		case Gtk.ResponseType.fromInt response of
+		    Gtk.ResponseType.OK =>
+		    let
+			val c = Gdk.Color.new { red = 0, green = 0, blue = 0 }
+			val txt = Gtk.Label.getText label
+		    in
+			Gtk.ColorSelection.getCurrentColor(cs, c);
+			Gdk.Colormap.allocColor(Config.cmap, c, false, true);
+			color := c;
+			colorsChanged := true;
+			Gtk.Label.setMarkup(label,
+					   mkLabel(txt, c))
+		    end
+		  | _ => ();
+		Gtk.Widget.destroy dia
+	    end
+
+	val _ = Gtk.signalConnect(plain_color_button, "clicked",
+				  colorDialog(plain_label, plainColor))
+	val _ = Gtk.signalConnect(error_color_button, "clicked",
+				  colorDialog(error_label, errorColor))
+	val _ = Gtk.signalConnect(keyword_color_button, "clicked",
+				  colorDialog(keyword_label, reservedColor))
+	val _ = Gtk.signalConnect(string_color_button, "clicked",
+				  colorDialog(string_label, stringColor))
+	val _ = Gtk.signalConnect(comment_color_button, "clicked",
+				  colorDialog(comment_label, commentColor))
+
+	fun fillColors () =
+	    (plainColor := (!Config.plainColor);
+	     errorColor := (!Config.errorColor);
+	     reservedColor := (!Config.reservedColor);
+	     stringColor := (!Config.stringColor);
+	     commentColor := (!Config.commentColor);
+	     colorsChanged := false;
+	     Gtk.Label.setMarkup(plain_label,
+				mkLabel("plain text", !plainColor));
+	     Gtk.Label.setMarkup(error_label,
+				mkLabel("error", !errorColor));
+	     Gtk.Label.setMarkup(keyword_label,
+				mkLabel("<b>keyword</b>", !reservedColor));
+	     Gtk.Label.setMarkup(string_label,
+				mkLabel("\"string\"", !stringColor));
+	     Gtk.Label.setMarkup(comment_label,
+				mkLabel("(*comment*)", !commentColor)))
+
+	val ip = let val ticket = Remote.offer (pack ():())
+		     val authority = Url.getAuthority (Url.fromString ticket)
+		 in hd(String.fields (fn c => c = #":") (valOf authority)) end
+		 handle IO.Io _ | Remote.Port | Option.Option | Empty => "N/A"
+
+	fun fillDialog () =
+	    (Gtk.ToggleButton.setActive(Gui.warnConventionsButton,
+				       #conventions(!Config.warnings));
+	     Gtk.ToggleButton.setActive(Gui.warnShadowingButton,
+				       #shadowing(!Config.warnings));
+	     Gtk.ToggleButton.setActive(Gui.warnUnusedImportsButton,
+				       #unusedImports(!Config.warnings));
+	     Gtk.ToggleButton.setActive(Gui.warnAddedImportsButton,
+				       #addedImports(!Config.warnings));
+	     Gtk.ToggleButton.setActive(Gui.warnInaccessibleExportsButton,
+				       #inaccessibleExports(!Config.warnings));
+	     Gtk.Entry.setText(Gui.heap_limit_entry, Int.toString (!Config.heapLimit));
+	     Gtk.ToggleButton.setActive(Gui.limitHeapButton, !Config.heapLimited);
+	     Gtk.Entry.setText(Gui.port_entry, Int.toString (!Config.port));
+	     Gtk.ToggleButton.setActive(Gui.portButton, not (!Config.portStatic));
+	     Gtk.Label.setText(Gui.ip_label, ip);
+	     Gtk.Entry.setText(Gui.pp_depth_entry, Int.toString (!Print.depth));
+	     Gtk.Entry.setText(Gui.pp_width_entry, Int.toString (!Print.width));
+	     Gtk.Button.setLabel(Gui.font_button, !Config.stdFontName);
+	     fillColors ();
+	     Gtk.ToggleButton.setActive(Gui.loadSessionButton,
+				       !Config.loadFileHistory);
+             Gtk.Entry.setText(Gui.history_size_entry,
+                Int.toString (!Config.historySize)))
+
+	fun applyConfig () =
+	    let
+		val warnings =
+		    {conventions =
+			Gtk.ToggleButton.getActive Gui.warnConventionsButton,
+		     shadowing =
+			Gtk.ToggleButton.getActive Gui.warnShadowingButton,
+		     unusedImports =
+			Gtk.ToggleButton.getActive Gui.warnUnusedImportsButton,
+		     addedImports =
+			Gtk.ToggleButton.getActive Gui.warnAddedImportsButton,
+		     inaccessibleExports =
+			Gtk.ToggleButton.getActive Gui.warnInaccessibleExportsButton}
+		val heapLimit = Gtk.Entry.getText Gui.heap_limit_entry
+		val heapLimit = Option.getOpt(Int.fromString heapLimit, !Config.heapLimit)
+		val heapLimit = Int.max(heapLimit, 64)
+		val port = Gtk.Entry.getText Gui.port_entry
+		val port = Option.getOpt(Int.fromString port, !Config.port)
+		val ppDepth = Gtk.Entry.getText Gui.pp_depth_entry
+		val ppWidth = Gtk.Entry.getText Gui.pp_width_entry
+		val ppDepth = Option.getOpt(Int.fromString ppDepth, !Print.depth)
+		val ppWidth = Option.getOpt(Int.fromString ppWidth, !Print.width)
+		val fontName = Gtk.Button.getLabel Gui.font_button
+		val historySize = Gtk.Entry.getText Gui.history_size_entry
+		val historySize =
+		    Option.getOpt(Int.fromString historySize, 100)
+		val loadFileHistory =
+		    Gtk.ToggleButton.getActive Gui.loadSessionButton
+	    in
+		Config.warnings := warnings;
+		Evaluator.setWarnings warnings;
+		Config.heapLimit := heapLimit;
+		Config.heapLimited := Gtk.ToggleButton.getActive Gui.limitHeapButton;
+		Config.port := port;
+		Config.portStatic := not (Gtk.ToggleButton.getActive Gui.portButton);
+		Config.initHeapHandler ();
+		Print.depth := ppDepth;
+		Print.width := ppWidth;
+		Config.historySize := historySize;
+		if !colorsChanged then
+		    (Config.plainColor := (!plainColor);
+		     Config.errorColor := (!errorColor);
+		     Config.reservedColor := (!reservedColor);
+		     Config.stringColor := (!stringColor);
+		     Config.commentColor := (!commentColor);
+		     Config.changeColors (Gtk.TextView.getBuffer Gui.progout);
+		     Config.changeColors (Gtk.TextView.getBuffer Gui.compilerout);
+		     Buffer.changeColors())
+		else ();
+		Config.stdFontName := fontName;
+		Config.stdFont :=
+		    Pango.FontDescription.fromString fontName;
+		Config.loadFileHistory := loadFileHistory;
+		Buffer.changeFonts();
+		Gtk.Widget.modifyFont(Gui.progout, !Config.stdFont);
+		Gtk.Widget.modifyFont(Gui.compilerout, !Config.stdFont)
+	    end
+
+	fun fontCallback _ =
+	    let
+                val dia = Gtk.FontSelectionDialog.new "Select font"
+		val _ =Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE)
+		val fontName = Gtk.Button.getLabel Gui.font_button
+                val _ = Gtk.FontSelectionDialog.setFontName(dia,
+                                                           !Config.stdFontName)
+                val response = Gtk.Dialog.run dia
+            in
+                case Gtk.ResponseType.fromInt response of
+                    Gtk.ResponseType.OK =>
+                    let
+                        val newFont = Gtk.FontSelectionDialog.getFontName dia
+                    in
+			Gtk.Button.setLabel(Gui.font_button, newFont)
+                    end
+                 | _ => ();
+                Gtk.Widget.destroy dia
+            end
+
+        val _ = Gtk.signalConnect (Gui.font_button, "clicked", fontCallback)
+
+        fun closeCallback _ = (Gtk.Window.setModal (Gui.preferences, false);
+			       Gtk.Widget.hide Gui.preferences)
+
+                    
+        val _ = Gtk.signalConnect(Gui.preferences, "delete-event",
+				  closeCallback)
+        val _ = Gtk.signalConnect(Gui.pref_cancel_button, "clicked",
+				  closeCallback)
+
+	fun revertCallback _ = (Config.init();
+				fillDialog())
+	fun okCallback _ = (applyConfig();
+			    closeCallback())
+	fun saveCallback _ = (applyConfig();
+			      Config.save();
+			      closeCallback())
+
+        val _ = Gtk.signalConnect(Gui.pref_ok_button, "clicked",
+				  okCallback)
+        val _ = Gtk.signalConnect(Gui.pref_save_button, "clicked",
+				  saveCallback)
+        val _ = Gtk.signalConnect(Gui.pref_revert_button, "clicked",
+				  revertCallback)
+
+	fun showDialog() =
+	    let
+		val _ = ()
+	    in
+		fillDialog();
+		Gtk.Window.setPosition (Gui.preferences, Gtk.WindowPosition.MOUSE);
+		Gtk.Window.setModal(Gui.preferences, true);
+                DialogUtils.moveToMouse Gui.preferences;
+		Gtk.Widget.showAll Gui.preferences
+	    end
+    end

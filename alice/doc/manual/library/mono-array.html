@@ -1,0 +1,224 @@
+<?php include("macros.php3"); ?>
+<?php heading("The MONO_ARRAY signature", "The <TT>MONO_ARRAY</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature MONO_ARRAY
+    structure CharArray : MONO_ARRAY where type elem = char
+    structure Word8Array : MONO_ARRAY where type elem = Word8.word
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/array.html"><TT>MONO_ARRAY</TT></A> signature.
+  </P>
+
+  <P>See also:
+    <A href="mono-array-slice.html"><TT>MONO_ARRAY_SLICE</TT></A>,
+    <A href="array.html"><TT>Array</TT></A>,
+    <A href="mono-vector.html"><TT>MONO_VECTOR</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature MONO_ARRAY =
+    sig
+	type elem
+	type vector
+	eqtype array
+	type t = array
+
+	val maxLen :      int
+
+	val array :       int * elem -> array
+	val vector :      array -> vector
+	val fromList :    elem list -> array
+	val toList :      array -> elem list
+	val fromVector :  vector -> array
+	val toVector :    array -> vector
+	val tabulate :    int * (int -> elem) -> array
+
+	val length :      array -> int
+	val sub :         array * int -> elem
+	val update :      array * int * elem -> unit
+	val swap :        array * int * int -> unit
+	val rev :         array -> unit
+	val copy :        {src : array,  dst : array, di : int} -> unit
+	val copyVec :     {src : vector, dst : array, di : int} -> unit
+
+	val app :         (elem -> unit) -> array -> unit
+	val appr :        (elem -> unit) -> array -> unit
+	val modify :      (elem -> elem) -> array -> unit
+	val foldl :       (elem * 'a -> 'a) -> 'a -> array -> 'a
+	val foldr :       (elem * 'a -> 'a) -> 'a -> array -> 'a
+	val all :         (elem -> bool) -> array -> bool
+	val exists :      (elem -> bool) -> array -> bool
+	val find :        (elem -> bool) -> array -> elem option
+
+	val appi :        (int * elem -> unit) -> array -> unit
+	val appri :       (int * elem -> unit) -> array -> unit
+	val modifyi :     (int * elem -> elem) -> array -> unit
+	val foldli :      (int * elem * 'a -> 'a) -> 'a -> array -> 'a
+	val foldri :      (int * elem * 'a -> 'a) -> 'a -> array -> 'a
+	val alli :        (int * elem -> bool) -> array -> bool
+	val existsi :     (int * elem -> bool) -> array -> bool
+	val findi :       (int * elem -> bool) -> array -> (int * elem) option
+
+	val contains :    (elem * elem -> bool) -> array -> elem -> bool
+	val notContains : (elem * elem -> bool) -> array -> elem -> bool
+
+	val equal :       (elem * elem -> bool) -> array * array -> bool
+	val collate :     (elem * elem -> order) -> array * array -> order
+
+	val isSorted :    (elem * elem -> order) -> array -> bool
+	val sort :        (elem * elem -> order) -> array -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/mono-array.html"><TT>MONO_ARRAY</TT></A> signature.
+  </P>
+
+  <P>
+    Note that, unlike polymorphic arrays, monomorphic arrays are strict in
+    their elements. I.e., all constructor and update functions taking individual
+    element values (<TT>array</TT>, <TT>fromList</TT>, <TT>tabulate</TT>,
+    <TT>update</TT>, <TT>modify</TT>, <TT>modifyi</TT>) will request
+    any potential futures immediately.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = array</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>array</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fromVector <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a vector containing the same elements as the array
+      <TT><I>arr</I></TT>. If <TT><I>v</I></TT> contains more than
+      <TT>maxLen</TT> elements, then the <TT>Size</TT> exception is raised.</P>
+    </DD>
+
+    <DT>
+      <TT>toVector <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a vector containing the same elements as the array
+      <TT><I>arr</I></TT>. If <TT><I>arr</I></TT> contains more than
+      <TT>Vector.maxLen</TT> elements, then the <TT>Size</TT> exception is
+      raised. Equivalent to <TT>vector <I>arr</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toList <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a list of the elements of <TT><I>arr</I></TT> in order of
+      increasing indices.</P>
+    </DD>
+
+    <DT>
+      <TT>rev <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Reverses in-place the order of elements in array
+      <TT><I>arr</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>swap (<I>arr</I>, <I>i</I>, <I>j</I>)</TT>
+    </DT>
+    <DD>
+      <P>Swaps the <I>i</I>th and <I>j</I>th element of array
+      <TT><I>arr</I></TT>. If <I>i</I> &lt; 0 or |<I>arr</I>| &lt;= <I>i</I>,
+      or <I>j</I> &lt; 0 or |<I>arr</I>| &lt;= <I>j</I>,
+      then the <TT>Subscript</TT> exception is raised.</P>
+    </DD>
+
+    <DT>
+      <TT>appr <I>f</I> <I>arr</I></TT> <BR>
+      <TT>appri <I>f</I> <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>appi</TT> and <TT>app</TT>, but apply <TT><I>f</I></TT> in
+      right to left order (i.e., decreasing indices). The expression
+      <TT>app <I>f arr</I></TT> is equivalent to:</P>
+      <PRE>
+        appri (<I>f</I> o #2) (<I>arr</I>, 0, NONE)</PRE>
+    </DD>
+
+    <DT>
+      <TT>alli <I>f</I> <I>arr</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>.
+      The index of each element is passed to <TT><I>f</I></TT> as an additional
+      argument. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>arr</I>    = alli (<I>f</I> o #2) <I>arr</I>
+        exists <I>f</I> <I>arr</I> = existsi (<I>f</I> o #2) <I>arr</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>contains <I>eq</I> <I>arr</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      array <TT><I>arr</I></TT>, with respect to the element equality
+      <TT><I>eq</I></TT>; otherwise <TT>false</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>notContains <I>eq</I> <I>arr</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      array <TT><I>arr</I></TT>, with respect to the element equality
+      <TT><I>eq</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>eq arr a</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>eq</I> (<I>arr1</I>, <I>arr2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an equality function on arrays given an equality on the
+      element type.</P>
+    </DD>
+
+    <DT>
+      <TT>isSorted <I>f</I> <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> iff <TT><I>arr</I></TT> is sorted with respect
+      to the ordering function <TT><I>f</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>sort <I>f</I> <I>arr</I></TT>
+    </DT>
+    <DD>
+      <P>Sorts <TT><I>arr</I></TT> with respect to the ordering function
+      <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
+      elements.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

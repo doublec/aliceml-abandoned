@@ -1,0 +1,66 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name    from "x-alice:/lib/rtt/Name"
+import structure Label   from "x-alice:/lib/rtt/Label"
+import structure Path    from "x-alice:/lib/rtt/Path"
+import structure Type    from "Type"
+import structure PathSet from "x-alice:/lib/rtt/PathSet"
+
+
+signature PERVASIVE_TYPE =
+sig
+    type lab		= Label.t
+    type name		= Name.t
+    type path		= Path.t
+    type typ		= Type.typ
+
+    val lab_false :	lab
+    val lab_true :	lab
+
+    val name_pervasive:	name
+    val name_ref :	name
+    val name_match :	name
+    val name_bind :	name
+
+    val path_int :	path
+    val path_word :	path
+    val path_real :	path
+    val path_char :	path
+    val path_string :	path
+    val path_vec :	path
+    val path_array :	path
+    val path_ref :	path
+    val path_exn :	path
+    val path_strict :	path
+    val path_conarrow :	path
+    val path_package :	path
+
+    val typ_bool :	typ
+    val typ_int :	typ
+    val typ_word :	typ
+    val typ_real :	typ
+    val typ_char :	typ
+    val typ_string :	typ
+    val typ_vec :	typ
+    val typ_array :	typ
+    val typ_ref :	typ
+    val typ_exn :	typ
+    val typ_strict :	typ
+    val typ_conarrow :	typ
+    val typ_package :	typ
+
+    val paths :		PathSet.t
+
+    exception Lookup of string
+    val lookup :	string -> typ	(* [Lookup] *)
+end

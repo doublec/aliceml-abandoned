@@ -1,0 +1,544 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS      from "OS"
+import structure IO      from "IO"
+import signature PRIM_IO from "PRIM_IO-sig"
+
+functor PrimIO(structure Vector: MONO_VECTOR
+		   where eqtype elem
+	       structure Array: MONO_ARRAY
+		   where type elem = Vector.elem
+		     and type vector = Vector.t
+	       structure VectorSlice: MONO_VECTOR_SLICE
+		   where type elem = Vector.elem
+		     and type vector = Vector.t
+	       structure ArraySlice: MONO_ARRAY_SLICE
+		   where type elem = Vector.elem
+		     and type vector = Vector.t
+		     and type array = Array.t
+		     and type vector_slice = VectorSlice.t
+	       val someElem: Vector.elem
+	       eqtype pos
+	       val compare: pos * pos -> order) : PRIM_IO =
+    struct
+	type elem = Vector.elem
+	type vector = Vector.t
+	type vector_slice = VectorSlice.t
+	type array = Array.t
+	type array_slice = ArraySlice.t
+
+	type pos = pos
+	val compare = compare
+
+	datatype reader = RD of
+	    {name: string,
+	     chunkSize: int,
+	     readVec: (int -> vector) option,
+	     readArr: (array_slice -> int) option,
+	     readVecNB: (int -> vector option) option,
+	     readArrNB: (array_slice -> int option) option,
+	     block: (unit -> unit) option,
+	     canInput: (unit -> bool) option,
+	     avail: unit -> int option,
+	     getPos: (unit -> pos) option,
+	     setPos: (pos -> unit) option,
+	     endPos: (unit -> pos) option,
+	     verifyPos: (unit -> pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	datatype writer = WR of
+	    {name: string,
+	     chunkSize: int,
+	     writeVec: (vector_slice -> int) option,
+	     writeArr: (array_slice -> int) option,
+	     writeVecNB: (vector_slice -> int option) option,
+	     writeArrNB: (array_slice -> int option) option,
+	     block: (unit -> unit) option,
+	     canOutput: (unit -> bool) option,
+	     getPos: (unit -> pos) option,
+	     setPos: (pos -> unit) option,
+	     endPos: (unit -> pos) option,
+	     verifyPos: (unit -> pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	fun openVectorListRd vs =
+	    let
+		val list = ref vs
+		val pos = ref 0
+		val closed = ref false
+		fun check f x =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (f x before Promise.fulfill (p, false))
+		    end
+
+		fun readVec sz =
+		    case !list of
+			[] => Vector.fromList []
+		      | v::vs =>
+		    let
+			val p = !pos
+			val n = Int.min (Vector.length v - p, sz)
+		    in
+			if n = 0 then
+			    (list := vs; pos := 0; readVec sz)
+			else
+			    VectorSlice.vector
+				(VectorSlice.slice (v, p, SOME n))
+			    before pos := p + n
+			    handle General.Subscript => raise General.Size
+		    end
+
+		fun readArr sl =
+		    case !list of
+			[] => 0
+		      | v::vs =>
+		    let
+			val p = !pos
+			val (buf, di, sz) = ArraySlice.base sl
+			val n = Int.min (Vector.length v - p, sz)
+		    in
+			if n = 0 then
+			    (list := vs; pos := 0; readArr sl)
+			else
+			    (ArraySlice.copyVec
+				 {src = VectorSlice.slice (v, p, SOME n),
+				  dst = buf, di = di};
+			     pos := p + n;
+			     n)
+			    handle General.Subscript => raise General.Size
+		    end
+
+		fun block () =
+		    case !list of
+			[] => ()
+		      | v::vs => if !pos < Vector.length v then ()
+				 else (list := vs; pos := 0; block ())
+
+		fun canInput () =
+		    not (Future.isFuture (!list)) andalso
+		    case !list of
+			[] => true
+		      | v::vs => not (Future.isFuture v) andalso
+				 (!pos < Vector.length v orelse
+				  (list := vs; pos := 0; canInput ()))
+	    in
+		RD {name = "vector",
+		    chunkSize = 1,
+		    readVec = SOME (check readVec),
+		    readArr = SOME (check readArr),
+		    readVecNB = SOME (check (fn x => if canInput ()
+						     then SOME (readVec x)
+						     else NONE)),
+		    readArrNB = SOME (check (fn x => if canInput ()
+						     then SOME (readArr x)
+						     else NONE)),
+		    block = SOME (check block),
+		    canInput = SOME (check canInput),
+		    avail = check (fn () => NONE),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
+		    close = fn () => Ref.modify (fn b => b orelse true) closed,
+		    ioDesc = NONE}
+	    end
+
+	fun openVector v = openVectorListRd [v]
+
+	fun openVectorListWr () =
+	    let
+		val p = Promise.promise ()
+		val vs = Promise.future p
+		val list = ref p
+		val closed = ref false
+		fun check f x =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (f x before Promise.fulfill (p, false))
+		    end
+
+		fun writeVec sl =
+		    let
+			val v = VectorSlice.vector sl
+			val p = Promise.promise ()
+		    in
+			Promise.fulfill (!list, v::(Promise.future p));
+			list := p;
+			Vector.length v
+		    end
+
+		fun writeArr sl =
+		    let
+			val v = ArraySlice.vector sl
+			val p = Promise.promise ()
+		    in
+			Promise.fulfill (!list, v::(Promise.future p));
+			list := p;
+			Vector.length v
+		    end
+	    in
+		(vs,
+		 WR {name = "vector",
+		     chunkSize = 1,
+		     writeVec = SOME (check writeVec),
+		     writeArr = SOME (check writeArr),
+		     writeVecNB = SOME (check (SOME o writeVec)),
+		     writeArrNB = SOME (check (SOME o writeArr)),
+		     block = SOME (check Fn.id),
+		     canOutput = SOME (check (Fn.const true)),
+		     getPos = NONE,
+		     setPos = NONE,
+		     endPos = NONE,
+		     verifyPos = NONE,
+		     close = fn () => Ref.modify (fn b => b orelse
+						  true before
+						  Promise.fulfill (!list, nil))
+						 closed,
+		     ioDesc = NONE})
+	    end
+
+	fun nullRd (): reader =
+	    let
+		val closed = ref false
+		fun check x _ =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (Promise.fulfill (p, false); x)
+		    end
+	    in
+		RD {name = "null",
+		    chunkSize = 1,
+		    readVec = SOME (check (Vector.fromList nil)),
+		    readArr = SOME (check 0),
+		    readVecNB = SOME (check (SOME (Vector.fromList nil))),
+		    readArrNB = SOME (check (SOME 0)),
+		    block = SOME (check ()),
+		    canInput = SOME (check true),
+		    avail = check (SOME 0),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
+		    close = fn () => Ref.modify (fn b => b orelse true) closed,
+		    ioDesc = NONE}
+	    end
+
+	fun nullWr (): writer =
+	    let
+		val closed = ref false
+		fun check f x =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (Promise.fulfill (p, false); f x)
+		    end
+	    in
+		WR {name = "null",
+		    chunkSize = 1,
+		    writeVec = SOME (check VectorSlice.length),
+		    writeArr = SOME (check ArraySlice.length),
+		    writeVecNB = SOME (check (SOME o VectorSlice.length)),
+		    writeArrNB = SOME (check (SOME o ArraySlice.length)),
+		    block = SOME (check ignore),
+		    canOutput = SOME (check (Fn.const true)),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
+		    close = fn () => Ref.modify (fn b => b orelse true) closed,
+		    ioDesc = NONE}
+	    end
+
+	fun augmentReader (RD {name, chunkSize, readVec, readArr, readVecNB,
+			       readArrNB, block, canInput, avail, getPos,
+			       setPos, endPos, verifyPos, close, ioDesc}) =
+	    let
+		val readVec' =
+		    if isSome readVec then readVec
+		    else if isSome readArr then
+			SOME (fn sz =>
+			      let
+				  val buf = Array.array (sz, someElem)
+				  val i = valOf readArr (ArraySlice.full buf)
+				  val sl = ArraySlice.slice (buf, 0, SOME i)
+			      in
+				  ArraySlice.vector sl
+			      end)
+		    else if isSome block then (*--** first read, then block *)
+			if isSome readVecNB then
+			    SOME (fn sz => (valOf block ();
+					    valOf (valOf readVecNB sz)))
+			else if isSome readArrNB then
+			    SOME (fn sz =>
+				  let
+				      val _ = valOf block ()
+				      val buf = Array.array (sz, someElem)
+				      val iOpt = valOf readArrNB
+						 (ArraySlice.full buf)
+				      val sl = ArraySlice.slice (buf, 0, iOpt)
+				  in
+				      ArraySlice.vector sl
+				  end)
+			else NONE
+		    else NONE
+		val readArr' =
+		    if isSome readArr then readArr
+		    else if isSome readVec then
+			SOME (fn sl =>
+			      let
+				  val (buf, di, sz) = ArraySlice.base sl
+				  val v = valOf readVec sz
+			      in
+				  Array.copyVec {src = v, dst = buf, di = di};
+				  Vector.length v
+			      end)
+		    else if isSome block then (*--** first read, then block *)
+			if isSome readArrNB then
+			    SOME (fn sl =>
+				  (valOf block ();
+				   valOf (valOf readArrNB sl)))
+			else if isSome readVecNB then
+			    SOME (fn sl =>
+				  let
+				      val _ = valOf block ()
+				      val (buf, di, sz) = ArraySlice.base sl
+				      val v = valOf (valOf readVecNB sz)
+				  in
+				      Array.copyVec {src = v, dst = buf,
+						     di = di};
+				      Vector.length v
+				  end)
+			else NONE
+		    else NONE
+		val readVecNB' =
+		    if isSome readVecNB then readVecNB
+		    else if isSome readArrNB then
+			SOME (fn sz =>
+			      let
+				  val buf = Array.array (sz, someElem)
+			      in
+				  case valOf readArrNB (ArraySlice.full buf) of
+				      NONE => NONE
+				    | some =>
+					  SOME (ArraySlice.vector
+						(ArraySlice.slice
+						 (buf, 0, some)))
+			      end)
+		    else if Option.isSome canInput then
+			if Option.isSome readVec then
+			    SOME (fn sz =>
+				  if valOf canInput () then
+				      SOME (valOf readVec sz)
+				  else NONE)
+			else if Option.isSome readArr then
+			    SOME (fn sz =>
+				  if valOf canInput () then
+				      let
+					  val buf = Array.array (sz, someElem)
+					  val i = valOf readArr
+							(ArraySlice.full buf)
+					  val sl =
+					      ArraySlice.slice (buf, 0, SOME i)
+				      in
+					  SOME (ArraySlice.vector sl)
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+		val readArrNB' =
+		    if Option.isSome readArrNB then readArrNB
+		    else if Option.isSome readVecNB then
+			SOME (fn sl =>
+			      if valOf canInput () then
+				  let
+				      val (buf, di, sz) = ArraySlice.base sl
+				      val v = valOf (valOf readVecNB sz)
+				  in
+				      Array.copyVec {src = v, dst = buf,
+				 		     di = di};
+				      SOME (Vector.length v)
+				  end
+			      else NONE)
+		    else if Option.isSome canInput then
+			if Option.isSome readArr then
+			    SOME (fn sl =>
+				  if valOf canInput () then
+				      SOME (valOf readArr sl)
+				  else NONE)
+			else if Option.isSome readVec then
+			    SOME (fn sl =>
+				  if valOf canInput () then
+				      let
+					  val (buf, di, sz) = ArraySlice.base sl
+					  val v = valOf readVec sz
+				      in
+					  Array.copyVec {src = v, dst = buf,
+							 di = di};
+					  SOME (Vector.length v)
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+	    in
+		RD {name, chunkSize, readVec = readVec', readArr = readArr',
+		    readVecNB = readVecNB', readArrNB = readArrNB', block,
+		    canInput, avail, getPos, setPos, endPos, verifyPos,
+		    close, ioDesc}
+	    end
+
+	fun augmentWriter (WR {name, chunkSize, writeVec, writeArr, writeVecNB,
+			       writeArrNB, block, canOutput, getPos, setPos,
+			       endPos, verifyPos, close, ioDesc}) =
+	    let
+		val writeVec' =
+		    if isSome writeVec then writeVec
+		    else if isSome writeArr then
+			SOME (fn sl =>
+			      let
+				  val sz = VectorSlice.length sl
+				  val a = Array.array (sz, someElem)
+			      in
+				  ArraySlice.copyVec {src = sl, dst = a,
+						      di = 0};
+				  valOf writeArr (ArraySlice.full a)
+			      end)
+		    else if isSome block then (*--** first write, then block *)
+			if isSome writeVecNB then
+			    SOME (fn sl =>
+				  (valOf block ();
+				   valOf (valOf writeVecNB sl)))
+			else if isSome writeArrNB then
+			    SOME (fn sl =>
+				  let
+				      val _ = valOf block ()
+				      val sz = VectorSlice.length sl
+				      val a = Array.array (sz, someElem)
+				  in
+				      ArraySlice.copyVec {src = sl, dst = a,
+							  di = 0};
+				      valOf (valOf writeArrNB
+					     (ArraySlice.full a))
+				  end)
+			else NONE
+		    else NONE
+		val writeArr' =
+		    if isSome writeArr then writeArr
+		    else if isSome writeVec then
+			SOME (fn sl =>
+			      let
+				  val v = ArraySlice.vector sl
+			      in
+				  valOf writeVec (VectorSlice.full v)
+			      end)
+		    else if isSome block then (*--** first write, then block *)
+			if isSome writeArrNB then
+			    SOME (fn sl =>
+				  (valOf block ();
+				   valOf (valOf writeArrNB sl)))
+			else if isSome writeVecNB then
+			    SOME (fn sl =>
+				  let
+				      val _ = valOf block ()
+				      val v = ArraySlice.vector sl
+				  in
+				      valOf (valOf writeVecNB
+					     (VectorSlice.full v))
+				  end)
+			else NONE
+		    else NONE
+		val writeVecNB' =
+		    if isSome writeVecNB then writeVecNB
+		    else if isSome writeArrNB then
+			SOME (fn sl =>
+			      let
+				  val sz = VectorSlice.length sl
+				  val a = Array.array (sz, someElem)
+			      in
+				  ArraySlice.copyVec {src = sl, dst = a,
+						      di = 0};
+				  valOf writeArrNB (ArraySlice.full a)
+			      end)
+		    else if isSome canOutput then
+			if isSome writeVec then
+			    SOME (fn sl =>
+				  if valOf canOutput () then
+				      SOME (valOf writeVec sl)
+				  else NONE)
+			else if isSome writeArr then
+			    SOME (fn sl =>
+				  if valOf canOutput () then
+				      let
+					  val sz = VectorSlice.length sl
+					  val a = Array.array (sz, someElem)
+				      in
+					  ArraySlice.copyVec {src = sl,
+							      dst = a, di = 0};
+					  SOME (valOf writeArr
+						(ArraySlice.full a))
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+		val writeArrNB' =
+		    if isSome writeArrNB then writeArrNB
+		    else if isSome writeVecNB then
+			SOME (fn sl =>
+			      let
+				  val v = ArraySlice.vector sl
+			      in
+				  valOf writeVecNB (VectorSlice.full v)
+			      end)
+		    else if isSome canOutput then
+			if isSome writeArr then
+			    SOME (fn sl =>
+				  if valOf canOutput () then
+				      SOME (valOf writeArr sl)
+				  else NONE)
+			else if isSome writeVec then
+			    SOME (fn sl =>
+				  if valOf canOutput () then
+				      let
+					  val v = ArraySlice.vector sl
+				      in
+					  SOME (valOf writeVec
+						(VectorSlice.full v))
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+	    in
+		WR {name, chunkSize, writeVec = writeVec',
+		    writeArr = writeArr', writeVecNB = writeVecNB',
+		    writeArrNB = writeArrNB', block, canOutput, getPos,
+		    setPos, endPos, verifyPos, close, ioDesc}
+	    end
+    end

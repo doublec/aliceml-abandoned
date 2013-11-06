@@ -1,0 +1,21 @@
+Group
+
+    structure Label
+    structure Type
+    signature FLAT_GRAMMAR
+    structure FlatGrammar
+
+is
+
+    ../../lib/utility/sources.cm
+    ../../lib/system/sources.cm
+    ../../lib/rtt/name.cm
+    ../../lib/rtt/type.cm
+    ../infrastructure/crash.cm
+    ../infrastructure/source.cm
+    ../common/id-stamp.cm
+    ../common/intermediate-grammar.cm
+    arity.cm
+
+    FLAT_GRAMMAR-sig.aml
+    FlatGrammar.aml

@@ -1,0 +1,97 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestComponent :> TESTSUITE = (* the component test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    structure C = Component
+
+    fun testExtension () =
+	Test.test (fn x => x = "alc") C.extension
+	
+    fun testDefaultResolver () =
+	Test.test (fn (r, s) => 
+		      isSome (Resolver.localize r (Url.fromString s))) 
+		                                     (C.defaultResolver, 
+						      "test/suite/Main.aml")
+
+    fun testFromPackage () = 
+	let
+	    structure P = struct type t = int val x = 5 end
+	    signature S = sig type t val x : t end
+	    val p = pack P : S
+	in
+	   Test.test (fn p => (C.fromPackage p; true)) p
+	end
+
+    fun testCreateFunctor () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testLoad () = 
+	let
+	    fun t (s, b) = 
+		(C.load (Url.fromString s); b)
+		    handle _ => not b
+	in
+	    (Test.test t ("x-alice:/lib/test/Gen", true);
+	     Test.test t ("test/suite/Main", true);
+	     Test.test t ("test/suite/Main.aml", true);
+	     Test.test t ("test/suite/Main.alc", true);
+	     Test.test t ("x-alice:/lib/test/notexisting", false);
+	     Test.test t ("x-alice:/lib/test/", false);
+	     Test.test t ("test/suite/notexisting", false))
+	end
+
+    fun testSave () = 
+	let
+	    val c = C.load (Url.fromString "x-alice:/lib/test/Gen")
+	    fun t (s, b) = (C.save (s, c); b) handle _ => not b
+
+	    fun cleanUp () = 
+		(OS.FileSys.remove "test/suite/tmp";
+		 OS.FileSys.remove "test/suite/tmp.aml";
+		 OS.FileSys.remove "test/suite/tmp.alc";true)
+
+	in
+	    (Test.test t ("test/suite/tmp", true);
+	     Test.test t ("test/suite/tmp.aml", true);
+	     Test.test t ("test/suite/tmp.alc", true);
+	     Test.test t ("test/suite/notexisting/tmp", false);
+	     Test.test t ("test/suite/", false);
+	     Test.test cleanUp ())
+	end
+
+    fun testMkManagerFunctor () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+(*
+	functor Create(signature S
+	  functor F (CM : COMPONENT_MANAGER) : S) : (val component : component)
+
+	functor MkManager(val resolver : Resolver.t) : COMPONENT_MANAGER
+*)
+
+    val suite = ("Component", [("extension", testExtension),
+			       ("defaultResolver", testDefaultResolver),
+			       ("fromPackage", testFromPackage),
+			       ("Create", testCreateFunctor),
+			       ("load", testLoad),
+			       ("save", testSave),
+			       ("MkManager", testMkManagerFunctor)])
+end

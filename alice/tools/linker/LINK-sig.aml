@@ -1,0 +1,36 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 2002-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Inf         from "../../lib/rtt/Inf"
+import structure Url         from "../../lib/system/Url"
+import structure Resolver    from "../../lib/system/Resolver"
+import structure MyComponent from "MyComponent"
+
+signature LINK =
+    sig
+	datatype boundary =
+	    INCLUDE of string
+	  | EXCLUDE of string
+
+	exception ExcludedRoot of Url.t
+	exception Mismatch of Url.t * Url.t * Inf.mismatch
+	exception Rewrite of Url.t * Url.t * Url.t
+	exception Cycle of Url.t list
+	exception Io of Url.t * exn
+
+	val link: {root: Url.t,
+		   verbose: bool,
+		   boundary: boundary list,
+		   rewrite: Resolver.Handler.t list} -> MyComponent.t
+		     (* Empty, Mismatch, Cycle, Rewrite, Io, ExcludedRoot *)
+    end

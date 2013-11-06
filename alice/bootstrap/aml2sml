@@ -1,0 +1,45 @@
+#!/bin/sh
+
+if [ $# != 1 ]
+then
+    echo Usage: aml2sml \<infile\>.aml
+    exit 2
+fi
+
+infile=`echo $1 | tr '\\\\' /`
+outdir=`dirname $infile`/NJ
+outfile=$outdir/`basename $infile .aml`.sml
+
+if [ ! -d $outdir ]
+then mkdir $outdir
+fi
+
+awk '
+BEGIN {
+   import=0;
+   FS="\n";
+   print "val assert=General.assert;"
+}
+
+{
+   if (!import) {
+      if (match($0, /^import[^a-zA-Z][^"]*"[^"]*".*$/)) {
+         print "";
+      }
+      else if (match($0, /^import([^a-zA-Z][^"]*)?$/)) {
+         import = 1;
+         print "";
+      }
+      else {
+         print $0;
+      }
+   }
+   else {
+      print "";
+      if (match($0, /^[^"]*"[^"]*".*$/)) {
+	 import = 0;
+      }
+   }
+}' < $infile > $outfile
+
+exit 0

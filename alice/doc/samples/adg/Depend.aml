@@ -1,0 +1,173 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature DEPEND from "DEPEND-sig"
+import structure Tree from "Tree"
+
+structure Depend :> DEPEND =
+struct
+
+fun isEndOfHeader s = 
+    (String.isSubstring "structure" s orelse
+     String.isSubstring "signature" s orelse
+     String.isSubstring "functor"   s orelse
+     String.isSubstring "val"       s orelse
+     String.isSubstring "fun"       s) andalso
+    (not (String.isSubstring "import" s))
+
+
+fun getPath' (str, i) = if i > String.size str 
+			then assert false (* wrong string *)
+			else if String.sub (str, i) = #"\"" 
+			     then i
+			     else getPath' (str, i + 1)
+
+fun getPath (instr, nil)     = 
+                if TextIO.endOfStream instr
+		then ""
+		else getPath (instr, explode (valOf (TextIO.inputLine instr)))
+  | getPath (instr, x::xs) = 
+               if x = #"\"" 
+	       then implode (List.take (xs, getPath' (implode xs, 0)))
+	       else getPath (instr, xs)
+
+(* idee um die kommentare auszublenden:
+
+    lies klammer + stern => kommentar, ignoriere alles bis stern + klammer
+                            && teste, ob in rest-zeile noch ein import kommt
+    lies import          => lies bis zu 2. ", teste rest-zeile auf 
+			    klammer + stern 
+*)
+
+fun getImports (instr, xs : string list) = 
+    if TextIO.endOfStream instr
+    then (TextIO.closeIn instr; xs)
+    else 
+	let
+	    val l = valOf (TextIO.inputLine instr)
+	in
+	    if isEndOfHeader l
+	    then (TextIO.closeIn instr; xs)
+	    else if Tree.isImport l
+	         then let
+		         val p = getPath (instr, explode l)
+		      in 
+		         if p = "" 
+			 then getImports (instr, xs)
+			 else getImports (instr, p::xs)
+		      end
+	         else getImports (instr, xs)
+	end
+
+fun searchForFile (d, f) = 
+    let
+	val _ = TextIO.output (TextIO.stdOut, "search for file: " ^
+					      d ^ "/" ^ f ^ "\n");
+	val dirStr = OS.FileSys.openDir d
+	fun search' s = 
+	    let
+		val file = OS.FileSys.readDir s
+	    in
+		if Option.isNone file 
+		then (OS.FileSys.closeDir dirStr;
+		     TextIO.output (TextIO.stdErr, "\tcould not find file!\n");
+		      NONE)
+		else if String.isSubstring f (valOf file) andalso 
+			String.isSuffix ".aml" (valOf file)
+		     then (TextIO.output (TextIO.stdOut, "\tfound file: " ^
+							 d ^ "/" ^ 
+							 (valOf file) ^ "\n");
+			   SOME (d ^ "/" ^ (valOf file)))
+	             else search' dirStr
+	    end
+    in
+	search' dirStr
+    end
+
+
+fun tree' (p, regex, outStr, parent) =
+    let
+	val path = if OS.Path.isAbsolute p
+		   then OS.Path.dir p
+		   else OS.Path.mkCanonical 
+			  (OS.Path.dir ((OS.FileSys.getDir ()) ^ "\\" ^ p));
+	val file = OS.Path.file p
+	val instr = TextIO.openIn p
+	val imp = rev (getImports (instr, nil))
+
+	fun insertWORek (im, attrs) = 
+	    let
+		val (title, _)  = Tree.insertNode (im, attrs)
+	    in
+		if parent <> "" 
+		then Tree.insertEdge (parent, title, [])
+		else  ()
+	    end
+
+	fun insertWRek (im, attrs) = 
+	    let
+		val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ 
+						  ".aml")
+		val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
+			     
+		val (title, mult)  = Tree.insertNode (path'', attrs)
+	    in
+		if mult
+		then Tree.insertEdge (parent, title, [])
+		else (if parent <> "" 
+		      then Tree.insertEdge (parent, title, [])
+		      else  ();
+		      tree' (path', regex, outStr, title)
+		         handle IO.Io _ => 
+			     let
+				 val x = searchForFile (OS.Path.dir path'',
+					     		OS.Path.file path'')
+			     in
+				 if Option.isNone x
+				 then ()
+				 else tree' (valOf x, regex, outStr, title)
+			     end)
+	    end
+
+	fun testCluding path' = 
+	    List.exists (fn (true, x)  => Tree.isRegExImport (x, path')
+			  | (false, x) => not (Tree.isRegExImport (x, path'))
+			) regex
+
+	fun tree'' im = 
+	    let
+		val path'  = if Tree.isLibImport im orelse
+				Tree.isUnsafeImport im 
+			     then im
+			     else OS.Path.mkCanonical (path ^ "/" ^ im ^ 
+						       ".aml")
+	    in
+		if not ((testCluding path') orelse (List.null regex))
+		then ()
+		else if Tree.isLibImport im 
+		     then insertWORek (im, [("color", "green")])
+		     else if Tree.isUnsafeImport im
+		          then insertWORek (im, [("color", "red")])
+		          else insertWRek (im, [("color", "lightblue")])
+	    end
+    in
+        List.app tree'' imp
+    end
+
+fun tree (inFile, regex, outStr, parent) = 
+    let
+	val (title, _) = Tree.insertNode (parent, [("color", "lightblue")])
+    in
+	tree' (inFile, regex, outStr, title);
+	(!Tree.nodes, !Tree.edges)
+    end
+
+end

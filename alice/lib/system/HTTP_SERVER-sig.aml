@@ -1,0 +1,26 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "TextIO"
+import structure Url    from "Url"
+import structure Http   from "Http"
+
+signature HTTP_SERVER =
+    sig
+	type handler = Http.request -> Http.response
+
+	val logOut: TextIO.outstream option ref
+	val idleTime: Time.t ref
+
+	val start: int option -> int
+	val register: Url.t * handler -> unit
+    end

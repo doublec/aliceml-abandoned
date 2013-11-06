@@ -1,0 +1,5167 @@
+\documentclass[a4paper,halfparskip]{scrartcl}
+
+\usepackage{epsfig,amssymb,times,graphicx,color,listings}
+
+\usepackage{html,makeidx}
+%\usepackage[dvips]{hyperref}
+\usepackage[]{hyperref}
+\usepackage{amsmath}
+%\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+%\usepackage{hyperlatex}
+\pagestyle{myheadings}
+\oddsidemargin0.1in
+\evensidemargin0.1in
+\textwidth6.4in
+
+\newcommand{\Store}{\ensuremath{\mathit{Store}}}
+\newcommand{\dom}[2]{\ensuremath{\{#1,\dots,#2\}}}
+\newcommand{\sdom}[2]{\ensuremath{\{#1,#2\}}}
+
+\begin{document}
+
+
+%begin{latexonly}
+\lstloadlanguages{Alice ML}
+\lstset{language = Alice ML }
+\lstset{basicstyle = \small,
+        keywordstyle = \color{blue}, frameround=tttt}
+%end{latexonly}
+
+
+%begin{latexonly}
+\lstnewenvironment{myverbatim}{}{}
+%end{latexonly}
+\begin{htmlonly}
+\newcommand{\lstset}[1]{}
+\end{htmlonly}
+
+
+
+%\begin{latexonly}
+\newcommand{\db}[1]{\textcolor{black}{#1}}
+%\end{latexonly}
+
+% benutzerdefinierte Listen erstellen, stets nur Punkte
+\renewcommand{\labelitemi}{$\bullet$}
+\renewcommand{\labelitemii}{$\bullet$}
+\renewcommand{\labelitemiii}{$\bullet$}
+
+
+\markboth{\emph\textbf{Constraint Programming in Alice. A tutorial.} - Dominik
+  Brill}
+         {\emph\textbf{Constraint Programming in Alice. A tutorial.} - Dominik
+  Brill}
+
+\begin{titlepage}
+\begin{latexonly}
+Universit\"at des Saarlandes\\
+Fachrichtung 6.2 - Informatik
+\end{latexonly}
+\begin{center}
+\begin{latexonly}
+\vspace{3cm}
+\end{latexonly}
+\Huge
+\textbf{Constraint Programming in Alice. A tutorial.}\\
+\begin{htmlonly}
+\vspace{1cm}
+\end{htmlonly}
+\begin{latexonly}
+\vspace{2cm}
+\end{latexonly}
+\LARGE
+by \\
+\emph{Christian Schulte, Gert Smolka, Tobias M\"uller, Dominik Brill}
+\end{center}
+\begin{latexonly}
+\vspace{6cm}
+\begin{figure}[htpb]
+\centerline{
+\includegraphics*[scale=0.6]{figs/alice.eps}}
+\end{figure}
+
+\vspace{1cm}
+\today
+\end{latexonly}
+
+\end{titlepage}
+
+\newpage
+
+\tableofcontents
+
+\listoffigures
+
+%begin{latexonly}
+\lstlistoflistings
+%end{latexonly}
+
+\newpage
+
+\section{Introduction}
+This document is a first introduction to \emph{Constraint Programming}
+in Alice.
+
+\emph{Constraint Progamming} is a problem-solving technique for
+\emph{combinatorial problems} that works by incorporating constraints
+into a \emph{programming environment} (after \cite{3} \emph{Principles
+  of Constraint Programming.} by \emph{Krysztof R. Apt}).
+
+Combinatorial problems question about properties (constraints) of a
+class of \emph{combinatorial structures} which are characterized in
+terms of a finite set of variables and a finite value for each
+variable.
+
+Finally, the constraint programming features of Alice that are build
+upon the \emph{Gecode}~\cite{12} constraint library realize the
+requirements of Apt's definition.
+
+First, this document covers combinatorial problems that can be
+stated with variables ranging over finite domains of
+integers. Later, those problems are expanded by allowing variables to
+range over finite sets of integers.
+Problems in this class range from puzzles to real world applications as 
+diverse as scheduling, ware house allocation, configuration and placement.
+
+The two basic techniques of constraint programming are
+\emph{constraint propagation} and \emph{branching}. Constraint
+propagation is an efficient inference mechanism obtained with
+concurrent propagators accumulating information in a \emph{constraint
+  store}.  Branching splits a problem into complementary cases once
+constraint propagation cannot advance further, i.e. it reaches a
+fixpoint.  By iterating propagation and branching, propagation will
+eventually determine the solutions of a problem.
+
+Branching can easily lead to an exponential growth of the number of
+subproblems to be considered. Fortunately, this potential
+combinatorial explosion can often be contained by combining strong
+propagation mechanisms with problem specific heuristics for selecting
+branching steps.
+
+The following puzzles give a first idea of the combinatorial problems
+that will be solved in this document:
+
+\begin{itemize}
+\item
+\textbf{Money}
+
+The Send More Money Problem consists in finding distinct 
+digits for the letters 
+D, E, M, N, O, R, S, Y such that S and M are different 
+from zero (no leading zeros) and 
+the equation
+    $ SEND + MORE = MONEY $
+is satisfied. The unique solution of the problem is 
+9567 + 1085 = 10652.
+
+\item
+\textbf{Safe}
+
+The code of Professor Smart's safe is a sequence of 9 
+distinct nonzero digits 
+$ C_1,\ldots,C_9 $ such that the following equations 
+and inequations are satisfied:\\
+     $ C_4 - C_6 = C_7 \\ 
+     C_1 * C_2 * C_3 = C_8 + C_9 \\ 
+     C_2 + C_3 + C_6 < C_8 \\ 
+     C_9 < C_8 \\ 
+     C_1 \neq 1,\ldots, C_9 \neq 9 $
+
+Can you determine the code?
+
+\item
+\textbf{Coloring}
+
+Given a map showing the West European countries Netherlands, 
+Belgium, France, Spain, 
+Portugal, Germany, Luxemburg, Switzerland, Austria, and Italy, 
+find a coloring such 
+that neighboring countries have different color and a minimal 
+number of colors is used.
+
+\item
+
+\textbf{Grocery}
+
+A kid goes into a grocery store and buys four items. The cashier 
+charges \$ 7.11, the kid 
+pays and is about to leave when the cashier calls the kid back, 
+and says
+
+`` Hold on, I multiplied the four items instead of adding them; 
+I'll try again; 
+Hah, with adding them the price still comes to \$ 7.11 .''
+
+What were the prices of the four items?
+
+\item
+\textbf{Queens}
+
+Place 8 queens on a chess board such that no two queens attack 
+each other.
+\end{itemize}
+
+The problems have in common that they can be stated with variables 
+that are a priori 
+constrained to finite sets of nonnegative integers. Consequently, 
+the problems could be 
+solved by simply checking all possible combinations of the values 
+of the variables. This naive 
+generate and test method is however infeasible for most realistic 
+problems since there are just 
+too many possible combinations.
+
+
+\subsection{More Information}
+
+While this tutorial tries to be as self-contained as possible for 
+constraint programming in Alice, 
+it is expected that the reader has already a working knowledge of
+functional Alice programming. Alice is a functional programming
+language based on \textcolor{blue}{Standard ML}, extended with rich
+support for concurrent, distributed, and constraint programming.
+As an introduction for functional programming in Alice we suggest the 
+\cite{4} ``\htmladdnormallink
+{\textcolor{blue}{Short Tour to Alice}}
+{http://www.ps.uni-sb.de/alice/manual/tour.html}
+`` by \emph{Andreas Rossberg}.
+
+\subsection{The Examples}
+
+The tutorial features a large number of examples. To ease the 
+understanding the examples should 
+be tried in the Alice Programming Environment. The Alice 
+programs can be downloaded from the 
+\htmladdnormallinkfoot{sample
+  sources}{http://www.ps.uni-sb.de/alice/manual/cptutorial/samples/}
+directory on our website.
+
+\subsection{Acknowledgements}
+
+The tutorial is based on the documents\\
+\htmladdnormallink{\cite{1} \emph{Finite Domain Constraint Programming in Oz. 
+A Tutorial.} \\
+by \emph{Christian Schulte and Gert Smolka}}
+{http://www.mozart-oz.org/documentation/fdt/index.html} 
+\\ 
+and\\
+%\href
+\htmladdnormallink
+{\cite{2} \emph{Problem Solving with 
+Finite Set Constraints in Oz. A Tutorial.} \\
+by \emph{Tobias M\"uller}}
+{http://www.mozart-oz.org/documentation/fst/index.html}
+
+
+
+
+
+\newpage
+\section{Propagate and Branch}
+\label{sec 2}
+This section presents the architecture of constraint-based problem 
+solving at the
+\textbf{concrete instance of finite domain problems}. 
+I will often refer to the 
+underlying solution method with 
+the slogan ``propagate and branch''. The slogan recalls the 
+two inference rules of the method, 
+constraint propagation and branching.
+
+\subsection{Finite Domains and Constraints}
+A \emph{finite domain} is a finite set of integers. 
+A constraint is a formula of predicate logic. 
+Here are typical examples of 
+constraints occurring with finite domain problems:
+\begin{quote}
+          $ X=67 \hspace{5mm} X\in\dom{0}{9} \hspace{5mm} X=Y $\\ 
+          $ X^2-Y^2=Z^2  \hspace{5mm} X+Y+Z<U \hspace{5mm} X+Y\neq5\cdot Z $ \\ 
+          $ X_1,\ldots,X_9 $ \hspace{2mm} are pairwise distinct \\
+\end{quote}
+
+A \emph{domain constraint} (also called basic constraint) takes the form
+$ x \in D $, where D is a finite domain.
+
+A \emph{finite domain problem} is a finite set P of quantifier-free 
+constraints such that P 
+contains a domain constraint for every variable occurring in a 
+constraint of P. A variable 
+assignment is a function mapping variables to integers.
+
+A \emph{solution} of a finite domain problem P is a variable 
+assignment that satisfies every 
+constraint in P.
+
+Notice that a finite domain problem has at most finitely 
+many solutions, provided we consider
+only variables that occur in the problem (since the problem 
+contains a finite domain constraint 
+for every variable occurring in it).  
+
+\subsection{Constraint Propagation}
+\label{section2-2}
+Constraint propagation is an inference rule for finite domain 
+problems that narrows the domains 
+of variables. For instance, given the inequation
+\begin{quote}
+$ X < Y $
+\end{quote}
+and the basic constraints
+\begin{quote}
+$ X \in \dom{23}{100} $
+\end{quote}
+and
+\begin{quote}
+$ Y \in \dom{1}{33} $
+\end{quote}
+constraint propagation can narrow the domains of X and Y to
+\begin{quote}
+$ X \in \dom{23}{32} $
+\end{quote}
+and
+\begin{quote}
+$ Y \in \dom{24}{33} $
+\end{quote}
+
+\subsection{Spaces, Propagators, and Constraint Stores}
+The computational architecture for constraint propagation is 
+called a \emph{space}\label{space} and consists 
+of a number of propagators connected to a constraint store:
+
+\begin{figure}[htpb]
+
+\centerline{
+\includegraphics*[scale=0.4]{figs/cp_2_new.eps}}
+\caption{\textbf{A computational architecture for Constraint Propagation}}
+\label{figure1}
+\end{figure}
+
+The \emph{constraint store} stores a conjunction of basic 
+constraints up to logical equivalence. 
+An example for such a conjunction is
+\begin{quote}
+$  X \in \dom{0}{5}  \hspace{2mm}\wedge{} \hspace{2mm}Y=8 \hspace{2mm} 
+\wedge{}\hspace{2mm} Z \in \dom{13}{23}.$
+\end{quote}
+The \emph{propagators} impose \emph{nonbasic} constraints, 
+for instance,
+\begin{quote}
+$ X < Y $ , $ X = Y $ or $ X^2 + Y^2 = Z^2 $.
+\end{quote}
+
+A propagator for a constraint C is a computational 
+agent that tries to narrow 
+the domains of the variables occurring in C.
+
+Two propagators that share a variable X can communicate with 
+each other through the constraint store. 
+To see an example for communicating propagators, suppose we 
+have two propagators imposing the constraints
+\begin{quote}
+$ X+Y=9 \hspace{5mm} 2 \cdot X + 4\cdot Y = 24 $
+\end{quote}
+over a constraint store containing the following information 
+about X and Y:
+\begin{quote}
+$ X \in \dom{0}{9} \hspace{4mm} Y \in \dom{0}{9} $
+\end{quote}
+
+As is, the first propagator cannot do anything. The second 
+propagator, however, can narrow the domains 
+of both X and Y:
+\begin{quote}
+$ X \in \dom{0}{8} \hspace{4mm} Y \in \dom{2}{6} $
+\end{quote}
+Now the first propagator can narrow the domain of X:
+\begin{quote}
+$ X \in \dom{3}{7} \hspace{4mm} Y \in \dom{2}{6} $
+\end{quote}
+Now the second propagator can narrow the domains of both X and Y:
+\begin{quote}
+$ X \in \dom{4}{6} \hspace{4mm} Y \in \sdom{3}{4} $
+\end{quote}
+This once more activates the first propagator, which narrows 
+the domain of X:
+\begin{quote}
+$ X \in \dom{5}{6} \hspace{4mm} Y \in \sdom{3}{4} $
+\end{quote}
+Now the second propagator gets active once more and determines 
+the values of X and Y:
+\begin{quote}
+$ X=6  \hspace{4mm} Y=3 $
+\end{quote}
+
+Given a constraint store storing a constraint S and a propagator 
+imposing a constraint P, 
+the propagator can tell to the constraint store a basic 
+constraint B if the conjunction $ S \wedge{} P$ 
+entails B and B adds new and consistent information to the 
+store. To \emph{tell} a constraint B to a 
+constraint store storing the constraint S means to update 
+the store so that it holds the 
+conjunction $ S \wedge{} B$.
+
+The \emph{operational semantics} of a propagator determines 
+whether the propagator can tell the store 
+a basic constraint or not. The operational semantics of a 
+propagator must of course respect 
+the \emph{declarative semantics} of the propagator, which is 
+given by the constraint the propagator imposes.
+
+We require that the constraint store be always \emph{consistent}; 
+that is, there must always be at least 
+one variable assignment that satisfies all constraints in the 
+constraint store.
+
+We say that the constraint store \emph{determines} a variable 
+x if the constraint store knows the value of x, 
+that is, if there exists an integer n such that the constraint 
+store entails x = n.
+
+We say that a propagator is \emph{inconsistent} if there is 
+no variable assignment that satisfies 
+both the constraint store and the constraint imposed by the 
+propagator 
+(e.g., $ X + Y = 6 $ over $ X \in \dom{3}{9} $ and $ Y \in \dom{4}{9} $). 
+We say that a propagator is \emph{failed} if its 
+operational semantics realizes that it is inconsistent.
+
+We say that a propagator is \emph{entailed} if every variable 
+assignment that satisfies the constraint 
+store also satisfies the constraint imposed by the propagator 
+(e.g., $ X < Y $ over $ X \in \dom{3}{5} $ and $ Y \in \dom{6}{9} $). 
+As soon as the operational semantics of a 
+propagator realizes that the propagator is entailed, the 
+propagator ceases to exist.
+
+We require that the operational semantics of a propagator 
+detects inconsistency and entailment at the 
+latest when the store determines all variables of the 
+propagator.
+
+We say that a space is \emph{failed} if one of its propagators 
+is failed. 
+
+We say that a space is \emph{solved} if all variables occuring 
+in it are determined.
+
+When a space is created, its propagators start to tell basic 
+constraints to the constraint store. 
+This propagation activity continues until a fixpoint is reached. 
+An important property of constraint 
+propagation as we consider it here is the fact that the order 
+in which the propagators tell information 
+to the store does not matter. When we start a space repeatedly 
+from the same state, it will either 
+always fail or always arrive at the same constraint store 
+(up to logical equivalence).
+
+A variable assignment is called a \emph{solution} of a space 
+if it satisfies the constraints in the 
+constraint store and all constraints imposed by the propagators. 
+The solutions of a space stay invariant 
+under constraint propagation and deletion of entailed propagators.
+
+\subsection{Interval and Domain Propagation}
+There are two established schemes for the operational semantics 
+of a propagator. \emph{Domain propagation}
+narrows the domains of the variables as much as possible, i.e. all
+values that are not consistent with the constraint are removed; 
+\emph{interval propagation} only narrows the 
+bounds of a domain.
+
+Consider a propagator for the constraint
+\begin{quote}
+$  2\cdot X = Y $
+\end{quote}
+over a constraint store
+\begin{quote}
+$ X \in \dom{1}{10} \hspace{4mm} Y \in \dom{1}{7} $
+\end{quote}
+Under domain propagation, the propagator can narrow the 
+domains to
+\begin{quote}
+$ X \in \dom{1}{3} \hspace{4mm}  Y \in \{2,4,6\}$
+\end{quote}
+Under interval propagation, the propagator can narrow 
+only the domain bounds, which yields
+\begin{quote}
+$ X \in \dom{1}{3} \hspace{4mm}  Y \in \dom{2}{6}$
+\end{quote}
+
+In practice, interval propagation is usually preferable over domain
+propagation because of its lower computational costs. But domain
+propagation often leads to considerably smaller search trees (figure
+\ref{figure2}).  In Alice, some propagators have an additional
+argument \emph{conlevel}. There you can specify the propagators
+consistency level.
+
+
+
+
+%-------------
+% es muss noch ein label eingefuegt werden und natuerlich
+% auch auch propagator beispiel
+%------------
+
+\subsection{Incompleteness of Propagation}
+Constraint propagation is not a complete solution method. 
+It may happen that a space has a unique 
+solution and that constraint propagation does not find it. 
+It may also happen that a space has no 
+solution and that constraint propagation does not lead to 
+a failed propagator.
+
+A straightforward example for the second case consists of 
+three propagators for
+\begin{quote}
+ $ X \neq Y \hspace{4mm} X \neq Z \hspace{4mm} Y \neq Z $
+\end{quote}
+and a constraint store
+\begin{quote}
+    $ X \in \sdom{0}{1} \hspace{4mm} Y \in \sdom{0}{1} \hspace{4mm} Z \in \sdom{0}{1}.$
+\end{quote}
+This space has no solution. Nevertheless, none of the propagators is
+inconsistent or can tell something to the constraint store.
+
+To see an example for the case where a unique solution is not found by
+constraint propagation, suppose we have interval propagators for the
+constraints
+\begin{quote}
+$ 3 \cdot X + 3 \cdot Y = 5 \cdot Z \hspace{4mm} X - Y = Z 
+\hspace{4mm} X + Y = Z + 2 $
+\end{quote}
+and a constraint store
+\begin{quote}
+   $ X \in \dom{4}{10} \hspace{4mm} Y \in \dom{1}{7} \hspace{4mm} Z 
+\in \dom{3}{9}$
+\end{quote}
+This space has the unique solution X = 4, Y = 1, Z = 3. 
+Nevertheless, none of the propagators can 
+narrow a variable domain.
+
+If we narrow the domains to
+\begin{quote}
+   $ X \in \dom{5}{10} \hspace{4mm} Y \in \dom{1}{6} \hspace{4mm} Z \in \dom{4}{9}$
+\end{quote}
+the space becomes unsatisfiable. Still, none of the above 
+propagators is inconsistent or can 
+narrow a variable domain. 
+
+\subsection{Branching and Search Trees}
+To solve a finite domain problem P, we can always choose 
+a constraint C and solve both 
+$ P\cup\{C\}$ and $ P\cup\{\neg C\}$. We say that we 
+have \emph{branched} P with C.
+
+We can apply the idea to spaces. Suppose S is a space 
+in which at least one variable is not determined. 
+Then we can choose a constraint C and \emph{branch} 
+S with C. Branching yields two spaces, one 
+obtained by adding a propagator for C, and one obtained 
+by adding a propagator for $\neg C$.
+
+The combination of constraint propagation and branching 
+yields a complete solution method 
+for finite domain problems. Given a problem, we set up a 
+space whose store contains the basic 
+constraints and whose propagators impose the nonbasic 
+constraints of the problem. Then we run 
+the propagators until they reached a fxpoint. If all 
+variables are determined, we are done. 
+Otherwise, we choose a not yet determined variable x 
+and an integer n such that x = n is consistent 
+with the constraint store and branch the space 
+with the constraint x = n. Since we can tell both 
+x = n and $ x \neq n $ to the constraint store (the store 
+already knows a domain for x), chances are 
+that constraint propagation can restart in both spaces.
+
+By proceeding this way we obtain a \emph{search tree} as
+shown in figure \ref{figure2}. Each node of the tree 
+corresponds to a space. Each leaf of the tree corresponds 
+to a space that is either solved or failed. 
+The search tree is always finite since there are only 
+finitely many variables all a priori constrained 
+to finite domains.
+
+\begin{figure}[htpb]
+
+\centerline{\includegraphics*[scale=0.5]{figs/search-tree.eps}}
+\caption{\textbf{A search tree}. Diamonds represent solved spaces 
+and boxes represent failed spaces.}
+\label{figure2}
+\end{figure}
+
+
+\subsection{An Example}
+To see the outlined propagate and branch method at a 
+concrete example, consider the problem
+ specified by the following constraints:
+\begin{quote}
+$ X \neq 7 \hspace{4mm} Z \neq 2 \hspace{4mm} X-Z = 3\cdot Y $ \\
+$ X \in \dom{1}{8} \hspace{4mm} Y \in \dom{1}{10} \hspace{4mm} Z \in \dom{1}{10} $
+\end{quote}
+To solve the problem, we start with a space whose store 
+constrains the variables X, Y, and Z to 
+the given domains. We also create three propagators 
+imposing the constraints $ X \neq 7, Z \neq 2$, and 
+$ X - Z = 3 \cdot Y$ . We assume that the propagator 
+for $ X - Z = 3\cdot Y$ realizes interval propagation, 
+and that the propagators for the disequations $ X \neq 7 $ 
+and $ Z \neq 2 $ realize domain propagation.
+
+The propagators for the disequations immediately write 
+all their information into the store and 
+disappear. The store then knows the domains
+\begin{quote}
+    $ X \in [\dom{1}{6} ; 8] \hspace{4mm} Y \in \dom{1}{10} 
+\hspace{4mm} Z \in [1 ; \dom{3}{10}]$
+\end{quote}
+where $ [1 ; \dom{3}{10}]$ denotes the finite domain 
+$ \{1\}\cup\{3,\ldots,10\}$. The interval propagator 
+for $ X-Z = 3\cdot Y $ can now further narrow the domains to
+\begin{quote}
+    $ X\in[\dom{4}{6} ; 8] \hspace{4mm} Y \in \sdom{1}{2} 
+\hspace{4mm} Z\in[1 ; \dom{3}{5}].$
+\end{quote}
+Now propagation has reached a fixpoint. Thus, we continue 
+with a first branching 
+step. We choose to branch with the constraint X = 4. 
+Figure \ref{figure3} shows the resulting search tree. 
+
+\begin{figure}[htpb]
+
+\centerline{\includegraphics*[scale=0.7]{figs/search-tree-exmpl.eps}}
+\caption{\textbf{A search tree containing 3 choice nodes, 
+1 failure node, and 3 solution nodes.}}
+\label{figure3}
+\end{figure}
+
+
+
+
+
+The space obtained by adding a propagator for X = 4 can be 
+solved by propagation and yields the solution
+\begin{quote}
+    $ X=4  \hspace{4mm} Y=1  \hspace{4mm} Z=1$
+\end{quote}
+The space obtained by adding a propagator for $ X\neq 4 $ 
+reaches a fixpoint immediately after this propagator 
+has written its information into the constraint store, 
+which then looks as follows:
+\begin{quote}
+    $ X \in [\dom{5}{6} ; 8]  \hspace{4mm} Y \in \sdom{1}{2}  
+\hspace{4mm} Z \in [1 \; \dom{3}{5}]$
+\end{quote}
+This time we branch with respect to the constraint X = 5.
+
+The space obtained by adding a propagator for X = 5 fails 
+since $ X-Z= 3\cdot Y $ is inconsistent with 
+the store obtained by adding X = 5.
+
+The space obtained by adding a propagator for $ X \neq 5$ 
+reaches a fixpoint immediately after this propagator 
+has written its information into the constraint store, 
+which then looks as follows:
+\begin{quote}
+    $ X \in [6 \; 8]  \hspace{4mm} Y \in \sdom{1}{2}  
+\hspace{4mm} Z \in [1 \; \dom{3}{5}]$
+\end{quote}
+Now we branch with respect to the constraint X = 6.
+
+The space obtained by adding a propagator for X = 6 can be 
+solved by propagation and yields the solution
+\begin{quote}
+    $ X = 6  \hspace{4mm} Y = 1  \hspace{4mm} Z = 3$
+\end{quote}
+Finally, the space obtained by adding a propagator for 
+$ X\neq 6$ can also be solved by propagation, yielding 
+the third and final solution
+\begin{quote}
+ $ X = 8  \hspace{4mm} Y = 1  \hspace{4mm} Z = 5$
+\end{quote}
+An alternative to the propagate and branch method 
+is a naive enumerate and test method, 
+which would enumerate all triples (X, Y, Z) admitted 
+by the initial domain constraints and test the 
+constraints $ X \neq 7, Z \neq 2 $ , and $ X - Z = 3\cdot Y$ 
+for each triple. There are 8 * 10 * 10 = 800 candidates. 
+This shows that constraint propagation can reduce the size 
+of the search tree considerably.
+
+
+
+\subsection{Branching Strategies}
+A \emph{branching strategy} is used when propagation alone is not
+strong enough to yield a solution of a constraint problem. After
+computing the fixpoint of all propagators, the branching strategy
+determines which constraints should be added in order to obtain two or
+more branches of the current node in the search tree.
+
+Usually, a branching strategy is defined on a sequence 
+$x_1,\ldots,x_n$ of variables. When a 
+branching step is necessary, the strategy selects a not 
+yet determined variable in the sequence 
+and branches on this variable.
+
+There are a few standard possibilities to branch on a 
+variable x:
+\begin{itemize}
+\item
+branch with x = l, where l is the least possible value 
+for x.
+\item
+branch with x = u, where u is the largest possible 
+value for x.
+\item
+branch with x = m, where m is a possible value for 
+x that is in the middle of the least and 
+largest possible value for x.
+\item
+branch with $ x \le m$ , where m is a possible 
+value for x that is in the middle of the 
+least and largest possible value for x (so called 
+\emph{domain splitting}).
+\end{itemize}
+
+A \emph{naive branching strategy} will select the 
+leftmost undetermined variable in the sequence.
+
+A \emph{first-fail branching strategy} will select 
+the leftmost undetermined variable in the 
+sequence whose domain in the constraint store has minimal 
+size. In other words, it will select 
+the leftmost undetermined variable for which the number 
+of different possible values is minimal.
+For most problems in this tutorial,
+first-fail strategies yield much smaller 
+search trees than naive strategies.
+
+\subsection{Search Order}
+So far we have not specified in which order search trees 
+are explored. Although this order 
+has no impact on the shape and size of a search tree, 
+it does have an impact on the time and
+ memory resources needed to find one or all solutions:
+\begin{itemize}
+\item
+If we are only interested in one solution, there is no 
+need to explore the entire search tree. 
+Ideally, we would just explore the path leading from the 
+root to the solution.
+\item
+If we are interested in all solutions, we need to explore 
+the entire search tree. However, 
+whether we explore the tree in depth-first or breadth-first 
+manner will make a big difference 
+in the memory needed. The memory requirements of breadth-first 
+exploration are typically 
+exponentially larger than those of depth-first exploration.
+\end{itemize}
+We will assume that the search engine explores the search trees always
+in a depth-first fashion.  Moreover, when the branching strategy
+results in $n$ branches for some node, the search engine will explore
+those branches from left to right (i.e. from branch number one to
+number $n$).
+
+The above assumptions ensure that the exploration of a search tree is
+a deterministic process, provided the branching strategy generating
+the constraints to branch with is deterministic.
+
+\newpage
+\section{Constraint Satisfaction Problems, Models and Viewpoints}
+In section \ref{sec 2} the two basic techniques to solve
+constraint problems, propagate and branch, have been introduced.
+
+In practice, the first step when confronted with a problem is to think
+of how this problem can be modeled, i.e. what variables, what
+domains for these variables, and what constraints
+should be used to encode the problem.
+
+In the following, we present \emph{Constraint Satisfaction Problems}
+as an abstract, but formal view of a single \emph{model} of a problem.
+Then we introduce \emph{viewpoints}, focusing on the problem variables
+and their initial domains. A viewpoints naturally leads to a model for
+a problem, as will be exemplified using the Sudoku puzzle.
+
+\subsection{Constraint Satisfaction Problem (CSP) and Models}
+A \emph{Constraint Satisfaction Problem}(CSP), is a triple
+$<$ X, D, C $>$ with: 
+\begin{itemize}
+\item
+X is a set of variables \{$x_1, \ldots, x_n$\}
+\item
+D = \{$ D_1, \ldots, D_n$\} is a set 
+of associated domains for all $x_i \in$ X
+\item
+C is a set of constraints
+\end{itemize}
+A CSP \emph{M} is called \emph{model} for a problem \emph{P}
+if every solution of \emph{P} is also determined by
+the solutions to \emph{M}.
+
+The first two elements of the triple have a special
+meaning because they are the first thing we have to think
+about when modeling a constraint problem. These two 
+sets X, D can be defined as the \emph{viewpoint} of a
+problem, presented next.
+  
+\subsection{Viewpoint}
+\label{viewp}
+The term \emph{viewpoint} goes back to Geelen \cite{6} when
+discussing permutation problems. Lee and Law \cite{7} adopted
+that concept and formally defined it.
+
+A \emph{viewpoint} is a pair (X,D), where X = \{$x_1, \ldots, x_n$\} 
+is a set of variables, and D = \{$ D_1, \ldots, D_n$\} is a set 
+of associated domains for all $x_i \in$ X.
+
+Once having choosen the variables and their domains, the next
+step is to search for a set of constraints such that the solutions 
+to the problem are determined by the solution to the constraints.
+Obviously, the choice of the viewpoint affects the set of
+constraints we need. So, different viewpoints for a problem
+result in different sets of constraints and finally in completely
+different models for a problem.
+ 
+
+\subsection{Example: Sudoku Puzzle}
+\label{sudoku-puzzle}
+\subsubsection{History}
+Howard Garnes, a freelance puzzle constructor and retired architect, has
+designed the puzzle in 1979. It was first published in New York in the late 1970s by the specialist puzzle publisher Dell Magazines in its magazine Dell Pencil Puzzles and Word Games, under the title Number Place. 
+The puzzle was introduced in Japan by Nikoli 1984 as "Suji wa dokushin ni kagiru", which can be translated as "the numbers must be single" or "the numbers must occur only once".
+\htmladdnormallink{(See here to get some more information)}
+{http://en.wikipedia.org/wiki/Sudoku}
+\subsubsection{Problem Description}
+Sudoku is a puzzle played on a partially filled 9 x 9 grid. The task 
+is to complete the assignment using numbers from 1 to 9 such that the 
+entries in each row, each column and each major 3 x 3 block are pairwise 
+different. Below are given two tables (taken from the paper
+\cite{8}); the first (\ref{sudoku-problem}) 
+is showing a Sudoku Problem
+and the second (\ref{sudoku-sol}) a solution to this problem.
+By choosing  a 'good' viewpoint, most instances of the Sudoku Puzzle can be
+solved without search.
+
+\begin{tabular}{||c|c|c||c|c|c||c|c|c||}
+\hline
+\multicolumn{9}{||c||}{A Sudoku Puzzle \label{sudoku-problem}}\\
+\hline
+\hline
+  & 2 & 6 &   &   &   & 8 & 1 &  \\
+\hline
+3 &   &   & 7 &   & 8 &   &   & 6\\
+\hline
+4 &   &   &   & 5 &   &   &   & 7\\
+\hline
+\hline
+  & 5 &   & 1 &   & 7 &   & 9 &  \\
+\hline
+  &   & 3 & 9 &   & 5 & 1 &   &  \\
+\hline
+  & 4 &   & 3 &   & 2 &   & 5 &  \\
+\hline
+\hline
+1 &   &   &   & 3 &   &   &   & 2\\
+\hline
+5 &   &   & 2 &   & 4 &   &   & 9\\
+\hline
+  & 3 & 8 &   &   &   & 4 & 6 &  \\
+\hline   
+\end{tabular}
+
+\begin{tabular}{||c|c|c||c|c|c||c|c|c||}
+\hline
+\multicolumn{9}{||c||}{A Sudoku Puzzle Solution \label{sudoku-sol}}\\
+\hline
+\hline
+7 & 2 & 6 & 4 & 9 & 3 & 8 & 1 & 5\\
+\hline
+3 & 1 & 5 & 7 & 2 & 8 & 9 & 4 & 6\\
+\hline
+4 & 8 & 9 & 6 & 5 & 1 & 2 & 3 & 7\\
+\hline
+\hline
+8 & 5 & 2 & 1 & 4 & 7 & 6 & 9 & 3\\
+\hline
+6 & 7 & 3 & 9 & 8 & 5 & 1 & 2 & 4\\
+\hline
+9 & 4 & 1 & 3 & 6 & 2 & 7 & 5 & 8\\
+\hline
+\hline
+1 & 9 & 4 & 8 & 3 & 6 & 5 & 7 & 2\\
+\hline
+5 & 6 & 7 & 2 & 1 & 4 & 3 & 8 & 9\\
+\hline
+2 & 3 & 8 & 5 & 7 & 9 & 4 & 6 & 1\\
+\hline   
+\end{tabular}
+
+\subsubsection{Viewpoints for the Sudoku Problem}
+In the following two different approaches to model
+the \emph{Sudoku Problem} are shown:
+\begin{enumerate}
+\item
+the variables $x_1, \ldots, x_{81}$ represent all boxes
+in the grid, and the domain of each variable is the set
+of integers \{1, $\ldots$, 9\}, i.e. the values every box
+can have; an assignment $x_i$ = c means that the i-th box
+has the value c.
+\item
+the variables $\mathit{nb}_1, \ldots, \mathit{nb}_9$ represent the numbers
+1, $\ldots$, 9, and the domain of every number is the power set
+$\mathcal{P}\{1, \dots, 81\}$, i.e. the boxes a number occurs; an
+assignment $\mathit{nb}_i$ = \{$c_1, \ldots, c_n $\} means that number i occurs
+in box $c_1, \ldots, c_n$ and \{$c_1, \ldots, c_n $ \} is a subset of 
+\{1, $\ldots$, 81\}.
+\end{enumerate}
+\db{In the first viewpoint you only need the propagator \emph{distinct(s,v)}
+that is already implemented in the Alice library and that ensures
+that all elements of the vector \emph{v} are distinct in space
+\emph{s}, i.e. pairwise non-equal}. 
+To achieve the requirements of the Sudoku Problem you have to
+use the distinct propagator for each row, each column and each
+3 x 3 box.
+
+In the second viewpoint, rules are more awkward to express.
+You have to guarantee that the cardinality of every set representing
+a number is 9, that all those sets are disjoint, that every number
+has exactly one value in every row and every column and exactly one
+value in every 3 x 3 box.
+% Both models can be implemented in Alice and are shown in ...
+
+\subsection{Selecting Viewpoints}
+As already said in section \ref{viewp}, different viewpoints can
+result in completely different models for a problem. Since these
+resulting models often need sets of constraints that both differ 
+in size and complexity of their propagators, the art in constraint 
+programming consists in finding viewpoints that maximize the CSP's
+efficiency.
+
+When modeling a problem, you should prefer a viewpoint that needs
+the fewest set of constraints. In addition, it does not only suffice
+to have a smallest set of constraints, these constraints are also
+required to have low complexity and efficient propagation algorithms. 
+As a matter of course you should always use the viewpoints in a way that
+the constraints and finally the model itself can be clearly described.
+
+
+\newpage
+\section{Writing Problem Solvers in Alice}
+
+We are now well-prepared to write and run our first finite 
+domain problem solvers in Alice. 
+For running, analyzing, and debugging problem solvers we 
+will use the Explorer, a graphical 
+tool of the Alice programming environment.
+
+A \emph{script} for a finite domain problem is a program 
+that implements a model for the problem. 
+In Alice, scripts will be run on predefined 
+search engines implementing the propagate 
+and branch method just described. Separating scripts 
+from the search engines running them 
+is an important abstraction making it possible to design 
+scripts at a very high level. To 
+develop a script for a given problem, we start by designing 
+a model, i.e. a \db{viewpoint (see \ref{viewp}) and a branching strategy}. 
+We then obtain an executable script by implementing the model 
+and branching strategy with the 
+predefined abstractions available in Alice. 
+
+
+\subsection{Format of Scripts}
+In Alice a script is a function $ f : space \rightarrow $ \emph{t} 
+that takes the following form:
+\begin{quote}
+fun f space = let
+\begin{quote}
+\hspace{15mm}\textcolor{red}{\# declare problem variables}
+\end{quote} 
+\begin{quote}
+\hspace{15mm} in
+\end{quote} 
+\begin{quote}
+\hspace{15mm}\textcolor{red}{\# post constraints}
+\end{quote} 
+\begin{quote}
+\hspace{15mm}\textcolor{red}{\# specify branching strategy}
+\end{quote} 
+\begin{quote}
+\hspace{15mm}end
+\end{quote}             
+\end{quote}
+
+
+The procedure declares the variables needed, 
+posts the constraints modeling the problem, 
+and specifies the branching strategy.
+The argument \emph{space} stands for the 
+computational architecture mentioned in 
+\ref{space}.
+The result type \emph{t} is called 
+the \emph{interface} and is used to specify
+a solution of the problem.
+Often, the result type is just a record of the 
+problem variables.
+
+There are two ways to obtain the solutions of a 
+CSP. \db{One way is by \emph{off-line search}
+using the functions from the
+\htmladdnormallink{\textcolor{blue}{Search}}
+{http://www.ps.uni-sb.de/alice/manual/library/search.html}
+library structure}. 
+The other
+and easiest way is to interactively explore the 
+induced search tree by using the
+\htmladdnormallink{\textcolor{blue}{Explorer}}
+{http://www.ps.uni-sb.de/alice/manual/library/explorer.html}.
+
+The Explorer  must first be imported:
+\begin{quote}
+import structure Explorer from ''x-alice:/lib/tools/Explorer''
+\end{quote}
+If you want to get all solutions of the problem, 
+you use:
+\begin{quote}
+Explorer.exploreAll (script)
+\end{quote}
+and the script will be run until the entire 
+search tree is explored.
+With 
+\begin{quote}
+Explorer.exploreOne (script)
+\end{quote}
+you obtain a tree with just one solution.
+
+Now, by double-clicking on a solution node 
+(green diamond) of the search tree, a window
+will open, called the \emph{Inspector}. The 
+inspector shows the variable assignments of
+this solution.
+If you double-click on an inner node, the 
+inspector will display the information available 
+at the respective point of the search tree.
+
+\subsection{Example: Send More Money}
+We will now write a script for the Send More 
+Money Puzzle.
+
+\subsubsection{Problem Specification}
+The Send More Money Problem consists in finding 
+distinct digits for the letters 
+D, E, M, N, O, R, S, Y such that S and M are 
+different from zero (no leading zeros) 
+and the equation
+\begin{quote}
+SEND + MORE = MONEY
+\end{quote}
+is satisfied. The unique solution of the problem 
+is 9567 + 1085 = 10652.
+
+\subsubsection{Viewpoint}
+We model the problem by having a variable for 
+every letter, where the variable 
+stands for the digit associated with the letter,
+i.e. every variable has the integer set 
+\{0, $\ldots$, 9\} as domain.
+ The constraints are obvious 
+from the problem specification.
+
+\subsubsection{Branching Strategy}
+\label{distribstrat}
+We branch on the variables for the letters 
+with a first-fail strategy.
+The variables are ordered according to the 
+alphabetic order of the letters. 
+The strategy tries the least possible value 
+of the selected variable. 
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script for the Send More Money
+    Puzzle},label=listing 1,frame=trbl}
+\begin{myverbatim}
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+
+open Modeling
+
+fun money space =
+  let
+    val letters as #[S,E,N,D,M,O,R,Y] = 
+               fdtermVec (space, 8, [0`#9])
+  in
+    distinct (space, letters, FD.DOM);
+    post (space, S `<> `0, FD.DOM);
+    post (space, M `<> `0, FD.DOM);
+    post (space, `1000`*S `+ `100`*E `+ `10`*N `+ D `+               
+                 `1000`*M `+ `100`*O `+ `10`*R `+ E
+             `=  `10000`*M `+ `1000`*O `+ `100`*N `+ 
+                 `10`*E `+ Y, FD.DOM);
+    branch (space, letters, FD.B_SIZE_MIN, FD.B_MIN);
+    {S,E,N,D,M,O,R,Y}
+  end
+\end{myverbatim}
+
+
+
+
+
+
+\db{Listing \ref{listing 1} shows a script realizing the model and
+branching strategy just discussed. In the first three lines of 
+the script the structures \emph{FD}, \emph{Modeling} and \emph{Explorer}
+are imported. This is important to be able to use the methods of the
+respective structures. In the following scripts these imports are omitted
+for the sake of readability. Be sure not to forget them when testing
+the example scripts.\footnote{You find the necessary imports for scripts in the 
+\htmladdnormallink{Alice sources}{http://www.ps.uni-sb.de/alice/manual/cptutorial/samples/}.}}
+The script first declares a vector of finite domain variables,one for every letter. 
+This is done via
+the function \emph{fdtermVec: space * int * domain $ \rightarrow $ term vector}
+included in the structure
+\htmladdnormallink{\textcolor{blue}{Modeling}}
+{http://www.ps.uni-sb.de/alice/manual/library/modeling.html} from the Gecode 
+library. \db{ The function \emph{fdtermVec(s,i,d)} creates a 
+new vector of finite domain variables 
+with lenght \emph{i}
+and every variable has to range over a finte 
+set of integers specified by
+\emph{d} ( so it is a basic constraint)}. 
+Then the script posts the
+following constraints:
+\begin{itemize}
+\item
+The fields of the vector \emph{letters} are pairwise 
+distinct. This is
+realized with the predefined propagator \\
+\emph{distinct : space * term vector * conlevel $ \rightarrow $ 
+unit}, also included
+in the Modeling library. \emph{Conlevel} refers to 
+the strength of
+propagation, i.e. for most propagators you can select 
+\emph{interval propagation} (FD.BND)
+or \emph{domain propagation} (FD.DOM). 
+This constraint 
+is nonbasic.
+\item
+\db{The values of the variables S and M are different 
+from zero (no
+leading zeros). These constraints are basic}.
+\item
+The digits for the letters satisfy the equation
+SEND + MORE = MONEY. This constraint is nonbasic.
+\end{itemize}
+
+\subsubsection{Posting of constraints}
+Posting of constraints is defined differently for basic and 
+nonbasic constraints. Basic constraints are posted by telling 
+them to the constraint store. Nonbasic constraints are posted 
+by creating propagators implementing them.
+
+\db{Note that the modelling tools for $ S \neq 0 $ and $ M \neq 0$ can 
+immediately write their complete information into the constraint 
+store since the store already knows domains for S and M}. 
+
+The line \emph{branch (space, letters, $ FD.B\_SIZE\_MIN, FD.B\_MIN$)} posts 
+a branching that will branch on the vector letters with the 
+\textbf{first-fail} strategy (specified by $FD.B\_SIZE\_MIN$ and $FD.B\_MIN$). 
+$\emph{FD.B\_SIZE\_MIN}$ controls which undetermined variable will be
+selected and \emph{$ FD.B\_MIN $} determines which value of that variable
+will be selected.
+
+If you now import for example the structure
+\htmladdnormallink{\textcolor{blue}{Search}}
+{http://www.ps.uni-sb.de/alice/manual/library/search.html}
+from the Gecode library with:
+\begin{quote}
+import structure Search from ``x-alice:/lib/Gecode/Search``
+\end{quote}
+and you type in the command:
+\begin{quote}
+Search.searchAll smm
+\end{quote}
+you obtain the list of all solutions and the result record
+(by depth-first search):
+\begin{quote}
+Space.space list *
+\begin{quote}
+      \{D : term, E : term, M : term, N : term, O : term, R : term, S : term,
+       Y : term\} =
+\end{quote}
+\begin{quote}
+   $ ([\_val],$\\
+   $ \{D = FD (\_val), E = FD (\_val), M = FD (\_val), N = FD (\_val),$\\ 
+   $ O = FD (\_val), R = FD (\_val), S = FD (\_val), Y = FD (\_val)\})$\\
+\end{quote}
+\end{quote}
+
+
+The actual solutions could now be extracted from the result 
+record using the functions from the
+\htmladdnormallink{\textcolor{blue}{FD.Reflect}}
+{http://www.ps.uni-sb.de/alice/manual/library/fd.html}
+library structure.
+
+To understand the search process defined by \emph{smm}, we need more 
+information than just the list of solutions found. Obviously, it would 
+be useful to see a graphical representation of the search tree. It
+would also be nice if we could see for every node of the search tree 
+what information about the solution was accumulated in the constraint 
+store when the respective space became stable. Finally, it would be
+nice to see for every arc of the tree with which constraint it was 
+branched.
+
+Figure \ref{figure4} shows the search tree explored by smm together 
+with the information just mentioned. This gives us a good
+understanding of the search process defined by smm. Note that the 
+search tree is quite small compared to the $ 10^8 $ candidates a naive 
+generate and test method would have to consider.
+
+
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.3]{figs/fig5.eps}}
+\caption{\textbf{The search tree explored by smm}}
+\label{figure4}
+\end{figure}
+
+\subsection{The Explorer}
+The Explorer is a graphical tool of the Alice programming
+environment. It can run scripts and display the explored search
+trees. It can also display the information in the constraint stores 
+associated with the nodes of the search tree.
+
+The statement:
+\begin{quote}
+Explorer.ExploreAll smm
+\end{quote}
+tells the Explorer to run the script smm and explore the entire search 
+tree. The Explorer will pop up a window and display the explored nodes 
+of the search tree (see Figure \ref{figure5}). Choice nodes appear 
+as blue circles, failure nodes as red boxes, and solution nodes as
+green diamonds. Fully explored subtrees not containing solution nodes 
+are collapsed into a single red triangle. 
+
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.5]{figs/smm1.eps}}
+\caption{\textbf{The Explorer with the compact search tree of smm.}}
+\label{figure5}
+\end{figure}
+
+
+\subsubsection{Selecting nodes}
+\db{You can select any node of the displayed search tree (excepting a
+failure node) by clicking it with the left mouse button. 
+It is also possible to select the parent node of a node that
+is actually selected with the command (Ctrl + Up), the left child node
+(the selected node is an open choice node) with the command (Ctrl + Down). 
+Is the left child a failure node, the right child is selected. Further, you can select
+a left sibling (resp. right sibling) with the command (Ctrl + Left) (resp.
+(Ctrl + Right)). Again, none of the commands above can select a failure node!}
+
+\subsubsection{Hiding nodes}
+\db{Select the red triangle and type the command \emph{H} (hide/unhide). 
+This will replace the triangle with the 
+actual nodes of the tree (see Figure \ref{figure6}). 
+You now see the full search tree of smm , which consists of three choice nodes, 
+three failure nodes, and one solution node. Typing the command h once 
+more will switch back to the compact representation of the failed
+subtree. It is not only failed subtrees that you can hide with
+the command \emph{H}. If you hide a subtree with command \emph{H} and
+there is a solution node in that subtree, a big green triangle replaces
+that subtree. If there is an open choice node in the subtree, a big
+green triangle with a small grey triangle appears. The command
+\emph{F} just hides failed subtrees.}
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.5]{figs/smm2.eps}}
+\caption{\textbf{The Explorer with the full search tree of smm}}
+\label{figure6}
+\end{figure}
+
+
+\subsubsection{Double clicking nodes}
+Next, double-click the green solution node with the left mouse button.
+\db{A new window is popped - up by the \emph{Alice Inspector}.
+It will display the unique solution 
+of the Money Puzzle (see figure \ref{figure7})}. 
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=1.0]{figs/inspector1.eps}}
+\caption{\textbf{The Inspector showing the solution of smm}}
+\label{figure7}
+\end{figure}
+You can also double click a blue choice node. 
+This will display the information about the solution 
+that was accumulated in the constraint store before the node was
+branched. Double clicking the top node of the tree, for instance, 
+results in figure \ref{figure8}.
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.8]{figs/inspector2.eps}}
+\caption{\textbf{The Inspector showing the result at the first choice node}}
+\label{figure8}
+\end{figure}
+This way, the Explorer and the Inspector can display the 
+annotated search tree shown in Figure \ref{figure4}.
+
+\subsubsection{Open and closed choice nodes}
+The statement
+\begin{quote}
+Explorer.exploreOne smm
+\end{quote}
+tells the Explorer to run the script smm until the first solution is 
+found. \db{This time the Explorer will show a partial search tree that 
+contains the solution node in the lefttmost position}, and also
+contains an \emph{open choice node}. An open choice node is a choice 
+node for which not all direct descendents have been explored yet. A 
+closed choice node is a choice node for which all direct descendents 
+have been explored already. \db{While closed choice nodes are displayed 
+as blue circles, open choice nodes are displayed as grey triangles}. Not yet 
+explored descendents of an open choice node are not displayed.
+
+To check whether there are further solutions, you can resume the 
+search process by selecting the root node and typing the command \emph{N}
+(next). This will resume the search until either the next solution 
+is found or all nodes of the search tree are explored.
+
+\subsubsection{Stopping exploration}
+\db{You can stop the exploring Explorer at any time with the command \emph{Ctrl + C}}.
+
+\subsubsection{Resuming exploration}
+\db{You can resume the exploration of a partial search tree by selecting 
+any choice node and typing the command \emph{N} or \emph{A}}. The command \emph{N} (next) 
+will resume the exploration of the selected subtree until a further 
+solution is found or the subtree is fully explored. The command \emph{A}
+(all) will resume the exploration of the selected subtree until it 
+is fully explored.
+
+\subsubsection{Resetting the Explorer}
+\db{The command \emph{Ctrl + R} will reset the Explorer and show only the root node of 
+the search tree (grey triangle). You 
+can request the exploration of the seach tree by typing \emph{N} or \emph{A}}.
+
+\subsubsection{Hand-guided exploration}
+\db{You can guide the search of the Explorer by hand. Reset the Explorer 
+by typing \emph{Ctrl + R}. This will select the root node, which is an open choice 
+node. Now type the command \emph{S} to compute the first descendents of 
+the root. Now, you can select another open choice node and compute its first 
+descendants. You can repeat this exploration until no open choice nodes are left.}
+
+
+\subsubsection{Zooming the search tree}
+\db{The right vertical scroll bar of the Explorer's window zooms the 
+size of the displayed search tree. You can zoom the tree to fit 
+the size of the window by clicking the zoom button above the
+vertical scroll bar with the left mouse button}.
+
+\subsection{Example: Safe}
+\subsubsection{Problem Specification}
+The code of Professor Smart's safe is a sequence of 9 distinct nonzero
+digits $ C_1,\ldots,C_9 $ such that the following equations and
+inequations are satisfied:
+\begin{eqnarray*}{c}
+  C_4 - C_6 & = & C_7 \\
+  C_1 * C_2 * C_3 & = & C_8 + C_9 \\
+  C_2 + C_3 + C_6 & < & C_8 \\
+  C_9 & < & C_8 \\
+  C_1\neq 1,\ldots, C_9\neq 9
+\end{eqnarray*}
+
+
+Can you determine the code?
+
+\subsubsection{Viewpoint and Branching Strategy}
+You should model the problem by choosing a variable for every digit $
+C_1,\ldots,C_9 $ and branch over these variables with the standard
+first-fail strategy. This time, the variables range over
+\{1, $\ldots$, 9\}.
+
+
+\subsubsection{Script}
+
+
+\lstset{caption = \textbf{A script for the Safe Puzzle},label=listing 2,frame=trbl}
+\begin{myverbatim}
+fun safe space = 
+   let
+      val letters as #[c1,c2,c3,c4,c5,c6,c7,c8,c9]= 
+          FD.intvarVec(space,9,#[(1,9)])
+      fun not_equalv vec space = Vector.appi(fn (i,x) => 
+                     post(space,FD(x) `<> `i `+ `1,FD.DOM)) vec
+   in
+      FD.distinct(space,letters,FD.DOM);
+      post(space,FD(c4)`- FD(c6) `= FD(c7),FD.DOM);
+      post(space,FD(c1)`* FD(c2)`* FD(c3)`= FD(c8)`+ FD(c9),FD.DOM);        
+      post(space,FD(c2)`+ FD(c3)`+ FD(c6)`< FD(c8),FD.DOM);
+      post(space,FD(c9)`< FD(c8),FD.DOM);
+      not_equalv letters space;
+      FD.branch(space,letters,FD.B_SIZE_MIN,FD.B_MIN);
+      {c1,c2,c3,c4,c5,c6,c7,c8,c9}
+    end 
+
+\end{myverbatim}
+
+
+
+
+\db{Listing \ref{listing 2} shows a simple script for the Safe Puzzle.
+First, the script introduces a vector of type \emph{intvar}, with one 
+finite domain variable for every digit. The script also defines two additional
+temporary finite domain variables whose use will be explained later and a help
+function that posts the constraint $c.i \neq i\hspace{2mm}$ for every 
+$\hspace{2mm} i = 1,\ldots,9$. In the application
+part of the \emph{let -  construct}, the first constraint ensures that all digits
+are distinct. The next six constraints that are posted guarantee that the 
+equations and inequations of the Safe problem are satisfied \footnote{Sometimes
+you recognize a \emph{FD} with the finite domain variables. This is important because the {\it
+post} method gets besides the others one argument of type \emph{term}. \emph{FD} transfers
+variables of type \emph{intvar} into type \emph{term} }.}
+Finally the branching strategy branches over the vector
+\emph{letters}.
+
+The following two figures \ref{figure9} and \ref{figure10} show the 
+resulting search-tree of the Safe Puzzle and its unique solution \{4 3 1 8 9 2 6 7 5\}.
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=1.0]{figs/explorer_safe_expl.eps}}
+\caption{\textbf{Search-tree of the Safe Puzzle}}
+\label{figure9}
+\end{figure}
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=1.0]{figs/solution_safe2.eps}}
+\caption{\textbf{Solution of the Safe Puzzle}}
+\label{figure10}
+\end{figure}
+
+
+
+\newpage
+\section{Elimination of Symmetries and Defined Constraints}
+In this section you will learn two basic constraint programming techniques. 
+The first technique consists in \textbf{eliminating symmetries} in the model, 
+which often leads to scripts with smaller search trees. The second technique 
+introduces \textbf{defined constraints}, which for programmers is not a big
+surprise, but still is a means for writing modular and concise scripts.
+
+\subsection{Example: Grocery}
+This example illustrates that elimination of symmetries can 
+dramatically reduce 
+the size of search trees.
+
+\subsubsection{Problem Specification}
+A kid goes into a grocery store and buys four items. 
+The cashier charges \$ 7.11, the kid 
+pays and is about to leave when the cashier calls the kid back, 
+and says
+
+``Hold on, I multiplied the four items instead of adding them; 
+I'll try again; 
+Hah, with adding them the price still comes to \$ 7.11 .''
+
+What were the prices of the four items?
+
+\subsubsection{Viewpoint}
+The viewpoint of our model consits in four variables 
+A, B, C, and D, which stand for the 
+prices of the four items. In order that the variables
+ can be constrained 
+to finite domains of integers, we assume that the prices 
+are given in cents. 
+To say that the sum of the four prices is 711, 
+we impose the constraint A + B + C + D = 711, and to say 
+that the product 
+of the four prices is 711, we impose the constraint
+\begin{quote}
+A * B * C * D = 711 * 100 * 100 * 100
+\end{quote}
+The model admits many different equivalent solutions since the 
+prices of 
+the items can be interchanged. We can eliminate these 
+symmetries by imposing an order 
+on the prices of the items, for instance,
+\begin{quote} 
+$ A \le B \le C \le D$
+\end{quote}
+With these ordering constraints the model has a unique solution.
+
+\subsubsection{Branching Strategy}
+For this problem it is advantageous to use a first-fail strategy 
+that splits the domain 
+of the selected variable and tries the upper part of the domain 
+first. This strategy leads 
+to a much smaller search tree than the standard first-fail strategy, 
+which tries the least 
+possible value of the selected variable first. 
+
+\db{
+\subsubsection{The use of defined constraints}
+In Listing \ref{listing 4} you will recognize that a new function is 
+used - \emph{constrain}. It demands for further explanation. 
+Listing \ref{listing 3} shows an example how defined constraints are
+realized. A new datatype - \emph{constraint} - to modularize propagators 
+is declared. Here, a constraint
+can be a sum, a product or a '$<$' - relation. 
+The \db{procedure} \emph{post(space,SUMV(xs) `= `c,FD.BND)} creates a propagator that 
+propagates $ \sum_{i=1}^n x_i   = c $ where the $ x_i $ are the elements of xs
+and c is an integer constant.
+The other \db{procedure} productRelI propagates $ \pi_{i=1}^n x_i  = c $. To realize this
+you need a temporary variable for every product of two variables because \emph{FD.mult}
+only can propagate x * y = z. Both procedures use predefined propagators from the
+\htmladdnormallink{\textcolor{blue}{FD}}
+{http://www.ps.uni-sb.de/alice/manual/library/fd.html}
+library.}
+
+\lstset{caption = \textbf{Defined Constraints},label=listing 3,frame=trbl}
+\begin{myverbatim}
+
+fun product'(space,  _, 0, _) = FD.range(space, (1, 1))
+  | product'(space, xs, 1, _) = Vector.sub(xs, 0)
+  | product'(space, xs, n, conlevel) =
+       Vector.foldl (fn (x, a) =>
+          let
+             val tmp = FD.range(space, (0, maxValue))
+          in
+             FD.mult(space, a, x, tmp, conlevel);tmp
+          end)
+          (product'(space, #[], 0, conlevel))xs
+ 
+fun productRelI(space, xs, rel, c, conlevel) =
+   FD.relI(space, 
+   product'(space, xs, Vector.length xs, conlevel), rel, c)       
+ 
+datatype constraint =
+   SUM of FD.intvar vector * int
+ | PRD of FD.intvar vector * int
+ | LEQ of FD.intvar * FD.intvar
+
+
+fun constrain(space, SUM(xs, c)) = 
+       post(space,SUMV(xs) `= `c,FD.BND)
+  | constrain(space, PRD(xs, c)) = 
+       productRelI(space, xs, FD.EQ, c, FD.BND)
+  | constrain(space, LEQ( x, y)) = 
+       FD.rel(space, x, FD.LQ, y)
+
+\end{myverbatim}
+
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script for the Grocery Puzzle},
+label=listing 4,frame=trbl}
+\begin{myverbatim}
+fun grocery space =
+   let
+      (* problem variables *)
+      val a = FD.range(space, (0, maxValue))
+      val b = FD.range(space, (0, maxValue))
+      val c = FD.range(space, (0, maxValue))
+      val d = FD.range(space, (0, maxValue))
+      val tmp = FD.range(space,(0, maxValue))
+      (* interface *)
+      val prices = #[a, b, c, d]
+   in
+      (* problem constraints *)
+      constrain(space, SUM(prices,711));
+      constrain(space, PRD(prices,maxValue));
+      (* symmetry breaking *)
+      
+      constrain(space, LEQ(a, b));
+      constrain(space, LEQ(b, c));
+      constrain(space, LEQ(c, d));
+      
+      (* branching *)
+      FD.branch(space,prices,FD.B_SIZE_MIN,FD.B_SPLIT_MAX);
+      {a, b, c, d}
+   end
+\end{myverbatim}
+
+
+The script in Listing \ref{listing 4} spawns a huge search tree. 
+It will explore 
+304 nodes before it finds the unique solution \{120 125 150 316\}.
+ Without the ordering constraints 
+the script explores more than 450 times as many nodes before
+ finding a first solution. 
+We learn that the elimination of symmetries may make it easier 
+to find the first solution.
+
+
+\subsubsection{A subtle symmetry}
+There exists another symmetry whose elimination leads to a much smaller search tree. 
+For this we observe that 711 has the prime factor 79 (711 = 9 * 79). Since the product 
+of the prices of the items is 711, we can assume without loss of generality that 79 is 
+a prime factor of the price A of the first item. We adapt our script by replacing 
+the statement 
+\begin{quote}
+constrain (space, LEQ(a, b)) 
+\end{quote}
+with
+\begin{quote}
+post(space, FD(a) `=  `79  `*  FD(tmp), FD.DOM)
+\end{quote}
+The new propagator for 
+\begin{quote}
+a = 79 * tmp
+\end{quote} 
+reduces the search tree of Grocery to 205 nodes. 
+The solution of the problem is now found after exploring 44 nodes.
+
+
+
+\newpage
+\subsection{Example: Family}
+This example also illustrates the use of symmetry elimination and
+defined constraints.
+
+\subsubsection{Problem Specification}
+Maria and Clara are both heads of households, and both families 
+have three boys and three girls. Neither family includes any children closer 
+in age than one year, and all children are under age 10. The youngest child 
+in Maria's family is a girl, and Clara has just given birth to a little girl.
+
+In each family, the sum of the ages of the boys equals the sum of the ages 
+of the girls, and the sum of the squares of the ages of the boys equals the 
+sum of the the squares of ages of the girls. The sum of the ages of all children 
+is 60.
+
+What are the ages of the children in each family? 
+
+\subsubsection{Viewpoint}
+The viewpoint of this problem consists of 12 variables
+and each of these variables is associated with the domain of the integers
+0, $\ldots$, 9. 
+We model a family as a record
+\begin{quote}
+\{boys:$ \#[ $B1 B2 B3$]$, girls:$\#[$G1 G2 G3$]$\}
+\end{quote}
+where the variables B1, B2 and B3 stand for the ages of the boys in descending 
+order (i. e., B3 is the age of the youngest boy in the family), and the variables 
+G1, G2 and G3 stand for the ages of the girls, also in descending order. This 
+representation of a family avoids possible symmetries. The constraints that must 
+hold for a family will be posted by the defined constraint \emph{makefamily}.
+A solution is a pair consisting of Maria's and Clara's family. 
+
+\subsubsection{Branching Stratgey}
+We branch on the list of the ages of the children of the two families following 
+a first-fail strategy. The strategy splits the domain of the selected variable and 
+tries the lower part of the domain first.
+
+\subsubsection{Script}
+
+\lstset{caption = \textbf{Script for the Family Puzzle},
+label=listing 5,frame=trbl}
+\begin{myverbatim}
+fun age_list space =
+    let
+        val ages as #[a,b,c] = FD.intvarVec(space,3,#[(0,9)])
+    in 
+        FD.rel(space,a,FD.GR,b);
+        FD.rel(space,b,FD.GR,c);
+        ages
+    end
+
+fun makefamily space =
+    let
+        val boysages  = age_list space
+        val girlsages = age_list space
+        val tmp1 = FD.range(space,(0,243))
+        val tmp2 = FD.range(space,(0,243))
+        val ages as #[a,b,c,d,e,f] = 
+                Vector.concat([boysages,girlsages])
+        fun squares_sum(#[x,y,z],res)= 
+            post(space,FD(x)`* FD(x)`+ 
+                       FD(y)`* FD(y)`+
+                       FD(z)`* FD(z) `= FD(res),FD.DOM)
+    in
+        FD.distinct(space,ages,FD.DOM);
+        post(space,FD(a) `+ FD(b) `+ FD(c) 
+                `= FD(d) `+ FD(e) `+ FD(f),FD.DOM);
+        squares_sum(boysages,tmp1);
+        squares_sum(girlsages,tmp2);
+        FD.rel(space,tmp1,FD.EQ,tmp2);
+        {boys= #[Vector.sub(ages,0),Vector.sub(ages,1),
+                 Vector.sub(ages,2)],
+         girls = #[Vector.sub(ages,3),Vector.sub(ages,4),
+                   Vector.sub(ages,5)]}
+    end
+
+fun family space = 
+    let
+        val maria = makefamily space
+        val clara = makefamily space
+        val ageofmariasyoungestgirl = Vector.sub(#girls maria,2)
+        val ageofclarasyoungestgirl = Vector.sub(#girls clara,2)
+        val ages = Vector.concat([#boys (maria),#girls (maria),
+                                  #boys(clara),#girls(clara)])
+    in
+        Vector.app(fn x => 
+              FD.rel(space,x,FD.GR,ageofmariasyoungestgirl))
+                  (#boys maria);
+        FD.relI(space,ageofclarasyoungestgirl,FD.EQ,0);
+        post(space,SUMV(ages) `= `60,FD.DOM);
+        FD.branch(space,ages,FD.B_SIZE_MIN,FD.B_MIN);
+        {maria,clara}
+    end         
+ 
+\end{myverbatim}
+
+The procedure \emph{age\_list} ensures that
+the elements in the list of boys or girls appear in 
+descending order.
+
+
+
+\newpage
+\subsection{Example: Zebra Puzzle}
+This example also illustrates the use of defined constraints and
+shows a clever problem representation avoiding possible symmetries.
+
+\subsubsection{Problem Specification}
+Five men with different nationalities live in the first five 
+houses of a street. There are only houses on one side of the street. 
+The men practice distinct professions, and each of them has a favorite 
+drink and a favorite animal, all of them different. The five houses are 
+painted with different colors. The following facts are known: 
+\begin{enumerate}
+\item
+The Englishman lives in a red house.
+\item
+The Spaniard owns a dog.
+\item
+The Japanese is a painter.
+\item
+The Italian drinks tea.
+\item
+The Norwegian lives in the first house.
+\item
+The owner of the green house drinks coffee.
+\item
+The green house comes after the white one.
+\item
+The sculptor breeds snails.
+\item
+The diplomat lives in the yellow house.
+\item
+Milk is drunk in the third house.
+\item
+The Norwegian's house is next to the blue one.
+\item
+The violinist drinks juice.
+\item
+The fox is in the house next to that of the doctor.
+\item
+The horse is in the house next to that of the diplomat.
+\item
+The zebra is in the white house.
+\item
+One of the men drinks water.
+\end{enumerate}
+Who lives where? 
+
+
+\subsubsection{Viewpoint}
+For this problem a viewpoint is choosen consisting in 25
+finite domain variables, each associated with the domain \{1,$\ldots$, 5\}.
+We number the houses from 1 to 5, where 1 is the first and 5 
+is last house in the street. There are 25 different properties 
+(i. e. hosting an Englishman, being the green house, hosting a painter, 
+hosting a dog, or hosting someone who drinks juice), and each 
+of these properties must hold for exactly one house. The properties 
+are partitioned into five groups of five members each, where the 
+properties within one group must hold for different houses. The model 
+has one variable for each of these properties, where the variable 
+stands for the number of the house for which this property holds. 
+
+\subsubsection{Branching Strategy}
+We branch on the variables for the properties with the 
+standard first-fail strategy. 
+
+\subsubsection{Script}
+The defined constraint \emph{adjacent} in Listing \ref{listing 6}
+creates a propagator for $|$ X - Y $|$ = 1.
+\lstset{caption = \textbf{Script for the Zebra Puzzle},
+label=listing 6,frame=trbl}
+\begin{myverbatim}
+fun adjacent (space,#[a,b])=
+        let
+           val tmp = FD.range(space,(~4,4))
+           val one = FD.range(space,(1,1))
+        in
+           post(space,FD(a) `- FD(b) `= FD(tmp),FD.DOM);
+           FD.abs(space,tmp,one,FD.DOM)
+        end
+
+
+   
+fun zebra_puzzle space =
+  let
+     val nationality  = 
+       {engl=FD.range(space,(0,4)),span=FD.range(space,(0,4)),
+        jap=FD.range(space,(0,4)),ital=FD.range(space,(0,4)),
+        norw=FD.range(space,(0,4))}
+     val color  =
+       {green=FD.range(space,(0,4)),red=FD.range(space,(0,4)),
+        yellow=FD.range(space,(0,4)),blue=FD.range(space,(0,4)),
+        white=FD.range(space,(0,4))}
+     val profession = 
+       {painter =FD.range(space,(0,4)),diplomat=FD.range(space,(0,4)),
+        violinist =FD.range(space,(0,4)),doctor=FD.range(space,(0,4)),
+        sculptor=FD.range(space,(0,4))}
+     val animal =
+       {dog=FD.range(space,(0,4)),zebra=FD.range(space,(0,4)),
+        fox=FD.range(space,(0,4)),snails=FD.range(space,(0,4)),
+        horse=FD.range(space,(0,4))}
+     val drink  = 
+       {juice=FD.range(space,(0,4)),water=FD.range(space,(0,4)),
+        tea=FD.range(space,(0,4)),coffee=FD.range(space,(0,4)),
+        milk=FD.range(space,(0,4))}
+     fun makevector() = 
+        let val a = (fn x => #[#engl(x),#ital(x),#jap(x),#norw(x),
+                        #span(x)])nationality
+            val b = (fn x => #[#green(x),#red(x),#yellow(x),#blue(x),
+                        #white(x)])color
+            val c = (fn x => #[#painter(x),#diplomat(x),#violinist(x),
+                        #doctor(x),#sculptor(x)])profession
+            val d = (fn x => #[#dog(x),#zebra(x),#fox(x),#snails(x),
+                        #horse(x)])animal
+            val e = (fn x => #[#juice(x),#water(x),#tea(x),#coffee(x),
+                        #milk(x)])drink
+        in
+            #[a,b,c,d,e]
+        end
+     val varvec = makevector()
+  in
+        (* the following constraint ensures that the properties
+           within one group hold for different houses*) 
+        Vector.app(fn x => FD.distinct(space,x,FD.BND))
+                      varvec;          
+        (* the next 15 constraints ensure the known
+           facts mentioned in the problem specification *)
+        FD.rel(space,#engl(nationality),FD.EQ,#red(color));
+        FD.rel(space,#dog(animal),FD.EQ,#span(nationality));
+        FD.rel(space,#painter(profession),FD.EQ,#jap(nationality));
+        FD.rel(space,#tea(drink),FD.EQ,#ital(nationality));
+        FD.relI(space,#norw(nationality),FD.EQ,0);
+        FD.rel(space,#green(color),FD.EQ,#coffee(drink));
+        FD.rel(space,#green(color),FD.GR,#white(color));
+        FD.rel(space,#sculptor(profession),FD.EQ,#snails(animal));
+        FD.rel(space,#diplomat(profession),FD.EQ,#yellow(color));
+        FD.relI(space,#milk(drink),FD.EQ,2);
+        adjacent(space,#[#norw(nationality),#blue(color)]);
+        FD.rel(space,#violinist(profession),FD.EQ,#juice(drink));
+        adjacent(space,#[#fox(animal),#doctor(profession)]);
+        adjacent(space,#[#horse(animal),#diplomat(profession)]);
+        FD.rel(space,#zebra(animal),FD.EQ,#white(color));
+        
+        FD.branch(space,Vector.concat(Vector.toList(varvec)),
+                   FD.B_SIZE_MIN,FD.B_MIN);
+        {nationality,color,profession,animal,drink}
+ end
+\end{myverbatim}
+
+
+The script defines a search tree with 29 nodes. 
+The unique solution is the record\\
+\{animal = \{dog = 2, fox = 4, horse = 3, snails = 1, zebra = 0\},\\ 
+ color = \{blue = 1, green = 4, red = 3, white = 0, yellow = 2\},\\
+ drink = \{coffee = 4, juice = 0, milk = 2, tea = 1, water = 3\},\\ 
+ nationality = \{engl = 3, ital = 1, jap = 4, norw = 0, span = 2\},\\ 
+ profession = \{diplomat = 2, doctor = 3, painter = 4, sculptor = 1, violinist = 0\}\}
+
+
+
+
+\newpage
+\section{Parameterized Scripts}
+Combinatorial problems typically occur in a general form that can 
+be instantiated with different data sets. This leads to parameterized 
+scripts separating the general script from particular data sets.
+
+\subsection{Example: Queens}
+Place N queens on an $ N \times N $ chess board such that no two queens 
+attack each other. The parameter of the problem is N. A solution for the 
+4 - queens problem looks as follows:
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.3]{figs/queens-4.eps}}
+\caption{\textbf{A solution to the Queens Problem}}
+\label{figure 11}
+\end{figure}
+
+\subsubsection{Viewpoint}
+We will use a clever viewpoint avoiding possible symmetries and minimizing 
+the number of propagators.
+
+Since we want to put one queen into each column, we use the problem
+variables $ row[ 0 ], \ldots, row[ N - 1 ]$, one for each column on
+the chessboard. Every variable has the set $ \{ 0, \ldots, N - 1 \} $
+as initial domain. Now, an assignment $ row[ i ] = j $ means that the
+queen in the \emph{i}th column should be placed into the \emph{j}th row.
+A solution to the N-queens problem is an assignment that satisfies the
+following constraints:
+\begin{itemize}
+\item
+No two queens are allowed to be placed in the same column.( This constraint
+is already coded in the model since we only have one problem variable
+per column).
+\item
+No two queens are allowed to be placed in the same row:
+\begin{quote}
+$ \forall j \neq i : row[ i ] \neq row[ j ] $
+\end{quote}
+\item
+No two queens are allowed to be placed on the same diagonal:
+\begin{quote}
+$ \forall i < j : row[ i ] + (j - i) \neq row[ j ] \wedge  row[ i ] - (j - i) \neq row[ j ] $
+\end{quote}
+\end{itemize}
+
+\subsubsection{Branching Strategy}
+We branch on the variables $ row[ 0 ], \ldots, row[ N - 1 ]$ using a 
+first-fail strategy that tries the value in the middle of the domain of 
+the selected variable first. This strategy works well even for large N. 
+
+\subsubsection{Script}
+Listing \ref{listing 7} shows a script for the N - queens problem.
+Besides the argument \emph{space} the script now has an additional
+parameter n. This parameter is both used to create the vector row of
+size n and as an argument to the \emph{upperTriangle} function.
+
+\lstset{caption = \textbf{Script for the N-queens Problem},
+label=listing 7,frame=trbl}
+\begin{myverbatim}
+fun queens n space =
+   let
+      val row = Modeling.fdtermVec(space, n, [0`#(n - 1)])
+   in
+      Modeling.distinct (space, row, FD.BND);
+      List.app (fn (i, j) =>
+         let
+            val rowi = Vector.sub (row, i)
+            val rowj = Vector.sub (row, j)
+         in
+            post (space, rowi `+ (`j `- `i) `<> rowj, FD.BND);
+            post (space, rowi `- (`j `- `i) `<> rowj, FD.BND)
+         end) (upperTriangle n);
+      Modeling.branch (space, row, FD.B_SIZE_MIN, FD.B_MED);
+      row
+   end
+\end{myverbatim}
+
+
+
+The \db{procedure} upperTriangle you see in Listing \ref{listing 8} is used
+to create the list of all pairs (i , j) of integers such that:
+\begin{quote}
+$ 0 \leq i \le j \le N $
+\end{quote}  
+This list is given as parameter to the \emph{List.app} \db{procedure} and
+is used to satisfy the constraint that no two queens are on the
+same diagonal. So the resulting list of upperTriangle ensures
+that the sequences $ row[ 0 ] - 1, \ldots, row[ N - 1 ] - (N - 1)  $ and
+$ row[ 0 ] + 1, \ldots, row[ N - 1] + (N - 1) $ are both
+nonrepetitive and therefore reduce the amount of propagators.
+\lstset{caption = \textbf{Help functions for the N-queens Problem},
+label=listing 8,frame=trbl}
+\begin{myverbatim}
+fun loop i n f = if i >= n then nil else f i :: loop (i + 1) n f
+
+fun upperTriangle n =
+   List.concat (loop 0 n 
+               (fn i => loop (i + 1) n (fn j => (i, j))))
+
+\end{myverbatim}
+
+\subsubsection{Using global constraints}
+The script presented in Listing \ref{listing 7} is not optimal.
+For a problem of size 9, the Explorer already needs very long to
+search the tree. One problem is that in the script for every
+pair of the upperTriangle list two propagators are created. This
+is really waste of computational space and time.
+
+\db{In Listing \ref{listing 9} you see an improved script that uses
+three vectors, where the first vector is the already known row vector.
+The vectors \emph{add} and \emph{sub} are used to build the constraints
+$ \forall i,j : row[i] + i  \neq row[j] + j $ and $\forall i,j: 
+row[i] - i  \neq row[j] - j $, i.e. there are no two queens placed 
+on the same diagonal}.
+The optimization now is realized through the use
+of the propagator \emph{distinctOffset} of the 
+\htmladdnormallink{\textcolor{blue}{\it FD}}
+{http://www.ps.uni-sb.de/alice/manual/library/fd.html}
+library. DistinctOffset is an extension
+of the distinct propagator and has the type:
+\begin{quote}
+$ space * (int * intvar) vector * conlevel \rightarrow  unit $
+\end{quote}
+\db{So distinctOffset creates a propagator in s for the following: 
+\begin{quote}
+$ \forall (c_i, x_i) and (c_j, x_j) with 0 \leq i,j \leq n - 1 and
+i \neq j  : x_i + c_i \neq x_j + c_j $
+\end{quote}}
+ 
+This propagator applied to the zipped vectors row with add and row with sub optimizes
+the script because the new formulation of the constraint, that no two
+queens are placed on the same diagonal, requires only two propagators.
+\lstset{caption = \textbf{Optimization of the script for the N-queens Problem},
+label=listing 9,frame=trbl}
+\begin{myverbatim}
+fun betterqueens n space =
+  let
+    val row = FD.rangeVec (space, n, (0, n - 1))
+    val add = Vector.tabulate (n, fn i => 0 + i)
+    val sub = Vector.tabulate (n, fn i => 0 - i)
+  in
+    FD.distinct (space, row, FD.BND);
+    FD.distinctOffset (space, VectorPair.zip (add, row), FD.BND);
+    FD.distinctOffset (space, VectorPair.zip (sub, row), FD.BND);
+    FD.branch (space, row, FD.B_SIZE_MIN, FD.B_MED);
+    row
+  end
+\end{myverbatim}
+
+
+\newpage
+\subsection{Example: Changing Money}
+\subsubsection{Problem Specification}
+Given bills and coins of different denominations and an amount, 
+select a minimal number of bill and coins to pay . One instance of the 
+problem assumes that we want to pay the amount of 1.42, and that we have 
+6 one dollar bills, 8 quarters (25 cents), 10 dimes (10 cents), 1 nickel 
+(5 cents), and 5 pennies (1 cent). 
+
+\subsubsection{Viewpoint}
+To avoid conversions, we assume that the amount to be paid and all 
+denominations are specified in the same currency unit (e.g., cents). 
+The data is specified by variables $ a_1, \ldots, a_k $ specifying 
+the available denominations $ d_i $ and the number $ a_i $ of available 
+respective coins or bills.
+
+The viewpoint has a variable for ever available denomination saying how many 
+of the corresponding bills or coins we will use to pay the amount. For all i, 
+we must have $ 0 \leq C_i \leq a_i $. Moreover, we must satisfy the constraint 
+\begin{quote}
+$ d_1 * C_1 + d_2 * C_2 + \ldots + d_k * C_k = amount $
+\end{quote}
+
+\subsubsection{Branching Strategy}
+We branch on the variables $ C_1, C_2, \ldots $, where we give precedence 
+to larger denominations
+and, with second priority, to larger values. 
+
+\subsubsection{Script}
+In Listing \ref{listing 10} 
+The procedure changeMoney takes three parameters. Besides the standard
+argument \emph{space}, it needs a vector of records - \emph{billsandcoins}
+where each field specifies a denomination's value in cents and how many 
+coints of that denomination are available. The second argument 
+\emph{amount} specifies the result of the linear equation mentioned above.
+ It is assumed that the 
+bills and coins are specified in denomination decreasing order.
+
+\lstset{caption = \textbf{A script for the Changing Money
+      Problem},label=listing 10,frame=trbl}
+\begin{myverbatim}
+(* billsandcoins is a vector of pairs where the first component
+   specifies the value of a coin in cents and the second the
+   the amount of available coins *)
+   val billsandcoins = #[{incents=100,avail=6},
+                         {incents=25,avail=8},
+                         {incents=10,avail=10},
+                         {incents=5,avail=1},
+                         {incents=1,avail=5}];
+                         
+(* amount specifies the amount of money you have to pay*)
+   val amount = 142;
+
+
+fun changeMoney(bac:{avail:int,incents:int}vector) amount space =
+    let
+       val denoms = Vector.map(fn x => 
+                     FD.range(space,(0,#avail(x))))(bac)      
+    in
+       FD.linear(space,VectorPair.zip(Vector.map
+                              (fn x =>(#incents(x)))bac,denoms),
+                       FD.EQ,amount,FD.DOM);
+       FD.branch(space,denoms,FD.B_NONE,FD.B_MAX);
+      {dollars=Vector.sub(denoms,0),quarters=Vector.sub(denoms,1),
+       dimes=Vector.sub(denoms,2),nickels=Vector.sub(denoms,3),
+       pennies=Vector.sub(denoms,4)}
+    end  
+\end{myverbatim}
+
+
+\newpage
+\subsection{Example: Sukoku Puzzle}
+\label{sudoku-puzzle2}
+The problem description of the Sudoku Puzzle is already given
+in section \ref{sudoku-puzzle}. There are also shown two viewpoints
+for this problem. Here, we want to realize the first viewpoint in
+Alice. 
+
+\subsubsection{Viewpoint}
+\db{The variables $x_1, \ldots, x_{81}$ represent all boxes
+in the grid, and the domain of each variable is the set
+of integers \{1, $\ldots$, 9\}, i.e. the values every box
+can have; an assignment $x_i$ = c means that the i-th box
+has the value c.}
+
+In the following example, the domain
+of the variables $x_1, x_4, x_5, x_6, x_9, x_{11}, 
+x_{12}, x_{14}, x_{16}, x_{17}$ is unrestricted, i.e. 
+values of the set \{1, $\ldots$, 9\} ( in
+the first two rows).
+By contrast, the domain of the variables in the first two rows,
+that are not already mentioned above, is determined.
+
+\begin{tabular}{||c|c|c||c|c|c||c|c|c||}
+\hline\\
+\multicolumn{9}{||c||}{A Sudoku Puzzle}\\
+\hline
+\hline
+  & 2 & 6 &   &   &   & 8 & 1 &  \\
+\hline
+3 &   &   & 7 &   & 8 &   &   & 6\\
+\hline
+4 &   &   &   & 5 &   &   &   & 7\\
+\hline
+\hline
+  & 5 &   & 1 &   & 7 &   & 9 &  \\
+\hline
+  &   & 3 & 9 &   & 5 & 1 &   &  \\
+\hline
+  & 4 &   & 3 &   & 2 &   & 5 &  \\
+\hline
+\hline
+1 &   &   &   & 3 &   &   &   & 2\\
+\hline
+5 &   &   & 2 &   & 4 &   &   & 9\\
+\hline
+  & 3 & 8 &   &   &   & 4 & 6 &  \\
+\hline   
+\end{tabular}\\[1.0cm]
+
+
+\subsubsection{Branching Strategy}
+\db{We use a strategy that picks the variable with the smallest lower bound,
+splits the domain 
+of the selected variable and tries the upper part of the domain 
+first. This strategy leads 
+to a smaller search tree than the standard first-fail strategy, 
+which tries the least 
+possible value of the selected variable first}. 
+
+
+\subsubsection{Script}
+The procedure \emph{sukoku1} gets as argument a list of
+triples (a,b,c), where (a,b) is the address of the variable 
+in the grid and c is its value. It first constrains the
+boxes to the input and then it posts the constraints given in
+the problem description. 
+\lstset{caption = \textbf{A script for Sudoku Puzzle},
+label=listing 11,frame=trbl}
+\begin{myverbatim}
+(* the inputlist is a list of triples(a,b,c) where
+   (a,b) is the address of the variable in the grid
+   and c is its value  *)
+
+val inputlist=[(0,1,2),(0,2,6),(0,6,8),(0,7,1),(1,0,3),
+               (1,3,7),(1,5,8),(1,8,6),(2,0,4),(2,4,5),
+               (2,8,7),(3,1,5),(3,3,1),(3,5,7),(3,7,9),
+               (4,2,3),(4,3,9),(4,5,5),(4,6,1),(5,1,4),
+               (5,3,3),(5,5,2),(5,7,5),(6,0,1),(6,4,3),
+               (6,8,2),(7,0,5),(7,3,2),(7,5,4),(7,8,9),
+               (8,1,3),(8,2,8),(8,6,4),(8,7,6)]
+
+fun sudoku1 inputlist space =
+    let
+        val grid = Vector.tabulate(9,fn x => 
+                           FD.rangeVec(space,9,(1,9)))
+        val grid' = Vector.concat(Vector.toList(grid))
+        fun flatten([])= []
+              | flatten(x::xs)= x@flatten(xs)
+        (* box constructs a list of elements representing
+           one 3 x 3 box *)
+        fun box(x,y)= flatten(List.tabulate(3,fn k => 
+                   List.tabulate(3,fn z =>(k+x,z+y))))
+    in 
+        (* use next constraint,only when imputlist is used;
+           updates the values from inputlist to grid *)
+        List.app(fn(x,y,z) => FD.relI(space,
+            Vector.sub(Vector.sub(grid,x),y),FD.EQ,z))inputlist;
+        (* distinct values in rows *)
+        Vector.app(fn x => FD.distinct(space,x,FD.DOM))grid;
+        (* distinct values in columns *)
+        Vector.appi(fn(i,y)=> FD.distinct(space,Vector.map
+                     (fn x => Vector.sub(x,i))grid,FD.DOM))grid;
+        (* distinct values in 3 x 3 boxes *)
+        Vector.app(fn(k,l)=> 
+          let
+             val box' = Vector.map(fn(x,y) => 
+                              Vector.sub(Vector.sub(grid,x),y))
+                             (Vector.fromList(box(k,l)))
+          in
+             FD.distinct(space,box',FD.DOM)
+          end)
+         (#[(0,0),(0,3),(0,6),(3,0),(3,3),(3,6),(6,0),(6,3),(6,6)]);
+        FD.branch(space,grid',FD.B_MIN_MIN,FD.B_SPLIT_MIN);
+        grid
+    end
+\end{myverbatim}
+
+Given this input list, the problem has an unique solution and can be solved
+without any search at all.
+
+
+
+
+
+
+\newpage
+\section{Minimizing a Cost Function}
+In many applications one is interested in solutions 
+that minimize a given cost function. If the cost function 
+is simple enough, we can obtain the minimization effect by 
+employing a two-di\-men\-sio\-nal branching strategy.
+
+This section will present two examples, map coloring and 
+conference scheduling, for which a two-di\-men\-sio\-nal branching 
+strategy suffices. 
+
+\subsection{Example: Coloring a Map}
+\subsubsection{Problem Specification}
+Given a map showing the West European countries Netherlands, 
+Belgium, France, Spain, Portugal, Germany, Luxemburg, Switzerland, 
+Austria, and Italy, find a coloring such that neighboring 
+countries have different color and a minimal number of colors is used. 
+
+\subsubsection{Viewpoint}
+This viewpoint's variable set consists of eleven elements:
+we have a variable \emph{nbColors} saying how many different colors we can use. 
+Moreover, we have a vector \emph{countries1 }, containing a variable for every country .
+We represent colors as numbers. Hence we constrain all variables 
+for countries to integers in 1 $\#$ nbColors. 
+
+\subsubsection{Branching Strategy}
+We first branch on nbColors, trying the numbers 1, 2,$\ldots$ in ascending order. 
+After nbColors is determined, we branch on the variables for the 
+countries using the usual first-fail strategy. 
+
+\subsubsection{Script}
+The script in Listing \ref{listing 12} uses the procedure \emph{borderTo}
+to guarantee that no two countries that have a common border can
+have the same color.
+
+\lstset{caption = \textbf{A script for the Map Coloring Problem},
+label=listing 12,frame=trbl}
+\begin{myverbatim}
+fun mapColoring space =
+ let
+    val nbColors = FD.range(space,(1,10))
+    val countries as #[au,ge,ne,sw,be,ita,po,fr,lu,sp] =
+            FD.rangeVec(space,10,(1,10))
+    (* borderTo gets a country and its neighbours and
+          ensures they do not have the same color *) 
+    fun borderTo(space,c,nvec)=
+                Vector.app(fn x => FD.rel(space,c,FD.NQ,x))nvec
+ in
+    FD.branch(space,#[nbColors],FD.B_NONE,FD.B_MIN);
+    Vector.app(fn x => FD.rel(space,x,FD.LQ,nbColors))countries;
+    borderTo(space,au,#[ita,sw,ge]);
+    borderTo(space,be,#[fr,ne,ge,lu]);
+    borderTo(space,fr,#[sp,lu,ita]);
+    borderTo(space,ge,#[au,fr,lu,ne]);
+    borderTo(space,sp,#[po]);
+    borderTo(space,sw,#[ita,fr,ge,au]);
+    FD.branch(space,countries,FD.B_SIZE_MIN,FD.B_MIN);
+    { netherlands = ne, belgium = be, france = fr, spain = sp,
+      portugal = po, germany = ge, luxemburg = lu, italy = ita,
+      switzerland = sw, austria = au, nbColors}
+ end
+\end{myverbatim}
+
+
+The search tree of \emph{mapColoring} is interesting.First, 
+colorings with 1, 2 and 3 colors are searched and not found. 
+Then a coloring with 4 colors is searched. Now a solution is 
+found quickly, without going through further failure nodes. 
+There are many solutions using 4 colors since the particular 
+color given to a country does not matter.
+
+The statement
+\begin{quote}
+Explorer.exploreOne(mapColoring);
+\end{quote}
+results in the following solution:
+\begin{quote}
+\{austria = intvar\{$|$1 $|$\}, 
+ belgium = intvar\{$|$2 $|$\}, 
+ france = intvar\{$|$1 $|$\}, \\
+ germany = intvar\{$|$3 $|$\}, 
+ italy = intvar\{$|$3 $|$\}, 
+ luxemburg = intvar\{$|$4 $|$\}, \\
+ nbColors = intvar\{$|$4 $|$\}, 
+ netherlands = intvar\{$|$1 $|$\}, 
+ portugal = intvar\{$|$1 $|$\}, \\
+ spain = intvar\{$|$2 $|$\}, 
+ switzerland = intvar\{$|$2 $|$\}\}
+\end{quote}
+
+
+
+\newpage
+\subsection{Example: Conference}
+\subsubsection{Problem Specification}
+We want to construct the time table of a conference. 
+The conference will consist of 11 sessions of equal length. 
+The time table is to be organized as a sequence of slots, 
+where a slot can take up to 3 parallel sessions. There are 
+the following constraints on the timing of the sessions: 
+\begin{itemize}
+\item
+Session 4 must take place before Session 11.
+\item
+Session 5 must take place before Session 10.
+\item
+Session 6 must take place before Session 11.
+\item
+Session 1 must not be in parallel with Sessions 2, 3, 5, 7, 8, and 10. 
+\item
+Session 2 must not be in parallel with Sessions 3, 4, 7, 8, 9, and 11. 
+\item
+Session 3 must not be in parallel with Sessions 5, 6, and 8. 
+\item
+Session 4 must not be in parallel with Sessions 6, 8, and 10. 
+\item
+Session 6 must not be in parallel with Sessions 7 and 10. 
+\item
+Session 7 must not be in parallel with Sessions 8 and 9. 
+\item
+Session 8 must not be in parallel with Session 10. 
+\end{itemize}
+The time table should minimize the number of slots.  
+
+\subsubsection{Viewpoint}
+The model has a variable \emph{nbSlots} saying how many slots 
+the conference has. Here, nbSlots can be constrained to the finite 
+domain $ \dom{4}{11} $. The model also has a variable $\emph{plan}_i $ for 
+every session \emph{i}, where $\emph{plan}_i $ stands 
+for the number of the slot in which Session i will take place. 
+Every variable $\emph{plan}_i $ can be constrained to the finite 
+domain $ 1 \# $ nbSlots. The remaining constraints are obvious from 
+the problem description. 
+
+\subsubsection{Branching Strategy}
+We use a two-dimensional branching strategy. 
+We first branch on nbSlots, trying smaller values first. 
+Once nbSlots is determined, we branch on the variables $\emph{plan}_i $  
+using the standard first-fail strategy. 
+
+\subsubsection{Script}
+The script in Listing \ref{listing 13} first creates a local
+variable nbSlots specifying the number of slots used by the 
+conference. It also defines two procedures \emph{precedes} and
+\emph{notparallel} that realize scheduling constraints and
+should be easy to understand. It then branches naively on
+nbSlots. After nbSlots is determined, it constrains its 
+variable \emph{plan}.
+
+The statement 
+\begin{quote}
+Explorer.exploreOne(conference)
+\end{quote}
+will explore the search tree until the first solution is found. 
+The first solution minimizes the number of slots and looks as follows: 
+\begin{quote}
+\{x1 = intvar\{$|$1 $|$\},\\
+  x10 = intvar\{$|$3 $|$\}, \\
+ x11 = intvar\{$|$4 $|$\}, \\
+ x2 = intvar\{$|$2 $|$\}, \\
+ x3 = intvar\{$|$3 $|$\},\\ 
+ x4 = intvar\{$|$1 $|$\}, \\
+ x5 = intvar\{$|$2 $|$\}, \\
+ x6 = intvar\{$|$2 $|$\}, \\
+ x7 = intvar\{$|$3 $|$\}, \\
+ x8 = intvar\{$|$4 $|$\}, \\
+ x9 = intvar\{$|$1 $|$\}\}
+\end{quote}
+This plan says that the conference requires 4 slots, 
+where the sessions 1, 4 and 9 take place in slot 1, the sessions 2, 
+5 and 6 take place in slot 2, the sessions 3, 7 and 10 take place in 
+slot 3, and the sessions 8 and 11 take place in slot 4. 
+\lstset{caption = \textbf{A script for conference scheduling},
+label=listing 13,frame=trbl}
+\begin{myverbatim}
+fun conference space =
+    let 
+        val nbSlots = FD.range(space,(4,11)) 
+        val plan as 
+           #[x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11] =
+           FD.rangeVec(space,11,(1,11))
+        fun precedes(a,b)= post(space,FD(a)`< FD(b),FD.DOM)
+        fun notparallel(s,vec)= Vector.app(fn x => 
+            post(space,FD(s)`<> FD(x),FD.DOM))vec
+        
+    in
+        FD.branch(space,#[nbSlots],FD.B_NONE,FD.B_MIN);
+        Vector.app(fn x => FD.rel(space,x,FD.LQ,nbSlots))plan;
+        precedes(x4,x11);
+        precedes(x5,x10);
+        precedes(x6,x11);
+        notparallel(x1,#[x2,x3,x5,x7,x8,x10]);
+        notparallel(x2,#[x3,x4,x7,x8,x9,x11]);
+        notparallel(x3,#[x5,x6,x8]);
+        notparallel(x4,#[x6,x8,x10]);
+        notparallel(x6,#[x7,x10]);
+        notparallel(x7,#[x8,x9]);
+        notparallel(x8,#[x10]);
+        (* the next line ensures that every slot has at most 
+           three sessions *)
+        Vector.app(fn x =>FD.countVI(space,plan,x,FD.LE,4))plan;
+        FD.branch(space,plan,FD.B_SIZE_MIN,FD.B_MIN);
+        {x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11}
+    end
+\end{myverbatim}
+
+
+\newpage
+\section{Propagators for Redundant Constraints}
+\label{redundant}
+For some problems, the performance of a script can 
+be drastically improved by introducing propagators 
+for redundant constraints. \emph{Redundant constraints} are 
+constraints that are entailed by the constraints specifying 
+the problem. Additional propagators for redundant constraints 
+may decrease the size of the search tree by strengthening 
+the propagation component of the script.
+
+\subsection{Example: Fractions}
+\subsubsection{Problem Specification}
+The Fractions Puzzle consists in finding 
+distinct nonzero digits such that the following 
+equation holds:\db{ 
+\begin{quote}
+$ \frac{A}{BC} +  \frac{D}{EF} +  \frac{G}{HI}  = 1 $
+\end{quote}}
+
+\subsubsection{Viewpoint and Constraints}
+We have a variable for every letter, similar as 
+in the Send More Money Puzzle. Since the three fractions 
+are symmetric, we can impose the order 
+\begin{quote}
+$ \frac{A}{BC} \ge  \frac{D}{EF} \ge  \frac{G}{HI} $
+\end{quote}
+From the order constraints we obtain the redundant 
+constraints 
+\begin{quote}
+$ 3\frac{A}{BC} \ge 1 $ and $3\frac{G}{HI} \le 1 $
+\end{quote}
+The order constraints together with the redundant 
+constraints reduce the size of the search tree by one order 
+of magnitude. 
+
+\subsubsection{Branching Strategy}
+We branch on the list of letters using the standard 
+first-fail strategy.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{Script for the Fractions Problem},
+label=listing 14,frame=trbl}
+\begin{myverbatim}
+fun fractions space =
+        let 
+            val letters as #[a,b,c,d,e,f,g,h,i]=
+                FD.rangeVec(space,9,(1,9))
+            val bc = FD.range(space,(1,81))
+            val ef = FD.range(space,(1,81))
+            val hi = FD.range(space,(1,81))
+        in
+            FD.distinct(space, letters, FD.DOM);
+            post(space,`10 `* FD(b) `+ FD(c) `= FD(bc),FD.DOM);
+            post(space,`10 `* FD(e) `+ FD(f) `= FD(ef),FD.DOM);
+            post(space,`10 `* FD(h) `+ FD(i) `= FD(hi),FD.DOM);   
+            post(space,FD(a) `* FD(ef) `* FD(hi) `+
+                       FD(d) `* FD(bc) `* FD(hi) `+
+                       FD(g) `* FD(bc) `* FD(ef) `= 
+                       FD(bc) `* FD(ef) `* FD(hi),FD.DOM);
+            (* impose canonical order *)
+            post(space,FD(a) `* FD(ef) `>= FD(d) `* FD(bc),FD.DOM);
+            post(space,FD(d) `* FD(hi) `>= FD(g) `* FD(ef),FD.DOM);
+            (* redundant constraints *)
+            post(space,`3 `* FD(a) `>= FD(bc),FD.DOM);
+            post(space,`3 `* FD(g) `<= FD(hi),FD.DOM);
+            FD.branch(space,letters,FD.B_SIZE_MIN,FD.B_MIN);
+            {letters}  
+       end     
+\end{myverbatim}
+
+The script constrains its problem variable letters to a vector 
+having a field for every letter. Since Alice has no finite domain 
+propagators for fractions, we eliminate the fractions by multiplying 
+with the denominators. For every denominator we introduce an auxiliary 
+variable. 
+
+
+\newpage
+\subsection{Example: Pythagoras}
+Not all propagators exploit coreferences in products 
+(e.g. $ x * x + y * y = z * z $). For the example of 
+this section it will be essential to exploit such 
+coreferences, and you will learn how to do it.
+
+The example also illustrates the case where a propagator 
+for a redundant constraint improves the performance of a 
+script by decreasing the number of necessary propagation 
+steps, but without significantly changing the search tree. 
+
+\subsubsection{Problem Specification}
+How many triples (A,B,C) exist such that $ A^2 + B^2 = C^2 $ 
+and $ A \le B \le C \le 1000 $? 
+
+\subsubsection{Viewpoint and Constraints}
+The model has three variables A, B and C. Each variable is 
+constrained to the finite domain 1 $\#$ 1000. The model imposes 
+the constraints  $ A^2 + B^2 = C^2 $ and $ A \le B \le C $.
+
+The script will also create a propagator for the redundant 
+constraint 2 * $B^2 \ge C^2$. 
+
+\subsubsection{Branching Strategy}
+We branch on the variables A, B, C  using the standard 
+first-fail strategy.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script that enumerates Pythagoras triples},
+label=listing 15,frame=trbl}
+\begin{myverbatim}
+fun pythagoras space =
+   let
+      (* problem variables *)
+      val a = FD.range (space, (1, 1000))
+      val b = FD.range (space, (1, 1000))
+      val c = FD.range (space, (1, 1000))
+      (* squares *)
+      val aa = FD.range (space, (0, maxValue))
+      val bb = FD.range (space, (0, maxValue))
+      val cc = FD.range (space, (0, maxValue))
+   in
+      (* intermediate variables *)
+      FD.mult (space, a, a, aa, FD.BND);
+      FD.mult (space, b, b, bb, FD.BND);
+      FD.mult (space, c, c, cc, FD.BND);
+      (* problem constraints *)
+      FD.linear (space, #[(1, aa), (1, bb), (~1, cc)], FD.EQ, 0, FD.BND);
+      FD.rel (space, a, FD.LQ, b);
+      FD.rel (space, b, FD.LQ, c);
+      (* redundant constraint *)
+      FD.linear (space, #[(2, bb), (~1, cc)], FD.GQ, 0, FD.BND);
+      (* branching *)
+      FD.branch (space, #[a, b, c], FD.B_SIZE_MIN, FD.B_MIN);
+      {a, b, c}
+   end
+\end{myverbatim}
+
+You can see, that for all squares new variables \emph{aa, bb, cc}
+are introduced in Listing \ref{listing 15}. This is a very important
+step in this script. As you already know, it is also possible to
+\db{use the \emph{post} - modelling tool}. Then you would not need to write:
+\begin{quote}
+ val aa = FD.range (space, (0, maxValue))\\
+ val bb = FD.range (space, (0, maxValue))\\
+ val cc = FD.range (space, (0, maxValue))\\
+ FD.mult (space, a, a, aa, FD.BND);\\
+ FD.mult (space, b, b, bb, FD.BND);\\
+ FD.mult (space, c, c, cc, FD.BND);\\
+and\\
+ FD.linear (space,$ \#$[(1, aa), (1, bb), (~1, cc)], FD.EQ, 0, FD.BND);
+\end{quote}
+You just have to insert the following two new constraints:
+\begin{quote}
+ post(space,FD(a) `* FD(a) `+ FD(b) `* FD(b) `= FD(c) `* FD(c),FD.DOM);
+\end{quote}
+and replace
+\begin{quote}
+ FD.linear (space, $\#$[(2, bb), (~1, cc)], FD.GQ, 0, FD.BND);
+\end{quote}
+with
+\begin{quote}
+post(space,`2 `* FD(b) `* FD(b) `$>$ FD(b) `* FD(b), FD.DOM);
+\end{quote}
+
+This would result in a more readable and convenient script, but
+comparing the search trees of the two versions, the new version
+is worse. But why?
+
+It is because of the variables \emph{aa, bb, cc}. In the first
+version( Listing \ref{listing 15}), the redundant constraint
+propagates stronger, because its variables are connected to
+the propagator ensuring the squares. In the second version they
+are independent. 
+
+
+\newpage
+\subsection{Example: Magic Squares}
+
+The model will eliminate symmetries by imposing order 
+constraints. Propagation will be drastically improved by 
+exploiting a redundant constraint. 
+
+\subsubsection{Problem Specification}
+The Magic Square Puzzle consists in finding for given N
+an N x N  - matrix such that:
+\begin{itemize} 
+\item
+Every field of the matrix is an integer between 1 and $N^2$.
+\item
+The fields of the matrix are pairwise distinct.
+\item
+The sums of the rows, columns, and the two main diagonals
+ are all equal.
+\end{itemize}
+A magic square for N = 3 looks as follows:
+\begin{quote}
+2 \hspace{4mm} 7 \hspace{4mm}6\\
+9 \hspace{4mm} 5 \hspace{4mm}1\\
+4 \hspace{4mm} 3 \hspace{4mm}8
+\end{quote}
+The Magic Square Puzzle is extremely hard for large N. 
+Even for N = 4, our script will have to explore more 
+than 10000 
+nodes to find a solution. 
+
+\subsubsection{Viewpoint and Constraints}
+We model the problem by having a variable $F_{ij}$ for every field 
+(i,j) of the matrix. Moreover, we have one additional variable S 
+and require that the sum of every row, column, and main diagonal 
+equals S.
+
+Without loss of generality, we can impose the following order 
+constraints eliminating symmetries: 
+\begin{quote}
+$F_{11} < F_{NN}$ \hspace{4mm}$F_{N1} < F_{1N}$ \hspace{4mm}$F_{11} < F_{N1}$
+\end{quote}
+Since the sum of the sums of the rows must equal the sum of all 
+fields, we have the redundant constraint
+\begin{quote}
+$\frac{N^2}{2}$ * ($N^2$ + 1) = N * S
+\end{quote} 
+To see this, note that sum of all fields equals 
+\begin{quote}
+1 + 2 + 3 + $\ldots$ + $N^2$ = $\frac{N^2}{2}$ * ($N^2$ + 1)
+\end{quote}
+and that the sum of each of the N rows must be S. 
+
+\subsubsection{Branching Strategy}
+We branch on the variables  $F_{11}, \ldots, F_{NN} $ with a first-fail 
+strategy splitting the domain of the selected variable and trying 
+the lower half first. 
+
+\subsubsection{Script}
+\lstset{caption = \textbf{Script for the Magic Square Puzzle},
+label=listing 16,frame=trbl}
+\begin{myverbatim}
+val maxValue = (valOf (Int.maxInt))div 2
+
+fun magicsquares n space =
+    let
+        val nn = n * n
+        val matrix = Vector.tabulate(n,fn x => 
+                              FD.rangeVec(space,n,(1,nn)))
+        val matrixv =Vector.concat(Vector.toList(matrix))
+        val sum = FD.range(space,(1,maxValue))
+        val sumn = FD.range(space,(1,maxValue))
+        val diagonal1 = Vector.tabulate(n,fn x =>(x,x))
+        val diagonal2 = Vector.tabulate(n,fn x =>(n-1-x,x))
+        val diagonal1vars = Vector.map(fn(x,y) => 
+               Vector.sub(Vector.sub(matrix,x),y))diagonal1  
+        val diagonal2vars = Vector.map(fn(x,y) => 
+               Vector.sub(Vector.sub(matrix,x),y))diagonal2
+        val field11 = Vector.sub(Vector.sub(matrix,0),0) 
+        val field1N = Vector.sub(Vector.sub(matrix,0),n-1)
+        val fieldN1 = Vector.sub(Vector.sub(matrix,n-1),0)
+        val fieldNN = Vector.sub(Vector.sub(matrix,n-1),n-1)                 
+    in
+        FD.distinct(space,matrixv,FD.DOM);
+        (* diagonals *)
+        post(space,SUMV(diagonal1vars) `= FD(sum),FD.DOM);
+        post(space,SUMV(diagonal2vars) `= FD(sum),FD.DOM);
+        (* columns *)
+        Vector.appi(fn(y,z)=>
+         let 
+            val colmn = Vector.tabulate(n,fn x =>
+                         Vector.sub(Vector.sub(matrix,x),y)) 
+         in
+            post(space,SUMV(colmn) `= FD(sum),FD.DOM)
+         end)matrix;
+        (* rows *)
+        Vector.appi(fn(x,y) =>
+                     post(space,SUMV(y) `= FD(sum),FD.DOM))matrix;
+        (* Eliminate symmetries *)
+        FD.rel(space,field11,FD.LE,fieldNN);
+        FD.rel(space,fieldN1,FD.LE,field1N);
+        FD.rel(space,field11,FD.LE,fieldN1);
+        (*redundant constraints *)
+        post(space,FD(sum) `* `n `= FD(sumn),FD.DOM);
+        FD.relI(space,sumn,FD.EQ,(nn *(nn + 1))div 2);
+        
+        FD.branch(space,matrixv,FD.B_SIZE_MIN,FD.B_SPLIT_MIN);
+        {matrix}  
+    end
+\end{myverbatim}
+
+With the Explorer you can find out that for N = 3 
+there is exactly one magic square satisfying the ordering 
+constraints of our model. Without the ordering constraints 
+there are 8 different solutions. Omitting the propagator for 
+the redundant constraint will increase the search tree by one 
+order of magnitude.
+
+
+
+
+
+\newpage
+\section{Reified Constraints}
+In this section we will see a new class of constraints called 
+\emph{reified constraints}. \emph{Reified constraints} make it possible to 
+express constraints involving logical connectives such as 
+disjunction, implication, and negation. Reified constraints 
+also make it possible to solve overconstrained problems, 
+for which only some of the stated constraints can be satisfied. 
+
+\subsection{Getting Started}
+\subsubsection{Reification of a constraint}
+The \emph{reification of a constraint} C with respect to a variable
+x is the constraint 
+\begin{quote}
+( C $ \leftrightarrow $ x = 1) $ \wedge $ x $\in $ 0$\#$1
+\end{quote}
+where it is assumed that x does not occur free in C.
+
+The operational semantics of a propagator for the reification of a
+constraint C with respect to x is given by the following rules:
+\begin{enumerate} 
+\item
+If the constraint store entails x = 1, the propagator for the 
+reification reduces to a propagator for C.
+\item
+If the constraint store entails x = 0, the propagator for the 
+reification reduces to a propagator for $\urcorner$ C.
+\item
+If a propagator for C would realize that the constraint store entails 
+C, the propagator for the reification tells x = 1 and ceases to exist.
+\item
+If a propagator for C would realize that the constraint store is 
+inconsistent with C, the propagator for the reification tells x = 0  
+and ceases to exist.
+\end{enumerate}
+To understand these rules, you need to be familiar with the definitions 
+in Section \ref{section2-2}. 
+
+\subsubsection{0/1-variables}
+A \emph{0/1-variable} is a variable that is constrained to the finite 
+domain 0$\#$1. The control variables of reified constraints are 0/1-variables. 
+
+\subsubsection{Posting reified constraints}
+Here are examples for statements creating propagators for 
+reified constraints: 
+\begin{itemize}
+\item
+Reified.intvar (s, dom, b)\\
+Returns an FD variable freshly created in s. Also, a propagator 
+is created to ensure b is true if and only if the intvar returned is in dom.
+\item 
+Reified.intvarVec (s, n, dom, b)\\
+Returns a vector of FD variables freshly created in s. Also, a 
+propagator is created to ensure b is true if and only if all the 
+intvars returned are in dom. 
+\item
+Reified.dom (s, x, dom, b)\\
+Creates a propagator in s to ensure b is true if and only if x is in dom. 
+\item
+Reified.rel (s, x, rel, y, b),Reified.relI (s, x, rel, n, b)\\
+Creates a propagator in s to ensure b is true if and only if x 
+is in rel with y (or n). 
+\item
+Reified.linear (s, v, rel, n, b, level)\\
+Creates a propagator in s to ensure b is true if and only 
+if the regular linear constraint holds for the arguments. 
+\end{itemize}
+
+
+\newpage
+\subsection{Example: Aligning for a Photo}
+\label{sec8-2}
+We will now see an overconstrained problem for which it is impossible 
+to satisfy all constraints. The problem specification will distinguish 
+between primary and secondary constraints, and the goal is to find a 
+solution that satisfies all primary constraints and as many of the 
+secondary constraints as possible.
+
+\subsubsection{Problem Specification}
+Betty, Chris, Donald, Fred, Gary, Mary, and Paul want to align in one 
+row for taking a photo. Some of them have preferences next to whom they 
+want to stand:
+\begin{enumerate}
+\item
+Betty wants to stand next to Gary and Mary.
+\item
+Chris wants to stand next to Betty and Gary.
+\item   
+Fred wants to stand next to Mary and Donald.
+\item
+Paul wants to stand next to Fred and Donald.
+\end{enumerate}
+Obviously, it is impossible to satisfy all preferences. Can you find 
+an alignment that maximizes the number of satisfied preferences?
+
+\subsubsection{Viewpoint and Constraints}
+The model has a variable $ pers[p] $ for every person, where $ pers[p]$ stands 
+for the position i takes in the alignment. Since there are exactly 7 
+persons, we have $ pers[p] \in $ 1 $\#$ 7 for every person p. Moreover, we 
+have $pers[p] \neq pers[q] $ for every pair p,q of distinct persons. The model 
+has a variable $ S_i \in$ 0 $\# $ 1 for each of the 8 preferences, where 
+$S_i$ = 1 if and only if the i-th preference is satisfied. To express 
+this constraint, we constrain the control variable S of a preference 
+``person p wants to stand next to person q'' by means of the reified 
+constraint
+\begin{quote}
+    $(|pers[p] - pers[q]| = 1 \leftrightarrow  S = 1) \land  S \in 0\# 1$
+\end{quote}
+Finally, there is a variable
+\begin{quote}
+    \emph{Satisfaction} = $S_1 $ + $\ldots$ + $S_8$
+\end{quote}
+denoting the number of satisfied preferences. We want to find a solution 
+that maximizes the value of \emph{Satisfaction}.
+
+The experienced constraint programmer will note that we can eliminate a 
+symmetry by picking two persons p and q and imposing the order constraint 
+\begin{quote}
+ $pers[p]$ $ <  $ $pers[q] $
+\end{quote}
+
+\subsubsection{Branching Strategy}
+To maximize \emph{Satisfaction}, we employ a two-dimensional branching 
+strategy, which first branches on \emph{Satisfaction}, trying the values 
+8,7,$ \ldots $ ,1 in this order. Once \emph{Satisfaction} is determined, we 
+branch on the variables $pers$ using a first-fail strategy that splits 
+the domain of the selected variable.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script for the Photo Puzzle},
+label=listing 17,frame=trbl}
+\begin{myverbatim}
+fun photo space =
+   let 
+       val pers as #[b,c,d,f,g,m,p]= FD.rangeVec(space,7,(1,7))
+      (* si is a vector of boolean variables where s_i is 1 
+         if the i-th preference is satisfied *)
+       val si as #[s1,s2,s3,s4,s5,s6,s7,s8] = FD.boolvarVec(space,8)
+      (* constraints is a vector of pairs (x,y) such that x wants to
+         stand next to y *)
+       val constraints = #[(b,g),(b,m),(c,b),(c,g),(f,m),
+                           (f,d),(p,f),(p,d)]
+      (* satisfaction is the sum of all s_i *)
+       val satisfaction = FD.range(space,(0,8))
+      (* satisfy posts the reified constraints:|x-y| = 1 <-> z *)
+       fun satisfy(sp,constr,bools)= Vector.app(fn ((x,y),z) =>
+              let
+                  val tmp1 = FD.boolvar sp
+                  val tmp2 = FD.boolvar sp
+              in
+                 (FD.Reified.linear(sp,#[(1,x),(~1,y)],
+                                    FD.EQ,1,tmp1,FD.DEF);
+                  FD.Reified.linear(sp,#[(1,x),(~1,y)],
+                                    FD.EQ,~1,tmp2,FD.DEF);
+                  FD.disjV(sp,#[tmp2,tmp1],z))
+              end)
+                 (VectorPair.zip(constr,bools))
+   in
+       FD.distinct(space,pers,FD.DOM);
+       satisfy(space,constraints,si);
+       let 
+           val si' = Vector.map(fn x => (FD.boolvar2intvar x))si
+       in
+           post(space,SUMV(si') `= FD(satisfaction),FD.DOM)
+       end;
+       FD.rel(space,f,FD.LE,b);
+       FD.branch(space,#[satisfaction],FD.B_NONE,FD.B_MAX);
+       FD.branch(space,pers,FD.B_SIZE_MIN,FD.B_SPLIT_MIN);
+      {Betty = b, Chris = c, Donald = d, Fred = f,
+       Gary = g, Mary = m, Paul = p,satisfaction}  
+  end
+\end{myverbatim}
+
+The statement Explorer.exploreOne(photo) will run the script 
+until a first solution is found. The first solution satisfies 
+6 preferences and looks as follows:
+\begin{quote}
+\{Betty = intvar\{$|$5 $|$\}, 
+ Chris = intvar\{$|$6 $|$\}, \\
+ Donald = intvar\{$|$1 $|$\}, 
+ Fred = intvar\{$|$3 $|$\}, \\
+ Gary = intvar\{$|$7 $|$\}, 
+ Mary = intvar\{$|$4 $|$\}, \\
+ Paul = intvar\{$|$2 $|$\}, 
+ satisfaction = intvar\{$|$6 $|$\}\}
+
+\end{quote}
+By construction of the script, this is the maximal number of 
+preferences that can be satisfied simultaneously. 
+
+
+\newpage
+\subsection{Example: Self-referential Aptitude Test}
+This example illustrates three issues: expressing complex 
+propositional formulas as reified constraints, improving 
+performance and presentation by elimination of common subconstraints, 
+and using the symbolic constraint posted by \emph{FD.element}.
+
+\subsubsection{Problem Specification}
+The self-referential aptitude test (which is taken from \cite{10}) 
+consists of 10 multiple choice questions, referred to as 1 to 10. 
+Each question allows for 5 possible answers, referred to as a to e. 
+For each of the 50 possible answers, a condition is specified. 
+For each question, exactly one of the conditions associated with 
+its possible answers must hold. A solution of the test is a function 
+assigning to every question a letter such that the condition selected 
+by the assigned letter holds.
+
+Here are the questions and their possible answers:
+\begin{itemize}
+\item
+The first question whose answer is b is question 
+(a) 2; (b) 3; (c) 4; (d) 5; (e) 6.
+\item
+The only two consecutive questions with identical answers are questions 
+(a) 2 and 3; (b) 3 and 4; (c) 4 and 5; (d) 5 and 6; (e) 6 and 7.
+\item
+The answer to this question is the same as the answer to question 
+(a) 1; (b) 2; (c) 4; (d) 7; (e) 6.
+\item
+The number of questions with the answer a is (a) 0; (b) 1; (c) 2; (d) 3; (e) 4.
+\item
+The answer to this question is the same as the answer to question 
+(a) 10; (b) 9; (c) 8; (d) 7; (e) 6.
+\item
+The number of questions with answer a equals the number of questions 
+with answer (a) b; (b) c; (c) d; (d) e; (e) none of the above.
+\item
+Alphabetically, the answer to this question and the answer to the 
+following question are (a) 4 apart; (b) 3 apart; (c) 2 apart; 
+(d) 1 apart; (e) the same.
+\item
+The number of questions whose answers are vowels is (a) 2; (b) 3; 
+(c) 4; (d) 5; (e) 6.
+\item
+The number of questions whose answer is a consonant is (a) a prime; 
+(b) a factorial; (c) a square; (d) a cube; (e) divisible by 5.
+\item
+The answer to this question is (a) a; (b) b; (c) c; (d) d; (e) e.
+\end{itemize}
+To understand the test, verify that
+\begin{quote}
+1:c  \hspace{2mm} 2:d \hspace{2mm} 3:e \hspace{2mm} 4:b \hspace{2mm}5:e\\
+6:e \hspace{2mm} 7:d \hspace{2mm} 8:c \hspace{2mm} 9:b \hspace{2mm} 10:a
+\end{quote}
+is a correct set of answers for the test. In particular, convince 
+yourself that for every question the remaining 4 possibilities to 
+answer it are falsified. The script we are going to write will 
+prove that there is no other set of correct answers.
+
+\subsubsection{Viewpoint and Constraints}
+Our model has 0/1 - variables $A_i, B_i, C_i, and D_i$ for i$\in$ 1$\#$ 10 
+such that:
+\begin{enumerate}
+\item
+$A_i + B_i + C_i + D_i + E_i = 1$
+\item
+$A_i$ = 1 iff the answer to Question i is a
+\item
+$B_i$ = 1 iff the answer to Question i is b
+\item
+$C_i$ = 1 iff the answer to Question i is c
+\item
+$D_i$ = 1 iff the answer to Question i is d
+\item
+$E_i$ = 1 iff the answer to Question i is e
+\end{enumerate}
+To obtain a compact representation of the questions, 
+we also have variables $Q_i \in $ 1$\#$ 5 for i$\in$ 1 $\#$ 10 such that
+\begin{quote}
+$Q_i$ = 1 $\leftrightarrow A_i$ = 1\\
+$Q_i$ = 2 $\leftrightarrow B_i$ = 1\\
+$Q_i$ = 3 $\leftrightarrow C_i$ = 1\\
+$Q_i$ = 4 $\leftrightarrow D_i$ = 1\\
+$Q_i$ = 5 $\leftrightarrow E_i$ = 1
+\end{quote}
+The first question can now be expressed by means of five equivalences:
+\begin{quote}
+$ A_1 = B_2$ \\
+$B_1 = (B_3\land (B_2=0))$ \\ 
+$C_1 = (B_4\land (B_2+B_3=0))$\\ 
+$D_1 = (B_5\land (B_2+B_3+B_4=0))$\\ 
+$E_1 = (B_6\land (B_2+B_3+B_4+B_5=0))$
+\end{quote}
+These equivalences can be expressed by reifying the 
+nested equality constraints.
+
+The second question can be expressed with the following constraints:
+\begin{quote}
+$Q_1\neq Q_2,\quad Q_7\neq Q_8,$
+$\quad Q_8\neq Q_9,\quad Q_9\neq Q_10$ \\ 
+$A_2=(Q_2=Q_3),\quad B_2=(Q_3=Q_4),\quad C_2=(Q_4=Q_5)$ \\ 
+$D_2=(Q_5=Q_6),\quad E_2=(Q_6=Q_7) $
+\end{quote}
+
+The third question can be expressed as follows:
+\begin{quote} 
+$ A_3=(Q_1=Q_3),\quad B_3=(Q_2=Q_3),\quad C_3=(Q_4=Q_3)$\\ 
+$ D_3=(Q_7=Q_3),\quad E_3=(Q_6=Q_3)$ 
+\end{quote}
+
+The fourth question can be elegantly expressed with the constraint
+\begin{quote}
+    \emph{element}($Q_4$,(0,1,2,3,4)) = $\sum_{i=1}^{10}{A_i}$
+\end{quote}
+where the function \emph{element}(k,x) yields the k-th component 
+of the tuple x.
+
+We choose this formulation since Alice provides a propagator 
+\emph{FD.element} 
+for the constraint \emph{element}(k,x)= y.
+
+\subsubsection{Reified Membership Constraints}
+The nineth question can be expressed with the following equations
+\begin{quote}
+$ S = \sum_{i=1}^{10}{(B_i+C_i+D_i)} $\\
+$A_9 = (S\in\{2,3,5,7\}) $\\ 
+$B_9 = (S\in\{1,2,6\}) $\\ 
+$C_9 = (S\in\{0,1,4,9\}) $\\
+$ D_9 = (S\in\{0,1,8\}) $\\ 
+$E_9 = (S\in\{0,5,10\}) $
+\end{quote}
+where S is an existentially quantified auxiliary variable. 
+This time we use reified membership constraints of the form x$\in$ D.
+
+\subsubsection{Branching Strategy}
+We branch on the variables $Q_1,Q_2,\ldots$ using the standard first-fail strategy.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script for the self-referential aptitude test},
+label=listing 18,frame=trbl}
+\begin{myverbatim}
+(* bsum ensures that the sum of the boolean vector 
+   boolvec is equal s(:intvar) *)
+fun bsum(space,boolvec,s)=
+    let
+        val tmp = Vector.map(fn x => 
+                      (FD.boolvar2intvar x))boolvec
+    in
+       post(space,SUMV(tmp) `= FD(s),FD.DOM)
+    end
+                                
+(* bsumI ensures that the sum of the boolean vector 
+   boolvec is equal s(:int) *)
+fun bsumI(space,boolvec,s)= 
+    let
+        val tmp = Vector.map(fn x => 
+                      (FD.boolvar2intvar x))boolvec
+    in
+       post(space,SUMV(tmp) `= `s,FD.DOM)
+    end                         
+
+fun srat space =
+    let
+        val a as #[a0,a1,a2,a3,a4,a5,a6,a7,a8,a9] = 
+              FD.boolvarVec(space,10)
+        val b as #[b0,b1,b2,b3,b4,b5,b6,b7,b8,b9]= 
+              FD.boolvarVec(space,10)
+        val c as #[c0,c1,c2,c3,c4,c5,c6,c7,c8,c9]= 
+              FD.boolvarVec(space,10)
+        val d as #[d0,d1,d2,d3,d4,d5,d6,d7,d8,d9]= 
+              FD.boolvarVec(space,10)
+        val e as #[e0,e1,e2,e3,e4,e5,e6,e7,e8,e9]= 
+              FD.boolvarVec(space,10)   
+        val questions as #[q0,q1,q2,q3,q4,q5,q6,q7,q8,q9] = 
+              FD.rangeVec(space,10,(1,5))
+        val suma = FD.range(space,(0,10))
+        val sumb = FD.range(space,(0,10))
+        val sumc = FD.range(space,(0,10))
+        val sumd = FD.range(space,(0,10))
+        val sume = FD.range(space,(0,10))
+        val sumae =FD.range(space,(0,20))
+        val sumbcd = FD.range(space,(0,30))
+       (* assert ensures that q_i = nb <-> boolvec[i]= 1  *)
+        fun asrt(boolvec,nb)= Vector.appi(fn(i,x)=> 
+            FD.Reified.relI(space,Vector.sub(questions,i),
+                                  FD.EQ,nb,x))(boolvec)
+   in  
+        Vector.app(fn(x,y)=> bsum(space,x,y))
+             (#[(a,suma),(b,sumb),(c,sumc),(d,sumd),(e,sume)]);
+        post(space,FD(suma) `+ FD(sume) `= FD(sumae),FD.DOM);
+        post(space,FD(sumb) `+ FD(sumc) `+ FD(sumd) 
+                    `= FD(sumbcd),FD.DOM);
+            
+       (* ensures that a_i + b_i + .. + e_i = 1 *)
+        Vector.app(fn(i) => 
+          let 
+              val tmp = Vector.map(fn y =>Vector.sub(y,i))
+                         (#[a,b,c,d,e])
+          in
+              bsumI(space,tmp,1)
+          end)
+              (Vector.tabulate(10,fn x => x)); 
+                                   
+       (*  to obtain a compact representation of the questions
+          (see Model) *)                              
+        Vector.appi(fn(i,x)=> asrt(x,i+1))(#[a,b,c,d,e]);
+           
+       (* first question *)
+        Vector.appi(fn(i,(x,y))=>
+         let
+             val tmp1 = Vector.sub(x,0)
+             val tmp2 = Vector.sub(b,i+1)
+             val tmp3 = FD.boolvar(space)
+             val tmp4 = FD.boolvar(space)
+             val tmp5 = FD.boolvar(space)
+         in
+             if(Vector.length(y)>0) 
+             then
+               (FD.Reified.linear(space,Vector.map(fn x=>
+               (1,FD.boolvar2intvar x))y,FD.EQ,0,tmp3,FD.DOM);
+                FD.conj(space,tmp4,tmp3,tmp2);
+                FD.conj(space,tmp5,tmp4,tmp1);
+                FD.Reified.relI(space,Vector.sub(questions,0),
+                                      FD.EQ,i+1,tmp5))
+             else
+               (FD.conj(space,tmp3,tmp1,tmp2);
+                FD.Reified.relI(space,Vector.sub(questions,0),
+                                      FD.EQ,1,tmp3))
+         end)
+            (#[(a,#[]),(b,#[b1]),(c,#[b1,b2]),(d,#[b1,b2,b3]),
+                 (e,#[b1,b2,b3,b4])]); 
+            
+           
+       (* second and third question*)
+        Vector.app(fn(x,y)=>FD.rel(space,x,FD.NQ,y))
+                  (#[(q0,q1),(q6,q7),(q7,q8),(q8,q9)]);
+        Vector.app(fn(x,y,z) => FD.Reified.rel(space,y,FD.EQ,z,x))
+                    (#[(a1,q1,q2),(b1,q2,q3),(c1,q3,q4),(d1,q4,q5),
+                       (e1,q5,q6),(a2,q0,q2),(b2,q1,q2),(c2,q3,q2),
+                       (d2,q6,q2),(e2,q5,q2)]);
+                         
+       (* fourth question *)
+        let 
+            val tmp = FD.range(space,(1,5))
+        in 
+            post(space,FD(tmp) `= FD(q3) `- `1,FD.DOM);
+            FD.elementI(space,#[0,1,2,3,4],tmp,suma)
+        end;
+            
+       (* fifth question *)
+        Vector.app(fn(x,y) => FD.Reified.rel(space,y,FD.EQ,q4,x))
+                  (#[(a4,q9),(b4,q8),(c4,q7),(d4,q6),(e4,q5)]);
+                      
+       (* sixth question *)
+        Vector.app(fn(x,y)=>FD.Reified.rel(space,suma,FD.EQ,x,y))
+                    (#[(sumb,a5),(sumc,b5),(sumd,c5),(sume,d5)]);
+        FD.Reified.linear(space,Vector.map(fn x =>
+                        (1,FD.boolvar2intvar x))(#[a5,b5,c5,d5]),
+                         FD.EQ,0,e5,FD.DOM); 
+            
+       (* seventh question *)
+        FD.Reified.relI(space,q7,FD.EQ,1,c6);
+        FD.Reified.relI(space,q7,FD.EQ,3,d6);
+            
+       (* eighth question *)
+        let 
+            val tmp = FD.range(space,(1,5))
+        in 
+            post(space,FD(tmp) `= FD(q7) `- `1,FD.DOM);
+            FD.elementI(space,#[2,3,4,5,6],tmp,sumae)
+        end;
+            
+       (* nineth question *)
+        Vector.app(fn(x,y)=>FD.Reified.dom(space,sumbcd,y,x))
+                 (#[(a8,#[(2,3),(5,5),(7,7)]),(b8,#[(1,2),(6,6)]),
+                    (c8,#[(0,1),(4,4),(9,9)]),(d8,#[(0,1),(8,8)]),
+                    (e8,#[(0,0),(5,5),(10,10)]) ]); 
+          
+        (* last question is entailed in the compact representation 
+           constraint above*) 
+            
+        FD.branch(space,questions,FD.B_SIZE_MIN,FD.B_MIN);
+       {q1 = q0, q2 = q1, q3 = q2, q4 = q3, q5 = q4, q6 = q5,
+        q7 = q6, q8 = q7, q9 = q8, q10 = q9}
+    end
+
+\end{myverbatim}
+
+\newpage
+\subsection{Example: Bin Packing}
+\label{sec8-4}
+This example features a nontrivial model involving reified 
+constraints and nontrivial defined constraints. 
+
+\subsubsection{Problem Specification}
+Given a supply of components and bins of different types, 
+compile a packing lists such that a minimal number of bins 
+is used and given constraints on the contents of bins are satisfied.
+
+In our example, there are 3 types of bins and 5 types of components. 
+The bin types are red, blue, and green. The component types are 
+glass, plastic, steel, wood, and copper.
+
+The following constraints must hold for the contents of bins:
+\begin{enumerate}
+\item
+Capacity constraints:
+\begin{enumerate}       
+\item
+Red bins can take at most 3 components, and at most 1 component of type wood.
+\item
+Blue bins can take exactly 1 component.
+\item
+Green bins can take at most 4 components, and at most 2 components of type wood.
+\end{enumerate}
+\item
+Containment constraints (what can go into what):
+\begin{enumerate}       
+\item    
+Red bins can contain glass, wood, and copper.
+\item        
+Blue bins can contain glass, steel, and copper.
+\item        
+Green bins can contain plastic, wood, and copper.
+\end{enumerate}
+\item
+Requirement and exclusion constraints applying to all bin types:
+\begin{enumerate}    
+\item         
+Wood requires plastic.
+\item       
+Glass excludes copper.
+\item          
+Copper excludes plastic.
+\end{enumerate}
+\end{enumerate}
+Compile a packing list for an order consisting of 1 glass component, 
+2 plastic components, 1 steel component, 3 wood components, and 2 
+copper components. The packing list should require as few bins as possible.
+
+\subsubsection{Viewpoint and Constraints}
+One possibility for a model consists in having a variable for every 
+component saying in which bin the component should be packed. The 
+resulting model admits many symmetric solutions and does not lead 
+to a satisfactory script.
+
+We will use a model that has both variables for bins and for
+components. The model has a variable \emph{mcap} saying how many 
+bins are used to pack the order. For every i $\in$ 1 $\#$
+\emph{mcap} we have 6 variables:
+\begin{itemize}
+\item
+$\emph{btype}_i$ denoting the type of the i-th bin.
+\item
+$\emph{glass}_i$ denoting the number of glass components to be packed into the i-th bin.
+\item
+$\emph{plastic}_i $denoting the number of plastic components to be packed into the i-th bin.
+\item
+$\emph{steel}_i $ denoting the number of steel components to be packed into the i-th bin.
+\item
+$\emph{wood}_i $ denoting the number of wood components to be packed into the i-th bin.
+\item
+$\emph{copper}_i $ denoting the number of copper components to be packed into the i-th bin.
+\end{itemize}
+Given these variables, the capacity and containment constraints 
+are easy to express. The requirement and exclusion constraints are 
+implications that can be expressed by means of reified constraints.
+
+To reduce the size of the search tree, we exclude some of the symmetries 
+in a packing list. We require that blue bins appear before red bins, 
+and red bins appear before green bins. Moreover, if two consecutive 
+bins have the same type, the first bin must contain at least as many 
+glass components as the second bin.
+
+\subsubsection{Branching Strategy}
+ 
+We branch on the type and capacity variables with
+the standard first - fail strategy. Because we want to get a 
+packlist with a minimal number of bins used, you should first
+branch over the variable \emph{mcap} and try smaller values
+first. Here, this is not possible because the vaue is used
+to create the lenght of the packing list and so has to be an
+integer value. To get this value of \emph{mcap} you would need to
+\emph{reflect} it's value during search. This is not possible!
+
+We solve this problem with a test function, that uses the structure
+\htmladdnormallink{\textcolor{blue}{Search}}
+{http://www.ps.uni-sb.de/alice/manual/library/search.html} and
+in a loop that tries smaller values for \emph{mcap} first and
+stops when the first solution is found.
+
+\subsubsection{Script}
+The first defined constraint \emph{impl} is used to post
+the following constraint:
+\begin{quote}
+$ v_1 \hspace{2mm} rel \hspace{2mm} v_1' \leftrightarrow v_2 \hspace{2mm} rel \hspace{2mm} v_2' $
+\end{quote}
+The function \emph{makebin} creates a consistently packed
+bin with type
+\emph{btype} and its components. It implements all the capacity, 
+containment, requirement, and exclusion constraints of the problem 
+specification.
+
+The function \emph{makepacklist} imposes constraints saying that 
+\emph{packlist} is a consistent packing list ordered as specified 
+in the description of the model.
+
+\emph{Match} imposes constraints saying that the packing list 
+\emph{packlist} matches the order \emph{order}.
+
+\lstset{caption = \textbf{A script for the Bin Packing Problem},
+label=listing 19,frame=trbl}
+\begin{myverbatim}
+type bin = {btype : FD.intvar, copper : FD.intvar, 
+            glass : FD.intvar,plastic : FD.intvar,
+            steel : FD.intvar, wood : FD.intvar}
+                  
+type packlist = 
+           {btype : FD.intvar, copper : FD.intvar, 
+            glass : FD.intvar,plastic : FD.intvar, 
+            steel : FD.intvar, wood : FD.intvar} list
+       
+type order = 
+           {copper : int, glass : int, plastic : int,
+            steel : int, wood : int}                  
+
+                       
+(* posts an implication of two relations *)  
+fun impl(space,v1,rel1,v1',v2,rel2,v2')= 
+    let
+        val tmp1 = FD.boolvar space
+        val tmp2 = FD.boolvar space
+        val tmp3 = FD.boolvar space
+        val tru = FD.intvar2boolvar(space,
+                     FD.range(space,(1,1)))
+    in
+        FD.Reified.rel(space,v1,rel1,v1',tmp1);
+        FD.Reified.rel(space,v2,rel2,v2',tmp2);
+        FD.impl(space,tmp1,tmp2,tru)
+    end
+                       
+                           
+fun makebin(space) =
+    let 
+        val cap = FD.range(space,(1,4))
+       (* b is the type of a bin *)
+        val b = FD.range(space,(0,2))
+        val components as #[g,p,s,w,c] = 
+                       FD.rangeVec(space,5,(0,4))
+        val bin = {btype = b,glass = g,plastic = p,
+                   steel = s,wood = w,copper = c}
+        val tru = FD.intvar2boolvar
+                  (space,FD.range(space,(1,1)))
+       (* posts an implication of two relations with 
+          constants*) 
+        fun implI(space,v1,rel1,const1,v2,rel2,const2)= 
+            let
+                val tmp1 = FD.boolvar space
+                val tmp2 = FD.boolvar space
+            in
+                FD.Reified.relI(space,v1,rel1,const1,tmp1);
+                FD.Reified.relI(space,v2,rel2,const2,tmp2);
+                FD.impl(space,tmp1,tmp2,tru)
+            end
+        fun implist(a as (a1,r1,a2),
+                    rellist as((b1,r2,b2)::bs))=
+                List.app(fn(x,y,z)=> 
+                      implI(space,a1,r1,a2,x,y,z))rellist
+    in
+       post(space,SUMV(components) `= FD(cap),FD.DOM);
+       implI(space,w,FD.GR,0,p,FD.GR,0);
+       implI(space,g,FD.GR,0,c,FD.EQ,0);
+       implI(space,c,FD.GR,0,p,FD.EQ,0);
+       implist((b,FD.EQ,1),[(cap,FD.EQ,3),(p,FD.EQ,0),
+               (s,FD.EQ,0),(w,FD.LQ,1)]);
+       implist((b,FD.EQ,0),[(cap,FD.EQ,1),(p,FD.EQ,0),
+               (w,FD.EQ,0)]);
+       implist((b,FD.EQ,2),[(cap,FD.EQ,4),(g,FD.EQ,0),(s,FD.EQ,0),
+               (w,FD.LQ,2)]);
+       bin        
+    end    
+
+
+
+fun makepacklist list space = 
+    let
+        val packlist = List.map(fn x => makebin(space))list
+        fun order(space,(x:bin)::nil) = ()
+          | order(space,x::y::xs)=
+                (FD.rel(space,((#btype)x),FD.LQ,((#btype)y));
+                 impl(space,((#btype)x),FD.EQ,((#btype)y),
+                            ((#glass)x),FD.GQ,((#glass)y))) 
+    in
+        order(space,packlist);
+        packlist
+    end                            
+
+val order = {glass=2,plastic = 4,steel =3,
+             wood =6,copper =4}
+
+fun match (packlist:packlist)(order:order)space = 
+    let
+        val order' = #[#glass(order),#plastic(order),
+             #steel(order),#wood(order),#copper(order)]
+        val a = List.map(fn x => ((#glass)x))packlist
+        val b = List.map(fn x => (#plastic)x)packlist
+        val c = List.map(fn x => (#steel)x)packlist
+        val d = List.map(fn x => (#wood)x)packlist
+        val e = List.map(fn x => (#copper)x)packlist
+    in 
+        Vector.appi(fn(i,x)=> post(space,SUMV(Vector.fromList x)
+                       `=  `(Vector.sub(order',i)),FD.DOM))
+                   (#[a,b,c,d,e])
+    end
+          
+              
+
+fun binpacking order mcap space =
+    let 
+        val nbcomp = #glass(order) + #plastic(order)+ 
+                     #steel(order) + #wood(order) + 
+                     #copper(order)
+        val list = List.tabulate(mcap,fn x => x)
+        val packlist = makepacklist list space
+        val branchlist = List.map(fn x =>
+                          [(#btype)x,(#copper)x,(#steel)x,
+                           (#glass)x,(#plastic)x,(#wood)x])
+                         packlist
+        val branchvec = Vector.fromList(List.concat(branchlist))
+    in 
+        match packlist order space;
+        FD.branch(space,branchvec,FD.B_SIZE_MIN,FD.B_MIN);
+        packlist
+    end
+
+
+(* insert a value > 0 for x and findsolution finds the 
+   minimal number of bins 
+
+ fun findsolution x =
+   let 
+      val res =  (Search.searchOne(binpacking order x))
+                    handle Space.InvalidSpace => NONE
+   in
+      case res of NONE => findsolution (x+1)
+                | SOME(s,r) => 
+                     List.map(fn y =>
+                         List.map(fn z => FD.Reflect.value(s,z))
+                               ([(#btype)y,(#copper)y,(#steel)y,
+                               (#glass)y,(#plastic)y,(#wood)y]))r
+   end
+*)
+\end{myverbatim}
+
+ 
+The result of \emph{findsolution (1 )}
+is a list of lenght 8, where every element is a bin with it's type
+and components:
+\begin{quote}
+$[[0, 0, 1, 0, 0, 0], [0, 0, 1, 0, 0, 0], [1, 0, 0, 2, 0, 0],$\\
+$[2, 4, 0, 0, 0, 0], [2, 0, 0, 0, 1, 2], [2, 0, 0, 0, 1, 2],$\\
+$[2, 0, 0, 0, 2, 2], [0, 0, 1, 0, 0, 0]]$
+\end{quote}
+
+
+
+
+
+
+\newpage
+\section{Branch and Bound}
+In this chapter we focus on computing an optimal solution 
+according to a given cost function. While we have searched 
+for optimal solutions already in Section \ref{sec8-2} and Section 
+\ref{sec8-4}, we have used a rather ad-hoc strategy there. This strategy 
+lacks generality and does not provide either for a proof of optimality.
+
+In this chapter we introduce a general schema to compute an optimal 
+solution according to an arbitrary cost function and show how it is 
+available in Alice. This schema is called \textbf{branch and bound} and is available 
+by procedures like \emph{ExploreBest}. A typical application of \emph{ExploreBest}
+for a script \emph{Script} looks like
+\begin{quote}
+    Explorer.exploreBest Script 
+\end{quote}
+The branch and bound schema works as follows. When a solution of 
+Script is found, all the remaining alternatives in the search tree 
+are constrained to be better with respect to an order available through 
+the procedure \emph{Order}. Usually Order applies a cost function to its 
+arguments and creates a propagator imposing the ordering. \db{The second 
+argument of Order is the previous solution, and the first argument 
+is an alternative solution we are searching for.} 
+
+
+
+
+\subsection{Example: Aligning for a Photo, Revisited}
+In Section \ref{sec8-2} we have searched for a solution of the 
+alignment problem which satisfies the maximal number of preferences. 
+To this aim we have introduced a variable which counts the number of 
+satisfied preferences. By branching this variable with its maximal 
+value first, we have guaranteed that the first solution found is 
+indeed the optimal one.
+
+In this section we replace this ad-hoc approach by branch and bound. 
+We first restate the script for the problem by omitting the branching 
+code for the variable summing up the satisfied preferences. The resulting 
+script is shown in Listing \ref{listing 20}.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{The revised script for the Photo Puzzle},
+label=listing 20,frame=trbl}
+\begin{myverbatim}
+fun revisedphoto space =
+    let 
+        val pers as #[b,c,d,f,g,m,p]= 
+                      FD.rangeVec(space,7,(1,7))
+       (* si as a vector of boolean variables where s_i is 1 
+          if the i-th preference is satisfied *)
+        val si as #[s1,s2,s3,s4,s5,s6,s7,s8] = 
+                           FD.boolvarVec(space,8)
+       (* constraints is a vector of pairs (x,y) such that x wants to
+          stand next to y *)
+        val constraints = #[(b,g),(b,m),(c,b),(c,g),
+                            (f,m),(f,d),(p,f),(p,d)]
+       (* satisfaction is the sum of all s_i *)
+        val satisfaction = FD.range(space,(0,8))
+       (* satisfy posts the reified constraints:|x-y| = 1 <-> z *)
+        fun satisfy(sp,constr,bools)= 
+            Vector.app(fn ((x,y),z) => 
+              let
+                 val tmp1 = FD.boolvar sp
+                 val tmp2 = FD.boolvar sp
+              in
+                (FD.Reified.linear(sp,#[(1,x),(~1,y)],FD.EQ,1,
+                                      tmp1,FD.DEF);
+                 FD.Reified.linear(sp,#[(1,x),(~1,y)],FD.EQ,~1,
+                                      tmp2,FD.DEF);
+                 FD.disjV(sp,#[tmp2,tmp1],z))
+              end)
+                 (VectorPair.zip(constr,bools))
+       (* photoorder ensures that the overall sum of satisfied
+          preferences in an alternative solution must be strictly 
+          greater than the corresponding sum in a previous solution *)
+        fun photoorder(current,last)=
+            post (current, FD(satisfaction) `> 
+                  `(FD.Reflect.value(last,satisfaction)),FD.BND)                   
+    in
+        FD.distinct(space,pers,FD.DOM);
+        satisfy(space,constraints,si);
+        let 
+           val si' = Vector.map(fn x => (FD.boolvar2intvar x))si
+        in
+           post(space,SUMV(si') `= FD(satisfaction),FD.DOM)
+        end;
+        FD.rel(space,f,FD.LE,b);
+           
+        FD.branch(space,pers,FD.B_SIZE_MIN,FD.B_SPLIT_MIN);
+      ({Betty = b, Chris = c, Donald = d, Fred = f,
+       Gary = g, Mary = m, Paul = p,satisfaction},photoorder)
+   end
+\end{myverbatim}
+
+
+Next we define an ordering procedure which states that the overall 
+sum of satisfied preferences in an alternative solution must be 
+strictly greater than the corresponding sum in a previous solution:
+
+\lstset{caption = \textbf{ordering procedure},label=listing 21,frame=trbl}
+\begin{myverbatim}
+fun photoorder(current,last)=
+               post (current, FD(satisfaction)`> 
+            `(FD.Reflect.value(last,satisfaction)),FD.BND)
+\end{myverbatim}
+
+
+Here the procedure \emph{FD.Reflect.value} from the
+\htmladdnormallink{\textcolor{blue}{FD.Reflect}}
+{http://www.ps.uni-sb.de/alice/manual/library/fd.html}
+library structure is used.
+It returns the value \emph{satisfaction} takes in the space \emph{last} and
+throws \emph{NotAssigned} if \emph{satisfaction} is not determined.
+
+The optimal solution can be found with the statement
+\begin{quote}
+    Explorer.exploreBest revisedphoto
+\end{quote}
+Note that the type of the script has changed to:
+\lstset{caption = \textbf{type of revised photo script},
+label=listing 22,frame=trbl}
+\begin{myverbatim}
+FD.space ->
+      {Betty : FD.intvar, Chris : FD.intvar, Donald : FD.intvar,
+       Fred : FD.intvar, Gary : FD.intvar, Mary : FD.intvar, Paul : FD.intvar,
+       satisfaction : FD.intvar} * (Modeling.space * FD.space -> unit)
+\end{myverbatim}
+
+
+We obtain the same solution as in \ref{sec8-2}. But now only 319 choice nodes 
+are needed to find the optimal solution whereas 477 choice nodes 
+were needed in Section \ref{sec8-2}. Furthermore, branch and bound allows 
+us to prove in an efficient way that the last solution found is 
+really the optimal one. The full search tree (including the proof 
+of optimality) contains 639 choice nodes. If we inspect 
+the solutions, we observe that the first solution satisfies only a 
+single preference. By imposition of the ordering procedure by the 
+search engine, the next found solution must satisfy more preferences. 
+Indeed, the second solution satisfies two preferences. Following 
+this approach we finally arrive at the optimal solution with six 
+satisfied preferences.
+
+
+\newpage
+\subsection{Example: Send Most Money}
+In section \ref{distribstrat} we searched for a solution to the
+Send More Money problem. The send Send Most Money problem
+has more than one solution and we want to find the best one.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script for the Send Most Money Puzzle},
+label=listing 23,frame=trbl}
+\begin{myverbatim}
+fun smm space =
+  let
+    (* I use o' because o is an operator *)
+    val letters as #[s, e, n, d, m,o', t, y] = 
+        FD.rangeVec(space, 8,(0,9))
+    val money = FD.range(space,(0, 98765))
+    (* better function *)
+    fun better (current, lastSolution) =
+         post (current, FD(money) `> 
+          `(FD.Reflect.value(lastSolution,money)),FD.BND)
+  in
+    FD.distinct (space, letters, FD.DOM);
+    post (space, FD(s) `<> `0, FD.DOM);
+    post (space, FD(m) `<> `0, FD.DOM);
+    post (space, `1000 `* FD(s) `+ `100 `* FD(e) `+ 
+                 `10 `* FD(n) `+ FD(d) `+  `1000 `* FD(m)`+ 
+                 `100 `* FD(o') `+ `10 `* FD(s) `+ FD(t)
+             `= `10000 `* FD(m) `+ `1000 `* FD(o') `+ `100 `* 
+                  FD(n) `+ `10 `* FD(e) `+ FD(y), FD.DOM);
+    post (space, FD(money)`= `10000 `* FD(m) `+ `1000 `* FD(o')
+            `+ `100 `* FD(n) `+ `10 `* FD(e) `+ FD(y), FD.DOM);
+    FD.branch (space, letters, FD.B_SIZE_MIN, FD.B_MIN);
+    ({s, e, n, d, m, o', t, y}, better)
+  end
+  
+\end{myverbatim}
+
+The procedure \emph{better} in listing \ref{listing 23} ensures
+that the value of \emph{money} is maximized. Again, you use
+\begin{quote}
+Explorer.exploreBest(smm)
+\end{quote}
+to get a search tree where the value of \emph{money} in every 
+solution space is higher than the one in a solution space before. 
+
+
+
+\newpage
+\subsection{Example: Locating Warehouses}
+This example features branch and bound to compute an optimal solution, 
+a non-trivial branching strategy and symbolic constraints.
+
+\subsubsection{Problem Specification}
+Assume a company which wants to construct warehouses to supply 
+stores with goods. Each warehouse to be constructed would have 
+a certain capacity defining the largest number of stores which 
+can be supplied by this warehouse. For the construction of a 
+warehouse we have fixed costs. The costs for transportation from 
+a warehouse to a store vary depending on the location of the warehouse 
+and the supplied store. The aim is to determine which warehouses 
+should be constructed and which stores should be supplied by the 
+constructed warehouses such that the overall costs are minimized.
+
+We assume the fixed costs of building a warehouse to be 50. We 
+furthermore assume 5 warehouses W1 through W5 and 10 stores Store 1 
+through Store 10. The capacities of the warehouses are:
+
+\label{cap}
+\begin{tabular}{||c|c|c|c|c|c||}
+\hline
+& \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} &\textbf{W5}\\
+\hline
+capacity  & 1 & 4 & 2 &1 & 3\\
+\hline
+\end{tabular}
+
+The costs to supply a store by a warehouse are:
+
+\begin{tabular}{||c|c|c|c|c|c||}
+\hline
+& \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} &\textbf{W5}\\
+\hline
+\textbf{Store 1}& 36 & 42 & 22 & 44 & 52\\
+\hline
+\textbf{Store 2}& 49 & 47 & 134 & 135 & 121\\ 
+\hline
+\textbf{Store 3}& 121 & 158 & 117 & 156 & 115\\
+\hline
+\textbf{Store 4}& 8 & 91 & 120 & 113 & 101\\
+\hline
+\textbf{Store 5}& 77 & 156 & 98 & 135 & 11\\
+\hline
+\textbf{Store 6}& 71 & 39 & 50 & 110 & 98\\
+\hline
+\textbf{Store 7}& 6 & 12 & 120 & 98 & 93\\
+\hline
+\textbf{Store 8}& 20 & 120 & 25 & 72 & 156\\
+\hline
+\textbf{Store 9}& 151 & 60 & 104 & 139 & 77\\
+\hline
+\textbf{Store 10}& 79 & 107 & 91 & 117 & 154\\
+\hline
+\end{tabular}
+
+\subsubsection{Viewpoint and Constraints}
+We assume that the costs are given in the matrix \emph{CostMatrix} 
+defined above. For the model of this problem we introduce the 
+following variables.
+\begin{itemize}
+\item
+$\emph{Open}_i$, 1 $\leq$ i$ \leq$ 5, with domain 0$\#$1 such that 
+$\emph{Open}_i$ = 1 if warehouse $W_i$ does supply at least one store.
+\item
+$\emph{Supplier}_i$, 1 $\leq$ i $\leq$ 10, with domain 1$\#$5 such that 
+$\emph{Supplier}_i$ = j if store $\Store_i$ is supplied by 
+warehouse $W_j$.
+\item
+$\emph{Cost}_i$, 1 $\leq$ i $\leq$ 10, such that the domain of $\emph{Cost}_i$ 
+is defined by the row $\emph{CostMatrix}_i$. The variable $\emph{Cost}_i$ 
+denotes the costs of supplying store $\Store_i$ by warehouse 
+$W_{\emph{Supplier}_i}$, i. e., $\emph{Cost}_i$ = $\emph{CostMatrix}_{i,\emph{Supplier}_i}$.
+\end{itemize}
+We have the additional constraint that the capacity of the warehouses 
+must not be exceeded. To this aim we introduce auxiliary variables 
+$\emph{Supplies}_{i,j}$ with the domain 0$\#$1 as follows:
+\begin{quote}
+$\forall i \in \{1,\ldots,5\} \forall j \in \{1,\ldots, 10\}$:
+$(\emph{Supplies}_{i,j} = 1) \Leftrightarrow (\emph{Supplier}_j = i)$
+\end{quote}
+
+The capacity constraints can then be stated with
+\begin{quote}
+$\forall i \in \{1, \ldots, 5\}:\ \emph{Cap}_i \geq $
+$\sum\limits_{j=1}^{10}\emph{Supplies}_{i,j}$
+\end{quote}
+where $\emph{Cap}_i$ is defined defined above\ref{cap}.
+
+
+\subsubsection{Branching Strategy}
+There are several possibilities to define a branching 
+strategy for this problem.
+
+We choose to determine the variables $\emph{Cost}_i$ by branching. 
+Because no entry in a row of the cost matrix occurs twice, we 
+immediately know which store is supplied by which warehouse. 
+We select the variable $\emph{Cost}_i$ first for which the difference 
+between the smallest possible value and the next higher value 
+is maximal. Thus, decisions are made early in the search tree 
+where the difference between two costs by different suppliers 
+are maximal. The branching strategy will try the minimal 
+value in the domain of $\emph{Cost}_i$ first. In Operations 
+Research this strategy is known as the principle of \emph{least regret}.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A script for the warehouse problem},
+label=listing 24,frame=trbl}
+\begin{myverbatim}
+val capacity = #[3,1,4,1,4];
+
+val costmatrix = 
+    #[#[36,42,22,44,52],#[49,47,134,135,121],
+      #[121,158,117,156,115],#[8,91,120,113,101],
+      #[77,156,98,135,11],#[71,39,50,110,98],
+      #[6,12,120,98,93],#[20,120,25,72,156],
+      #[151,60,104,139,77],#[79,107,91,117,154]];
+                   
+val maxValue = (valOf (Int.maxInt))div 2
+
+fun warehouse cap costm space =
+    let
+       val isopen as #[o1,o2,o3,o4,o5] = 
+                          FD.boolvarVec(space,5)
+       val supplier as #[s0,s1,s2,s3,s4,s5,s6,s7,s8,s9] = 
+                          FD.rangeVec(space,10,(0,4))
+       val cost as #[c0,c1,c2,c3,c4,c5,c6,c7,c8,c9] = 
+                          FD.rangeVec(space,10,(1,1000))
+       val suppliesij = Vector.tabulate(5,fn x => 
+                          FD.boolvarVec(space,10))
+       val sumcost = FD.range(space,(1,10000))
+       val nbopen = FD.range(space,(0,5))
+       val totalcost = FD.range(space,(1,11000))
+       fun order(curr,last)=
+           post (curr, FD(totalcost)`< 
+                 `(FD.Reflect.value(last,totalcost)),FD.BND)
+                  
+    in  
+      (* posts sum of isopen[i] = nbopen *) 
+       post(space,SUMV(Vector.map(fn x => 
+              FD.boolvar2intvar x)isopen) `= FD(nbopen),FD.DOM);
+      (* posts sum of cost[i]= sumcost *)
+       post(space,SUMV(cost) `= FD(sumcost),FD.DOM);
+       post(space,FD(sumcost)`+ FD(nbopen) `* `50 
+                    `= FD(totalcost),FD.DOM);
+      (* ensures that for i={1,..,5}and j={1,..,10}: 
+         supplies_{i,j} = 1 <-> supplier[j]=i *)
+       let  
+          val tmp = Vector.concat(Vector.toList
+               (Vector.tabulate(5,fn x => 
+                        Vector.tabulate(10,fn y =>(x,y)))))
+       in
+          Vector.app(fn(i,j) =>
+               FD.Reified.relI(space,
+                  Vector.sub(supplier,j),FD.EQ,i,
+                  Vector.sub(Vector.sub(suppliesij,i),j)))
+                    tmp
+       end;
+      (* ensures that for i ={1,..,5}and j={1,..,10}: 
+         capacity[i] >= sum supplies_{i,j} *)
+       Vector.app(fn(x) => 
+          post(space,SUMV(Vector.map(fn y =>
+                 FD.boolvar2intvar y)(Vector.sub(suppliesij,x))) 
+                 `<= `(Vector.sub(cap,x)),FD.DOM))
+                 (#[0,1,2,3,4]); 
+      (* ensures that cost[i] = costmatrix_{i,(supplier[i])} *)           
+       Vector.appi(fn(i,x) => FD.elementI( space,x,
+                  Vector.sub(supplier,i),Vector.sub(cost,i)))
+                  (costm);
+      (* ensures that open[i]= 1 <-> 
+         W_i does support at least one store *)   
+       Vector.appi(fn(i,x) => 
+         let
+            val tmp = Vector.map(fn y => FD.boolvar2intvar y)x
+            val tmp2 =  FD.range(space,(0,5))                  
+         in
+            post(space,SUMV(tmp) `= FD(tmp2),FD.DOM);
+            FD.Reified.relI(space,tmp2,FD.GR,0, Vector.sub(isopen,i))
+         end)  
+           (suppliesij);
+       FD.branch(space,cost,FD.B_REGRET_MIN_MAX,FD.B_MIN);
+     ({cost,totalcost,supplier,suppliesij,isopen,nbopen},order)
+   end
+
+\end{myverbatim}
+
+
+
+
+\newpage
+\section{Problem Solving with Finite Set Constraints}
+\subsection{Introduction}
+\subsubsection{Set Values}
+Alice provides finite sets of integers as 
+first-class values and every set value is a subset of 
+the universal set \emph{U} = \{\emph{- sup},$\ldots$,\emph{sup}\}. 
+The value of \emph{sup} is determined by the 
+actual implementation and in Alice it is 536870910.
+
+
+\subsubsection{Set Constraints}
+A basic set constraint approximates a set value \emph{S} 
+in three different ways: 
+\begin{itemize}
+\item
+Constraining the lower bound by set \emph{s}:\emph{s}$\subseteq$\emph{S}. 
+The lower bound contains all elements that are at 
+least contained in the set value. 
+\item
+Constraining the upper bound by set \emph{s} :\emph{S}$\subseteq$\emph{s} . 
+The upper bound contains all elements that 
+are at most contained in the set value. 
+\item
+Constraining the cardinality of a set by a finite 
+domain interval \{\emph{n},$\ldots$,\emph{m}\}: \emph{n}$\le$ $\#$\emph{S}$\le$\emph{m} . 
+The cardinality constraint determines the minimal 
+and maximal number of elements allowed to be contained in the set. 
+\end{itemize}
+
+A set constraint denotes a set value if either the lower 
+is equal to the upper bound, the cardinality of the lower 
+bound is equal to the upper bound of the cardinality constraints, 
+or the cardinality of the upper bound is equal to the lower 
+bound of the cardinality constraint.
+
+Non-basic set constraints, as intersubsection $\cap$, union $\cup$, 
+disjointness $\parallel$, 
+and the like, are provided as propagators. For details on the provided 
+set propagators see the structure
+\htmladdnormallink{\textcolor{blue}{FS}}
+{http://www.ps.uni-sb.de/alice/manual/library/fs.html}.
+
+
+\subsubsection{Set Constraint Propagation}
+To explain constraint propagation, assume the basic 
+set constraints: 
+\begin{quote}
+$\emptyset \subseteq$ X,Y $\subseteq$\{1,$\ldots$,5\}
+\end{quote}
+and additionally the following non-basic constraints:  
+\begin{quote}
+X $\cup$ Y = \{1,$\ldots$,5\} and X$\parallel$Y.
+\end{quote}
+Adding the constraints 1 $\in$ X and 2 $\notin$ Y  yields 
+the intermediate store \{1\} $\subseteq$ X $\subseteq$ \{1,$\ldots$,5\}
+and $\emptyset \subseteq$ Y $\subseteq$ \{1,3,4,5\}. The 
+present non-basic constraints can add even more basic 
+constraints: the disjointness constraint removes 1 from 
+the upper bound of \emph{Y} since 1 was added to the lower bound 
+of \emph{X}. The union constraint adds 2 to the lower bound of  
+\emph{X} since 2 was removed from the upper bound of \emph{Y}. 
+After that, propagation has reached a fixed-point and leads to 
+\{1,2\}$\subseteq$ X $\subseteq$ \{1,$\ldots$,5\} and 
+$\emptyset \subseteq$ Y $\subseteq$ \{3,4,5\}. 
+Bringing the cardinality constraint 3 $\le$ $\#$Y $\le$ 5  
+into play determines \emph{Y} to \{3,4,5\} since the upper 
+bound has exactly 3 elements which is the minimal number 
+required by the cardinality constraint. 
+The disjointness constraint then removes 3, 4, 5 from \emph{X}'s 
+upper bound and that way determines \emph{x} to \{1,2\}. 
+
+\subsubsection{Connecting Finite Sets and Finite Domains}
+Set constraints on their own are of limited use, connecting 
+them with finite domain constraints provides much more 
+expressivity. The straightforward way is to connect a finite 
+set variable via the cardinality constraint to a finite 
+domain variable. Another technique is to provide reified 
+versions for various set constraints as containment and 
+the like. But there are further possiblies if the fact 
+that the elements of a set are integers is exploited. 
+
+
+\subsubsection{Branching}
+Due to the fact that constraint propagation is incomplete, 
+expectedly in case of set constraints as well, solving a 
+problem involving set constraints requires branching. 
+\db{A typical choice-point branching a set variable is 
+n $ \in $ S  $ \vee $ n $ \not\in $ S. 
+The following figure illustrates that.}
+
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.8]{figs/setdistribution.eps}}
+\caption{\textbf{Branching with set constraints}}
+\label{figure 12}
+\end{figure}
+
+
+
+
+
+\newpage
+\subsection{The Steiner Problem}
+\subsubsection{Problem Specification}
+The ternary Steiner problem of order $n$ asks for $n( n - 1 ) / 6$
+sets $s_i \subset \{1,\ldots,n\}$ with cardinality 3 such that every
+two of them share at most one element. The mathematical properties of
+the problem require that $n \mod 6$ has to be either 1 or 3
+\cite{11}.
+
+\subsubsection{Viewpoint and Constraints}
+We create a list \textbf{ss} of \emph{n( n - 1 ) / 6} set variables 
+and constrain every set to have a cardinality of 3 and to have an 
+upper bound of \emph{\{1,$\ldots$,n\}}. Further we require that the cardinality 
+of the intersubsection of every two distinct sets in \emph{ss} must 
+not exceed 1. 
+
+\subsubsection{Branching Strategy}
+Branching simply takes the sets as they occur in \emph{ss} 
+and adds resp. removes elements from them starting from 
+the smallest element. 
+
+\subsubsection{Script}
+First, the list ss is created and its elements' upper bounds 
+and cardinalities are appropriately constrained. 
+The procedure \emph{intersect} ensures
+that every two sets share at most one element by stating that 
+the cardinality of the intersubsection of two sets is in \emph{\{0,1\}}. 
+Branching is straightforward and uses the provided library 
+procedure \emph{setvarbranch}.
+  
+\lstset{caption = \textbf{A script for the Steiner Problem},
+label=listing 25,frame=trbl}
+\begin{myverbatim}
+exception FalseInput;
+
+fun steiner n space  = 
+   if ((n mod 6) = 1) orelse ((n mod 6) = 3)
+   then
+    let 
+       val n' = (n *(n - 1)) div 6
+       val ss = List.tabulate(n',(fn x => 
+                  FS.upperBound(space,#[(1,n)])))
+       fun intersect(space,[y])= ()
+         | intersect(space,y::ys)= (List.app(fn x =>
+              let 
+                 val tmp = FS.setvar space
+              in       
+                (FS.relOp(space,y,FS.INTER,x,FS.SEQ,tmp);
+                 FS.cardRange(space,0,1,tmp))
+             end)
+                (ys);intersect(space,ys))
+    in
+       List.app(fn x => FS.cardRange(space,3,3,x))ss;
+       intersect(space,ss);
+       FS.setvarbranch(space,Vector.fromList ss,
+                             FS.FSB_NONE,FS.FSB_MIN);    
+       ss
+    end
+    else                 
+     raise FalseInput 
+\end{myverbatim}
+
+
+Solving the Steiner problem of order 9 by invoking the Alice 
+Explorer 
+\begin{quote}
+Explorer.exploreOne(Steiner 9)
+\end{quote}
+yields as solution 
+\begin{quote}
+$\{ss = [setvar\{|<1..3> (3)|\}, setvar\{|<1, 4..5> (3)|\},setvar\{|<1, 6..7> (3)|\},$ \\
+$       setvar\{|<1, 8..9> (3)|\}, setvar\{|<2, 4, 6> (3)|\},  setvar\{|<2, 5, 8> (3)|\},$\\
+$  setvar\{|<2, 7, 9> (3)|\},  setvar\{|<3..4, 9> (3)|\},  setvar\{|<3, 5, 7> (3)|\}, $\\
+$ setvar\{|<3, 6, 8> (3)|\},  setvar\{|<4, 7..8> (3)|\},  setvar\{|<5..6, 9> (3)|\}]\}$
+\end{quote}
+The search tree has 4529 choice nodes, and 4505 
+failure nodes. 
+
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.3]{figs/steiner1.eps}}
+\caption{\textbf{Search tree of the Steiner Problem}}
+\label{figure 13}
+\end{figure}
+
+
+
+\subsubsection{Improving the Model}
+A promising way to improve the efficiency of a constraint
+ model (where the corresponding problem does not have a 
+unique solution) is to break symmetries and thus to improve 
+constraint propagation. Breaking symmetries can be achieved 
+by imposing an order, in our case, an order on the set variables 
+in Ss. We can simply interpret every set as a number with 
+three digits to the base \emph{(n + 1)}. A set with three elements 
+\{\emph{$x_1, x_2, x_3$}\} can be mapped to an integer by 
+\emph{(n + 1)}\emph{$^2 * x_1$} + \emph{(n + 1)}\emph{$^2 * x_2$ + $x_3$}. 
+
+\subsubsection{Extending the Solver}
+The finite set library provides 
+FS.match to match 
+the elements of a set \emph{s} with a fixed number of elements 
+to a vector of size \emph{$\#$ s} of finite domain variables. This 
+library constraint in conjunction with Map is used to 
+convert the list of sets Ss to a list of finite domain 
+lists with 3 finite domains per list. Finally the order 
+between adjacent sets is imposed by 
+\begin{quote}
+N1 * N1 * $y_1$ + N1 * $y_2$ + $y_3 < $ N1 * N1 * $x_1$ + N1 * $x_2$ + $x_3$.
+\end{quote}
+\lstset{caption = \textbf{Extension of the Steiner Script},
+label=listing 26,frame=trbl}
+\begin{myverbatim}
+let 
+    val n1 = n + 1
+    val n1n1 = n1 * n1
+    val ivarlist = List.map(fn x => 
+    let 
+       val tmp = FD.rangeVec(space,3,(1,n))
+     in
+       (FS.match(space,x,tmp);Vector.toList tmp)
+    end)(ss)
+    fun redundantconstr(s,[y]) = ()
+      | redundantconstr(space,y as [y1,y2,y3]::ys)= 
+             (List.map(fn x as [x1,x2,x3] =>
+                 post(space,`n1n1 `* FD(y1) `+ `n1 `* FD(y2) `+
+                            FD(y3) `< `n1n1 `* FD(x1) `+ `n1 `* 
+                            FD(x2) `+ FD(x3),FD.DOM))(ys);
+              redundantconstr(space,ys))       
+ in
+    redundantconstr(space,ivarlist)
+end;
+\end{myverbatim}
+
+This code is to be inserted right before the branching. 
+Solving the Steiner problem of order 9 results in the following 
+search tree. 
+
+\begin{figure}[htpb]
+\centerline{\includegraphics*[scale=0.3]{figs/steiner2.eps}}
+\caption{\textbf{Search tree of the optimized Script for the Steiner Problem}}
+\label{figure 14}
+\end{figure}
+We see that the number of choice nodes decreases from 
+4529 to 419 and the number of failure nodes decreases from 
+4505 to 359.
+
+
+
+
+\newpage
+\subsection{Generating Hamming Codes}
+
+\subsubsection{Problem Specification}
+Generate a Hamming code that fits in \emph{b} - bit words to 
+code \emph{n} symbols where the Hamming distance between every 
+two symbol codes is at least \emph{b}. The Hamming distance between 
+two words is the number of bit positions where they differ. 
+
+\subsubsection{Viewpoint and Constraints}
+A \emph{b} - bit word is modeled by a set 
+\emph{s} $\subseteq$ \{1,$\ldots$,\emph{b}\}
+where \emph{e}$\in$ \emph{s} means that the bit
+at position \emph{e} is set (resp. unset otherwise). The Hamming 
+distance \emph{h(a, b)} between two words \emph{a} and \emph{b}
+represented as sets $s_a$  and $s_b$ 
+can be computed by subtracting from the word size $b$ 
+the number of elements that is contained 
+($\#(s_a \cap s_b)$) \db{resp. is not contained 
+($\#(\{1,\ldots,b\}\setminus s_a \cup s_b)$)
+in both sets. Thus, the Hamming distance results in 
+\begin{quote}
+$h(a, b)$ = $s_b$ - $\#$ ($s_a \cap s_b $)
+ - $\#$(\{1,$\ldots$,b$\backslash s_a \cup s_b$).  
+\end{quote}}
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A Script for the Hamming Codes Problem},
+label=listing 27,frame=trbl}
+\begin{myverbatim}
+
+ 
+fun hamming bits distance numsymbols space =
+    let
+       val xs = List.tabulate(numsymbols,(fn x => 
+                    FS.upperBound(space,#[(1,bits)])))
+       val tmp = FS.Value.make(space,#[(1,bits)])
+       fun minDist(x,y)= 
+           let
+              val tmp1 = FS.setvar space
+              val tmp2 = FS.setvar space
+              val tmp3 = FS.setvar space
+              val tmp4 = FD.intvar(space,#[(0,bits)])
+              val tmp5 = FD.intvar(space,#[(0,bits)])
+           in
+             (FS.relOp(space,x,FS.INTER,y,FS.SEQ,tmp1);
+              FS.relOp(space,x,FS.UNION,y,FS.SEQ,tmp2);
+              FS.relOp(space,tmp,FS.MINUS,tmp2,FS.SEQ,tmp3);
+              FS.cardinality(space,tmp1,tmp4);
+              FS.cardinality(space,tmp3,tmp5);
+              post(space,`bits `- FD(tmp4) `- FD(tmp5) 
+                         `>= `distance,FD.DOM))
+           end 
+       fun forallTail([y])= ()
+         | forallTail(y::ys) = (List.app(fn x => 
+                          minDist(y,x))(ys);forallTail ys)
+    in
+       forallTail(xs);
+       FS.setvarbranch(space,Vector.fromList xs,
+                             FS.FSB_NONE,FS.FSB_MIN);
+       xs
+    end
+\end{myverbatim}
+
+
+The Script in Listing \ref{listing 27} generates a Hamming 
+code for \emph{numsymbols} symbols in words with \emph{bits} bits 
+and a Hamming distance of \emph{distance}. The procedure \emph{minDist} 
+implements the constraint that the Hamming distance does not 
+exceed the value of \emph{distance}. The list \emph{xs} holds the sets 
+representing the single codes.
+The nested loop \emph{forallTail} 
+imposes \emph{minDist} on all pairwise distinct elements of \emph{xs}. 
+The branching employs straightforwardly a naive strategy.
+
+The following code generates a Hamming code for 16 symbols 
+using 7 bit words and ensures a Hamming distance of 2. 
+\lstset{label=listing 28,frame=trbl}
+\begin{myverbatim}
+val distance = 2
+val bits = 7
+val numsymbols = 16 
+
+let 
+    val(s,r) = valOf(Search.searchOne
+                (hamming bits distance numsymbols))
+in
+    List.map(fn y => domainToList y)
+     (List.map(fn x =>FS.Reflect.upperBound(s,x))r)
+end 
+
+\end{myverbatim}
+
+
+
+
+
+
+\newpage
+\subsection{Packing Files onto Disks}
+
+\subsubsection{Problem Specification}
+Suppose, you want to copy a set of files from your hard-disk 
+onto as few as possible diskettes of a given size, e. g. onto 
+common 1.44 MB diskettes. In case your files do not fit on a 
+single diskette, it might become quite tricky to figure out 
+the minimal number of needed diskettes and how to partition the files. 
+
+\subsubsection{Viewpoint and Constraints}
+A diskette is modeled by a set $\text{disk}_i$. All sets $\text{disk}_i$  
+form a partition of the set of all files $s_\text{all\_files}$, 
+i. e., all $\text{disk}_i$ are pairwise disjoint and their union is 
+$s_\text{all\_files}$. The sizes of all files contained in a set is 
+summed up and compared with the fixed capacity of the diskette. 
+
+\subsubsection{Branching Strategy}
+The branching over the sets representing the individual disks
+employs straightforwardly a naive strategy. To get the minimal
+number of needed disks, we have to write a procedure that searches
+for the first solution iterating over an integer variable \emph{nbDisks}
+beginning with small values. \db{It is not possible to use a two dimensional
+branching strategy because the value of \emph{nbDisks} would have to be
+\emph{reflected} during search}.
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A Script for the Packing Files Problem},
+label=listing 29,frame=trbl}
+\begin{myverbatim}
+val diskCap = 1440
+
+type filev = {name : string, size : int} vector
+
+val files = #[{name= "a",size = 360},{name= "b",size = 850},
+              {name= "c",size = 630},{name= "d",size = 70},
+              {name= "e",size = 700},{name= "f",size = 210}]
+    
+
+fun spreadFiles (files:filev) diskCap nbDisks space =
+    let
+       val size = Vector.length files
+       val disks = Vector.tabulate(nbDisks,fn x => 
+                      FS.upperBound(space,#[(1,size)]))
+       val disks' = Vector.tabulate(nbDisks,fn x => 
+                      FD.boolvarVec(space,size))
+       val all_files = FS.Value.make(space,#[(1,size)])          
+       fun sumFiles vec =  
+           Vector.appi(fn(i,x) => 
+             let 
+                val list = List.tabulate(size,fn x => x+1)
+             in      
+                List.app(fn y => FS.domR(space,x,FS.SUP,#[(y,y)],
+                           Vector.sub(Vector.sub(disks',i),y-1)))
+                        list;
+                FD.linear(space,VectorPair.zip(
+                           Vector.tabulate(size,fn z => 
+                                      #size(Vector.sub(files,z))),
+                            Vector.map(fn z => FD.boolvar2intvar z)
+                                 (Vector.sub(disks',i))),
+                          FD.LQ,diskCap,FD.DOM)
+             end)vec
+   in 
+       FS.relN(space,disks,FS.DUNION,all_files);
+       sumFiles(disks);
+       FS.setvarbranch(space,disks,FS.FSB_NONE,FS.FSB_MIN); 
+       disks
+   end
+     
+     
+\end{myverbatim}
+
+
+The function \emph{spreadfiles} gets the formal arguments \emph{files},
+\emph{diskCap} and \emph{nbDisks}. The script returns the problem 
+variable \emph{disks} that contains the set of diskettes of 
+size \emph{diskCap} needed to store all files in \emph{files}. 
+and specifies what files have to be stored on which diskette.
+
+The argument \emph{files} is a vector of individual files, where each 
+file is represented by a record with labels \emph{name} and \emph{size}. 
+The argument \emph{diskCap} and \emph{nbDisks} are integers.
+
+Because we want the number of disks we need to store the files
+to be minimal, we have to write an additional function that checks
+the result of a hardcoded value for \emph{nbDisks} and tries to find -
+if possible - a smaller one.
+
+The procedure \emph{sum\_files} ensures that every file is stored in
+a disk without exceeding capacity.
+
+In listing \ref{listing 30} is given a function \emph{test} that
+gets as formal argument an integer \emph{x}. Given this integer, it
+computes the result of
+\begin{quote}
+Search.searchOne(spreadFiles files diskCap x).
+\end{quote}
+If the function finds a solution it stops, otherwise it continues
+computation with the successor of \emph{x}.
+\lstset{caption = \textbf{Test function for the Packing 
+Files Problem},
+label=listing 30,frame=trbl}
+\begin{myverbatim}
+fun test x =                        
+  let 
+     val b = (Search.searchOne(spreadFiles files diskCap x))
+             handle Space.InvalidSpace => NONE
+     fun name l = List.map(fn z =>List.map(fn y => 
+                  (#name)(Vector.sub(files,y-1)))z)l
+  in
+     case b of NONE => test(x+1)
+             | SOME (s,r) =>
+               (x,name(List.map(fn z => domainToList z)
+                  (Vector.toList(Vector.map(fn x =>
+                     FS.Reflect.upperBound(s,x))r))))
+     
+  end
+\end{myverbatim}
+
+
+Given the \emph{test} function the argument 0, it computes
+\begin{quote}
+$(2, [['a','b','f' ], ['c','d','e' ]])$
+\end{quote}
+where 2 is the minimal number of disks you need and
+the second argument is a list with the name of the files
+stored on the specific disks.
+
+
+
+
+
+
+
+\newpage
+\subsection{A Crew Allocation Problem}
+
+\subsubsection{Problem Specification}
+A small air-line has to assign their 20 flight attendants 
+to 10 flights. Each flight has to be accompanied by a certain 
+number of cabin crew (see first Table) that has to meet a couple 
+of constraints. First, to serve the needs of international 
+clients the cabin crew has to be able to speak German, Spanish, 
+and French (see second Table). Further, a minimal number of 
+stewardesses resp. stewards have to attend a flight 
+(see third Table). Finally, every cabin crew member has 
+two flights off after an attended flight.
+
+\begin{tabular}{||c|c||c|c||}
+\hline
+\multicolumn{4}{||c||}{Cabin crew per flight}\\
+\hline
+flight$\#$ & $\#$of cabin staff & flight$\#$ & $\#$of cabin staff\\
+\hline 
+1 & 4 & 6 & 4\\
+\hline
+2 & 4 & 7 & 4 \\
+\hline
+3 & 5 & 8 & 5 \\
+\hline
+4 & 5 & 9 & 5 \\
+\hline
+5 & 6 & 10 & 6\\
+\hline   
+\end{tabular}
+
+\begin{tabular}{||c||c|c|c||}
+\hline
+\multicolumn{4}{||c||}{Cabin crew speaking foreign language per flight}\\
+\hline
+flight$\#$ & French  & Spanish & German \\
+\hline 
+1 & 1 & 1 & 1\\
+\hline
+2 & 1 & 1 & 1 \\
+\hline
+3 & 1 & 1 & 1 \\
+\hline
+4 & 2 & 2 & 1 \\
+\hline
+5 & 2 & 2 & 1\\
+\hline   
+6 & 1 & 1 & 1\\
+\hline
+7 & 1 & 1 & 1 \\
+\hline
+8 & 1 & 1 & 1 \\
+\hline
+9 & 1 & 1 & 1 \\
+\hline
+10 & 1 & 1 & 1\\
+\hline   
+\end{tabular}
+
+\label{table3}
+\begin{tabular}{||c|c|c||c|c|c||}
+\hline
+\multicolumn{6}{||c||}{Male resp. female cabin crew per flight}\\
+\hline
+flight$\#$ & male & female & flight$\#$ & male & female\\
+\hline 
+1 & 1 & 1 & 6 & 1 & 1\\
+\hline
+2 & 1 & 1 & 7 & 1 & 1 \\
+\hline
+3 & 1 & 1 & 8 & 1 & 1 \\
+\hline
+4 & 2 & 2 & 9 & 1 & 1\\
+\hline
+5 & 3 & 2 & 10 & 1 & 1\\
+\hline   
+\end{tabular}
+
+\subsubsection{Viewpoint and Constraints}
+The cabin crew for every flight is represented as a set
+with domain 1$\#$20. 
+The constraints on cabin crews of individual flights are 
+modeled in terms of constraints on the cardinality of the 
+intersection of the cabin crew set of that flight with the 
+sets associated with particular restrictions. Therefore 
+the following subsets of the cabin crew are introduced: 
+male, female, Spanish-speaking, French-speaking, and 
+German-speaking cabin crew. The constraint that a crew 
+member has two flights off after an attended flight is 
+expressed by the disjointness of the appropriate sets 
+representing a crew per flight. 
+
+\subsubsection{Script}
+The function \emph{assignCrew} returns a solver configured according 
+to its arguments \emph{flights} and \emph{crew}. As previously mentioned, 
+the constraints on the cabin crew of a flight are expressed in 
+terms of sets of crew members meeting these constraints. For 
+that reason the following variables are defined: 
+\begin{itemize}
+\item
+\emph{stewards} (male cabin crew members), 
+\item
+\emph{stewardesses} (female cabin crew members), 
+\item
+\emph{french, german, and spanish} 
+(French-, German-, resp. Spanish-speaking cabin crew members). 
+\end{itemize}
+\lstset{caption = \textbf{A Script for the Crew Allocation Problem},
+label=listing 31,frame=trbl}
+\begin{myverbatim}
+val maxValue = (valOf (Int.maxInt))div 2
+
+type crewrec = {french : int list, german : int list,
+                spanish : int list,stewardesses : int list, 
+                stewards : int list}
+                
+type flightrec = {crew : int, french : int, german : int,
+                  no : int,spanish : int,stewardesses : int,
+                  stewards : int}
+                  
+val crew = {stewards = [1,2,3,4,5,6,7,8,9,10],
+            stewardesses = [11,12,13,14,15,16,17,18,19,20],
+            french = [6,17,18,20],
+            german = [1,3,9,16,20],
+            spanish = [5,6,7,9,14,17,19]}
+     
+val flights = [{no = 1,crew = 4,stewards = 1,stewardesses = 1,
+                french = 1, spanish = 1,german = 1},
+               {no = 2,crew = 5,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 3,crew = 5,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 4,crew = 6,stewards = 2,stewardesses = 2,
+               french = 1, spanish = 1,german = 1},
+               {no = 5,crew = 7,stewards = 3,stewardesses = 3,
+               french = 1, spanish = 1,german = 1},
+               {no = 6,crew = 4,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 7,crew = 5,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 8,crew = 6,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 9,crew = 6,stewards = 2,stewardesses = 2,
+               french = 1, spanish = 1,german = 1},
+               {no = 10,crew = 7,stewards = 3,stewardesses = 3,
+               french = 1, spanish = 1,german = 1}]
+
+fun assignCrew flights (crew:crewrec) space =
+    let
+       val stewards = FS.Value.make(space,
+                      FD.domainFromList(#stewards(crew)))
+       val stewardesses = FS.Value.make(space,
+                      FD.domainFromList(#stewardesses(crew)))
+       val french = FS.Value.make(space,
+                      FD.domainFromList(#french(crew)))
+       val german = FS.Value.make(space,
+                      FD.domainFromList(#german(crew)))
+       val spanish = FS.Value.make(space,
+                      FD.domainFromList(#spanish(crew)))
+       fun teamConstraint(team,flight:flightrec)=
+           let
+              val n = #crew(flight)
+              val nstew = #stewards(flight)
+              val nhost = #stewardesses(flight)
+              val ngerm = #german(flight)
+              val nspan = #spanish(flight)
+              val nfren = #french(flight)
+              fun cardOp(nb,setv)= 
+                  let
+                     val tmp1 = FS.setvar space
+                     val tmp2 = FD.range(space,(1,maxValue))
+                  in
+                     FS.relOp(space,team,FS.INTER,setv,
+                              FS.SEQ,tmp1);
+                     FS.cardinality(space,tmp1,tmp2);
+                     post(space,FD(tmp2) `>= `nb,FD.DOM)
+                  end
+            in
+               FS.cardRange(space,n,n,team);
+               Vector.app(fn(x,y)=>cardOp(x,y))
+               (#[(nstew,stewards),(nhost,stewardesses),
+                  (ngerm,german),(nspan,spanish),(nfren,french)])
+            end
+       fun sequenceDisjoint(x::y::nil)= FS.rel(space,x,FS.DISJ,y)
+         | sequenceDisjoint(x::y::z::xs)= 
+                          (FS.rel(space,x,FS.DISJ,y);
+                           FS.rel(space,x,FS.DISJ,z);
+                           sequenceDisjoint(y::z::xs))         
+       val crewlist = List.tabulate(List.length flights,fn x =>
+                                    FS.upperBound(space,#[(1,20)]))         
+    in
+       List.app(fn(x,y)=> teamConstraint(y,x))
+               (ListPair.zip(flights,crewlist));
+       sequenceDisjoint(crewlist);
+       FS.setvarbranch(space,Vector.fromList crewlist,
+                       FS.FSB_NONE,FS.FSB_MIN); 
+       crewlist
+    end
+\end{myverbatim}
+
+
+The procedure \emph{teamConstraint} imposes the abovementioned constraints 
+on the individual flight cabin crew sets intersecting them with 
+appropriate sets by \emph{FS.relOp} with the set operation \emph{FS.INTER},
+and constrains the \db{intersection's cardinality according to Table 
+\ref{table3}(using FS.cardinality and \emph{post})}.
+
+The procedure \emph{sequenceDisjoint} is responsible to ensure that every 
+crew member may enjoy a two-flight break between two flights. It 
+is a recursive procedure imposing \emph{FS.rel} with the set operation
+\emph{FS.DISJ} upon every 3 subsequent sets.
+
+The actual solver declares the local variable \emph{crewlist} that 
+contains the list of sets representing the individual crew 
+assignments. Then, the constraints of the procedure \emph{teamConstraint} 
+are imposed on \emph{crewlist} by the \emph{List.app} procedure, 
+applying the data provided by \emph{flights} to \emph{crewlist}. 
+The branching is straightforward and has no particularities.
+
+The following sample data can be used to test the solver:
+\lstset{caption = \textbf{Sample data for the Crew Allocation Problem},
+label=listing 32,frame=trbl}
+\begin{myverbatim}
+fun name 1 = "tom"
+  | name 2 = "david"
+  | name 3 = "jeremy"
+  | name 4 = "ron"
+  | name 5 = "joe"
+  | name 6 = "bill"
+  | name 7 = "fred"
+  | name 8 = "bob"
+  | name 9 = "mario"
+  | name 10 = "ed"
+  | name 11 = "carol"
+  | name 12 = "janet"
+  | name 13 = "tracy"
+  | name 14 = "marilyn"
+  | name 15 = "carolyn"
+  | name 16 = "cathy"
+  | name 17 = "inez"
+  | name 18 = "jean"
+  | name 19 = "heather"
+  | name 20 = "juliet";
+
+let 
+    val (s,r) = valOf(Search.searchOne(assignCrew flights crew))
+in  
+    List.map(fn x => List.map(fn y => name y)x)
+      (List.map(fn y=> domainToList y)(List.map(fn x => 
+                            FS.Reflect.upperBound(s,x))(r)))
+end
+\end{myverbatim}
+
+
+
+\newpage
+\subsection{Scheduling a Golf Tournament}
+
+\subsubsection{Problem Specification}
+There are 32 individually playing golfers who play in 
+groups of 4, so-called foursomes. For every week of the 
+golf tournament new sets of foursomes are to be compiled. 
+The task is to assign foursomes for a given number of weeks 
+such that no player plays with another player in a foursome twice. 
+
+\subsubsection{Maximal Number of Weeks}
+The upper bound for the number of weeks is 10 weeks due to 
+the following argument.\db{ There are $\left({32 \atop 2}\right) $ = 496 pairing of players. 
+Each foursome takes 6 pairings and every week consists of 8 
+foursomes, hence, every week occupies 48 pairings. Having 
+only 496 pairings available, at most $[496 / 48]$ = 10 weeks can be assigned 
+without duplicating foursomes}. Unfortunately, only assignments 
+for 9 weeks could be found so far. Fortunately again, 
+this assignment could only be found by solvers using set 
+constraints. Other approaches, using linear integer 
+programming, failed for this problem size. 
+
+\subsubsection{Viewpoint and Constraints}
+A foursome is modeled as a set of cardinality 4. A week is 
+a collection of foursomes and all foursomes of a week are 
+pairwise disjoint and their union is the set of all golfers. 
+This leads to a partition constraint. Further, each foursome 
+shares at most one element with any other foursome, since 
+a golfer, of course, may occur in different foursomes but 
+only on his own. Therefore, the cardinality of the intersubsection 
+of a foursome with any other foursome of the other weeks 
+has to be either 0 or 1. 
+
+\subsubsection{Branching Strategy}
+The branching strategy is crucial for this problem.
+A player is taken and assigned to all possible foursomes. 
+Then the next player is taken and assigned and so on.
+The approach, coming usually into mind first, to branch
+a foursome completely, fails even for smaller instances of 
+the problem. This branching strategy is called \emph{MIN UNKNOWN 
+ELEMENT}.
+
+\subsubsection{Script}
+
+\lstset{caption = \textbf{A Script for the Golf Problem},
+label=listing 33,frame=trbl}
+\begin{myverbatim}
+val nbOfWeeks = 9;
+val nbOfFourSomes = 8;
+
+fun golf nbOfWeeks nbOfFourSomes space =
+  let
+      val nbOfPlayers = 4 * nbOfFourSomes
+      val tournament = List.tabulate(nbOfWeeks,fn y => 
+                       List.tabulate(nbOfFourSomes,fn x =>
+                       FS.upperBound(space,#[(1,nbOfPlayers)])))
+      val allPlayers = FS.Value.make(space,#[(1,nbOfPlayers)])
+      fun flatten([])= []
+        | flatten(x::xs)= x@flatten(xs)
+      fun weeks([])= ()
+        | weeks(x::xs) = (List.app(fn y => 
+                            FS.cardRange(space,4,4,y))x;
+                          FS.relN(space,Vector.fromList x,
+                                      FS.DUNION,allPlayers);
+                          List.app(fn y =>
+                           List.app(fn z => 
+                            List.app(fn v =>
+                             let
+                                val tmp = FS.setvar space
+                             in
+                               (FS.relOp(space,v,FS.INTER,y,
+                                            FS.SEQ,tmp);
+                                FS.cardRange(space,0,1,tmp))
+                             end)z   
+                              )xs             
+                            )x;
+                           weeks(xs))
+   in 
+      weeks(tournament);
+      FS.setvarbranch(space,Vector.fromList(flatten tournament),
+                           FS.FSB_MIN_UNKNOWN_ELEM,FS.FSB_MIN);
+      tournament
+   end
+        
+\end{myverbatim}
+
+The function Golf returns a solver to find an assignment 
+for \emph{NbOfFourSomes} foursomes per week and NbOfWeeks weeks 
+duration. The number of players is computed from NbOfFourSomes 
+and stored in NbOfPlayers. The auxiliary function \emph{flatten} is 
+used to flatten a list of lists of variables.
+%Its definition 
+%is necessary since the library function of the same name 
+%works only on ground terms. \\
+
+The variable \emph{tournament} is a list, that contains for
+every field (week) a list of sets (foursomes).
+
+The procedure \emph{weeks} imposes the constraint that
+all sets are subsets of \{1,$\ldots$,nbOfPlayers\} 
+and have exactly 4 elements. Further, it imposes 
+that every foursome shares at most one element with any 
+other foursome of other weeks.
+
+\db{The following let - construct can be used to test the solver}:
+\lstset{caption = \textbf{Sample data for the Golf Problem},
+label=listing 34,frame=trbl}
+\begin{myverbatim}
+let 
+    val (s,r) = valOf(Search.searchOne
+                  (golf nbOfWeeks nbOfFourSomes))
+in
+    List.map(fn z =>
+     List.map(fn w => domainToList w)z)
+         (List.map(fn x => 
+             (List.map(fn y => 
+               FS.Reflect.upperBound(s,y))x)
+         )r)
+end
+\end{myverbatim}
+
+
+
+\newpage
+
+\subsection{Example: Sudoku Problem - Revisited}
+\label{sudoku-puzzle3}
+In section \ref{sudoku-puzzle} is both given a formulation
+and a solution to a Sudoku puzzle. There are also shown
+two different, mutually redundant viewpoints for the problem.
+In section \ref{sudoku-puzzle2} you have already seen a
+realization of the first viewpoint. Now, you are presented
+a realization of the second approach.
+
+\subsubsection{Viewpoint}
+\db{The variables $nb_1, \ldots, nb_9$ represent the numbers
+1, $\ldots$, 9, and the domain of every number is the set
+P\{1, $\ldots$, 81\}, i.e. the boxes a number occurs; an
+assignment $nb_i$ = \{$c_1, \ldots, c_n $\} means that number i occurs
+in box $c_1, \ldots, c_n$ and \{$c_1, \ldots, c_n $\} is a subset of 
+\{1, $\ldots$, 81\}}.
+
+Given the following tabular, initially, the lower bound of $nb_1$ is
+\{ 8, 31, 43, 55\} and its upper bound is the set \{1, $\ldots$, 81\}. The variable
+$nb_2$ has the lower bound \{2, 51, 63, 67\}, $nb_3$ the lower bound 
+\{10, 39, 49, 59, 74\}, $nb_4$ the lower bound \{ 19, 47, 69, 79\} and 
+$nb_5$ the lower bound \{ 23,29,42,53,64\} for example. Such as $nb_1$'s upper
+bound, the upper bound of $nb_2, \ldots, nb_5$ is \{1, $\ldots$, 81\}.
+
+
+\begin{tabular}{||c|c|c||c|c|c||c|c|c||}
+\hline
+\multicolumn{9}{||c||}{A Sudoku Puzzle}\\
+\hline
+\hline
+  & 2 & 6 &   &   &   & 8 & 1 &  \\
+\hline
+3 &   &   & 7 &   & 8 &   &   & 6\\
+\hline
+4 &   &   &   & 5 &   &   &   & 7\\
+\hline
+\hline
+  & 5 &   & 1 &   & 7 &   & 9 &  \\
+\hline
+  &   & 3 & 9 &   & 5 & 1 &   &  \\
+\hline
+  & 4 &   & 3 &   & 2 &   & 5 &  \\
+\hline
+\hline
+1 &   &   &   & 3 &   &   &   & 2\\
+\hline
+5 &   &   & 2 &   & 4 &   &   & 9\\
+\hline
+  & 3 & 8 &   &   &   & 4 & 6 &  \\
+\hline   
+\end{tabular}
+
+\subsubsection{Branching Strategy}
+\db{We use a strategy that the variable with the minimal
+cardinality between its lower and upper bound and picks the minimal
+value of the selected variable first}.
+
+\subsubsection{Script}
+In listing \ref{listing 35} the input is a list of tuples
+(a,b), where a is a 'number' value and b is the list of those
+numbers positions. 
+\lstset{caption = \textbf{A Script for the Sudoku Problem},
+label=listing 35,frame=trbl}
+\begin{myverbatim}
+val inputlist2 = [(1,[8,31,43,55]),(2,[2,51,63,67]),
+                  (3,[10,39,49,59,74]),(4,[19,47,69,79]),
+                  (5,[23,29,42,53,64]),(6,[3,18,80]),
+                  (7,[13,27,33]),(8,[7,15,75]),
+                  (9,[35,40,72])]
+
+fun sudoku2 inputlist space = 
+  let
+     val numbers = Vector.tabulate(9,fn x => 
+                        FS.upperBound(space,#[(1,81)]))
+     val rows = List.tabulate(9,fn x =>(x*9+9-8,x*9+9)) 
+     val columns = List.tabulate(9,fn y => 
+                       Vector.tabulate(9,fn x =>(x*9+1+y,x*9+1+y)))
+     val boxes1 = List.tabulate(3,fn y => 
+                   Vector.tabulate(3,fn x =>(x*9+1+y*3,x*9+3+y*3)))
+     val boxes2 = List.tabulate(3,fn y => 
+                   Vector.tabulate(3,fn x =>(x*9+28+y*3,x*9+30+y*3)))
+     val boxes3 = List.tabulate(3,fn y => 
+                   Vector.tabulate(3,fn x =>(x*9+55+y*3,x*9+57+y*3)))
+     val boxes = List.concat([boxes1,boxes2,boxes3])
+     fun constr l = 
+       List.app(fn y => 
+                 let
+                    val tmp1 = FS.Value.make(space,y)
+                 in
+                    Vector.app(fn x => 
+                     let 
+                        val tmp2 = FS.setvar space 
+                     in
+                        FS.relOp(space,x,FS.INTER,tmp1,FS.SEQ,tmp2);
+                        FS.cardRange(space,1,1,tmp2)
+                     end)numbers
+                 end)l
+     fun fsDisjoint ([]) = ()
+       | fsDisjoint (x::xs) = 
+            (List.app(fn y => FS.rel(space,y, FS.DISJ,x))xs;
+             fsDisjoint(xs))
+  in
+    (* use next constraint only, if inputlist is used *)
+     List.app(fn(x,y) => 
+       List.app(fn z => 
+                  let 
+                     val tmp = FS.Value.make(space,#[(z,z)])
+                  in
+                     FS.rel(space,Vector.sub(numbers,x-1),FS.SUP,tmp)
+                  end)y)inputlist;
+     Vector.app(fn x => FS.cardRange(space,9,9,x))numbers;
+    (* the domains of all numbers are pairwise distinct *)
+     fsDisjoint(Vector.toList numbers);
+    (* distinct numbers in rows *)
+     List.app(fn(y,z)=>
+       let 
+          val tmp1 = FS.Value.make(space,#[(y,z)]) 
+       in
+          Vector.app(fn x => 
+                      let 
+                         val tmp2 = FS.setvar space 
+                      in
+                         FS.relOp(space,x,FS.INTER,tmp1,FS.SEQ,tmp2);
+                         FS.cardRange(space,1,1,tmp2)
+                      end)numbers
+       end)rows;
+    (* distinct numbers in columns *)
+     constr domainvecs;  
+    (* distinct numbers in 3 x 3 boxes *)
+     constr boxes;   
+     FS.setvarbranch(space,numbers,FS.FSB_MIN_CARD,FS.FSB_MIN); 
+     numbers
+  end
+\end{myverbatim}
+
+
+
+
+\newpage
+\section{Combined Viewpoints}
+As we have have learned in section \ref{redundant}, redundant
+constraints can both improve the performance of a script and
+decrease the size of the search tree.
+
+In this section, you are presented an approach to use the
+advantage of combining \emph{mutually redundant models}.
+
+
+\subsection{Construction of a combined Model}
+The idea of combining \emph{mutually redundant models} was
+first introduced by  Cheng, Choi, Lee and Wu \cite{9}.
+Let $V_1$ = ($X_1, D_1$) and $V_2$ = ($X_2, D_2$) two viewpoints
+for the same problem. From each viewpoint a complete
+model can be constructed, say $M_1$ = ($X_1, D_1, C_1$), 
+$M_2$ = ($X_2, D_2, C_2$). So, they are \emph{mutually redundant}.
+
+If you combine these two models, you get a new model 
+$M_3$ = ($X_3, D_3, C_3$), where $X_3$ = $X_1 \cup X_2$, 
+$D_3$ = $D_1 \cup D_2$
+and $C_3$ =  $C_1 \cup C_2 \cup C_c$. $C_c$ is a set of
+\emph{channeling constraints}.
+
+You should always choose constraints that are of low arity, i.e.
+that assignments in one viewpoint can be propagated in the other when
+only a few variables have been assigned. 
+The combination of viewpoints is useless if propagation
+via channeling constraints can only occur when a complete assignment
+has been made. It can also be an advantage to do a combined model
+without constraints that are hard to express in one viewpoint,
+provided that the constraints of the other viewpoint together
+with the channeling constraints take on their work.
+
+
+\subsubsection{Channeling constraints}
+Channeling constraints relate the variables of two
+viewpoints. Usually, they are of binary form, i.e.
+they relate a single variable in one viewpoint to
+a single variable in the other. If an assignment 
+is made in the model constructed
+from one viewpoint, it can be translated into an 
+assignment in the other and vice versa.
+
+Hence, the advantage of a combined model is the strenghtened
+propagation caused by these channeling constraints. If in one
+model, say $M_1$ = ($X_1, D_1, C_1$), the values from the variables
+in $X_1$ are reduced by the constraints in $C_1$, \db{their removal
+is propagated by the channeling constraints} to the variables of the
+other model $M_2$ = ($X_2, D_2, C_2$). So, the propagated removals
+from the first viewpoint together with the constraints in $C_2$ may
+remove more values from the domains of $X_2$'s variables than the
+constraints in $C_2$ alone.
+
+\newpage
+\subsection{Example: Sudoku Problem}
+In section \ref{sudoku-puzzle2} and section \ref{sudoku-puzzle3}
+you have already seen how the Sudoku Problem can be realized
+in Alice. These two models - one with finite domain constraints,
+the other with finite set constraints - now are put together
+into one combined model.
+
+\subsubsection{New Problem Description}
+The Sudoku Problem example in section \ref{sudoku-puzzle} can
+be solved without any search at all. To underline the advantages
+of a combined model, we need a Problem that is harder to solve.
+Below you are given a problem that is hard  and needs search to be 
+solved.
+
+\begin{tabular}{||c|c|c||c|c|c||c|c|c||}
+\hline
+\multicolumn{9}{||c||}{A hard Sudoku Puzzle \label{hard-sudoku-problem}}\\
+\hline
+\hline
+ &  &  &  &  & 3  &  & 6 & \\
+\hline
+ &  &  &  &  &  &  & 1  & \\
+\hline
+ & 9 & 7 & 5 &  &  &  & 8 & \\
+\hline
+\hline
+ &  &  &  & 9 &  & 2 &  & \\
+\hline
+ &  & 8 &  & 7 &  & 4 &  & \\
+\hline
+ &  & 3 &  & 6 &  &  &  & \\
+\hline
+\hline
+ & 1 &  &  &  & 2 & 8 & 9 & \\
+\hline
+ & 4 &  &  &  &  &  &  & \\
+\hline
+ & 5 &  & 1 &  &  &  &  & \\
+\hline   
+\end{tabular}
+
+\subsubsection{Viewpoint and Constraints}
+The viewpoint of the new combined model consists in a set
+X, the union of the problem variables of the scripts in listing
+\ref{listing 11} and \ref{listing 35} with their respective
+domains. Also the constraints of both models are put together.
+Additionally, you have a set of channeling constraints of the
+form
+\begin{quote}
+grid'[i] = j $\Leftrightarrow i+1 \in $ numbers[ j-1],
+\end{quote}
+where grid is the vector of problem variables from the first
+model and numbers the vector of problem variables from the
+second model. Note, that the channeling constraints are realized
+with \emph{Reified Constraints} among other things.
+
+\subsubsection{Branching Strategy}
+\db{We use a strategy that the variable with the minimal
+cardinality between its lower and upper bound and picks the minimal
+value of the selected variable first}.
+
+
+\subsubsection{Script}
+\lstset{caption = \textbf{A combined Script for the Sudoku Problem},
+label=listing 36,frame=trbl}
+\begin{myverbatim}
+val inputlist_hard=[(0,5,3),(0,7,6),(1,7,1),(2,1,9),
+                    (2,2,7),(2,3,5),(2,7,8),(3,4,9),
+                    (3,6,2),(4,2,8),(4,4,7),(4,6,4),
+                    (5,2,3),(5,4,6),(6,1,1),(6,5,2),
+                    (6,6,8),(6,7,9),(7,1,4),(8,1,5),
+                    (8,3,1)]                 
+
+fun sudoku inputlist space = 
+  let
+     val grid = Vector.tabulate(9,fn x => 
+                         FD.rangeVec(space,9,(1,9)))
+     val grid' = Vector.concat(Vector.toList(grid))
+     val numbers = Vector.tabulate(9,fn x => 
+                         FS.upperBound(space,#[(1,81)]))
+     val rows = List.tabulate(9,fn x =>(x*9+9-8,x*9+9)) 
+     val domainvecs = List.tabulate(9,fn y => 
+                       Vector.tabulate(9,fn x =>(x*9+1+y,x*9+1+y)))
+     val boxes1 = List.tabulate(3,fn y => 
+                   Vector.tabulate(3,fn x =>(x*9+1+y*3,x*9+3+y*3)))
+     val boxes2 = List.tabulate(3,fn y => 
+                   Vector.tabulate(3,fn x =>(x*9+28+y*3,x*9+30+y*3)))
+     val boxes3 = List.tabulate(3,fn y => 
+                   Vector.tabulate(3,fn x =>(x*9+55+y*3,x*9+57+y*3)))
+     val boxes = List.concat([boxes1,boxes2,boxes3])
+     fun flatten([])= []
+       | flatten(x::xs)= x@flatten(xs)
+     fun box(x,y)= flatten(List.tabulate(3,fn k => 
+                            List.tabulate(3,fn z =>(k+x,z+y))))
+     fun constr l = 
+       List.app(fn y => 
+           let
+              val tmp1 = FS.Value.make(space,y)
+           in
+              Vector.app(fn x => 
+                  let 
+                     val tmp2 = FS.setvar space 
+                  in
+                     FS.relOp(space,x,FS.INTER,tmp1,FS.SEQ,tmp2);
+                     FS.cardRange(space,1,1,tmp2)
+                  end)numbers
+           end)l 
+     fun fsDisjoint ([]) = ()
+       | fsDisjoint (x::xs) = 
+            (List.app(fn y => FS.rel(space,y, FS.DISJ,x))xs;
+             fsDisjoint(xs))           
+  in
+     List.app(fn(x,y,z) => FD.relI(space,Vector.sub
+                          (Vector.sub(grid,x),y),FD.EQ,z))inputlist;
+    (* distinct values in rows *)
+     Vector.app(fn x => FD.distinct(space,x,FD.DOM))grid;
+    (* distinct values in columns *)
+     Vector.appi(fn(i,y)=> FD.distinct(space,Vector.map(fn x => 
+                                  Vector.sub(x,i))grid,FD.DOM))grid;
+    (* distinct values in 3 x 3 boxes *)
+     Vector.app(fn(k,l)=> 
+       let
+          val box' = Vector.map(fn(x,y) => 
+                              Vector.sub(Vector.sub(grid,x),y))
+                       (Vector.fromList(box(k,l)))
+       in
+          FD.distinct(space,box',FD.DOM)
+      end)(#[(0,0),(0,3),(0,6),(3,0),(3,3),(3,6),(6,0),(6,3),(6,6)]);
+     Vector.app(fn x => FS.cardRange(space,9,9,x))numbers;
+    (* the domains of all numbers are pairwise distinct *)
+     fsDisjoint(Vector.toList numbers);
+    (* distinct numbers in rows *)
+     List.app(fn(y,z)=>
+        let 
+           val tmp1 = FS.Value.make(space,#[(y,z)]) 
+        in
+           Vector.app(fn x => 
+                let 
+                   val tmp2 = FS.setvar space 
+                in
+                   FS.relOp(space,x,FS.INTER,tmp1,FS.SEQ,tmp2);
+                   FS.cardRange(space,1,1,tmp2)
+               end)numbers
+        end)rows;
+    (* distinct numbers in columns *)
+     constr domainvecs;  
+    (* distinct numbers in 3 x 3 boxes *)
+     constr boxes;   
+    (* channeling constraints: grid'[i] = j <=> i+1 in numbers[j-1] *)
+     List.app(fn i => 
+          List.app(fn j =>
+             let
+                val bvar = FD.boolvar space
+             in  
+                FD.Reified.relI(space,Vector.sub(grid',i-1),
+                                     FD.EQ,j,bvar);
+                FS.domR(space,Vector.sub(numbers,j-1),
+                                     FS.SUP,#[(i,i)],bvar)
+             end)
+             (List.tabulate(9,fn x => x+1)))
+         (List.tabulate(81,fn x => x+1));
+     FS.setvarbranch(space,numbers,FS.FSB_MIN_CARD,FS.FSB_MIN); 
+     numbers
+  end
+
+\end{myverbatim}
+
+
+Below, the three realizations of the a hard Sudoku Problem
+\ref{hard-sudoku-problem} are compared:
+
+\begin{tabular}{||c|| c | c | c||}
+\hline
+Problem realized with & Choices & Failures & Solutions \\
+\hline
+\hline
+finite domain constraints & 28 & 28 & 1  \\
+\hline
+finite set constraints & 12 & 12  & 1   \\
+\hline
+combined model & 10  & 10 & 1 \\
+\hline
+\end{tabular}
+
+
+
+\newpage
+
+\begin{thebibliography}{99}
+\bibitem[1]{1} \emph{Finite Domain Constraint Programming in Oz. A Tutorial.} by \\ 
+\emph{Christian Schulte and Gert Smolka}
+
+\bibitem[2]{2} \emph{Problem Solving with Finite Set Constraints in Oz. A Tutorial.} by \\ 
+\emph{Tobias M\"uller}
+
+\bibitem[3]{3} \emph{Principles of Constraint Programming.} by \\
+ \emph{Krysztof R. Apt.}, Cambridge University Press, 2003.
+
+\bibitem[4]{4} \emph{Short Tour to Alice} by\\
+\emph{Andreas Rossberg}, http://www.ps.uni-sb.de/alice/manual/tour.html
+
+\bibitem[5]{5} \emph{Modelling for Constraint Programming} by\\
+\emph{Barbara M. Smith}, in First International Summer School
+on Constraint Programming, September 2005
+
+\bibitem[6]{6} \emph{Dual Viewpoint Heuristics for Binary
+Constraint Satisfaction Problems} by \\ 
+\emph{P. A. Geelen}, in B. Neumann
+(Ed.), Proceedings ECAI92, 1992, pp. 3135. 
+
+ \bibitem[7]{7} {Model Induction: a New Source
+of CSP Model Redundancy} by \\
+\emph{Y. Law, J. Lee}, in: Proceedings of the
+18th National Conference on Artificial Intelligence
+(AAAI-2002), 2002, pp. 5460.
+
+\bibitem[8]{8}\emph{Sudoku as a Constraint Problem} by\\
+\emph{Helmut Simonis}, in Modelling and Reformulating
+Constraint Satisfaction Problems, Fourth International Workshop,
+Sitges (Barcelona), Spain, 1 October 2005
+
+\bibitem[9]{9}\emph{Increasing constraint propagation by redundant
+modeling: an experience report} by\\
+\emph{B. M.W. Cheng, K. M. F. Choi, J. H. M. Lee, J. C. K. Wu},in 
+Constraints 4 (1999)167192.
+
+\bibitem[10]{10}\emph{Don't be puzzled!} by\\
+\emph{ Martin Henz}, In Proceedings of the Workshop on Constraint 
+Programming 
+Applications, in conjunction with the Second International 
+Conference on Principles 
+and Practice of Constraint Programming (CP96), Cambridge, 
+Massachusetts, USA, August 1996.
+
+\bibitem[11]{11} \emph{Topics on steiner systems} by \\ 
+\emph{by C.C. Lindner and A. Rosa},Annals of Discrete Mathematics, 
+volume 7. North Holland, 1980.
+
+\bibitem[12]{12}
+\htmladdnormallink
+{Gecode}
+{http://www.gecode.org/} constraint library
+%\emph{}
+%\bibitem[]{} \emph{} by \\
+% \emph{}
+
+\end{thebibliography}
+
+\end{document}

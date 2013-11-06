@@ -1,0 +1,132 @@
+<?php include("macros.php3"); ?>
+<?php heading("The SUBSTRING signature", "The <TT>SUBSTRING</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature SUBSTRING
+    structure Substring : SUBSTRING where type char      = Char.t
+				      and type string    = CharVector.t
+				      and type substring = CharVectorSlice.t
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/substring.html"><TT>SUBSTRING</TT></A> signature.
+  </P>
+
+  <P>See also:
+    <A href="string.html"><TT>STRING</TT></A>,
+    <A href="mono-vector-slice.html"><TT>MONO_VECTOR_SLICE</TT></A>,
+    <A href="hashable.html"><TT>HASHABLE</TT></A>,
+    <A href="ordered.html"><TT>ORDERED</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature SUBSTRING =
+    sig
+	eqtype char
+	eqtype string
+	type substring
+	type t = substring							(**)
+
+	val equal :       substring * substring -> bool
+	val hash :        substring -> int
+
+	val base :        substring -> string * int * int
+	val string :      substring -> string
+	val substring :   string * int * int -> substring
+	val extract :     string * int * int option -> substring
+
+	val isEmpty :     substring -> bool
+	val size :        substring -> int
+
+	val full :        string -> substring
+	val getc :        substring -> (char * substring) option
+	val first :       substring -> char option
+	val triml :       int -> substring -> substring
+	val trimr :       int -> substring -> substring
+	val sub :         substring * int -> char
+	val slice :       substring * int * int option -> substring
+	val concat :      substring list -> string
+	val explode :     substring -> char list
+
+	val isPrefix :    string -> substring -> bool
+	val isSuffix :    string -> substring -> bool
+	val isSubstring : string -> substring -> bool
+	val compare :     substring * substring -> order
+	val collate :     (char * char -> order) -> substring * substring -> order
+
+	val splitl :      (char -> bool) -> substring -> substring * substring
+	val splitr :      (char -> bool) -> substring -> substring * substring
+	val splitAt :     substring * int -> substring * substring
+	val dropl :       (char -> bool) -> substring -> substring
+	val dropr :       (char -> bool) -> substring -> substring
+	val takel :       (char -> bool) -> substring -> substring
+	val taker :       (char -> bool) -> substring -> substring
+
+        val position :    string -> substring -> substring * substring
+        val tokens :      (char -> bool) -> substring -> substring list
+        val fields :      (char -> bool) -> substring -> substring list
+
+	val span :        substring * substring -> substring
+	val translate :   (char -> string) -> substring -> string
+
+	val app :         (char -> unit) -> substring -> unit
+	val appr :        (char -> unit) -> substring -> unit
+	val foldl :       (char * 'a -> 'a) -> 'a -> substring -> 'a
+	val foldr :       (char * 'a -> 'a) -> 'a -> substring -> 'a
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/substring.html"><TT>SUBSTRING</TT></A> signature.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = substring</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>substring</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>ss1</I>, <I>ss2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the substrings contain the same
+      sequence of characters, <TT>false</TT> otherwise.
+      Equivalent to <TT>string <I>ss1</I> = string <I>ss2</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>hash <I>ss</I></TT>
+    </DT>
+    <DD>
+      <P>A hash function for substrings.</P>
+    </DD>
+
+    <DT>
+      <TT>appr <I>f</I> <I>ss</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>app</TT>, but applies <TT><I>f</I></TT> in
+      right to left order (i.e., decreasing indices). Equivalent to:</P>
+      <PRE>
+        List.appr <I>f</I> (explode <I>s</I>)</PRE>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,258 @@
+<?php include("macros.php3"); ?>
+<?php heading("The MkEngine functor", "The <TT>MkEngine</TT> functor"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature ENGINE
+    functor MkEngine (type solution val toString : solution -> string)
+		     (MkProblem : fct (Constraints:CONSTRAINTS)
+			          -> PROBLEM
+				     where type space = Constraints.Space.space
+				     where type solution = solution)
+         :> ENGINE where type solution = solution
+</PRE>
+   <P>The <TT>MkEngine</TT> functor creates a search engine that
+      performs search on several networked computers in parallel.
+      It expects two arguments.
+      The first one is a structure that provides the type of solutions of the distributed problem
+      and a function <TT>toString</TT> to print them.
+      The second one is a functor that creates a <A href="sf-problem.html"><TT>PROBLEM</TT></A>, given
+      a local constraint library.</P>
+
+   <P>Have a look at the <A href="#example">example</A> below.</P>
+
+  <P>
+    See also:
+    <A href="sf-problem.html"><TT>PROBLEM</TT></A>,
+    <A href="sf-search.html"><TT>SEARCH</TT></A>,
+    <A href="channel.html"><TT>CHANNEL</TT></A>.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature ENGINE   from "x-alice:/lib/gecode/distributed-search/ENGINE-sig"
+    import structure MkEngine from "x-alice:/lib/gecode/distributed-search/MkEngine"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature ENGINE =
+sig
+    type <A href="#solution">solution</A>
+
+    val <A href="#start">start</A> : (string * string) list ->
+		(unit -> unit) * (solution Channel.channel)
+end
+
+</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="solution">solution</A></TT>
+    </DT>
+    <DD>
+      <P>The type of solutions, equal to the type <TT>solution</TT> passed as an argument to the functor
+         <TT>MkEngine</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="start">start</A> <I>hostList</I></TT>
+    </DT>
+    <DD>
+      <P>Start the search on the given hosts.
+         <TT><I>hostList</I></TT> is a list of pairs <I>(host, nickname)</I>,
+         where <I>host</I> is the network name of the remote machine (where alice should be installed,
+         see <A href="remote.html">Remote</A>),
+         and <I>nickname</I> is a display name for that machine (for debug messages).
+      </P>
+      <P><TT>start hostList</TT> returns a pair <I>(shutdown, solutions)</I> as soon as all remote workers
+         have been contacted.
+         <I>shutdown</I> is a function that can be used to concurrently stop the search and stop remote workers.
+         <I>solutions</I> is a channel, initially empty, that is filled with solutions as soon as they are discovered.
+         In case of Branch & Bound, newer solutions are always better, so that the last one is the best.
+      </P>
+    </DD>
+
+  </DL>
+
+<?php section("example", "example"); ?>
+<P>
+<A name="example"></A>
+The first step to create a distributed problem consists of creating a
+local problem.
+We take the <a href="sf-problem.html#examples">second example</a>
+described in <TT>PROBLEM</TT>.
+</P>
+
+<P>
+One may design, adjust, and test the local problem using
+<A href="sf-search.html"><TT>SEARCH</TT></A>, which runs locally.
+Once the programmer is happy with the problem, a straightforward
+transformation is needed to make it "distributable".
+Namely, the problem must be transformed into a functor receiving the
+constraint library as an argument, as follows:
+<PRE>
+structure MkProblem : MK_PROBLEM = fct (Constraints : CONSTRAINTS) =>
+let
+  structure Space  = Constraints.Space
+  structure FD     = Constraints.FD
+  structure FS     = Constraints.FS
+  structure Linear = Constraints.Linear
+in
+  struct
+  ...
+  end
+end
+</PRE>
+</P>
+
+<P>
+This functorialization is necessary because the constraint library is
+a local ressource. Thus, constraint problems cannot be transmitted over
+the network as such. Their dependencies over the constraint library
+must be abstracted first. On each remote worker, the local constraint
+library will be acquired and the functor applied to them.
+</P>
+
+<P>
+Note that your problem must not use any other local ressource.
+In particular, it must not use <TT>print</TT>, which is sited.
+Besides, in case of Branch & Bound, you must provide an implementation
+for <TT>compare</TT>.
+</P>
+  
+<P>
+Then, the problem is distributed to remote workers by using
+<TT>MkWorker</TT> and <TT>start</TT>.
+The argument given to start is a list of pairs
+<TT>(host, nickname)</TT>.
+The nickname is only used for debug messages (they can be useful when
+one remote machine runs several remote workers).
+The host must have Alice installed.
+<PRE>
+import structure MkEngine
+		       from "x-alice:/lib/gecode/distributed-search/MkEngine"
+import structure Debug from "x-alice:/lib/gecode/distributed-search/Debug"
+import structure Channel     from "x-alice:/lib/data/Channel"
+import signature CONSTRAINTS from "x-alice:/lib/gecode/CONSTRAINTS-sig"
+
+structure MkProblem  = fct (Constraints : CONSTRAINTS) =>
+
+let
+  structure Space  = Constraints.Space
+  structure FD     = Constraints.FD
+  structure FS     = Constraints.FS
+  structure Linear = Constraints.Linear
+
+(* The initial root space. *)
+val root = Space.new () 
+
+(*** Search problem :
+ *   Choose one number in each column (numbers1, numbers2)
+ *   All numbers must be different
+ *)
+val max = 10
+val size = 6
+val numbers1 = #[2, 1, 2, 5, 1, 6]
+val numbers2 = #[1, 3, 4, 3, 6, 7]
+
+infix %
+fun a % b = Vector.sub (a,b)
+
+val cn = FD.BND
+ 
+fun fromInt sp n = FD.intvar (sp,#[(n,n)])
+fun toInt   sp v = FD.Reflect.value (sp,v)
+  
+val vars  = FD.rangeVec   (root, size, (0, max))
+val reif  = FD.boolvarVec (root, size)
+val nreif = FD.boolvarVec (root, size) (* means "logical-not of reif" *)
+val reif2 = Vector.map FD.boolvar2intvar reif
+val sum   = FD.intvar (root, #[(0, size*max)])
+val kvars = Vector.tabulate
+		(size+1, (fn i => if i&lt;size then (1,vars%i) else (~1, sum)))
+fun readSolution space = Vector.map (toInt space) vars
+fun bound (space, sol) =
+    let
+      val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
+      val vsum = fromInt space lsum
+    in
+      FD.rel (space, sum, FD.GR, vsum)
+    end
+	
+val _ =
+    (* Propagators. *)
+    (FD.distinct (root, vars, cn) ;
+     VectorPair.app
+       (fn (b1, b2) => FD.nega(root, b1, b2)) (reif, nreif) ;
+     
+     Vector.appi
+       (fn (i, var) =>
+	   (FD.Reified.rel
+	     (root, var, FD.EQ, fromInt root (numbers1%i), reif%i) ;
+	     FD.Reified.rel
+	       (root, var, FD.EQ, fromInt root (numbers2%i), nreif%i)))
+       vars ;
+	 
+	 (* Sum *)
+	 FD.linear (root, kvars, FD.EQ, 0, cn) ;
+	 
+         (* Branching policy *)
+	 FD.branch (root, reif2, FD.B_NONE, FD.B_MIN))
+  
+(* Recomputation Policy : fixed distance *)
+val rdist = 3
+
+val sumvec = Vector.foldl (fn (x, s) => x+s) 0
+
+in
+
+struct
+  type solution = int Vector.t
+  type space = Space.space
+
+  val root = root
+  val readSolution = readSolution
+  fun copyq d = d mod rdist = 0
+  val bab = true
+  val bound = bound
+
+  fun compare (x,y) = (sumvec x) &lt; (sumvec y)
+  val mask = Debug.dbManag
+end
+
+end
+
+fun solToString v = Vector.foldl (fn (a, s) => s ^ Int.toString a ^ ";") "" v
+
+val _ =
+    let
+	(* Hosts used as remote workers. *)
+	val hosts = [("localhost", "Alice"),
+		     ("localhost", "Bob")]
+	    
+	(* We build the search engine. *)
+	structure Engine = MkEngine
+			       (type solution = int Vector.t
+				val  toString = solToString)
+			       MkProblem
+	    
+	(* As soon as the engine starts, it returns a channel of solutions. *)
+	val (shutdown, sols) = Engine.start hosts
+
+	val l = Channel.toList sols
+    in
+	List.app (fn sol => print ("Solution : " ^ solToString sol ^ "\n")) l;
+	Channel.waitClosed sols ;
+	shutdown () ;
+	OS.Process.exit OS.Process.success
+    end
+</PRE>
+</P>
+
+
+<?php footing(); ?>

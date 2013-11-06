@@ -1,0 +1,55 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature ALICE_NAME =
+sig
+    eqtype alice_name  
+    type path = string list
+
+    val aliceName : path * string -> alice_name
+
+    val toString :  alice_name * path -> string
+
+    val absolutePath : alice_name -> path 
+
+    val name :      alice_name -> string
+
+    val reveal :    alice_name -> path * string
+end
+
+structure AliceName : ALICE_NAME =
+struct
+    datatype alice_name = AN of string list * string  (* name of .... in alice *)
+
+    type path = string list
+
+    fun aliceName (path, id) = AN (path, id)
+
+    (* [toString (aliceName, currentScope)] resolves the name relative to
+       currentScope and returns a string representation (valid alice identifier)
+     *)
+    fun toString (AN ([], t), _)           = t
+      | toString (AN (absolutePath, t), []) =
+        String.concatWith "." absolutePath ^ "." ^ t
+      | toString (AN (x::xs, t), y::ys)     =
+        if x = y then toString (AN (xs, t), ys)
+        else String.concatWith "." (x::xs) ^ "." ^ t
+
+
+    fun absolutePath (AN (p, _)) = p
+
+    fun name (AN (_, n))         = n
+
+    fun reveal (AN (p, n))       = (p, n)
+end
+
+

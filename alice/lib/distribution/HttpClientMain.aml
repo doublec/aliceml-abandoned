@@ -1,0 +1,49 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import structure CommandLine from "x-alice:/lib/system/CommandLine"
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Http        from "x-alice:/lib/system/Http"
+import structure HttpClient  from "x-alice:/lib/system/HttpClient"
+
+signature HTTP_CLIENT_MAIN =
+    sig
+	val main: string list -> OS.Process.status
+    end
+
+structure HttpClientMain :> HTTP_CLIENT_MAIN =
+    struct
+	fun usage () =
+	    (TextIO.output
+	     (TextIO.stdErr,
+	      "Usage: " ^ CommandLine.name () ^ " <url>\n");
+	     OS.Process.failure)
+
+	fun main [url] =
+	    let
+		val response = HttpClient.get (Url.fromString url)
+	    in
+		TextIO.print (Int.toString (#statusCode response) ^ " " ^
+			      #reasonPhrase response ^ "\n");
+		Http.StringMap.appi
+		    (fn (name, value) =>
+			TextIO.print (name ^ ": " ^ value ^ "\n"))
+		    (#headers response);
+		TextIO.print ("\n" ^ #body response ^ "\n");
+		OS.Process.success
+	    end
+	  | main _ = usage ()
+    end
+
+val _ = OS.Process.exit (HttpClientMain.main (CommandLine.arguments ()))

@@ -1,0 +1,182 @@
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Type          from "x-alice:/lib/rtt/Type"
+import structure Common        from "Common"
+import structure MkMainWindow  from "gui/MkMainWindow"
+import structure MkConnections from "gui/MkConnections"
+import structure MkHandlers    from "MkHandlers"
+import structure Prefs         from "Prefs"
+import structure AbsTree       from "AbsTree"
+import structure TypeMappers   from "TypeMappers"
+
+structure Inspector =
+struct
+
+  (* Input queue with instructions to be executed by the current Inspector. *)
+  val queueRef = ref (NONE : Common.Queue.t option)
+
+  (* Get the inspector queue. Creates everything if needed. *)
+  fun init () =
+    let 
+      (* Can be optimized if necessary. *)
+      val p = Promise.promise ()
+      val queueRefOp = Ref.exchange (queueRef, Promise.future p)
+    in
+      case queueRefOp of
+        SOME c => (Promise.fulfill (p, queueRefOp) ; c)
+      | NONE =>
+          let
+            val       queue      = Common.Queue.queue ()
+            structure MainWindow = MkMainWindow ()
+            structure Handlers   = MkHandlers(structure MainWindow = MainWindow
+                                              val       queue      = queue
+                                              val       queueRef   = queueRef)
+            structure _ = MkConnections Handlers
+          in
+            (* Thread processing instructions. *)
+            spawn (Common.Queue.app Handlers.processInstruction queue) ;
+
+            MainWindow.setStatus Prefs.ready ;
+            Promise.fulfill (p, SOME queue) ;
+            queue
+          end
+    end
+
+  (* Inspects some alice item. *)
+  fun inspectItem item =
+    let val queue = init ()
+    in
+      Common.queuePut queue (Common.Inspect item)
+    end
+  
+  (* The magic (w.r.t types) takes place here. *)
+  fun inspectVal ty x = inspectItem (Common.Value (ty, Reflect.reflect x))
+  __overload 'a inspect : 'a -> unit = inspectVal
+
+  val _ = Promise.fulfill (Common.inspectItemPromise, inspectItem)
+
+  functor Inspect (A : (signature S structure X : S)) : any =
+    let
+      structure I = Reflect.ReflectSig A (* Does reflect the signature A.S *)
+      structure M = Reflect.Reflect A    (* Does reflect the structure A.X *)
+      val _ = inspectItem (Common.Module (I.x, M.x))
+    in
+      ()
+    end
+
+  (* Define your own style :
+   *   newStyle (name, fontname, (r, g, b), editable) *
+   *   name : Name of this style.
+   *   r,g,b : integers from 0 to 650000.
+   *   editable : should this style be editable in the preferences ?
+   *)
+  type style = Prefs.style
+  type tree = AbsTree.tree
+  type text = string * style
+
+  fun newStyle (name, colors, editable) =
+    Prefs.newStyle (name, !Prefs.fontname, colors, editable)
+
+  (* Define your own mappers. *)
+  datatype 'a item = Hidden | Value of 'a * Type.typ
+  val nof = AbsTree.Noflag
+
+
+  fun mapItem Hidden = AbsTree.NestedRow NONE
+    | mapItem (Value (v, t)) = AbsTree.Value (t, Reflect.reflect v, nof)
+
+  fun simple (item, rep) =
+    AbsTree.Simple {desc = mapItem item, rep}
+
+  (* Raw *)
+  fun raw (t, v) =
+    AbsTree.Raw (ref (FST (Common.Value (t, Reflect.reflect v))))
+
+  datatype orientation = datatype Prefs.orientation
+
+  (* Concatenation. *)
+  fun concat {prefix, tree, suffix, orient} =
+    let val orient = case orient of Parent => AbsTree.orientParent
+                                  | Son => AbsTree.orientSon
+                                  | SonStrict => AbsTree.orientSonStrict
+    in
+      AbsTree.Concat {prefix, tree, suffix, orient}
+    end
+
+  fun container (item, kids) = 
+    AbsTree.Container {desc = mapItem item, limit = false, kids}
+
+
+  fun register2' typ userMapper =
+    let
+      fun typeMapper (depth, item, path, targs, value) =
+        case item of
+          AbsTree.Value (t, _, _) => userMapper (depth, value, t, path, targs)
+        | _ => assert false
+    in
+      TypeMappers.register' typ typeMapper
+    end
+
+  type 'a user = int * 'a * Type.typ * Type.typ * Type.typ list -> AbsTree.tree
+  __overload 'a register2 : 'a user -> unit = register2'
+
+
+  fun register' typ userPrinter =
+    let
+      fun typeMapper (depth, item, path, targs, value) =
+        case item of
+          AbsTree.Value (t, _, _) =>
+		AbsTree.simpleText (item, userPrinter value, Prefs.userStyle)
+        | _ => assert false
+    in
+      TypeMappers.register' typ typeMapper
+    end
+
+  __overload 'a register  : ('a -> string) -> unit = register'
+
+
+  (* Predefined values. *)
+  val openParenthesis   = AbsTree.openParenthesis
+  val openParenthesisL  = AbsTree.openParenthesisL
+  val spaceParenthesis  = AbsTree.spaceParenthesis
+  val spaceParenthesisL = AbsTree.spaceParenthesisL
+  val space             = AbsTree.space
+  val spaceL            = AbsTree.spaceL
+  val closeParenthesis  = AbsTree.closeParenthesis
+  val closeParenthesisL = AbsTree.closeParenthesisL
+  val openBracket       = AbsTree.openBracket
+  val openBracketL      = AbsTree.openBracketL
+  val closeBracket      = AbsTree.closeBracket
+  val closeBracketL     = AbsTree.closeBracketL
+  val openSBracket      = AbsTree.openSBracket
+  val openSBracketL     = AbsTree.openSBracketL
+  val closeSBracket     = AbsTree.closeSBracket
+  val closeSBracketL    = AbsTree.closeSBracketL
+  val comma             = AbsTree.comma
+  val commaL            = AbsTree.commaL
+  val equal             = AbsTree.equal
+  val equalL            = AbsTree.equalL
+
+  val holeStyle    = Prefs.holeStyle
+  val lazyStyle    = Prefs.lazyStyle
+  val futureStyle  = Prefs.futureStyle
+  val failStyle    = Prefs.failStyle
+  val consStyle    = Prefs.consStyle
+  val labelStyle   = Prefs.labelStyle
+  val intStyle     = Prefs.intStyle
+  val realStyle    = Prefs.realStyle
+  val charStyle    = Prefs.charStyle
+  val strStyle     = Prefs.strStyle
+  val wordStyle    = Prefs.wordStyle
+  val refStyle     = Prefs.refStyle
+  val vecStyle     = Prefs.vecStyle
+  val exnStyle     = Prefs.exnStyle
+  val sepStyle     = Prefs.sepStyle
+  val brackStyle   = Prefs.brackStyle
+  val structStyle  = Prefs.structStyle
+  val fixStyle     = Prefs.fixStyle
+  val valStyle     = Prefs.valStyle
+  val labStyle     = Prefs.labStyle
+  val defaultStyle = Prefs.defaultStyle
+
+
+end

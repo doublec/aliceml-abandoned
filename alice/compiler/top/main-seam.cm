@@ -1,0 +1,12 @@
+Group is
+
+    ../frontend-sml/sources.cm
+    ../frontend-common/sources.cm
+    ../backend-common/sources.cm
+    ../backend-seam/sources.cm
+
+    make-recursive-compiler.cm
+    make-batch-compiler.cm
+
+    SMLToSeamRecursiveCompiler.aml
+    SMLToSeamBatchCompiler.aml

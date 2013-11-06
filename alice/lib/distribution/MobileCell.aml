@@ -1,0 +1,190 @@
+(*
+ * Mobile State
+ *
+ * Mobile state is made available through `cells'.
+ * Unlike references, the state of a cell must not be pickled by cloning.
+ * Instead, when a cell is unpickled, it initially does not have state
+ * locally.  Only when it is accessed it will request the state from its
+ * manager.  This means that a cell carries a reference to its manager
+ * with it - in the form of a proxy of type (unit -> 'a) -> 'a.
+ * Application of the proxy transfers the state to the local site.
+ * The proxy expects another proxy to a local procedure, that, when
+ * applied, transfers the state back to the manager.
+ *
+ * Apart from its manager, the pickled representation of a cell carries
+ * a globally unique identifier to represent equality.  This globally
+ * unique identifier is the link via which information about the state
+ * of the cell wrt. the local site is managed.
+ *
+ * The implementation of cells needs non-type-safe constructs, but the
+ * interface it exposes is type-safe.
+ *)
+
+(*--** For all these futures we introduce, try to explain who blocks
+ * on them and in which situation *)
+
+(*--** Can we find a GlobalCell abstraction that hides the site's
+ * global tables? *)
+
+(*--** How about equality of proxies - can they be made equal
+ * iff they reference the same distributed entity? *)
+
+(*--** The manager should forward getState requests instead of
+ * executing them itself - but this does not work with functional proxies *)
+
+import structure GlobalStamp   from "x-alice:/lib/data/GlobalStamp"
+import structure MkHashImpMap  from "x-alice:/lib/data/MkHashImpMap"
+import structure Remote        from "x-alice:/lib/distribution/Remote"
+
+structure Remote =
+    struct
+	open Remote
+	val proxy1 = proxy    (*--** *)
+    end
+
+signature GLOBAL_TABLE =
+    sig
+	type t
+	type key = GlobalStamp.t
+	type value
+
+	val new: unit -> t
+	val lookup: t * key -> value option
+	val insert: t * key * value -> unit
+	val exchange: t * key * value option -> value option
+	val remove: t * key -> value option
+    end
+
+structure GlobalTable :> GLOBAL_TABLE =
+    struct
+	type key = GlobalStamp.t
+	type value
+
+	structure StampMap = MkHashImpMap(GlobalStamp)
+
+	type t = Lock.lock * value option StampMap.t
+
+	fun new () = (Lock.lock (), StampMap.new ())
+
+	fun lookup ((lock, map), key) =
+	    case Lock.sync lock StampMap.lookup (map, key) of
+		SOME valueOpt => valueOpt
+	      | NONE => NONE
+
+	fun insert ((lock, map), key, value) =
+	    Lock.sync lock StampMap.insert (map, key, SOME value)
+
+	fun exchange ((lock, map), key, valueOpt) =
+	    Lock.sync lock exchange' (map, key, valueOpt)
+	and exchange' (map, key, newOpt) =
+	    (case StampMap.lookup (map, key) of
+		 SOME oldOpt => oldOpt
+	       | NONE => NONE)
+	    before StampMap.insert (map, key, newOpt)
+
+	fun remove ((lock, map), key) =
+	    Lock.sync lock remove' (map, key)
+	and remove' (map, key) =
+	    (case StampMap.lookup (map, key) of
+		 SOME oldOpt => oldOpt
+	       | NONE => NONE)
+	    before StampMap.remove (map, key)
+    end
+
+signature MOBILE_CELL =
+    sig
+	type 'a cell
+
+	val cell: 'a -> 'a cell
+	val equal: 'a cell * 'a cell -> bool
+	val access: 'a cell -> 'a
+	val assign: 'a cell * 'a -> unit
+	val exchange: 'a cell * 'a -> 'a
+    end
+
+structure MobileCell :> MOBILE_CELL =
+    struct
+	__primitive val cast: 'a -> 'b = "Unsafe.cast"
+
+	type 'a cell = GlobalStamp.t * (bool * (unit -> 'a) -> 'a option)
+
+	val managerTable = GlobalTable.new ()
+	(* If a cell has an entry in the managerTable, then this site
+	 * is the cell's manager.  If the entry is NONE, then this site
+	 * also owns the cell's state.  If the entry is SOME p, then p
+	 * is a proxy to the site currently owning the cell's state.
+	 * Application of p will request the cell's state. *)
+
+	val stateTable = GlobalTable.new ()
+	(* If a cell has an entry in the stateTable, then this site owns
+	 * the cell's state. *)
+
+	fun cell x =
+	    let
+		val stamp = GlobalStamp.new ()
+		fun getState (valueNeeded, returnState) =
+		    let
+			val p = Promise.promise ()
+			    (* this future is blocked on if two different sites
+			     * concurrently request the state *)
+			val value =
+			    case GlobalTable.exchange
+				     (stateTable, stamp, Promise.future p) of
+				SOME value => cast value
+			      | NONE =>
+				    case GlobalTable.lookup
+					     (managerTable, stamp) of
+					SOME returnState' =>
+					    cast returnState' ()
+				      | NONE => assert false
+		    in
+			GlobalTable.insert
+			    (managerTable, stamp, cast returnState);
+			Promise.fulfill (p, NONE);
+			if valueNeeded then SOME value else NONE
+		    end
+	    in
+		GlobalTable.insert (managerTable, stamp, cast NONE);
+		GlobalTable.insert (stateTable, stamp, cast x);
+		(stamp, Remote.proxy getState)
+	    end
+
+	fun equal ((stamp, _), (stamp', _)) = stamp = stamp'
+
+	fun withLocalState (valueNeeded, f1, f2) (stamp, getState) =
+	    let
+		val p = Promise.promise ()
+		    (* this future is blocked on if two threads on this site
+		     * concurrently execute an operation on the same cell *)
+		val valueOpt =
+		    case GlobalTable.exchange
+			     (stateTable, stamp, Promise.future p) of
+			SOME value => cast value
+		      | NONE =>
+			    let
+				fun returnState () =
+				    case GlobalTable.remove
+					     (stateTable, stamp) of
+					SOME value => cast value
+				      | NONE => assert false
+				val returnState = Remote.proxy1 returnState
+			    in
+				cast getState (valueNeeded, returnState)
+			    end
+	    in
+		Promise.fulfill (p, f1 valueOpt); f2 valueOpt
+	    end
+
+	val access = withLocalState (true, Future.await, cast o Option.valOf)
+	fun assign (cell, x) =
+	    withLocalState (false,
+			    (*--** make the following asynchronous? *)
+			    fn valueOpt =>
+			       (Future.await valueOpt; SOME (cast x)),
+			    ignore) cell
+	fun exchange (cell, x) =
+	    withLocalState (true,
+			    fn valueOpt =>
+			       (Future.await valueOpt; SOME (cast x)),
+			    cast o Option.valOf) cell
+    end

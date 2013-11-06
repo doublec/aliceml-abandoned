@@ -1,0 +1,53 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO    from "TextIO"
+import structure Component from "Component"
+import structure Inf       from "../rtt/Inf"
+
+signature COMPILER =
+sig
+    type env
+    type warnings	= {conventions		: bool,
+			   shadowing		: bool,
+			   unusedImports	: bool,
+			   addedImports		: bool,
+			   inaccessibleExports	: bool}
+
+    exception Error
+
+    val initialEnv	: env
+
+    val compile		: string -> Component.t
+    val compileWith	: env * string -> Component.t
+    val compileFile	: string * string option -> unit
+    val compileFileWith	: env * string * string option -> unit
+
+    val eval		: string -> package
+    val evalWith	: env * string -> env * package
+    val evalFile	: string -> package
+    val evalFileWith	: env * string -> env * package
+
+    val prepareWith	: env * string -> env * (unit -> package) * Inf.t
+    val prepareFileWith	: env * string -> env * (unit -> package) * Inf.t
+
+    val withStreams	: {out : TextIO.outstream option,
+			   err : TextIO.outstream option,
+			   trace : TextIO.outstream option,
+			   annot : TextIO.outstream option}
+			   -> ('a -> 'b) -> 'a -> 'b
+    val withWidths	: {out : int, err : int, trace : int}
+			   -> ('a -> 'b) -> 'a -> 'b
+    val withWarnings	: warnings -> ('a -> 'b) -> 'a -> 'b
+
+    val warnings	: warnings
+end

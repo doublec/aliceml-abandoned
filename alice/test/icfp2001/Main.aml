@@ -1,0 +1,49 @@
+import structure Doc    from "Doc"
+import structure Parse  from "Parse"
+import structure Smurf  from "Smurf"
+
+structure Main =
+struct
+    fun best(timeout, bestSoFar, betters) =
+	if Future.isFuture(Future.awaitOne(betters, timeout)) then
+	    bestSoFar
+	else case betters of [] =>
+	    bestSoFar (* Wow, an optimal solution! *)
+	| doc::docs =>
+	    best(timeout, doc, docs)
+
+    fun try timeout (meaning, cost, default) =
+	spawn best(timeout, [Doc.TEXT default], Smurf.smurf(meaning,cost))
+
+    fun main''(timeout, source) =
+	(* This essentially is
+	 *   List.app (Doc.print o try timeout) (Parse.parse source)
+	 * execpt for an sanity check on the size.
+	 *)
+	let
+	    val parts = Parse.parse source
+	    val docs  = List.map (try timeout) parts
+	    val size  = List.foldl op+ 0 (List.map Doc.size docs)
+	    exception JustBeDumbAndPrintTheDamnInputUnchanged
+	in
+	    (* Just in case we did something really dumb - like last year... *)
+	    if size <= String.size source
+	    then List.app Doc.print docs
+	    else raise JustBeDumbAndPrintTheDamnInputUnchanged
+	end
+
+    fun main' timeout =
+	let
+	    val source = TextIO.inputAll(TextIO.stdIn)
+	in
+	    main''(timeout, source) handle _ => TextIO.print source;
+	    OS.Process.exit(OS.Process.success)
+	end
+
+    fun timeout secs  = Time.fromSeconds(9 * (secs div 10) - 10) (* 90%-x *)
+
+    fun main []       = main'(Promise.future(Promise.promise()))
+      | main(time::_) = main'(Future.alarm(timeout(valOf(Int.fromString time))))
+
+    val _ = main(CommandLine.arguments())
+end

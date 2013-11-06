@@ -1,0 +1,52 @@
+
+fun towards_blob towards_hill towards_hill_depleted =
+    loop (
+	pick ifyes towards_hill ++
+	turnto (marker foodmarker) ifnot (
+	    turnto food ifyes (goto "extend_trail") ++
+	    times 3 (turn right) ++
+	    turnto food ifyes (goto "extend_trail") ++
+	    towards_hill_depleted
+	) ++
+	loop (
+	    move ifnot (
+		sense ahead foe ifyes (
+		    turn left ++
+		    move ifnot (goto ") ++
+		    turn right ++
+		    move ifnot () ++
+		)
+	    )
+	)
+    ) ++
+    label "extend_trail" ++
+    
+
+fun drop_food towards_blob =
+    drop ++
+    times 3 (turn left) ++
+    towards_blob
+
+fun worker _ =
+    proc "towards_blob" (
+	towards_blob (goto "towards_hill") (goto "towards_hill_depleted")
+    ) ++
+    proc "towards_hill" (
+	sync_towards_hill nop (goto "drop_food") (goto "blocked_trail_back")
+	    otherwise (lost)
+    ) ++
+    proc "towards_hill_depleted" (
+	sync_towards_hill (unmark (marker foodmarker))
+	    (goto "drop_food") (goto "blocked_trail_back") otherwise (lost)
+    ) ++
+    proc "drop_food" (
+	drop_food (goto "towards_blob")
+    ) ++
+    proc "blocked_trail_back" (
+	loop (
+	    sense ahead foe ifnot (goto "drop_food")
+	    (* try evasion? *)
+	)
+    )
+
+val ant = worker ()

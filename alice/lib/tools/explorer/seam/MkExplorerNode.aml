@@ -1,0 +1,240 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+
+import signature TYPES         from "TYPES-sig"
+import signature TREE_NODE     from "TREE_NODE-sig"
+import signature VISUAL_NODE   from "VISUAL_NODE-sig"
+import signature GTK_NODE      from "GTK_NODE-sig"
+
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+
+functor MkExplorerNode (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    (VisualNode : VISUAL_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    :
+    EXPLORER_NODE
+    where type tree = Types.tree
+    where type explorer_state = Types.explorer_state
+    where type space = Space.space
+    where type status = Types.status
+    =
+struct
+    open TreeNode
+
+    exception SearchDone
+
+    type tree = Types.tree
+    type explorer_state = Types.explorer_state
+    type space = Space.space
+    type status = Types.status
+
+    fun createNode(state, 
+		   mom,
+		   alternative) =
+	let
+	    val best =
+		case Types.getConstrain state of NONE => NONE
+		  | _ =>
+		    let
+			val best = Types.getBestSpace state
+		    in
+			case mom of NONE => best
+		      | SOME (Types.N({ownBest=momBest,...},_,_)) =>
+			    if best = !momBest then NONE
+			    else best
+		    end
+	in
+        Types.N({offset=ref 0,
+	         oldOffset=ref NONE,
+	         groupOffset=ref 0,
+	         status=ref Types.UNKNOWN,
+                 openChildren=ref 0,
+	         hidden=ref false,
+	         dirty=ref true,
+	         hasSolBelow=ref false,
+	         vNode=ref NONE,
+	         space=ref NONE,
+	         clone=ref NONE,
+		 dist=ref ((Option.getOpt(Option.map Types.getDist mom, 0))+1),
+	         ownBest=ref best,
+	         connection=ref NONE,
+	         alternative=alternative,
+	         shape =ref nil}, ref mom, ref #[])
+	end
+
+    fun decOpenChildren (Types.N({openChildren=openChildren,space=space,...},
+                           ref mom,_)) =
+        (openChildren := !openChildren - 1;
+         if !openChildren=0 then
+             (Option.app decOpenChildren mom;
+              Option.app (fn _ => Option.app (fn s => (Space.discard s;
+                                                       space := NONE))
+                                             (!space)) mom)
+         else ())
+    fun hasOpenChildren (Types.N({openChildren=openChildren,...},_,_)) =
+        !openChildren>=1
+
+    fun setStatus (node as Types.N({status=status,
+                                    openChildren=openChildren,...},
+                             ref mom,_)) newStatus = 
+        (case newStatus of
+             (Types.FAILED | Types.SOLVED) => Option.app decOpenChildren mom
+           | _ => ();
+         status := newStatus)
+    fun setChildren (Types.N({openChildren=openChildren,...},_,ch)) newCh =
+        (ch := newCh;
+         openChildren := Vector.length newCh)
+    fun setRoot (Types.N({clone,space,...},mom,_)) newSpace =
+	(assert(!mom=NONE);
+	 space := newSpace;
+	 Option.app (fn s => clone := SOME (Space.clone s)) newSpace)
+
+
+    fun doCommits(state,s,i,best) =
+	case Space.status s of
+            Space.BRANCH (_,desc) =>
+		(Space.commit(s, desc, i);
+		 (case Types.getConstrain state of
+		      NONE => ()
+		    | SOME c => Option.app (fn b => c(s, b)) best);
+		 Space.status s)
+          | _ => assert false
+
+    fun recomputeSpace (state,Types.N({clone=ref (SOME s),...},_,_)) =
+        Space.clone s
+      | recomputeSpace (state,
+			Types.N({alternative=i,space=space,
+                                 ownBest=ownBest,...},
+				ref (SOME mom),_)) =
+	let
+	    val s = recomputeSpace(state,mom)
+	in
+	    doCommits(state, s, i, !ownBest);
+	    s
+	end
+      | recomputeSpace _ = raise Subscript
+
+    fun acquireSpace (state,node as Types.N({space,clone,
+					     alternative,ownBest,dist,
+					     ...},
+					    ref (SOME mom),_)) =
+	((case mom of Types.N({space=ref (SOME momSpace) as momSpaceR,
+			       ...}, _,_) =>
+	      (doCommits(state, momSpace, alternative, !ownBest);
+	       space := SOME momSpace;
+	       momSpaceR := NONE)
+			     | _ =>
+	      space := SOME (recomputeSpace(state, node)));
+	  let
+	      val s = valOf (!space)
+	      val mrd = Types.getMrd state
+	  in
+	      if !dist >= mrd andalso mrd > 0 andalso
+		  not (Space.status s = Space.FAILED) then
+		  (clone := SOME (Space.clone s);
+		   dist := 0)
+	      else ();
+	      s
+	  end)
+      | acquireSpace _ = assert(false)
+
+    fun getSpace (state,node as Types.N({space,clone,...},_,_)) =
+	case !space of
+	    SOME s => s
+	  | NONE => (case !clone of
+			 SOME c =>
+			     let
+				 val s = Space.clone c
+			     in
+				 space := SOME s;
+				 s
+			     end
+		       | NONE =>
+			     acquireSpace (state, node))
+
+    fun getClone (state, node) =
+	Space.clone (getSpace (state, node))
+
+    fun nodeStatus (state, node as Types.N({status=status,
+                                            ownBest=ownBest,...},_,_)) =
+        case !status of Types.UNKNOWN =>
+                        let
+			    val _ = (case Types.getConstrain state of
+					 NONE => ()
+				       | SOME _ =>
+					     ownBest := Types.getBestSpace state
+					     )
+                            val s = getSpace(state, node)
+                        in
+                            case Space.status s of
+                                Space.FAILED => (setStatus node Types.FAILED;
+                                                 Types.addFailed state;
+                                                 Types.FAILED)
+                              | Space.SOLVED => (setStatus node Types.SOLVED;
+                                                 TreeNode.setHasSolBelow node;
+                                                 Types.addSolved(state,s);
+                                                 Types.SOLVED)
+                              | Space.BRANCH(alt,desc) 
+                                => (setStatus node (Types.CHOICE alt);
+                                    Types.addChoice state;
+                                    Types.CHOICE alt)
+                        end
+                      | s => s
+
+    fun isUnknown (node as Types.N({status=status,...},_,_)) =
+        (!status = Types.UNKNOWN)
+    fun isHidden (node as Types.N({hidden=hidden,...},_,_)) = !hidden
+    fun curNodeStatus (Types.N({status=ref status,...},_,_)) = status
+
+    fun noOfChildren (state, node as Types.N({status=status,...},_,ch)) =
+        if (Types.cancelSearch state) then
+           raise SearchDone
+        else
+        case !status of Types.UNKNOWN =>
+                        (VisualNode.undrawAndDirtyUp node;
+                         case nodeStatus (state, node) of
+                             Types.FAILED => 0
+                           | Types.SOLVED => 0
+                           | Types.CHOICE n =>
+                             (setChildren node 
+                                (Vector.tabulate(n,
+                                   fn i => createNode(state, SOME node, i)));
+                              n)
+                           | Types.UNKNOWN => raise Subscript (* can't happen*)
+                                                    )
+                      | _ => Vector.length (!ch)
+
+    fun getChild (node as Types.N(_,_,ch)) n = Vector.sub(!ch, n)
+    fun getParent (Types.N(_,p,_)) = !p
+    fun getAlternative (Types.N({alternative,...},_,_)) = alternative
+
+    fun discardTree' (Types.N({space=space,...},_,ch)) =
+        ((case !space of SOME s => Space.discard s
+                       | _ => ());
+         Vector.app discardTree' (!ch))
+    fun discardTree node =
+        (GtkNode.undrawSubtree node;
+         discardTree' node)
+end
+

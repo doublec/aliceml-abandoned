@@ -1,0 +1,1652 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[twoside]{article}
+\usepackage{times,alltt,url,a4,latexsym,proof}
+
+\setlength{\parskip}{1.5ex}
+\setlength{\parindent}{0mm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\void}[1]{}
+
+\newcommand{\conarrow}{\hookrightarrow}
+
+\newcommand{\x}[1]{\mathit{#1}}
+\newcommand{\f}[1]{\mbox{#1}}
+\renewcommand{\c}[1]{c_{\f{\scriptsize #1}}}
+
+\newcommand{\lab}{\x{lab}}
+\newcommand{\id}{\x{id}}
+\newcommand{\longid}{\x{longid}}
+\newcommand{\lit}{\x{lit}}
+\renewcommand{\exp}{\x{exp}}
+\newcommand{\exps}{\x{exps}}
+\newcommand{\fld}{\x{fld}}
+\newcommand{\flds}{\x{flds}}
+\newcommand{\mat}{\x{mat}}
+\newcommand{\mats}{\x{mats}}
+\newcommand{\pat}{\x{pat}}
+\newcommand{\pats}{\x{pats}}
+\newcommand{\dec}{\x{dec}}
+\newcommand{\decs}{\x{decs}}
+\newcommand{\imp}{\x{imp}}
+\newcommand{\imps}{\x{imps}}
+\newcommand{\com}{\x{com}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{The Stockhausen Module Theory}
+\author{Andreas Rossberg \\
+Universit\"at des Saarlandes \\
+\url{rossberg@ps.uni-sb.de}}
+\date{\today}
+
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Syntax}
+\label{syntax}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This is the external language:
+%
+\begin{center}
+\begin{tabular}{llcll}
+(identifiers)	&$x$&$\in$&	$\f{Id}$ \\
+(labels)	&$l$&$\in$&	$\f{Lab}$ \\
+(paths)		&$p$&$=$&	$x \;|\; p.l$ \\
+\\
+(values)	&$v$&$=$&	$p \;|\; \lambda x:t.v \;|\; v_1\;v_2 \;|\;
+				\Lambda x:k.v$ \\
+(types)		&$t$&$=$&	$p \;|\; \lambda x:k.t \;|\; t_1\;t_2 \;|\;
+				t_1\to t_2 \;|\; \forall x:k.t$ \\
+(kinds)		&$k$&$=$&	$\Omega \;|\; k_1\to k_2 \;|\;
+				\langle t:k\rangle$ \\
+\\
+(modules)	&$m$&$=$&	$p \;|\; \lambda x:i.m \;|\; m_1\;m_2 \;|\;
+				\{d\} \;|\; m:i \;|\; m:>i$ \\
+(interfaces)	&$i$&$=$&	$p \;|\; \lambda x:i_1.i_2 \;|\; i\;p \;|\;
+				\{s\} \;|\; (x:i_1)\to i_2 \;|\;
+				\langle p:i\rangle$ \\
+(universes)	&$u$&$=$&	$\Omega \;|\; (x:i)\to u \;|\;
+				\langle i:u\rangle$ \\
+\\
+(accessor)	&$a$&$=$&	$\epsilon \;|\; l@$ \\
+(declarations)	&$d$&$=$&	$\epsilon \;|\; ax=v;d \;|\; ax=t;d \;|\;
+				ax=m;d \;|\; ax=i;d$ \\
+(signatures)	&$s$&$=$&	$\epsilon \;|\; l@x:t;s \;|\; l@x:k;s \;|\;
+				l@x:i;s \;|\; l@x:u;s$ \\
+\\
+(environments)	&$E$&$=$&	$\epsilon \;|\; E,x:t \;|\; E,x:k \;|\;
+				E,x:i \;|\; E,x:u$
+\end{tabular}
+\end{center}
+%
+All accessors and labels in a declaration or signature have to be disjoint (modulo different name spaces for values, types, modules and interfaces). We use variables $Z$ to range over the union of types, kinds, interfaces, and universes\void{, and $z$ to range over paths, types, and interfaces}. Moreover, we write $\Box$ for one of $\diamond$ and $\Omega$.
+
+The internal language extends the external one with existential interface quantification and arbitrary accessors in signatures. Empty accessors in signatures represent a form of existential quantification as well:
+
+\begin{center}
+\begin{tabular}{llcll}
+(interfaces)	&$i$&$=$&	$\dots \;|\; \exists x:i_1.i_2$ \\
+(signatures)	&$s$&$=$&	$\epsilon \;|\; ax:t;s \;|\; ax:k;s \;|\;
+				ax:i;s \;|\; ax:u;s$ \\
+\end{tabular}
+\end{center}
+
+We abbreviate:
+
+\begin{center}
+\begin{tabular}{rcll}
+$i_1\to i_2$	&=&	$(x:i_1)\to i_2$	& ($x \notin \f{FV}(i_2)$) \\
+$i\to u$	&=&	$(x:i)\to u$		& ($x \notin \f{FV}(u)$)
+\end{tabular}
+\end{center}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Typing and Well-formedness Rules}
+\label{typing}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection*{Environments \hfill
+\fbox{$\vdash E : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{}{
+\vdash \epsilon : \diamond
+}
+\\\\\displaystyle
+\frac{
+\vdash E : \diamond
+\qquad
+E \vdash t : \Omega
+}{
+\vdash (E,x:t) : \diamond
+}(x \notin \f{Dom}(E))
+\qquad
+\frac{
+\vdash E : \diamond
+\qquad
+E \vdash k : \diamond
+}{
+\vdash (E,x:k) : \diamond
+}(x \notin \f{Dom}(E))
+\\\\\displaystyle
+\frac{
+\vdash E : \diamond
+\qquad
+E \vdash i : \Omega
+}{
+\vdash (E,x:i) : \diamond
+}(x \notin \f{Dom}(E))
+\qquad
+\frac{
+\vdash E : \diamond
+\qquad
+E \vdash u : \diamond
+}{
+\vdash (E,x:u) : \diamond
+}(x \notin \f{Dom}(E))
+\end{array}
+\end{displaymath}
+\begin{center}Environments\end{center}
+
+
+
+\subsubsection*{Values \hfill
+\fbox{$E \vdash v : t$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E(x) = t
+}{
+E \vdash x : t
+}
+\qquad
+\frac{
+E \vdash p : \{s\}
+\qquad
+E \vdash s/p.l : t
+}{
+E \vdash p.l : t
+}
+\\\\\displaystyle
+\frac{
+E \vdash t_1 : \Omega
+\qquad
+E,x:t_1 \vdash v : t_2
+}{
+E \vdash (\lambda x:t_1.v) : (t_1\to t_2)
+}
+\qquad
+\frac{
+E \vdash v_1 : (t_2\to t)
+\qquad
+E \vdash v_2 : t_2
+}{
+E \vdash v_1\;v_2 : t
+}
+\\\\\displaystyle
+\frac{
+E \vdash k : \diamond
+\qquad
+E,x:k \vdash v : t
+}{
+E \vdash (\Lambda x:k.v) : (\forall x:k.t)
+}
+\\\\\displaystyle
+\frac{
+E \vdash v : t'
+\qquad
+E \vdash t' \leq t : \Omega
+}{
+E \vdash v : t
+}
+\end{array}
+\end{displaymath}
+\begin{center}Values\end{center}
+
+
+
+\subsubsection*{Types \hfill
+\fbox{$E \vdash t : k$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E(x) = k
+}{
+E \vdash x : k
+}
+\qquad
+\frac{
+E \vdash p : \{s\}
+\qquad
+E \vdash s/p.l : k
+}{
+E \vdash p.l : k
+}
+\\\\\displaystyle
+\frac{
+E \vdash k_1 : \diamond
+\qquad
+E,x:k_1 \vdash t : k_2
+}{
+E \vdash (\lambda x:k_1.t) : (k_1\to k_2)
+}
+\qquad
+\frac{
+E \vdash t_1 : (k_2\to k)
+\qquad
+E \vdash t_2 : k_2
+}{
+E \vdash t_1\;t_2 : k
+}
+\\\\\displaystyle
+\frac{
+E \vdash t_1 : \Omega
+\qquad
+E \vdash t_2 : \Omega
+}{
+E \vdash (t_1\to t_2) : \Omega
+}
+\qquad
+\frac{
+E \vdash k : \diamond
+\qquad
+E,x:k \vdash t : \Omega
+}{
+E \vdash (\forall x:k.t) : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash t : k'
+\qquad
+E \vdash k' \leq k : \diamond
+}{
+E \vdash t : k
+}
+\qquad
+\frac{
+E \vdash t : k
+}{
+E \vdash t : \langle t:k\rangle
+}
+\end{array}
+\end{displaymath}
+\begin{center}Types\end{center}
+
+
+
+\subsubsection*{Kinds \hfill
+\fbox{$E \vdash k : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+}{
+E \vdash \Omega : \diamond
+}
+\qquad
+\frac{
+E \vdash k_1 : \diamond
+\qquad
+E \vdash k_2 : \diamond
+}{
+E \vdash (k_1\to k_2) : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash t : k
+}{
+E \vdash \langle t:k \rangle : \diamond
+}
+\end{array}
+\end{displaymath}
+\begin{center}Kinds\end{center}
+
+
+
+
+\subsubsection*{Modules \hfill
+\fbox{$E \vdash m : i$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E(x) = i
+}{
+E \vdash x : i
+}
+\qquad
+\frac{
+E \vdash p : \{s\}
+\qquad
+E \vdash s/p.l : i
+}{
+E \vdash p.l : i
+}
+\\\\\displaystyle
+\frac{
+E \vdash i_1 : \Omega
+\qquad
+E,x:i_1 \vdash m : i_2
+}{
+E \vdash (\lambda x:i_1.m) : ((x:i_1)\to i_2)
+}
+\qquad
+\frac{
+E \vdash m_1 : (i_2\to i)
+\qquad
+E \vdash m_2 : i_2
+}{
+E \vdash m_1\;m_2 : i
+}
+\\\\\displaystyle
+\frac{
+E \vdash d : s
+}{
+E \vdash \{d\} : \{s\}
+}
+\\\\\displaystyle
+\frac{
+E \vdash m : i'
+\qquad
+E \vdash i' \leq i : \Omega
+}{
+E \vdash (m : i) : i'|i
+}
+\qquad
+\frac{
+E \vdash m : i
+}{
+E \vdash (m :> i) : i
+}
+\\\\\displaystyle
+\frac{
+E \vdash m : i'
+\qquad
+E \vdash i' \leq i : \Omega
+}{
+E \vdash m : i
+}
+\qquad
+\frac{
+E \vdash p : i
+}{
+E \vdash p : \langle p:i\rangle
+}
+\\\\\displaystyle
+\frac{
+E \vdash m : \{x:Z;s\}
+}{
+E \vdash m : (\exists x':\{l@x:Z\}.\{s[x:=x'.l]\})
+}
+\qquad
+\frac{
+E \vdash m : \exists x:i_1.i_2
+}{
+E \vdash m : i_2
+}(x \notin \f{FV}(i_2))
+\end{array}
+\end{displaymath}
+\begin{center}Modules\end{center}
+
+
+
+\subsubsection*{Interfaces \hfill
+\fbox{$E \vdash i : u$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E(x) = u
+}{
+E \vdash x : u
+}
+\qquad
+\frac{
+E \vdash p : \{s\}
+\qquad
+E \vdash s/p.l : u
+}{
+E \vdash p.l : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash i_1 : \Omega
+\qquad
+E,x:i_1 \vdash i_2 : u
+}{
+E \vdash (\lambda x:i_1.i_2) : ((x:i_1)\to u)
+}
+\qquad
+\frac{
+E \vdash i : (i_2\to u)
+\qquad
+E \vdash p : i_2
+}{
+E \vdash i\;p : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash s : \diamond
+}{
+E \vdash \{s\} : \Omega
+}
+\qquad
+\frac{
+E \vdash i_1 : \Omega
+\qquad
+E,x:i_1 \vdash i_2 : \Omega
+}{
+E \vdash ((x:i_1)\to i_2) : \Omega
+}
+\qquad
+\frac{
+E \vdash i_1 : \Omega
+\qquad
+E,x:i_1 \vdash i_2 : \Omega
+}{
+E \vdash (\exists x:i_1.i_2) : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash p : i
+}{
+E \vdash \langle p:i\rangle : \Omega
+}
+\qquad
+\frac{
+E \vdash m : u'
+\qquad
+E \vdash u' \leq u : \diamond
+}{
+E \vdash m : u
+}
+\qquad
+\frac{
+E \vdash i : u
+}{
+E \vdash i : \langle i:u\rangle
+}
+\end{array}
+\end{displaymath}
+\begin{center}Interfaces\end{center}
+
+
+
+\subsubsection*{Universes \hfill
+\fbox{$E \vdash u : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+}{
+E \vdash \Omega : \diamond
+}
+\qquad
+\frac{
+E \vdash i : \Omega
+\qquad
+E,x:i \vdash u : \diamond
+}{
+E \vdash ((x:i)\to u) : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i : u
+}{
+E \vdash \langle i:u \rangle : \diamond
+}
+\end{array}
+\end{displaymath}
+\begin{center}Universes\end{center}
+
+
+
+\subsubsection*{Declarations \hfill
+\fbox{$E \vdash d : s$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+}{
+E \vdash \epsilon : \epsilon
+}
+\\\\\displaystyle
+\frac{
+E \vdash v : t
+\qquad
+E,x:t \vdash d : s
+}{
+E \vdash (ax=v;d) : (ax:t;s)
+}
+\qquad
+\frac{
+E \vdash t : k
+\qquad
+E,x:k \vdash d : s
+}{
+E \vdash (ax=t;d) : (ax:k;s)
+}
+\\\\\displaystyle
+\frac{
+E \vdash m : i
+\qquad
+E,x:i \vdash d : s
+}{
+E \vdash (ax=m;d) : (ax:i;s)
+}
+\qquad
+\frac{
+E \vdash i : u
+\qquad
+E,x:u \vdash d : s
+}{
+E \vdash (ax=i;d) : (ax:u;s)
+}
+\\\\\displaystyle
+\frac{
+E \vdash d : s'
+\qquad
+E \vdash s' \leq s
+}{
+E \vdash d : s
+}
+\\\\\displaystyle
+\frac{
+E \vdash d : (ax:(\exists x_1:i_1.i);s)
+}{
+E \vdash d : (x_1:i_1;ax:i;s)
+}(x_1 \notin \f{FV}(s))
+\end{array}
+\end{displaymath}
+\begin{center}Declarations\end{center}
+
+
+
+\subsubsection*{Signatures \hfill
+\fbox{$E \vdash s : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+}{
+E \vdash \epsilon : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash t : \Omega
+\qquad
+E,x:t \vdash s : \diamond
+}{
+E \vdash (ax:t;s) : \diamond
+}
+\qquad
+\frac{
+E \vdash k : \diamond
+\qquad
+E,x:k \vdash s : \diamond
+}{
+E \vdash (ax:k;s) : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i : \Omega
+\qquad
+E,x:i \vdash s : \diamond
+}{
+E \vdash (ax:i;s) : \diamond
+}
+\qquad
+\frac{
+E \vdash u : \diamond
+\qquad
+E,x:u \vdash s : \diamond
+}{
+E \vdash (ax:u;s) : \diamond
+}
+\end{array}
+\end{displaymath}
+\begin{center}Signatures\end{center}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Equivalence}
+\label{equivalence}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection*{Types \hfill
+\fbox{$E \vdash t = t' : k$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash t : k
+}{
+E \vdash t = t : k
+}
+\qquad
+\frac{
+E \vdash t' = t : k
+}{
+E \vdash t = t' : k
+}
+\qquad
+\frac{
+E \vdash t = t'' : k
+\qquad
+E \vdash t'' = t' : k
+}{
+E \vdash t = t' : k
+}
+\\\\\displaystyle
+\frac{
+E \vdash p = p' : \{s\}
+\qquad
+E \vdash s/p.l : k
+}{
+E \vdash p.l = p'.l : k
+}
+\qquad
+\frac{
+E \vdash t : \langle t':k\rangle
+}{
+E \vdash t = t' : k
+}
+\\\\\displaystyle
+\frac{
+E \vdash k_1 = k_1' : \diamond
+\qquad
+E,x:k_1 \vdash t = t' : k_2
+}{
+E \vdash (\lambda x:k_1.t) = (\lambda x:k_1'.t') : k_1\to k_2
+}
+\\\\\displaystyle
+\frac{
+E \vdash t_1 = t_1' : (k_2\to k)
+\qquad
+E \vdash t_2 = t_2' : k_2
+}{
+E \vdash t_1\;t_2 = t_1'\;t_2' : k
+}
+\\\\\displaystyle
+\frac{
+E \vdash (\lambda x:k.t_1)\;t_2 : k_1
+}{
+E \vdash (\lambda x:k.t_1)\;t_2 = t_1[x:=t_2] : k_1
+}
+\qquad
+\frac{
+E \vdash (\lambda x:k.t\;x) : (k\to k_2)
+}{
+E \vdash (\lambda x:k.t\;x) = t : (k\to k_2)
+}(x \notin \f{FV}(t))
+\\\\\displaystyle
+\frac{
+E \vdash t_1 = t_1' : \Omega
+\qquad
+E \vdash t_2 = t_2' : \Omega
+}{
+E \vdash (t_1\to t_2) = (t_1'\to t_2') : \Omega
+}
+\qquad
+\frac{
+E \vdash k = k' : \diamond
+\qquad
+E,x:k \vdash t = t' : \Omega
+}{
+E \vdash (\forall x:k.t) = (\forall x:k'.t') : \Omega
+}
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Kinds \hfill
+\fbox{$E \vdash k = k' : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash k : \diamond
+}{
+E \vdash k = k : \diamond
+}
+\qquad
+\frac{
+E \vdash k' = k : \diamond
+}{
+E \vdash k = k' : \diamond
+}
+\qquad
+\frac{
+E \vdash k = k'' : \diamond
+\qquad
+E \vdash k'' = k' : \diamond
+}{
+E \vdash k = k' : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash k_1 = k_1' : \diamond
+\qquad
+E \vdash k_2 = k_2' : \diamond
+}{
+E \vdash (k_1\to k_2) = (k_1'\to k_2') : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash t = t' : k
+\qquad
+E \vdash k = k' : \diamond
+}{
+E \vdash \langle t:k\rangle = \langle t':k'\rangle : \diamond
+}
+\qquad
+\frac{
+E \vdash t = t' : k
+}{
+E \vdash \langle t:\langle t':k\rangle\rangle = \langle t':k\rangle : \diamond
+}
+\end{array}
+\end{displaymath}
+
+
+\subsubsection*{Module Paths \hfill
+\fbox{$E \vdash p = p' : i$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash p : i
+}{
+E \vdash p = p : i
+}
+\qquad
+\frac{
+E \vdash p' = p : i
+}{
+E \vdash p = p' : i
+}
+\qquad
+\frac{
+E \vdash p = p'' : i
+\qquad
+E \vdash p'' = p' : i
+}{
+E \vdash p = p' : i
+}
+\\\\\displaystyle
+\frac{
+E \vdash p = p' : \{s\}
+\qquad
+E \vdash s/p.l : i
+}{
+E \vdash p.l = p'.l : i
+}
+\qquad
+\frac{
+E \vdash p : \langle p':i\rangle
+}{
+E \vdash p = p' : i
+}
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Interfaces \hfill
+\fbox{$E \vdash i = i' : u$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash i : u
+}{
+E \vdash i = i : u
+}
+\qquad
+\frac{
+E \vdash i' = i : u
+}{
+E \vdash i = i' : u
+}
+\qquad
+\frac{
+E \vdash i = i'' : u
+\qquad
+E \vdash i'' = i' : u
+}{
+E \vdash i = i' : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash p = p' : \{s\}
+\qquad
+E \vdash s/p.l : u
+}{
+E \vdash p.l = p'.l : u
+}
+\qquad
+\frac{
+E \vdash i : \langle i':u\rangle
+}{
+E \vdash i = i' : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash i_1 = i_1' : \Omega
+\qquad
+E,x:i_1 \vdash i_2 = i_2' : u
+}{
+E \vdash (\lambda x:i_1.i_2) = (\lambda x:i_1'.i_2') : ((x:i_1)\to u)
+}
+\\\\\displaystyle
+\frac{
+E \vdash i = i' : i_2\to u
+\qquad
+E \vdash p = p' : i_2
+}{
+E \vdash i\;p = i'\;p' : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash (\lambda x:i_1.i_2)\;p : u
+}{
+E \vdash (\lambda x:i_1.i_2)\;p = i_2[x:=p] : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash (\lambda x:i_1.i_2\;x) : ((x:i_1)\to u)
+\qquad
+}{
+E \vdash (\lambda x:i_1.i_2\;x) = i_2 : ((x:i_1)\to u)
+}(x \notin \f{FV}(i_2))
+\\\\\displaystyle
+\frac{
+E \vdash s = s' : \diamond
+}{
+E \vdash \{s\} = \{s'\} : \Omega
+}
+\qquad
+\frac{
+E \vdash i_1 = i_1' : \Omega
+\qquad
+E,x:i_1 \vdash i_2 = i_2' : \Omega
+}{
+E \vdash ((x:i_1)\to i_2) = ((x:i_1')\to i_2') : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash p = p' : i
+\qquad
+E \vdash i = i' : \Omega
+}{
+E \vdash \langle p:i\rangle = \langle p':i'\rangle : \Omega
+}
+\qquad
+\frac{
+E \vdash p = p' : i
+}{
+E \vdash \langle p:\langle p':i\rangle\rangle = \langle p':i\rangle : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash i_1 = i_1' : \Omega
+\qquad
+E,x:i_1 \vdash i_2 = i_2' : \Omega
+}{
+E \vdash (\exists x:i_1.i_2) = (\exists x:i_1'.i_2') : \Omega
+}
+\void{
+\qquad
+\frac{
+E \vdash (\exists x:i_1.i_2) : \Omega
+}{
+E \vdash (\exists x:i_1.i_2) = i_2 : \Omega
+}(x \notin \f{FV}(i_2))
+}
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Universes \hfill
+\fbox{$E \vdash u = u' : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash u : \diamond
+}{
+E \vdash u = u : \diamond
+}
+\qquad
+\frac{
+E \vdash u' = u : \diamond
+}{
+E \vdash u = u' : \diamond
+}
+\qquad
+\frac{
+E \vdash u = u'' : \diamond
+\qquad
+E \vdash u'' = u' : \diamond
+}{
+E \vdash u = u' : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i = i' : \Omega
+\qquad
+E,x:i \vdash u = u' : \diamond
+}{
+E \vdash ((x:i)\to u) = ((x:i')\to u') : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i = i' : u
+\qquad
+E \vdash u = u' : \diamond
+}{
+E \vdash \langle i:u\rangle = \langle i':u'\rangle : \diamond
+}
+\qquad
+\frac{
+E \vdash i = i' : u
+}{
+E \vdash \langle i:\langle i':u\rangle\rangle = \langle i':u\rangle : \diamond
+}
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Signatures \hfill
+\fbox{$E \vdash s = s' : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash s : \diamond
+\qquad
+E \vdash s' : \diamond
+\qquad
+x;E,x:\{s\} \vdash s \leq s' : \diamond
+\qquad
+x;E,x:\{s'\} \vdash s' \leq s : \diamond
+}{
+E \vdash s = s' : \diamond
+}
+\void{
+\frac{
+E \vdash s : \diamond
+}{
+E \vdash s = s : \diamond
+}
+\qquad
+\frac{
+E \vdash s' = s : \diamond
+}{
+E \vdash s = s' : \diamond
+}
+\qquad
+\frac{
+E \vdash s = s'' : \diamond
+\qquad
+E \vdash s'' = s' : \diamond
+}{
+E \vdash s = s' : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash t = t' : \Omega
+\qquad
+E,x:t \vdash s = s' : \diamond
+}{
+E \vdash (ax:t;s) = (ax:t';s') : \diamond
+}
+\qquad
+\frac{
+E \vdash k = k' : \diamond
+\qquad
+E,x:k \vdash s = s' : \diamond
+}{
+E \vdash (ax:k;s) = (ax:k';s') : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i = i' : \Omega
+\qquad
+E,x:i \vdash s = s' : \diamond
+}{
+E \vdash (ax:i;s) = (ax:i';s') : \diamond
+}
+\qquad
+\frac{
+E \vdash u = u' : \diamond
+\qquad
+E,x:u \vdash s = s' : \diamond
+}{
+E \vdash (ax:u;s) = (ax:u';s') : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash Z_1 : \Box
+\qquad
+E \vdash Z_2 : \Box
+\qquad
+E,x_1:Z_1,x_2:Z_2 \vdash s : \diamond
+}{
+E \vdash (a_1x_1:Z_1;a_2x_2:Z_2;s) = (a_2x_2:Z_2;a_1x_1:Z_1;s) : \diamond
+}\left(
+\begin{array}{@{}c@{}}
+x_1 \notin \f{FV}(Z_2) \\
+x_2 \notin \f{FV}(Z_1)
+\end{array}
+\right)
+\\\\\displaystyle
+\frac{
+E \vdash (x:Z;s) : \diamond
+}{
+E \vdash (x:Z;s) = s : \diamond
+}(x \notin \f{FV}(s))
+}
+\end{array}
+\end{displaymath}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Subtyping}
+\label{subtyping}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection*{Types \hfill
+\fbox{$E \vdash t \leq t' : \Omega$}
+}
+
+Subtyping on types corresponds to Hindley/Milner style instantiation.
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash t = t' : \Omega
+}{
+E \vdash t \leq t' : \Omega
+}
+\qquad
+\frac{
+E \vdash t \leq t'' : \Omega
+\qquad
+E \vdash t'' \leq t' : \Omega
+}{
+E \vdash t \leq t' : \Omega
+}
+\\\\\displaystyle
+\frac{
+E,x:k \vdash t \leq t' : \Omega
+}{
+E \vdash t \leq (\forall x:k.t') : \Omega
+}
+\qquad
+\frac{
+E \vdash t_1 : k
+\qquad
+E \vdash t[x:=t_1] \leq t' : \Omega
+}{
+E \vdash (\forall x:k.t) \leq t' : \Omega
+}
+\end{array}
+\end{displaymath}
+
+
+\subsubsection*{Kinds \hfill
+\fbox{$E \vdash k \leq k' : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash k = k' : \diamond
+}{
+E \vdash k \leq k' : \diamond
+}
+\qquad
+\frac{
+E \vdash k \leq k'' : \diamond
+\qquad
+E \vdash k'' \leq k' : \diamond
+}{
+E \vdash k \leq k' : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash k_1' \leq k_1 : \diamond
+\qquad
+E \vdash k_2 \leq k_2' : \diamond
+}{
+E \vdash (k_1\to k_2) \leq (k_1'\to k_2') : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash t = t' : k
+\qquad
+E \vdash k \leq k' : \diamond
+}{
+E \vdash \langle t:k\rangle \leq \langle t':k'\rangle : \diamond
+}
+\qquad
+\frac{
+E \vdash t : k
+}{
+E \vdash \langle t:k\rangle \leq k : \diamond
+}
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Interfaces \hfill
+\fbox{$E \vdash i \leq i' : \Omega$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash i = i' : u
+}{
+E \vdash i \leq i' : u
+}
+\qquad
+\frac{
+E \vdash i \leq i'' : u
+\qquad
+E \vdash i'' \leq i' : u
+}{
+E \vdash i \leq i' : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash s : \diamond
+\qquad
+x;E,x:\{s\} \vdash s \leq s' : \diamond
+}{
+E \vdash \{s\} \leq \{s'\} : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash i_1' \leq i_1 : \Omega
+\qquad
+E,x:i_1' \vdash i_2 \leq i_2' : \Omega
+\qquad
+E,x:i_1 \vdash i_2 : \Omega
+}{
+E \vdash ((x:i_1)\to i_2) \leq ((x:i_1')\to i_2') : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash p = p' : i
+\qquad
+E \vdash i \leq i' : \Omega
+}{
+E \vdash \langle p:i\rangle \leq \langle p':i'\rangle : \Omega
+}
+\qquad
+\frac{
+E \vdash p : i
+}{
+E \vdash \langle p:i\rangle \leq i : \Omega
+}
+\\\\\displaystyle
+\frac{
+E \vdash p : i_1
+\qquad
+E \vdash i \leq i'[x:=p] : \Omega
+}{
+E \vdash i \leq (\exists x:i_1.i') : \Omega
+}
+\qquad
+\frac{
+E \vdash i_1 : \Omega
+\qquad
+E,x:i_1 \vdash i \leq i' : \Omega
+}{
+E \vdash (\exists x:i_1.i) \leq i' : \Omega
+}
+\end{array}
+\end{displaymath}
+
+
+\subsubsection*{Universes \hfill
+\fbox{$E \vdash u \leq u' : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash u = u' : \diamond
+}{
+E \vdash u \leq u' : \diamond
+}
+\qquad
+\frac{
+E \vdash u \leq u'' : \diamond
+\qquad
+E \vdash u'' \leq u' : \diamond
+}{
+E \vdash u \leq u' : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i' \leq i : \Omega
+\qquad
+E,x:i' \vdash u \leq u' : \diamond
+\qquad
+E,x:i \vdash u : \diamond
+}{
+E \vdash ((x:i)\to u) \leq ((x:i')\to u') : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash i = i' : u
+\qquad
+E \vdash u \leq u' : \diamond
+}{
+E \vdash \langle i:u\rangle \leq \langle i':u'\rangle : \diamond
+}
+\qquad
+\frac{
+E \vdash i : u
+}{
+E \vdash \langle i:u\rangle \leq u : \diamond
+}
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Signatures \hfill
+\fbox{$x;E \vdash s \leq s' : \diamond$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\void{
+\frac{
+x;E \vdash s = s' : \diamond
+}{
+x;E \vdash s \leq s' : \diamond
+}
+\qquad
+\frac{
+x;E \vdash s \leq s'' : \diamond
+\qquad
+x;E \vdash s'' \leq s' : \diamond
+}{
+x;E \vdash s \leq s' : \diamond
+}
+\\\\\displaystyle
+}
+\frac{
+E \vdash s : \diamond
+}{
+x;E \vdash s \leq \epsilon : \diamond
+}
+\\\\\displaystyle
+\frac{
+E \vdash x.l : Z
+\quad\quad
+x;E \vdash s \leq s'[x'\!:=\!x.l] : \diamond
+}{
+x;E \vdash s \leq (l@x':Z;s') : \diamond
+}
+\void{
+\\\\\displaystyle
+\frac{
+E \vdash z : Z
+\qquad
+x;E \vdash s \leq s'[x':=z] : \diamond
+}{
+x;E \vdash s \leq (x':Z;s') : \diamond
+}
+\qquad
+\frac{
+E \vdash Z : \Box
+\qquad
+x;E,x':Z \vdash s \leq s' : \diamond
+}{
+x;E \vdash (x':Z;s) \leq s' : \diamond
+}
+}
+\end{array}
+\end{displaymath}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lookup}
+\label{lookup}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection*{Values \hfill
+\fbox{$E \vdash s/p.l : t$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash t : \Omega
+\qquad
+E,x:t \vdash s : \diamond
+}{
+E \vdash (l@x:t;s)/p.l : t
+}
+\\\\\displaystyle
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : t
+}{
+E \vdash (l_1@x:Z;s)/p.l : t[x:=p.l_1]
+}
+\qquad
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : t
+}{
+E \vdash (x:Z;s)/p.l : t
+}(x \notin \f{FV}(t))
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Types \hfill
+\fbox{$E \vdash s/p.l : k$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash k : \diamond
+\qquad
+E,x:k \vdash s : \diamond
+}{
+E \vdash (l@x:k;s)/p.l : k
+}
+\\\\\displaystyle
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : k
+}{
+E \vdash (l_1@x:Z;s)/p.l : k[x:=p.l_1]
+}
+\qquad
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : k
+}{
+E \vdash (x:Z;s)/p.l : k
+}(x \notin \f{FV}(k))
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Modules \hfill
+\fbox{$E \vdash s/p.l : i$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash i : \Omega
+\qquad
+E,x:i \vdash s : \diamond
+}{
+E \vdash (l@x:i;s)/p.l : i
+}
+\\\\\displaystyle
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : i
+}{
+E \vdash (l_1@x:Z;s)/p.l : i[x:=p.l_1]
+}
+\qquad
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : i
+}{
+E \vdash (x:Z;s)/p.l : i
+}(x \notin \f{FV}(i))
+\end{array}
+\end{displaymath}
+
+
+
+\subsubsection*{Interfaces \hfill
+\fbox{$E \vdash s/p.l : u$}
+}
+
+\begin{displaymath}
+\begin{array}{c}
+\displaystyle
+\frac{
+E \vdash u : \diamond
+\qquad
+E,x:u \vdash s : \diamond
+}{
+E \vdash (l@x:u;s)/p.l : u
+}
+\\\\\displaystyle
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : u
+}{
+E \vdash (l_1@x:Z;s)/p.l : u[x:=p.l_1]
+}
+\qquad
+\frac{
+E \vdash Z : \Box
+\qquad
+E,x:Z \vdash s/p.l : u
+}{
+E \vdash (x:Z;s)/p.l : u
+}(x \notin \f{FV}(u))
+\end{array}
+\end{displaymath}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Examples}
+\label{examples}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Let $s = (t@x:\Omega; u@y:\langle x:\Omega\rangle; \epsilon)$. It is a well-formed signature:
+
+\begin{displaymath}
+\infer{\vdash (t@x:\Omega; u@y:\langle x:\Omega\rangle; \epsilon) : \diamond}{
+  \infer{\vdash \Omega : \diamond}{}
+  &
+  \infer{x:\Omega \vdash (u@y:\langle x:\Omega\rangle;\epsilon) : \diamond}{
+    \infer{x:\Omega \vdash \langle x:\Omega\rangle : \diamond}{
+      \infer{x:\Omega \vdash x : \Omega}{
+        (x:\Omega)(x) = \Omega
+      }
+    }
+    &
+    \infer{x:\Omega,y:\langle x:\Omega\rangle \vdash \epsilon : \diamond}{}
+  }
+}
+\end{displaymath}
+
+We can prove $z:\{s\} \vdash z.t = z.u : \Omega$ as follows:
+
+\begin{displaymath}
+\infer{z:\{s\} \vdash z.t = z.u : \Omega}{
+  \infer{z:\{s\} \vdash z.u = z.t : \Omega}{
+    \infer{z:\{s\} \vdash z.u : \langle z.t:\Omega\rangle}{
+      \infer{z:\{s\} \vdash z : \{s\}}{
+        (z:\{s\})(z) = \{s\}
+      }
+      &
+      \infer{z:\{s\} \vdash (t@x:\Omega; u@y:\langle x:\Omega\rangle; \epsilon)/z.u : \langle z.t:\Omega\rangle}{
+        \infer{z:\{s\} \vdash \Omega : \diamond}{}
+	&
+	\infer{z:\{s\},x:\Omega \vdash (u@y:\langle x:\Omega\rangle;\epsilon)/z.u : \langle x:\Omega\rangle}{
+	  \infer{z:\{s\},x:\Omega \vdash \langle x:\Omega\rangle : \diamond}{
+	    \infer{z:\{s\},x:\Omega \vdash x : \Omega}{
+	      (z:\{s\},x:\Omega)(x) = \Omega
+	    }
+	  }
+	  &
+	  \infer{z:\{s\},x:\Omega,y:\langle x:\Omega\rangle \vdash \epsilon : \diamond}{}
+	}
+      }
+    }
+  }
+}
+\end{displaymath}
+
+More interestingly, $s$ is a sub-signature of $s' = (u@v:\Omega;t@w:\langle v:\Omega\rangle;\epsilon)$, which is a reordered variant of $s$:
+
+\begin{displaymath}
+\infer{z;z:\{s\} \vdash s \leq (u@v:\Omega;t@w:\langle v:\Omega\rangle;\epsilon) : \diamond}{
+  \infer{z:\{s\} \vdash z.u : \Omega}{
+    \infer{z:\{s\} \vdash z.u : \langle z.t:\Omega\rangle}{
+      \infer{z:\{s\} \vdash z : \{s\}}{
+        (z:\{s\})(z) = \{s\}
+      }
+      &
+      \infer{z:\{s\} \vdash s/z.u : \langle z.t:\Omega\rangle}{
+        \cdots
+      }
+    }
+    &
+    \infer{z:\{s\} \vdash \langle z.t:\Omega\rangle \leq \Omega : \diamond}{
+      \infer{z:\{s\} \vdash z.t : \Omega}{
+	\cdots
+      }
+    }
+  }
+  &
+  (1)
+}
+\end{displaymath}
+
+where $(1)$ is the following derivation:
+
+\begin{displaymath}
+\infer{z;z:\{s\} \vdash s \leq (t@w:\langle z.u:\Omega\rangle;\epsilon) : \diamond}{
+  \infer{z:\{s\} \vdash z.t : \langle z.u:\Omega\rangle}{
+    \infer{z:\{s\} \vdash z.t : \langle z.t:\Omega\rangle}{
+      \infer{z:\{s\} \vdash z : \{s\}}{
+        (z:\{s\})(z) = \{s\}
+      }
+      &
+      \infer{z:\{s\} \vdash s/z.t : \Omega}{
+        \cdots
+      }
+    }
+    &
+    \infer{z:\{s\} \vdash \langle z.t:\Omega\rangle \leq \langle z.u:\Omega\rangle : \diamond}{
+      \infer{z:\{s\} \vdash z.t = z.u : \Omega}{
+	\cdots
+      }
+      &
+      \infer{z:\{s\} \vdash \Omega \leq \Omega : \diamond}{
+        \infer{z:\{s\} \vdash \Omega = \Omega}{
+	  \infer{z:\{s\} \vdash \Omega : \diamond}{}
+	}
+      }
+    }
+  }
+  &
+  (2)
+}
+\end{displaymath}
+
+and $(2)$ is the respective derivation:
+
+\begin{displaymath}
+\infer{z;z:\{s\} \vdash s \leq \epsilon : \diamond}{
+  \infer{z:\{s\} \vdash s : \diamond}{
+    \cdots
+  }
+}
+\end{displaymath}
+
+Likewise, we can derive that $s'$ is a sub-signature of $s$ and can thus prove that they form equivalent interfaces:
+
+\begin{displaymath}
+\infer{\vdash \{s\} = \{s'\} : \Omega}{
+  \infer{\vdash s = s' : \diamond}{
+    \infer{\vdash s : \diamond}{\cdots}
+    &
+    \infer{\vdash s' : \diamond}{\cdots}
+    &
+    \infer{z;z:\{s\} \vdash s \leq s' : \diamond}{\cdots}
+    &
+    \infer{z;z:\{s'\} \vdash s \leq s : \diamond}{\cdots}
+  }
+}
+\end{displaymath}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

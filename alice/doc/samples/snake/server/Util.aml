@@ -1,0 +1,23 @@
+structure Util =
+struct
+    
+    fun tabulateStream (n, f) =
+        let
+            fun lazy endless i = 
+                f i :: endless (i + 1)
+            fun lazy ntimes (n, i) =
+                if i >= n then []
+                else f i :: ntimes (n, i + 1)
+        in
+            case n of 
+                NONE    => endless 0
+            |   SOME n  => ntimes (n, 0)
+        end    
+
+    fun differenceBy eq (l1, l2) = 
+        List.filter (fn x => not (List.exists (Fn.curry eq x) l2)) l1
+
+    fun difference (l1, l2) =
+        List.filter (not o List.contains l2) l1
+
+end

@@ -1,0 +1,707 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Defs           from "Defs"
+import structure Naming         from "Naming"
+import structure Print'         from "x-alice:/lib/system/Print"
+import structure AliceName      from "AliceName"
+import structure Rename         from "Rename"
+import structure Lexer          from "Lexer"
+import structure BasicTypes     from "BasicTypes"
+import structure Ignore         from "Ignore"
+import structure SexpTools      from "SexpTools"
+import structure Defs           from "Defs"
+import structure TypeWrapper    from "TypeWrapper"
+import structure StrMap         from "StrMap"
+import structure AliceType      from "AliceType"
+
+
+signature DEFS_PARSER =
+sig
+    val load : string -> Defs.info
+end
+
+structure DefsParser =
+struct
+    open Defs
+
+    val logStream  = ref (SOME TextIO.stdErr)
+
+    fun log msg = 
+        case !logStream of
+            NONE    => ()
+          | SOME s  => TextIO.output (s, msg ^ "\n")
+
+    fun logged' t (msg, value) =
+        case !logStream of
+            NONE        => value
+          | SOME s      =>
+            (TextIO.output (s, msg ^ " = ");
+             Print'.outputVal' t (s, value, 70);
+             TextIO.output (s, "\n");
+             TextIO.flushOut s;
+             value)
+
+    __overload 'a logged : string * 'a -> 'a = logged'
+
+    val aliceName = AliceName.aliceName
+
+    open Lexer
+
+    fun load fname =
+        let
+            val modules = ref []
+            val tys     = StrMap.map ()
+
+            fun missingAssoc n = raise Error ("missing field '" ^ n ^ "'")
+
+            fun allSplits s = 
+                let val parts   = String.tokens (Fn.curry op= #"_") s
+                    val len     = length parts
+                in
+                    if len < 3 then []
+                    else let val module = Naming.capitalize (hd parts)
+                             val parts  = tl parts
+                          in
+                            rev (List.tabulate (len - 2, 
+                                fn i =>
+                                    let val (a, b)      = List.split (parts, i + 1)
+                                    in
+                                        (i+1, module, 
+                                        String.concat (map Naming.capitalize a),
+                                            Naming.toCamelCase (String.concatWith "_" b))
+                                    end))
+                          end
+                end
+               
+            datatype fun_cat =
+               FC_METHOD of string * string
+             | FC_FUNC   of string * string * string
+             | FC_UNKNOWN 
+
+            fun categorizeFun fname =
+                let val splits  = allSplits fname in
+                case List.find (fn (_, m, ob, _) => StrMap.member (tys, m ^ ob)) splits of
+                    SOME (_, module, ob, f) => FC_METHOD (module ^ ob, f)
+                  | NONE =>
+                    case List.find (Fn.curry op= 1 o #1) splits of
+                        SOME (_, module, ob, f) => FC_FUNC (module, ob, f)
+                      | NONE                 => FC_UNKNOWN
+                end
+
+            
+            val assoc = assoc' Fn.id missingAssoc
+
+            fun optAssoc f def = assoc' f (Fn.const def)
+
+            val strAssoc     = Conv.string o assoc
+
+            val optStrAssoc  = optAssoc (SOME o Conv.string) NONE
+
+            val strPairAssoc = assoc' Conv.strPairs missingAssoc
+
+            val optStrPairAssoc = optAssoc Conv.strPairs []
+
+            fun parameters ts = parameters' ([], ts) 
+
+            and parameters' (res, ts) =
+                case ts of
+                    []                  => rev res
+                  | LPAR :: STR defType :: STR name :: ts' =>
+                    let val (assocs, ts'') = parseAssocs ts'
+                        val default        = optStrAssoc ("default", assocs)
+                        val nullOk         = assoc' (Fn.const true) (Fn.const false) 
+                                                ("null-ok", assocs)
+                        val p              = {
+                                name      = Rename.renameField name, 
+                                defType   = DT defType, 
+                                default, 
+                                nullOk,
+                                array     = NONE
+                            }
+                    in
+                        (* Hack: if there is a * at the beginning of a name
+                           move it into the type
+                         *)
+                        if String.sub (name, 0) = #"*" then 
+                            parameters' (PARAM { p where 
+                                    name      = Rename.renameField (String.extract (name, 1, NONE)),
+                                    defType   = DT (defType ^ "*")
+                                } :: res, ts'')
+                        else
+                            parameters' (PARAM p :: res, ts'')
+                    end
+                  | _                   => raise Error "syntax"
+
+            val sizeTypes = [DT "gint", DT "guint", DT "int"]
+    
+            fun unref (DT s) =
+                if String.sub (s, String.size s - 1) = #"*" then 
+                    let val ty = String.substring (s, 0, String.size s - 1)
+                    in
+                        if String.isPrefix "const-" ty then
+                            SOME (true, String.extract (ty, 
+                                    String.size "const-", NONE))
+                        else
+                            SOME (false, ty)
+                    end
+                else
+                    NONE
+
+            fun fixArrayParms ( (p1 as PARAM { name = sizeName, defType = sizeType, ... })
+                             :: (p2 as PARAM { name = valueName, defType = arrayType, ... })
+                             :: params ) 
+                    if (String.isPrefix "n_" sizeName andalso 
+                        List.exists (Fn.curry op= sizeType) sizeTypes andalso 
+                        String.size valueName > 2 andalso 
+                        String.extract (sizeName, 2, NONE) = valueName) =
+                (case unref arrayType of
+                    SOME (_, elemType) =>
+                        logged ("array parameter", PARAM { name = valueName, defType = arrayType, default = NONE,
+                                nullOk = false, array = SOME { 
+                                    sizeType, sizeBefore = true, 
+                                    elemType = DT elemType  
+                                }
+                              }) :: fixArrayParms params
+                  | NONE => p1 :: p2 :: fixArrayParms params)
+              | fixArrayParms ( (p1 as PARAM { name = valueName, defType = arrayType, ... })
+                            ::  (p2 as PARAM { name = sizeName,  defType = sizeType, ... })
+                            :: params )
+                    if (String.isPrefix "n_" sizeName andalso
+                        List.exists (Fn.curry op= sizeType) sizeTypes andalso 
+                        String.size valueName > 2 andalso 
+                        String.extract (sizeName, 2, NONE) = valueName) =
+                 (case unref arrayType of
+                     SOME (_, elemType) =>
+                        logged ("array parameter", PARAM { name = valueName, defType = arrayType, default = NONE,
+                                nullOk = false, array = SOME { 
+                                    sizeType, sizeBefore = false, 
+                                    elemType = DT elemType
+                                }
+                              }) :: fixArrayParms params
+                   | NONE => p1 :: p2 :: fixArrayParms params)
+              | fixArrayParms (p :: ps) = p :: fixArrayParms ps 
+              | fixArrayParms []        = []              
+            
+
+            val parametersAssoc = assoc' (fixArrayParms o parameters) (Fn.const [])
+            
+            fun properties ts = properties' ([], ts) 
+
+            and properties' (res, ts) =
+                case ts of
+                    []                  => rev res
+                  | LPAR :: STR name :: ts' =>
+                    let val (assocs, ts'') = parseAssocs ts'
+
+                        fun getDefType name =
+                            case name of 
+                                "adjustment" => "GtkAdjustment*"
+                              | "hadjustment" => "GtkAdjustment*"
+                              | "vadjustment" => "GtkAdjustment*"
+                              | "label"      => "const-gchar*"
+                              | "title"      => "const-gchar*"
+                              | "tooltip"    => "const-gchar*"
+                              | "stock_id"   => "const-gchar*"
+                              | "name"       => "const-gchar*"
+                              | "lower"      => "double"
+                              | "upper"      => "double"
+                              | "value"      => "double"
+                              | "step_increment" => "double"
+                              | "page_increment" => "double"
+                              | "page_size"      => "double"
+                              | "xalign"         => "double"
+                              | "yalign"         => "double"
+                              | "xscale"         => "double"
+                              | "yscale"         => "double"
+                              | "arrow_type"     => "GtkArrowType"
+                              | "shadow_type"    => "GtkShadowType"
+                              | "ratio"          => "double"
+                              | "obey_child"     => "gboolean"
+                              | "type"           => "GtkWindowType"
+                              | "homogeneous"    => "gboolean"
+                              | "spacing"        => "gint"
+                              | "model"          => "GtkTreeModel*"
+                              | "tag_table"      => "GtkTextTagTable*"
+                              | "n_rows"         => "gint"
+                              | "n_columns"      => "gint"
+                              | "climb_rate"     => "double"
+                              | "digits"         => "gint"
+                              | "mode"           => "GtkSizeGroupMode"
+                              | "buffer"         => "GtkTextBuffer*"
+                              | _                => "gpointer"
+
+                        val p = PARAM {
+                            name,
+                            defType = DT (getDefType name),
+                            default = NONE,
+                            array   = NONE,
+                            nullOk  = true
+                        }
+                    in
+                        
+                        properties' (p :: res, ts'')
+                    end
+                  | _                   => raise Error "syntax"
+
+
+            val propertiesAssoc = assoc' properties (Fn.const [])
+
+            
+            fun returnTypeAssoc assocs = 
+                case assoc' Conv.string (Fn.const "none") ("return-type", assocs) of
+                    "none"      => NONE
+                  | "void"      => NONE
+                  | r           => SOME (DT r)
+
+            
+            fun convertField (t, cn) =
+                (DT t, CN cn, Naming.fieldNameToAlice cn)
+
+            infixr 3 ++ 
+
+            fun a ++ f = f a
+
+ 
+            fun parseFile fname = (log ("parsing '" ^ fname ^ "'"); parse (lex fname))
+
+            and parseMethod (name, body) =
+                let val (assocs, ts') = parseAssocs body 
+                    val objectName as CN obName = CN (strAssoc ("of-object", assocs))
+                    val cName         = CN (strAssoc ("c-name", assocs))
+                    val code          = optStrAssoc ("code", assocs)
+                    val returnType    = returnTypeAssoc assocs
+                    val parameters    = 
+                        case parametersAssoc ("parameters", assocs) of
+                            []  =>
+                            propertiesAssoc ("properties", assocs)
+                          | ps  => ps
+                            
+                    val varArgs       = assoc' (Fn.const true) (Fn.const false) ("varargs", assocs)
+                    val path          = lookupAlicePath objectName
+                    val f             = FUNCTION {
+                            aliceName = aliceName (path, Rename.renameFun (Naming.toCamelCase name)), 
+                            cName, returnType, 
+                            parameters = PARAM { 
+                                    name    = "self", 
+                                    defType = DT (obName ^ "*"),
+                                    default = NONE,
+                                    nullOk  = false,
+                                    array   = NONE
+                                } :: parameters, 
+                            varArgs,
+                            code,
+                            useRecord = false
+                        }
+                in
+                    if Ignore.notIgnoredFun cName then
+                        addMethod (objectName, f)
+                    else ();
+                    ts'
+                end
+
+            and lookupAlicePath (CN ty) =
+                case StrMap.lookup (tys, ty) of
+                    SOME (TY_BOXED { aliceName, ... }) =>
+                    AliceName.absolutePath aliceName
+                  | SOME (TY_ENUM  { aliceName, ... }) =>
+                    AliceName.absolutePath aliceName
+                  | SOME (TY_OBJECT (OBJECT { alicePath, ... })) =>
+                    alicePath
+                  | NONE  => []
+
+                    
+            and parseFunction (name, body) =
+                let val (assocs, ts') = parseAssocs body 
+                    (* val module        = strAssoc ("in-module", assocs) *)
+                    val cName         = strAssoc ("c-name", assocs)
+                    val name          = cName
+                    val cName         = CN cName
+                    val returnType    = returnTypeAssoc assocs
+                    val code          = optStrAssoc ("code", assocs)
+                    val parameters    =
+                            case parametersAssoc ("parameters", assocs) of
+                                []  =>
+                                propertiesAssoc ("properties", assocs)
+                              | ps  => ps
+                    val varArgs       = assoc' (Fn.const true) (Fn.const false) ("varargs", assocs)
+                in
+                    case assoc' (SOME o Conv.symOrStr) (Fn.const NONE) 
+                                ("is-constructor-of", assocs) of
+                        NONE    =>  
+                        if Ignore.notIgnoredFun cName then
+                            (case categorizeFun name of
+                                FC_METHOD (ctype, name) =>
+                                addMethod (CN ctype, FUNCTION {
+                                    aliceName = aliceName (lookupAlicePath (CN ctype), name),
+                                    cName, returnType, parameters, varArgs, 
+                                    code, useRecord = false
+                                })
+                              | FC_FUNC (module1, module2, name) =>
+                                addFunToModule (module1, FUNCTION {
+                                    aliceName = aliceName ([module1, module2], name),
+                                    cName, returnType, parameters, varArgs,
+                                    code, useRecord = false
+                                })
+                              | FC_UNKNOWN => 
+                                log ("ignoring function " ^ name ^ ".\n"); 
+                            ts')
+                        else ts'
+                      | SOME objectName =>
+                        let 
+                            val name = Rename.renameFun (Naming.toCamelCase (Naming.removePrefix 
+                                        (Naming.ctypeToCFunPrefix objectName) name))
+                            val f = FUNCTION {
+                                aliceName = aliceName (lookupAlicePath (CN objectName), name),
+                                cName, returnType, parameters, varArgs, code, 
+                                useRecord = false
+                            }
+                        in
+                            if Ignore.notIgnoredFun cName then
+                                addConstructor (CN objectName, f)
+                            else ();
+                            ts'
+                        end
+                end
+
+                
+            and addMethod (CN obName, f) =
+                case StrMap.lookup (tys, obName) of
+                    SOME (TY_OBJECT (OBJECT ob)) => 
+                        (log ("adding method " ^ cNameToS (cNameOfFun f) ^ 
+                              " to object " ^ obName);
+                        #methods ob := f :: ! (#methods ob))
+                  | SOME (TY_BOXED b) =>
+                        (log ("adding method " ^ cNameToS (cNameOfFun f) ^ 
+                            " to boxed " ^ obName);
+                         #methods b := f :: ! (#methods b))
+                  | SOME (_) => () (* assert false *)
+                  | NONE => 
+                    log ("ignoring method " ^ cNameToS (cNameOfFun f) ^ 
+                         " we do NOT know anything about " ^ obName)
+
+ 
+            and addConstructor (CN obName, f) =
+                case StrMap.lookup (tys, obName) of
+                    SOME (TY_OBJECT (OBJECT ob)) => 
+                        (log ("adding constructor " ^ cNameToS (cNameOfFun f) ^ 
+                              " to object " ^ obName);
+                        #constructors ob := f :: ! (#constructors ob))
+                  | SOME (TY_BOXED b) =>
+                        (log ("adding constructor " ^ cNameToS (cNameOfFun f) ^ 
+                            " to boxed " ^ obName);
+                         #constructors b := f :: ! (#constructors b))
+                  | SOME (_) => assert false
+                  | NONE => 
+                    (* raise Error ("unknown object " ^ obName ^ 
+                                "!  Cannot create a constructor for it.") *)
+                    log ("ignoring constructor " ^ cNameToS (cNameOfFun f) ^ 
+                         " we do NOT know anything about " ^ obName)
+
+ 
+            and createFieldMethods (CN obName, path) (dt, cn as CN cName, 
+                    (getter, setter))  =
+                let
+                    val self = PARAM { 
+                        name    = "self", 
+                        defType = DT (obName ^ "*"),
+                        default = NONE,
+                        nullOk  = false,
+                        array   = NONE
+                    } 
+                    val argIn = PARAM {
+                        name    = "value",
+                        defType = dt,
+                        default = NONE,
+                        nullOk  = true,
+                        array   = NONE
+                    }
+                    val fset = FUNCTION {
+                        aliceName       = AliceName.aliceName (path, setter),
+                        cName           = CN ("DO" ^ setter),
+                        returnType      = NONE,
+                        parameters      = [self, argIn],
+                        varArgs         = false,
+                        code            = NONE,
+                        useRecord       = false
+                    }
+                    val fget = FUNCTION { 
+                        aliceName       = AliceName.aliceName (path, getter),
+                        cName           = CN ("DO" ^ getter),
+                        returnType      = SOME dt,
+                        parameters      = [self],
+                        varArgs         = false,
+                        code            = NONE,
+                        useRecord       = false
+                    }
+                in
+                    addMethod (CN obName, fset);
+                    addMethod (CN obName, fget)
+                end
+                
+            and sortFields fs =
+                List.sort (fn ((_, CN n1, _), (_, CN n2, _)) => String.compare (n1, n2)) fs
+                
+            and parseBoxed (name, body) =
+                let val (assocs, ts') = parseAssocs body 
+                    val module        = strAssoc ("in-module", assocs)
+                    val cName         = CN (strAssoc ("c-name", assocs))
+                    val fields        = sortFields (map convertField 
+                                            (optStrPairAssoc ("fields", assocs)))
+                    val copyFunc      = assoc' (SOME o CN o Conv.string) (Fn.const NONE)
+                                            ("copy-func", assocs)
+                    val releaseFunc   = assoc' (SOME o CN o Conv.string) (Fn.const NONE)
+                                            ("relase-func", assocs)
+                
+                    val gType         = optStrAssoc ("gtype-id", assocs)
+
+                    val boxed   = TY_BOXED {
+                            aliceName    = aliceName ([module, name], "t"), 
+                            cName,
+                            copyFunc, 
+                            releaseFunc,
+                            fields, 
+                            gType,
+                            methods      = ref [],
+                            constructors = ref []
+                        }
+                in
+                    if Ignore.notIgnoredType cName then (
+                        addTy boxed;
+                        addTyToModule (CN module, boxed);
+                        TypeWrapper.registerTy boxed;
+                        List.app (createFieldMethods (cName, [module, name])) fields
+                    ) else ();
+                    ts'
+                end
+
+            
+            and parseObject (isInterface, name, body) =
+                let val (assocs, ts') = parseAssocs body 
+                    val module        = strAssoc ("in-module", assocs)
+                    val cName         = CN (strAssoc ("c-name", assocs))
+                    val fields        = sortFields (map convertField 
+                                            (optStrPairAssoc ("fields", assocs)))
+                    val parent        = case optStrAssoc ("parent", assocs) of
+                                            SOME p => CN p
+                                          | NONE   => CN ""
+
+                    val gType         = strAssoc ("gtype-id", assocs)
+                    
+                    val object   = TY_OBJECT (OBJECT {
+                            alicePath     = [module, name],
+                            cName,
+                            parent,
+                            fields,
+                            gType,
+                            methods       = ref [],
+                            constructors  = ref [],
+                            properties    = ref [],
+                            isInterface
+                        })
+                in
+                    if Ignore.notIgnoredType cName then (
+                        addTy object;
+                        addTyToModule (CN module, object);
+                        TypeWrapper.registerTy object;
+                        List.app (createFieldMethods (cName, [module, name])) fields
+                    ) else ();
+                    ts'
+                end
+
+
+            and parseEnum flag (name, body) =
+                let val (assocs, ts') = parseAssocs body 
+                    val module        = strAssoc ("in-module", assocs)
+                    val cName         = CN (strAssoc ("c-name", assocs))
+                    val gType         = optStrAssoc ("gtype-id", assocs)
+                    val values        = 
+                        List.sort (fn ((a, _), (b, _)) => String.compare (a, b)) (
+                        List.map (fn (a, b) => (Naming.enumValueToAlice a, 
+                                CN (getOpt (Naming.removeSuffix "," b, b))))
+                                    (strPairAssoc ("values", assocs))
+                        )
+                    val enum   = TY_ENUM  {
+                            aliceName = aliceName ([module, name], "t"), 
+                            cName,
+                            values,
+                            isFlag = flag,
+                            gType
+                        }
+                in
+                    if Ignore.notIgnoredType cName then (
+                        addTy enum;
+                        addTyToModule (CN module, enum);
+                        TypeWrapper.registerTy enum
+                    ) else ();
+                    ts'
+                end
+                
+            and addTy ty = 
+                let val n = cNameToS (cNameOfTy ty)
+                in
+                    log ("adding type " ^ n ^ " to global type map");
+                    StrMap.insertDisjoint (tys, n, ty)
+                end
+
+
+            and addTyToModule (CN moduleName, ty) =
+                let val MODULE m = lookupOrCreateModule moduleName
+                    val n        = cNameToS (cNameOfTy ty)
+                in
+                    log ("adding type " ^ n ^ " to module " ^ moduleName);
+                    #types m := ty :: ! (#types m)
+                end
+                 
+            and addFunToModule (moduleName, f) =
+                let val MODULE m = lookupOrCreateModule moduleName
+                in
+                    #functions m := f :: !(#functions m)
+                end
+            
+            and lookupOrCreateModule name =
+                case List.find (fn MODULE { name=n, ... } => name = n) 
+                            (!modules) of
+                    SOME m => m
+                  | NONE   => 
+                    let val m = MODULE { 
+                            name      = name,
+                            functions = ref [],
+                            types = ref []
+                        }
+                    in
+                        log ("creating module " ^ name);
+                        modules := m :: (!modules);
+                        m
+                    end
+                
+            and converterFromType t =
+                case t of
+                    ("gdouble" | "double")      => ("Value.double", "Value.toReal", "real")
+                  | ("gfloat" | "float")        => ("Value.float", "Value.toReal", "real")
+                  | ("guint" | "gint" | "int")  => ("Value.int", "Value.toInt", "int")
+                  | _                           => ("Value." ^ t, 
+                                        "Value.to" ^ (Naming.capitalize t), t)
+
+            and addEnumProp (propName, obName, aliceModule) =
+                let val OBJECT ob =
+                    case StrMap.lookup (tys, obName) of
+                        SOME (TY_OBJECT ob) => ob
+                      | _                  => raise Fail "urks"
+
+                    val ty      = aliceModule ^ ".t"    (* FIXME: add real alicename parsing *)
+
+                    val to      = "(fn x => Value.enum (" ^ aliceModule ^ ".toInt (x), "
+                                    ^ aliceModule ^ ".getType ()))"
+                    val fro     = "(fn v => " ^ aliceModule ^ ".fromInt (Value.toInt (v)))"
+                
+                    val p = PROP {
+                        name            = propName,
+                        aliceType       = AliceType.AT_APPLY (
+                                            [AliceType.AT (AliceName.aliceName ([], ty))],
+                                            AliceName.aliceName ([], "prop")
+                                          ),
+                        toValue=to,
+                        fromValue=fro
+                    }
+                in
+                    #properties ob := p :: ! (#properties ob)
+                end
+                
+
+            and addSimpleProp (propName, obName, aliceType) =
+                let val OBJECT ob =
+                    case StrMap.lookup (tys, obName) of
+                        SOME (TY_OBJECT ob) => ob
+                      | _                  => raise Fail "urks"
+
+                    val (to, fro, ty) = converterFromType aliceType
+                
+                    val p = PROP {
+                        name            = propName,
+                        aliceType       = AliceType.AT_APPLY (
+                                            [AliceType.AT (AliceName.aliceName ([], ty))],
+                                            AliceName.aliceName ([], "prop")
+                                          ),
+                        toValue=to,
+                        fromValue=fro
+                    }
+                in
+                    #properties ob := p :: ! (#properties ob)
+                end
+                
+            and addPropOf (propName, obName, body) =
+                let val (assocs, ts') = parseAssocs body 
+                    val ty            = strAssoc ("type", assocs)
+                    val toValue       = strAssoc ("to-value", assocs)
+                    val fromValue     = strAssoc ("from-value", assocs)
+                   
+                    val OBJECT ob =
+                        case StrMap.lookup (tys, obName) of
+                            SOME (TY_OBJECT ob) => ob
+                          | _                  => raise Fail "urks"
+ 
+                    val p = PROP {
+                        name            = propName,
+                        aliceType       = AliceType.AT_APPLY ([AliceType.fromString ty],
+                                            AliceName.aliceName ([], "prop")),
+                        toValue,
+                        fromValue
+                    }
+                in
+                    #properties ob := p :: ! (#properties ob) ;
+                    ts'
+                end
+                
+            and parse ts =
+                case ts of
+                    LPAR :: SYM "include" :: STR s :: RPAR :: ts' =>
+                    (parseFile s; parse ts')
+                  | LPAR :: SYM "define-boxed" :: SYM ty :: body =>
+                    parseBoxed (ty, body) ++
+                    parse
+                  | LPAR :: SYM "define-object" :: SYM ty :: body =>
+                    parseObject (false, ty, body) ++
+                    parse
+                  | LPAR :: SYM "define-interface" :: SYM ty :: body =>
+                    parseObject (true, ty, body) ++
+                    parse
+                  | LPAR :: SYM "define-enum" :: SYM ty :: body =>
+                    parseEnum false (ty, body) ++
+                    parse
+                  | LPAR :: SYM "define-flags" :: SYM ty :: body =>
+                    parseEnum true (ty, body) ++
+                    parse
+                  | LPAR :: SYM "define-function" :: SYM f :: body =>
+                    parseFunction (f, body) ++
+                    parse
+                  | LPAR :: SYM "define-method" :: SYM f :: body =>
+                    parseMethod (f, body) ++
+                    parse
+                  | LPAR :: SYM "define-prop" :: STR name :: SYM obName :: SYM aliceType :: rest =>
+                    (addSimpleProp (name, obName, aliceType) ;
+                     parse rest)
+                  | LPAR :: SYM "define-property" :: STR name :: SYM obName :: rest =>
+                    addPropOf (name, obName, rest) ++
+                    parse
+                  | LPAR :: SYM "define-enum-prop" :: STR name :: SYM obName 
+                            :: STR aliceModule :: ts =>
+                    (addEnumProp (name, obName, aliceModule);
+                     parse ts)
+                  (* for now just ignore everything we cannot parse *)
+                  | _  :: ts' => parse ts'
+                  | [] => ()
+        in
+            parseFile fname;
+            (!modules, tys)
+        end
+end

@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *   Andreas Rossberg, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature OS_PROCESS =
+sig
+    type status
+
+    val success :	status
+    val failure :	status
+    val isSuccess :	status -> bool
+
+    val system :	string -> status
+    val atExit :	(unit -> unit) -> unit
+    val exit :		status -> 'a
+    val terminate :	status -> 'a
+    val getEnv :	string -> string option
+    val sleep :		Time.time -> unit
+
+    val atExn :		(Exn.packet -> unit) -> unit			(**)
+end

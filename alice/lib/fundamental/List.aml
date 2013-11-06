@@ -1,0 +1,249 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                       from "Pervasive"
+import __primitive
+       datatype bool and order and option and list
+       and int                                     from "ToplevelTypes"
+import __primitive
+       infix 4 = <> < > infixr 5 :: @ infix 6 + -
+       val op = and op <> and op < and op >
+       val op + and op -                           from "ToplevelValues"
+import __primitive structure General               from "General"
+import __primitive structure Bool                  from "Bool"
+import __primitive signature LIST                  from "LIST-sig"
+
+structure List : LIST =
+struct
+    datatype list		= datatype list
+    type  'a t			= 'a list				(**)
+
+    __primitive exception Empty	= "List.Empty"
+
+    fun null nil		= true
+      | null _			= false
+
+    fun length   xs		= length'(0,xs)
+    and length'(i, nil)		= i
+      | length'(i, x::xs)	= length'(i+1,xs)
+
+    fun hd(x::xs)		= x
+      | hd  _			= raise Empty
+
+    fun tl(x::xs)		= xs
+      | tl  _			= raise Empty
+
+    fun last(x::nil)		= x
+      | last(x::xs)		= last xs
+      | last nil		= raise Empty
+
+    fun getItem(x::xs)		= SOME(x,xs)
+      | getItem nil 		= NONE
+
+    fun nth (xs, i) if (i<0)	= raise General.Subscript
+      | nth (xs, i)		= nth'(i,xs)
+    and nth'(0, x::xs)		= x
+      | nth'(i, x::xs)		= nth'(i-1,xs)
+      | nth'(i, nil)		= raise General.Subscript
+
+    val sub			= nth					(**)
+
+    fun rev   xs		= rev'(xs,nil)
+    and rev'( nil,  ys)		= ys
+      | rev'(x::xs, ys)		= rev'(xs,x::ys)
+
+    fun    xs   @ nil		= xs (* optimisation *)
+      |   nil   @ ys		= ys
+      | (x::xs) @ ys		= x::(xs @ ys)
+
+    fun revAppend(nil,   ys)	= ys
+      | revAppend(x::xs, ys)	= revAppend(xs,x::ys)
+
+    fun concat nil		= nil
+      | concat(xs::xss)		= xs @ concat xss
+
+    fun index xs		= index'(0,xs)				(**)
+    and index'(i, nil)		= nil
+      | index'(i, x::xs)	= (i,x)::index'(i+1,xs)
+
+    fun tabulate (n, f)    if (n<0)	= raise General.Size
+      | tabulate (n, f)			= tabulate'(n,f,0)
+    and tabulate'(n, f, i) if (i=n)	= nil
+      | tabulate'(n, f, i)		= f(i)::tabulate'(n,f,i+1)
+
+    fun take (xs,i) if (i<0)	= raise General.Subscript
+      | take (xs,i)		= take'(i,xs)
+    and take'(0, xs)		= nil
+      | take'(i, x::xs)		= x::take'(i-1,xs)
+      | take'(i, nil)		= raise General.Subscript
+
+    fun drop (xs,i) if (i<0)	= raise General.Subscript
+      | drop (xs,i)		= drop'(i,xs)
+    and drop'(0, xs)		= xs
+      | drop'(i, x::xs)		= drop'(i-1,xs)
+      | drop'(i, nil)		= raise General.Subscript
+
+    fun split(xs,i) if (i<0)	= raise General.Subscript
+      | split(xs,i)		= split'(i,xs)
+    and split'(0, xs)		= (nil,xs)
+      | split'(i, x::xs)	= let val (ys,zs) = split'(i-1,xs)
+				  in (x::ys,zs) end
+      | split'(i, nil)		= raise General.Subscript
+
+    fun app  f  xs		= app'(f,xs)
+    and app'(f, nil)		= ()
+      | app'(f, x::xs)		= (f x ; app'(f,xs))
+
+    fun appi  f xs		= appi'(f,0,xs)				(**)
+    and appi'(f, i, nil)	= ()
+      | appi'(f, i, x::xs)	= (f(i,x) ; appi'(f, i+1, xs))
+
+    fun appr  f  xs		= appr'(f,xs)				(**)
+    and appr'(f, nil)		= ()
+      | appr'(f, x::xs)		= (appr'(f,xs) ; f x)
+
+    fun appri  f xs		= appri'(f,0,xs)			(**)
+    and appri'(f, i, nil)	= ()
+      | appri'(f, i, x::xs)	= (appri'(f, i+1, xs) ; f(i,x))
+
+    fun map  f  xs		= map'(f,xs)
+    and map'(f, nil)		= nil
+      | map'(f, x::xs)		= f(x)::map'(f,xs)
+
+    fun mapi  f xs		= mapi'(f,0,xs)				(**)
+    and mapi'(f, i, nil)	= nil
+      | mapi'(f, i, x::xs)	= f(i,x)::mapi'(f,i+1,xs)
+
+    fun mapPartial  f  xs	= mapPartial'(f,xs)
+    and mapPartial'(f, nil)	= nil
+      | mapPartial'(f, x::xs)	= case f x of NONE   => mapPartial'(f,xs)
+					    | SOME y => y::mapPartial'(f,xs)
+
+    fun mapiPartial  f xs	= mapiPartial'(f,0,xs)			(**)
+    and mapiPartial'(f,i,nil)	= nil
+      | mapiPartial'(f,i,x::xs)	= case f(i,x)
+				   of NONE   => mapiPartial'(f,i+1,xs)
+				    | SOME y => y::mapiPartial'(f,i+1,xs)
+
+    fun foldl  f  y  xs		= foldl'(f,y,xs)
+    and foldl'(f, y, nil)	= y
+      | foldl'(f, y, x::xs)	= foldl'(f, f(x,y), xs)
+
+    fun foldli  f  y  xs	= foldli'(f,y,0,xs)			(**)
+    and foldli'(f, y, i, nil)	= y
+      | foldli'(f, y, i, x::xs)	= foldli'(f, f(i,x,y), i+1, xs)
+
+    fun foldr  f  y  xs		= foldr'(f,y,xs)
+    and foldr'(f, y, nil)	= y
+      | foldr'(f, y, x::xs)	= f(x, foldr'(f,y,xs))
+
+    fun foldri  f  y  xs	= foldri'(f,y,0,xs)			(**)
+    and foldri'(f, y, i, nil)	= y
+      | foldri'(f, y, i, x::xs)	= f(i, x, foldri'(f,y,i+1,xs))
+
+    fun all  f  xs		= all'(f,xs)
+    and all'(f, nil)		= true
+      | all'(f, x::xs)		= f x andalso all'(f,xs)
+
+    fun alli  f  xs		= alli'(f,0,xs)
+    and alli'(f, i, nil)	= true
+      | alli'(f, i, x::xs)	= f(i,x) andalso alli'(f,i+1,xs)
+
+    fun exists  f  xs		= exists'(f,xs)
+    and exists'(f, nil)		= false
+      | exists'(f, x::xs)	= f x orelse exists'(f,xs)
+
+    fun existsi  f  xs		= existsi'(f,0,xs)
+    and existsi'(f, i, nil)	= false
+      | existsi'(f, i, x::xs)	= f(i,x) orelse existsi'(f,i+1,xs)
+
+    fun find  f  xs		= find'(f,xs)
+    and find'(f, nil)		= NONE
+      | find'(f, x::xs)		= if f x then SOME x else find'(f,xs)
+
+    fun findi  f  xs		= findi'(f,0,xs)			(**)
+    and findi'(f, i, nil)	= NONE
+      | findi'(f, i, x::xs)	= if f(i,x) then SOME(i,x) else findi'(f,i+1,xs)
+
+    fun filter  f  xs		= filter'(f,xs)
+    and filter'(f, nil)		= nil
+      | filter'(f, x::xs)	= let val b = f x val zs = filter'(f,xs)
+				  in if b then x::zs else zs end
+
+    fun filteri  f  xs		= filteri'(f,0,xs)			(**)
+    and filteri'(f, i, nil)	= nil
+      | filteri'(f, i, x::xs)	= let val b = f(i,x) val zs = filteri'(f,i+1,xs)
+				  in if b then (i,x)::zs else zs end
+
+    fun partition  f  xs	= partition'(f,xs)
+    and partition'(f, nil)	= (nil,nil)
+      | partition'(f, x::xs)	= let val b = f x val (ys,zs) = partition'(f,xs)
+				  in if b then (x::ys,zs) else (ys,x::zs) end
+
+    fun partitioni  f xs	= partitioni'(f,0,xs)			(**)
+    and partitioni'(f,i, nil)	= (nil,nil)
+      | partitioni'(f,i, x::xs)	= let val b = f(i,x)
+				      val (ys,zs) = partitioni'(f,i+1,xs)
+				  in if b then ((i,x)::ys, zs)
+					  else (ys, (i,x)::zs) end
+
+    fun contains xs y		= contains'(y,xs)			(**)
+    and contains'(y, nil)	= false
+      | contains'(y, x::xs)	= y = x orelse contains'(y,xs)
+
+    fun notContains xs y	= Bool.not(contains'(y,xs))		(**)
+
+    fun equal  eq (xs,ys)	= equal'(eq,xs,ys)			(**)
+    and equal'(eq, nil,  nil)	= true
+      | equal'(eq, x::xs,y::ys)	= eq(x,y) andalso equal'(eq,xs,ys)
+      | equal' _		= false
+
+    fun collate  cmp (xs,ys)	= collate'(cmp,xs,ys)
+    and collate'(cmp, nil, nil)	= EQUAL
+      | collate'(cmp, nil, _ )	= LESS
+      | collate'(cmp, _,   nil)	= GREATER
+      | collate'(cmp, x::xs, y::ys)
+				= case cmp(x,y) of EQUAL => collate'(cmp,xs,ys)
+						 | other => other
+
+    fun isSorted  cmp xs	= isSorted'(cmp,xs)			(**)
+    and isSorted'(cmp, (nil | _::nil))
+				= true
+      | isSorted'(cmp, x1::(xs as x2::_))
+				= cmp(x1,x2) <> GREATER
+				  andalso isSorted'(cmp,xs)
+
+    fun split2 nil		= (nil,nil)
+      | split2(xs as _::nil)	= (xs,nil)
+      | split2(x1::x2::xs)	= let val (xs1,xs2) = split2 xs
+				  in (x1::xs1, x2::xs2) end
+    fun sort cmp =							(**)
+    let
+	fun merge(xs, nil)	= xs
+	  | merge(nil, ys)	= ys
+	  | merge(xs as x::xs',
+		  ys as y::ys')	= case cmp(x,y)
+				    of LESS    => x::merge(xs',ys)
+				     | EQUAL   => x::y::merge(xs',ys')
+				     | GREATER => y::merge(xs,ys')
+	fun sort nil		= nil
+	  | sort(xs as _::nil)	= xs
+	  | sort xs		= let val (ys,zs) = split2 xs
+				  in merge(sort ys, sort zs) end
+    in
+	sort
+    end
+end

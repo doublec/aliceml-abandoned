@@ -1,0 +1,895 @@
+<?php include("macros.php3"); ?>
+
+<?php heading("Extensions to the Module Language",
+		"module\nlanguage\nextensions") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>Alice ML extends the SML module system in various ways, by providing:</P>
+
+<UL>
+  <LI> <A href="#local">Local modules</A> </LI>
+  <LI> <A href="#open">Generalised open declarations</A> </LI>
+  <LI> <A href="#higher">Higher-order functors</A> </LI>
+  <LI> <A href="#sigmembers">Signature members and abstract signatures</A> </LI>
+<!--
+  <LI> <A href="3#paramsig">Parameterized signatures</A> </LI>
+  <LI> <A href="#singleton">Singleton signatures</A> </LI>
+-->
+  <LI> <A href="#package">Dynamic typing and modules as 1st-class values</A> </LI>
+  <LI> <A href="#lazy">Lazy evaluation</A> </LI>
+  <LI> <A href="#fixity">Fixity specifications</A> </LI>
+  <LI> <A href="#sugar">Syntax enhancements</A> </LI>
+</UL>
+
+<P>A <A href="#syntax">syntax summary</A> is given below.</P>
+
+
+
+<?php section("local", "local modules") ?>
+
+<P>Unlike SML, Alice ML has no stratification between core and module language.
+Core declarations (<I>dec</I>), structure declarations (<I>strdec</I>), and
+toplevel declarations (<I>topdec</I>) are collapsed into one class. As a
+consequence, structures can be declared local to an expression (via
+<TT>let</TT>) and functors as well as signatures can be nested into structures.
+For example: </P>
+
+<PRE class=code>
+fun sortWithoutDups compare l =
+let
+    structure Set = MkRedBlackSet (type t = string; val compare = compare)
+in
+    Set.toList (foldr (flip Set.insert) Set.empty l)
+end</PRE>
+
+
+
+<?php section("open", "open declarations") ?>
+
+<P>Alice ML generalises SML's open declaration and allows not only
+structure identifiers, but arbitrary structure expressions:</P>
+
+<PRE class=code>
+open MkRedBlackSet(Int)
+open IntInf : INTEGER
+open unpack p : (val it : int -> int)</PRE>
+
+<P>Note that, for backwards compatibility with SML, a sequence of identifiers
+is <I>not</I> parsed as a <A href="#higher-strexp">functor application</A>,
+but as a multiple open declaration:
+
+<PRE class=code>
+open MkRedBlackSet Int</PRE>
+
+<P>is an attempt to open two structures <TT>MkRedBlackSet</TT> and <TT>Int</TT>,
+and will thus produce an error. Parentheses are needed to disambiguate, as in
+either of the following:</P>
+
+<PRE class=code>
+open MkRedBlackSet(Int)
+open (MkRedBlackSet Int)</PRE>
+
+
+<?php section("higher", "higher-order functors") ?>
+
+<?php subsection("higher-strexp", "Functor expressions") ?>
+
+<P>A direct consequence of allowing local functor declarations is the presence
+of higher-order functors, even if a bit cumbersome:</P>
+
+<PRE class=code>
+functor F (X : S1) =
+struct
+    functor G (Y : S2) = struct (* ... *) end
+end
+
+structure M = let structure Z = F (X) in G (Y) end</PRE>
+
+<P>Functors are truly higher-order, so that the above example may be simplified
+to curried form:</P>
+
+<PRE class=code>
+functor F (X : S1) (Y : S2) = struct (* ... *) end</PRE>
+
+<P>Application can be written as in the core language, without parentheses (see
+<A href="#sugar-parens">below</A>):</P>
+
+<PRE class=code>
+structure M = F X Y</PRE>
+
+<P>The class of structure expressions (<I>strexp</I>) has been extended to
+include functor expressions. Similar to <TT>fun</TT> declarations,
+<TT>functor</TT> declarations are mere derived forms. The declaration for
+<TT>F</TT> above is just sugar for:</P>
+
+<PRE class=code>
+structure F = fct X : S1 => fct Y : S2 => struct (* ... *) end</PRE>
+
+<P>The keyword <TT>fct</TT> starts a functor expression very much like
+<TT>fn</TT> begins a function expression in the core language. Functor
+expressions can be arbitrarily mixed with other structure expressions. In
+contrast to SML, there is no distinction between structure and functor
+identifiers (see <A
+href="incompatibilities.html#funid">incompatibilities</A>).</P>
+
+<P class=note><EM>Note:</EM> The keyword <TT>structure</TT> and the syntactic classes
+<I>strid</I>, <I>strexp</I>, etc. are kept for compatibility reasons, despite
+<TT>module</TT> now being more appropriate.</P>
+
+
+<?php subsection("higher-sigexp", "Functor signatures") ?>
+
+<P>The syntax of signatures has been extended to contain functor types.
+For example, functor <TT>F</TT> can be described by the following
+signature:</P>
+
+<PRE class=code>
+structure F : fct X : S1 -> fct Y : S2 -> sig (* ... *) end</PRE>
+
+<P>If the parameters <TT>X</TT> and <TT>Y</TT> do not appear in <TT>S2</TT> or the rest of the signature, it may be abbreviated as follows:</P>
+
+<PRE class=code>
+structure F : S1 -> S2 -> sig (* ... *) end</PRE>
+
+<P>As another derived form, the following SML/NJ compatible syntax is provided
+for functor descriptions in signatures:</P>
+
+<PRE class=code>
+functor F (X : S1) (Y : S2) : sig (* ... *) end</PRE>
+  
+
+
+<?php section("sigmembers", "signature members") ?>
+
+<?php subsection("sigmembers-nested", "Nested signatures") ?>
+
+<P>Like structures and functors, signatures can also be declared anywhere. In
+particular, this allows signatures inside structures, and consequently, nested
+signatures:</P>
+
+<PRE class=code>
+signature S =
+sig
+    signature T = sig (* ... *) end
+end
+
+structure X :> S =
+struct
+    signature T = sig (* ... *) end
+end</PRE>
+
+<P>Nested signatures must always be matched exactly. More precisely, a
+signature <I>S</I><SUB>1</SUB> with nested <TT>T</TT> = <I>T</I><SUB>1</SUB> 
+matches another signature <I>S</I><SUB>2</SUB> with nested <TT>T</TT> =
+<I>T</I><SUB>2</SUB> only if <I>T</I><SUB>1</SUB> matches <I>T</I><SUB>2</SUB>,
+<EM>and also</EM> <I>T</I><SUB>2</SUB> matches <I>T</I><SUB>1</SUB>.</P>
+
+
+<?php subsection("sigmembers-abstract", "Abstract signatures") ?>
+
+<P>Analogously to types, nested signatures may be specified abstractly:</P>
+
+<PRE class=code>
+signature S =
+sig
+    signature T
+    structure X : T
+end</PRE>
+
+<P>An abstract signature can be matched by any signature. Abstract signatures
+are particularly useful as functor parameters, because they allow declaring
+"polymorphic" functors:</P>
+
+<PRE class=code>
+functor F (signature S structure X : S) = (* ... *)</PRE>
+
+<P>The Alice <A href="library/index.html">library</A> contains several examples of
+such polymorphic functors, for example the functors provided by the <A
+href="library/component-manager.html">component manager</A>.</P>
+
+<DIV class=note>
+
+<P><I>Note:</I> Abstract signatures render the type system of Alice ML
+undecidable. We do not consider this a problem in practice, since already
+the simplest program to make the type checker loop is highly artificial:</P>
+
+<PRE class=code>
+signature I =
+sig
+    signature A
+    functor F(X : sig
+                      signature A = A
+                      functor F(X : A) : sig end
+                  end) : sig end
+end
+
+signature J =
+sig
+    signature A = I
+    functor F(X : I) : sig end
+end
+
+(* Try to check J &le; I *)
+functor Loop(X : J) = X : I</PRE>
+
+<P>Currently, the Alice compiler has no upper limit on the number of
+substitutions it does during signature matching, so this example will actually
+make it loop.</P>
+
+</DIV>
+
+
+<!--
+<?php section("paramsig", "parameterized signatures") ?>
+
+  <P>
+    Functors often require putting <TT>where</TT> constraints on signatures
+    to denote exact return types. This can become quite tedious. Alice
+    provides an alternative by generalizing signature identifiers to signature
+    constructors, parameterized over structure values:
+  </P>
+
+  <PRE>
+	signature SET(Elem : sig type t end) =
+	sig
+	    type elem = Elem.t
+	    type t
+	    (* ... *)
+	end
+
+	functor MakeSet(Elem : sig type t end) :> SET(Elem) =
+	struct
+	    (* ... *)
+	end
+  </PRE>
+
+  <P>
+    The same derived forms as for functor declarations apply, so <TT>SET</TT>
+    and <TT>MakeSet</TT> can be defined as:
+  </P>
+
+  <PRE>
+	signature SET(type t) =
+	sig
+	    type elem = t
+	    type t
+	    (* ... *)
+	end
+
+	functor MakeSet(type t) :> SET(type t = t) =
+	struct
+	    (* ... *)
+	end
+  </PRE>
+
+  <P class=note>
+    Caveat: parameterized signatures are not yet properly treated
+    in the Alice implementation.
+  </P>
+-->
+
+
+<?php section("package", "Dynamic typing and modules as 1st-class values") ?>
+
+<P>Modules can be wrapped up and passed as first-class values as so-called
+<EM>packages</EM>. The signature of packed modules can be dynamically checked
+against given signatures. See the section on <A
+href="packages.html">packages</A> for a description of the package
+mechanism.</P>
+
+
+<?php section("lazy", "laziness and concurrency") ?>
+
+<P>Like <A href="futures.html#lazy">core expressions</A>, modules can be
+evaluated concurrently or lazily. Like in the core language, this can be accomplished by just preceding a module expression with the respective keyword:</P>
+
+<PRE class=code>
+lazy <I>strexp</I>
+spawn <I>strexp</I></PRE>
+
+<P>Evaluating these expressions returns a lazy or concurrent module future, respectively.</P>
+
+<P>Note however that the most frequent cause of lazy module evaluation is the
+<A href="components.html">component system</A>. Every structure that is
+imported from another component is evaluated lazily.</P>
+
+
+<?php subsection("lazy-sugar", "Syntactic sugar") ?>
+
+<P>Derived forms <A href="futures.html#spawn-sugar">analogous to the core language</A> are provided for defining functors that should evaluate lazily or in a separate threads:</P>
+
+<PRE class=code>
+functor lazy F (X : S) = <I>strexp</I>
+functor spawn G (X : S) = <I>strexp</I></PRE>
+
+<P>An application of <TT>F</TT> is evaluated lazily, while <TT>G</TT> will spawn a new thread for evaluation. See <A href="#syntax">below</A> for a precise definition of this derived form.</P>
+
+
+<?php subsection("lazy-longids", "Lazy structure access") ?>
+
+<P>Long identifiers have lazy semantics: accessing a structure <TT>X</TT> via
+the dot notation <TT>X.l</TT> does <EM>not</EM> request <TT>X</TT>. The
+structure is only requested if <TT>X.l</TT> itself is requested.</P>
+
+
+
+<?php section("fixity", "fixity specifications") ?>
+
+<P>Signatures may contain fixity specifications:</P>
+
+<PRE class=code>
+signature S =
+sig
+    type t
+    infix 2 ++
+    val x :    t
+    val op++ : t * t -> t
+end</PRE>
+
+<P>To match a signature with infix specifications, a structure must provide the
+same infix status directives. The infix environment is part of a structure's
+principal signature.</P>
+
+
+<?php subsection("fixity-open", "Opening structures") ?>
+
+<P>Opening a structure with infix specifications pulls in the according infix
+status into the local environment:</P>
+
+<PRE class=code>
+structure M :> S = struct (* ... *) end
+
+open M
+val z = x ++ x</PRE>
+
+<P>Some modules of the Alice library, e.g., in the <A
+href="library/modeling.html">constraint modeling</A> structure, define infix
+operators that can be used conveniently this way.</P>
+
+<P class=note><I>Note:</I> This feature produces a syntactic <A
+href="incompatibilities.html#openinfix">incompatibility</A> with SML showing up
+in some rare cases.</P>
+
+
+
+<?php section("sugar", "syntactic enhancements") ?>
+
+<?php subsection("sugar-parens", "Parentheses") ?>
+
+<P>Parentheses may be used freely in module and signature expressions:</P>
+
+<PRE class=code>
+structure X :> (S' where type t = int) = (F (A))</PRE>
+
+<P>Parentheses may be dropped from functor arguments:</P>
+
+<PRE class=code>
+structure Y = F A B</PRE>
+
+<P>The derived form for functor arguments, allowing a list <I>dec</I> of
+declarations being given instead of a structure expression, has been
+generalized: in a structure expression, parentheses may either enclose another
+<I>strexp</I>, or a <I>dec</I>. For example,</P>
+
+<PRE class=code>
+structure Z = (type t = int val x = 9)</PRE>
+
+<P>Analogously, in a signature expression, parentheses may enclose either
+another <I>sigexp</I>, or a <I>spec</I>:</P>
+
+<PRE class=code>
+signature S = (type t val x : int)</PRE>
+
+<P>Functor parameters may also be specified as a <I>spec</I>, generalising the
+SML functor binding derived forms:</P>
+
+<PRE class=code>
+structure F = fct (type t val x : int) => struct val x = x end</PRE>
+
+
+<?php subsection("sugar-wildcards", "Module wildcards") ?>
+
+<P>Structure bindings may contain a wildcard instead of a structure
+identifier:</P>
+
+<PRE class=code>
+structure _ = Pickle.SaveVal (type t = int  val x = 43)</PRE>
+
+<P>In this example, the functor application is performed solely for its side
+effect, and does not return any interesting result.</P>
+
+<P>Similarly, wildcards are allowed for functor parameters:</P>
+
+<PRE class=code>
+functor F (_ : S) = struct (* don't actually need argument *) end</PRE>
+
+<P>They are also allowed in signatures:</P>
+
+<PRE class=code>
+signature FF = fct (_ : A) -> B</PRE>
+
+<P>However, the same signature may be written more compactly as:</P>
+
+<PRE class=code>
+signature FF = A -> B</PRE>
+
+
+<?php subsection("sugar-withtype", "Recursion using <TT>withtype</TT>") ?>
+
+<P>As in the core language, datatype specifications may be made recursive with
+type declarations using the <TT>withtype</TT> keyword:</P>
+
+<PRE class=code>
+signature S =
+sig
+    datatype 'a tree   = TREE of 'a forest
+    withtype 'a forest = 'a tree list
+end</PRE>
+
+
+<?php subsection("sugar-op", "The <TT>op</TT> keyword") ?>
+
+<P>The keyword <TT>op</TT> is allowed in value, constructor and exception
+specifications:</P>
+
+<PRE class=code>
+signature S =
+sig
+    datatype 'a list = nil | op:: of 'a * 'a list
+    val op+ : int * int -> int
+    exception op!!!
+end</PRE>
+
+
+
+<?php section("syntax", "syntax") ?>
+
+<P>The syntax for modules very much resembles the syntax of core language
+expressions. Derived forms have been marked with (*).</P>
+
+
+<?php subsection("syntax-exps", "Expressions") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>atstrexp</I> <TT>:</TT> <I>atsigexp</I> </TD>
+    <TD> <A href="packages.html#package-pack">transparent packing</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>atstrexp</I> <TT>:></TT> <I>atsigexp</I> </TD>
+    <TD> <A href="packages.html#syntax-derived">opaque packing</A> (*) </TD>
+  </TR>
+</TABLE>
+
+
+<?php subsection("syntax-structs", "Structures") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atstrexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>struct</TT> <I>dec</I> <TT>end</TT> </TD>
+    <TD> structure </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>longstrid</I> </TD>
+    <TD> structure identifier </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>let</TT> <I>dec</I> <TT>in</TT> <I>strexp</I> <TT>end</TT> </TD>
+    <TD> local declarations </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>strexp</I> <TT>)</TT> </TD>
+    <TD> parentheses </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>dec</I> <TT>)</TT> </TD>
+    <TD> structure (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>appstrexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atstrexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>appstrexp</I> <I>atstrexp</I> </TD>
+    <TD> functor application </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>strexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>appstrexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> transparent constraint </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strexp</I> <TT>:></TT> <I>sigexp</I> </TD>
+    <TD> opaque constraint </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> unpacking </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
+    <TD> functor </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>lazy</TT> <I>strexp</I> </TD>
+    <TD> laziness </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>spawn</TT> <I>strexp</I> </TD>
+    <TD> concurrency </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>atstrpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> parameter (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <TT>_</TT> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> anonymous parameter (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+    <TD> signature as parameter (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>strpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atstrpat</I>  </TD>
+    <TD> atomic (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I>  </TD>
+    <TD> parameter </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> anonymous parameter (*) </TD>
+  </TR>
+</TABLE>
+
+
+<?php subsection("syntax-sigs", "Signatures") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atsigexp</I> </TD>
+    <TD align="center">::=</TD>
+<!--
+    <TD> <TT>any</TT> </TD>
+    <TD> top </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+-->
+    <TD> <TT>sig</TT> <I>spec</I> <TT>end</TT> </TD>
+    <TD> ground signature </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>longsigid</I> </TD>
+    <TD> signature identifier </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>let</TT> <I>dec</I> <TT>in</TT> <I>sigexp</I> <TT>end</TT> </TD>
+    <TD> local declarations </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> parentheses </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+    <TD> signature (*) </TD>
+  </TR>
+  <TR></TR>
+<!--
+  <TR>
+    <TD> <I>appsigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>appsigexp</I> <I>atstrexp</I> </TD>
+    <TD> signature application </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>appsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+-->
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>
+    <TD> specialization </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
+    <TD> functor </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>atsigexp</I> <TT>-></TT> <I>sigexp</I> </TD>
+    <TD> non-dependent functor (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>rea</I> </TD>
+    <TD align="center">::=</TD>
+<!--
+    <TD> <TT>val</TT> <I>longvid</I> <TT>=</TT> <I>longvid</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>longvid</I> <TT>=</TT> <I>longvid</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+-->
+    <TD> <TT>type</TT> <I>tyvarseq</I> <I>longtycon</I>
+         <TT>=</TT> <I>ty</I> </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>structure</TT> <I>longstrid</I><SUB>1</SUB> <TT>=</TT> <I>longstrid</I><SUB>2</SUB> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>longsigid</I>
+         <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>sigexp</I> </TD>
+    <TD> signature (<I>n</I>&ge;0) </TD>
+  </TR>
+  <TR></TR>
+-->
+</TABLE>
+
+
+<?php subsection("syntax-specs", "Specifications") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>spec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>functor</TT> <I>fundesc</I> </TD>
+    <TD> functor specification (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>sigdesc</I> </TD>
+    <TD> signature specification </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>fundesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+         <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
+    <TD> functor description (<I>n</I>&ge;1) (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> &lt;<TT>=</TT> <I>sigexp</I>&gt;
+         &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
+    <TD> signature description </TD>
+  </TR>
+<!--
+  <TR>
+    <TD> <I>sigdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+         &lt;<TT>=</TT> <I>sigexp</I>&gt;
+         &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
+    <TD> signature description (<I>n</I>&ge;0) </TD>
+  </TR>
+-->
+</TABLE>
+
+
+<?php subsection("syntax-decs", "Declarations") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>dec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>open</TT> <I>strexp</I>
+    <TD> generalised open<SUP>1</SUP> (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>strbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I>
+         &lt;<TT>and</TT> <I>strbind</I>&gt; </TD>
+    <TD> anonymous structure (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>funbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB> &lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;
+         <TT>=</TT> <I>strexp</I>
+         &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
+    <TD> functor binding (<I>n</I>&ge;1) (*) </TD>
+  </TR>
+<!--
+  <TR></TR>
+  <TR>
+    <TD> <I>sigbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>sigbind</I>&gt; </TD>
+    <TD> signature binding (<I>n</I>&ge;0) </TD>
+  </TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) The structure expression <I>strexp</I> does not have the form
+<I>longstrid</I><SUB>1</SUB> ... <I>longstrid<SUB>n</SUB></I>.</P>
+
+
+<?php subsection("syntax-derived", "Derived forms") ?>
+
+<TABLE class="bnf df">
+  <TR>
+    <TD> <TT>(</TT>&nbsp;<I>dec</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <TT>struct</TT>&nbsp;<I>dec</I>&nbsp;<TT>end</TT> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>_</TT>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<SUP>1</SUP> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>(</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>(</TT>&nbsp;<TT>_</TT>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<SUP>1</SUP> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT>&nbsp;<SUP>1</SUP><SUP>2</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>open</TT>&nbsp;<I>strexp</I> </TD>
+    <TD> <TT>local</TT>&nbsp;<TT>structure</TT>&nbsp;<I>strid</I>&nbsp;<TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<TT>in</TT>&nbsp;<TT>open</TT>&nbsp;<I>strid</I>&nbsp;<TT>end</TT>&nbsp;<SUP>1</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>functor</TT>&nbsp;<I>funbind</I> </TD>
+    <TD> <TT>structure</TT>&nbsp;<I>funbind</I> </TD>
+  </TR>
+  <TR>
+    <TD> &lt;<TT>lazy</TT>|<TT>spawn</TT>&gt;&nbsp;<I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;&lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;&nbsp;<!--
+	--><TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<TT>=</TT>&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;<TT>=></TT>&nbsp;...&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT>&nbsp;&lt;<TT>lazy</TT>|<TT>spawn</TT>&gt;&nbsp;<!--
+	--><I>strexp</I>&nbsp;&lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
+  </TR>
+  <TR>
+    <TD> <TT>_</TT>&nbsp;&lt;<TT>:</TT>&nbsp;<I>sigexp</I>&gt;&nbsp;<TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>strbind</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;&lt;<TT>:</TT>&nbsp;<I>sigexp</I>&gt;&nbsp;<TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>strbind</I>&gt;&nbsp;<SUP>1</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <TT>sig</TT>&nbsp;<I>spec</I>&nbsp;<TT>end</TT> </TD>
+  </TR>
+  <TR>
+    <TD> <I>atsigexp</I>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I> </TD>
+    <TD> <TT>fct</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>atsigexp</I>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I>&nbsp;<SUP>1</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>functor</TT>&nbsp;<I>fundesc</I> </TD>
+    <TD> <TT>structure</TT>&nbsp;<I>fundesc</I> </TD>
+  </TR>
+  <TR>
+    <TD> <I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB><!--
+	--><TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>fundesc</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT><!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;<TT>-></TT>&nbsp;...&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>fundesc</I>&gt; </TD>
+  </TR>
+</TABLE>
+
+<P><SUP>1</SUP>) The identifier <I>strid</I> is new.</P>
+
+<P><SUP>2</SUP>) If the <I>strpat</I> occurs in a functor expression
+<TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I>, then <I>strexp</I> is
+rewritten to <I>strexp'</I> by replacing any occurrence of an identifier <I>x</I>
+bound in <I>spec</I> to <I>strid</I><TT>.</TT><I>x</I>. Likewise, if it occurs
+in a functor signature <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I>,
+then <I>sigexp</I> is rewritten to <I>sigexp'</I> by similar substitution.</P>
+
+
+<?php footing() ?>

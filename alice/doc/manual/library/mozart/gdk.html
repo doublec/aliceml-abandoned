@@ -1,0 +1,1514 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Gdk structure", "The <TT>Gdk</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature GDK
+    structure Gdk : GDK</PRE>
+
+ <P>
+   The <TT>Gdk</TT> structure is the platform abstraction layer of Gtk.
+   It provides access to a number of supplementary functions used by
+   Gtk and the Canvas.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+ </P>
+
+ <?php section("import", "import"); ?>
+
+  <PRE>
+    import structure Core from "x-alice:/lib/gtk/Core"
+    import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
+    import structure GdkEnums from "x-alice:/lib/gtk/GdkEnums"
+    import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
+    import structure CanvasEnums from "x-alice:/lib/gtk/CanvasEnums"</PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+
+signature GDK =
+sig
+    type object = Core.object
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+    type callback_function = object * arg list -> unit
+    val signalConnect      : object * string * callback_function -> int
+    val signalConnectAfter : object * string * callback_function -> int
+    val signalDisconnect   : object * int -> unit
+    datatype GdkByteOrder = LSB_FIRST | MSB_FIRST
+    val GdkByteOrderToInt : GdkByteOrder -> int
+    val IntToGdkByteOrder : int -> GdkByteOrder
+    datatype GdkModifierType = SHIFT_MASK | LOCK_MASK | CONTROL_MASK | MOD1_MASK | MOD2_MASK | MOD3_MASK | MOD4_MASK | MOD5_MASK | BUTTON1_MASK | BUTTON2_MASK | BUTTON3_MASK | BUTTON4_MASK | BUTTON5_MASK
+    val GdkModifierTypeToInt : GdkModifierType -> int
+    val IntToGdkModifierType : int -> GdkModifierType
+    datatype GdkInputCondition = INPUT_READ | INPUT_WRITE | INPUT_EXCEPTION
+    val GdkInputConditionToInt : GdkInputCondition -> int
+    val IntToGdkInputCondition : int -> GdkInputCondition
+    datatype GdkStatus = OK | ERROR | ERROR_PARAM | ERROR_FILE | ERROR_MEM
+    val GdkStatusToInt : GdkStatus -> int
+    val IntToGdkStatus : int -> GdkStatus
+    datatype GdkGrabStatus = GRAB_SUCCESS | GRAB_ALREADY_GRABBED | GRAB_INVALID_TIME | GRAB_NOT_VIEWABLE | GRAB_FROZEN
+    val GdkGrabStatusToInt : GdkGrabStatus -> int
+    val IntToGdkGrabStatus : int -> GdkGrabStatus
+    datatype GdkCursorType = X_CURSOR | ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP | BOAT | BOGOSITY | BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER | BOTTOM_SIDE | BOTTOM_TEE | BOX_SPIRAL | CENTER_PTR | CIRCLE | CLOCK | COFFEE_MUG | CROSS | CROSS_REVERSE | CROSSHAIR | DIAMOND_CROSS | DOT | DOTBOX | DOUBLE_ARROW | DRAFT_LARGE | DRAFT_SMALL | DRAPED_BOX | EXCHANGE | FLEUR | GOBBLER | GUMBY | HAND1 | HAND2 | HEART | ICON | IRON_CROSS | LEFT_PTR | LEFT_SIDE | LEFT_TEE | LEFTBUTTON | LL_ANGLE | LR_ANGLE | MAN | MIDDLEBUTTON | MOUSE | PENCIL | PIRATE | PLUS | QUESTION_ARROW | RIGHT_PTR | RIGHT_SIDE | RIGHT_TEE | RIGHTBUTTON | RTL_LOGO | SAILBOAT | SB_DOWN_ARROW | SB_H_DOUBLE_ARROW | SB_LEFT_ARROW | SB_RIGHT_ARROW | SB_UP_ARROW | SB_V_DOUBLE_ARROW | SHUTTLE | SIZING | SPIDER | SPRAYCAN | STAR | TARGET | TCROSS | TOP_LEFT_ARROW | TOP_LEFT_CORNER | TOP_RIGHT_CORNER | TOP_SIDE | TOP_TEE | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM | LAST_CURSOR | CURSOR_IS_PIXMAP
+    val GdkCursorTypeToInt : GdkCursorType -> int
+    val IntToGdkCursorType : int -> GdkCursorType
+    datatype GdkDragAction = ACTION_DEFAULT | ACTION_COPY | ACTION_MOVE | ACTION_LINK | ACTION_PRIVATE | ACTION_ASK
+    val GdkDragActionToInt : GdkDragAction -> int
+    val IntToGdkDragAction : int -> GdkDragAction
+    datatype GdkDragProtocol = DRAG_PROTO_MOTIF | DRAG_PROTO_XDND | DRAG_PROTO_ROOTWIN | DRAG_PROTO_NONE | DRAG_PROTO_WIN32_DROPFILES | DRAG_PROTO_OLE2 | DRAG_PROTO_LOCAL
+    val GdkDragProtocolToInt : GdkDragProtocol -> int
+    val IntToGdkDragProtocol : int -> GdkDragProtocol
+    datatype GdkExtensionMode = EXTENSION_EVENTS_NONE | EXTENSION_EVENTS_ALL | EXTENSION_EVENTS_CURSOR
+    val GdkExtensionModeToInt : GdkExtensionMode -> int
+    val IntToGdkExtensionMode : int -> GdkExtensionMode
+    datatype GdkInputSource = SOURCE_MOUSE | SOURCE_PEN | SOURCE_ERASER | SOURCE_CURSOR
+    val GdkInputSourceToInt : GdkInputSource -> int
+    val IntToGdkInputSource : int -> GdkInputSource
+    datatype GdkInputMode = MODE_DISABLED | MODE_SCREEN | MODE_WINDOW
+    val GdkInputModeToInt : GdkInputMode -> int
+    val IntToGdkInputMode : int -> GdkInputMode
+    datatype GdkAxisUse = AXIS_IGNORE | AXIS_X | AXIS_Y | AXIS_PRESSURE | AXIS_XTILT | AXIS_YTILT | AXIS_WHEEL | AXIS_LAST
+    val GdkAxisUseToInt : GdkAxisUse -> int
+    val IntToGdkAxisUse : int -> GdkAxisUse
+    datatype GdkFilterReturn = FILTER_CONTINUE | FILTER_TRANSLATE | FILTER_REMOVE
+    val GdkFilterReturnToInt : GdkFilterReturn -> int
+    val IntToGdkFilterReturn : int -> GdkFilterReturn
+    datatype GdkEventType = NOTHING | DELETE | DESTROY | EXPOSE | MOTION_NOTIFY | BUTTON_PRESS | GDK_2BUTTON_PRESS | GDK_3BUTTON_PRESS | BUTTON_RELEASE | KEY_PRESS | KEY_RELEASE | ENTER_NOTIFY | LEAVE_NOTIFY | FOCUS_CHANGE | CONFIGURE | MAP | UNMAP | PROPERTY_NOTIFY | SELECTION_CLEAR | SELECTION_REQUEST | SELECTION_NOTIFY | PROXIMITY_IN | PROXIMITY_OUT | DRAG_ENTER | DRAG_LEAVE | DRAG_MOTION | DRAG_STATUS | DROP_START | DROP_FINISHED | CLIENT_EVENT | VISIBILITY_NOTIFY | NO_EXPOSE | SCROLL | WINDOW_STATE | SETTING
+    val GdkEventTypeToInt : GdkEventType -> int
+    val IntToGdkEventType : int -> GdkEventType
+    datatype GdkEventMask = EXPOSURE_MASK | POINTER_MOTION_MASK | POINTER_MOTION_HINT_MASK | BUTTON_MOTION_MASK | BUTTON1_MOTION_MASK | BUTTON2_MOTION_MASK | BUTTON3_MOTION_MASK | BUTTON_PRESS_MASK | BUTTON_RELEASE_MASK | KEY_PRESS_MASK | KEY_RELEASE_MASK | ENTER_NOTIFY_MASK | LEAVE_NOTIFY_MASK | FOCUS_CHANGE_MASK | STRUCTURE_MASK | PROPERTY_CHANGE_MASK | VISIBILITY_NOTIFY_MASK | PROXIMITY_IN_MASK | PROXIMITY_OUT_MASK | SUBSTRUCTURE_MASK | SCROLL_MASK | ALL_EVENTS_MASK
+    val GdkEventMaskToInt : GdkEventMask -> int
+    val IntToGdkEventMask : int -> GdkEventMask
+    datatype GdkVisibilityState = VISIBILITY_UNOBSCURED | VISIBILITY_PARTIAL | VISIBILITY_FULLY_OBSCURED
+    val GdkVisibilityStateToInt : GdkVisibilityState -> int
+    val IntToGdkVisibilityState : int -> GdkVisibilityState
+    datatype GdkScrollDirection = SCROLL_UP | SCROLL_DOWN | SCROLL_LEFT | SCROLL_RIGHT
+    val GdkScrollDirectionToInt : GdkScrollDirection -> int
+    val IntToGdkScrollDirection : int -> GdkScrollDirection
+    datatype GdkNotifyType = NOTIFY_ANCESTOR | NOTIFY_VIRTUAL | NOTIFY_INFERIOR | NOTIFY_NONLINEAR | NOTIFY_NONLINEAR_VIRTUAL | NOTIFY_UNKNOWN
+    val GdkNotifyTypeToInt : GdkNotifyType -> int
+    val IntToGdkNotifyType : int -> GdkNotifyType
+    datatype GdkCrossingMode = CROSSING_NORMAL | CROSSING_GRAB | CROSSING_UNGRAB
+    val GdkCrossingModeToInt : GdkCrossingMode -> int
+    val IntToGdkCrossingMode : int -> GdkCrossingMode
+    datatype GdkPropertyState = PROPERTY_NEW_VALUE | PROPERTY_DELETE
+    val GdkPropertyStateToInt : GdkPropertyState -> int
+    val IntToGdkPropertyState : int -> GdkPropertyState
+    datatype GdkWindowState = WINDOW_STATE_WITHDRAWN | WINDOW_STATE_ICONIFIED | WINDOW_STATE_MAXIMIZED | WINDOW_STATE_STICKY | WINDOW_STATE_FULLSCREEN
+    val GdkWindowStateToInt : GdkWindowState -> int
+    val IntToGdkWindowState : int -> GdkWindowState
+    datatype GdkSettingAction = SETTING_ACTION_NEW | SETTING_ACTION_CHANGED | SETTING_ACTION_DELETED
+    val GdkSettingActionToInt : GdkSettingAction -> int
+    val IntToGdkSettingAction : int -> GdkSettingAction
+    datatype GdkCapStyle = CAP_NOT_LAST | CAP_BUTT | CAP_ROUND | CAP_PROJECTING
+    val GdkCapStyleToInt : GdkCapStyle -> int
+    val IntToGdkCapStyle : int -> GdkCapStyle
+    datatype GdkFill = SOLID | TILED | STIPPLED | OPAQUE_STIPPLED
+    val GdkFillToInt : GdkFill -> int
+    val IntToGdkFill : int -> GdkFill
+    datatype GdkFunction = COPY | INVERT | XOR | CLEAR | AND | AND_REVERSE | AND_INVERT | NOOP | OR | EQUIV | OR_REVERSE | COPY_INVERT | OR_INVERT | NAND | NOR | SET
+    val GdkFunctionToInt : GdkFunction -> int
+    val IntToGdkFunction : int -> GdkFunction
+    datatype GdkJoinStyle = JOIN_MITER | JOIN_ROUND | JOIN_BEVEL
+    val GdkJoinStyleToInt : GdkJoinStyle -> int
+    val IntToGdkJoinStyle : int -> GdkJoinStyle
+    datatype GdkLineStyle = LINE_SOLID | LINE_ON_OFF_DASH | LINE_DOUBLE_DASH
+    val GdkLineStyleToInt : GdkLineStyle -> int
+    val IntToGdkLineStyle : int -> GdkLineStyle
+    datatype GdkSubwindowMode = CLIP_BY_CHILDREN | INCLUDE_INFERIORS
+    val GdkSubwindowModeToInt : GdkSubwindowMode -> int
+    val IntToGdkSubwindowMode : int -> GdkSubwindowMode
+    datatype GdkGCValuesMask = GC_FOREGROUND | GC_BACKGROUND | GC_FONT | GC_FUNCTION | GC_FILL | GC_TILE | GC_STIPPLE | GC_CLIP_MASK | GC_SUBWINDOW | GC_TS_X_ORIGIN | GC_TS_Y_ORIGIN | GC_CLIP_X_ORIGIN | GC_CLIP_Y_ORIGIN | GC_EXPOSURES | GC_LINE_WIDTH | GC_LINE_STYLE | GC_CAP_STYLE | GC_JOIN_STYLE
+    val GdkGCValuesMaskToInt : GdkGCValuesMask -> int
+    val IntToGdkGCValuesMask : int -> GdkGCValuesMask
+    datatype GdkRgbDither = RGB_DITHER_NONE | RGB_DITHER_NORMAL | RGB_DITHER_MAX
+    val GdkRgbDitherToInt : GdkRgbDither -> int
+    val IntToGdkRgbDither : int -> GdkRgbDither
+    datatype GdkPixbufAlphaMode = PIXBUF_ALPHA_BILEVEL | PIXBUF_ALPHA_FULL
+    val GdkPixbufAlphaModeToInt : GdkPixbufAlphaMode -> int
+    val IntToGdkPixbufAlphaMode : int -> GdkPixbufAlphaMode
+    datatype GdkColorspace = COLORSPACE_RGB
+    val GdkColorspaceToInt : GdkColorspace -> int
+    val IntToGdkColorspace : int -> GdkColorspace
+    datatype GdkPixbufError = PIXBUF_ERROR_CORRUPT_IMAGE | PIXBUF_ERROR_INSUFFICIENT_MEMORY | PIXBUF_ERROR_BAD_OPTION | PIXBUF_ERROR_UNKNOWN_TYPE | PIXBUF_ERROR_UNSUPPORTED_OPERATION | PIXBUF_ERROR_FAILED
+    val GdkPixbufErrorToInt : GdkPixbufError -> int
+    val IntToGdkPixbufError : int -> GdkPixbufError
+    datatype GdkInterpType = INTERP_NEAREST | INTERP_TILES | INTERP_BILINEAR | INTERP_HYPER
+    val GdkInterpTypeToInt : GdkInterpType -> int
+    val IntToGdkInterpType : int -> GdkInterpType
+    datatype GdkFontType = FONT_FONT | FONT_FONTSET
+    val GdkFontTypeToInt : GdkFontType -> int
+    val IntToGdkFontType : int -> GdkFontType
+    datatype GdkImageType = IMAGE_NORMAL | IMAGE_SHARED | IMAGE_FASTEST
+    val GdkImageTypeToInt : GdkImageType -> int
+    val IntToGdkImageType : int -> GdkImageType
+    datatype GdkPropMode = PROP_MODE_REPLACE | PROP_MODE_PREPEND | PROP_MODE_APPEND
+    val GdkPropModeToInt : GdkPropMode -> int
+    val IntToGdkPropMode : int -> GdkPropMode
+    datatype GdkFillRule = EVEN_ODD_RULE | WINDING_RULE
+    val GdkFillRuleToInt : GdkFillRule -> int
+    val IntToGdkFillRule : int -> GdkFillRule
+    datatype GdkOverlapType = OVERLAP_RECTANGLE_IN | OVERLAP_RECTANGLE_OUT | OVERLAP_RECTANGLE_PART
+    val GdkOverlapTypeToInt : GdkOverlapType -> int
+    val IntToGdkOverlapType : int -> GdkOverlapType
+    datatype GdkVisualType = VISUAL_STATIC_GRAY | VISUAL_GRAYSCALE | VISUAL_STATIC_COLOR | VISUAL_PSEUDO_COLOR | VISUAL_TRUE_COLOR | VISUAL_DIRECT_COLOR
+    val GdkVisualTypeToInt : GdkVisualType -> int
+    val IntToGdkVisualType : int -> GdkVisualType
+    datatype GdkWindowClass = INPUT_OUTPUT | INPUT_ONLY
+    val GdkWindowClassToInt : GdkWindowClass -> int
+    val IntToGdkWindowClass : int -> GdkWindowClass
+    datatype GdkWindowType = WINDOW_ROOT | WINDOW_TOPLEVEL | WINDOW_CHILD | WINDOW_DIALOG | WINDOW_TEMP | WINDOW_FOREIGN
+    val GdkWindowTypeToInt : GdkWindowType -> int
+    val IntToGdkWindowType : int -> GdkWindowType
+    datatype GdkWindowAttributesType = WA_TITLE | WA_X | WA_Y | WA_CURSOR | WA_COLORMAP | WA_VISUAL | WA_WMCLASS | WA_NOREDIR
+    val GdkWindowAttributesTypeToInt : GdkWindowAttributesType -> int
+    val IntToGdkWindowAttributesType : int -> GdkWindowAttributesType
+    datatype GdkWindowHints = HINT_POS | HINT_MIN_SIZE | HINT_MAX_SIZE | HINT_BASE_SIZE | HINT_ASPECT | HINT_RESIZE_INC | HINT_WIN_GRAVITY | HINT_USER_POS | HINT_USER_SIZE
+    val GdkWindowHintsToInt : GdkWindowHints -> int
+    val IntToGdkWindowHints : int -> GdkWindowHints
+    datatype GdkWindowTypeHint = WINDOW_TYPE_HINT_NORMAL | WINDOW_TYPE_HINT_DIALOG | WINDOW_TYPE_HINT_MENU | WINDOW_TYPE_HINT_TOOLBAR | WINDOW_TYPE_HINT_SPLASHSCREEN | WINDOW_TYPE_HINT_UTILITY | WINDOW_TYPE_HINT_DOCK | WINDOW_TYPE_HINT_DESKTOP
+    val GdkWindowTypeHintToInt : GdkWindowTypeHint -> int
+    val IntToGdkWindowTypeHint : int -> GdkWindowTypeHint
+    datatype GdkWMDecoration = DECOR_ALL | DECOR_BORDER | DECOR_RESIZEH | DECOR_TITLE | DECOR_MENU | DECOR_MINIMIZE | DECOR_MAXIMIZE
+    val GdkWMDecorationToInt : GdkWMDecoration -> int
+    val IntToGdkWMDecoration : int -> GdkWMDecoration
+    datatype GdkWMFunction = FUNC_ALL | FUNC_RESIZE | FUNC_MOVE | FUNC_MINIMIZE | FUNC_MAXIMIZE | FUNC_CLOSE
+    val GdkWMFunctionToInt : GdkWMFunction -> int
+    val IntToGdkWMFunction : int -> GdkWMFunction
+    datatype GdkGravity = GRAVITY_NORTH_WEST | GRAVITY_NORTH | GRAVITY_NORTH_EAST | GRAVITY_WEST | GRAVITY_CENTER | GRAVITY_EAST | GRAVITY_SOUTH_WEST | GRAVITY_SOUTH | GRAVITY_SOUTH_EAST | GRAVITY_STATIC
+    val GdkGravityToInt : GdkGravity -> int
+    val IntToGdkGravity : int -> GdkGravity
+    datatype GdkWindowEdge = WINDOW_EDGE_NORTH_WEST | WINDOW_EDGE_NORTH | WINDOW_EDGE_NORTH_EAST | WINDOW_EDGE_WEST | WINDOW_EDGE_EAST | WINDOW_EDGE_SOUTH_WEST | WINDOW_EDGE_SOUTH | WINDOW_EDGE_SOUTH_EAST
+    val GdkWindowEdgeToInt : GdkWindowEdge -> int
+    val IntToGdkWindowEdge : int -> GdkWindowEdge
+    val pointGetFieldX : object -> int
+    val pointGetFieldY : object -> int
+    val pointSetFieldX : object * int -> unit
+    val pointSetFieldY : object * int -> unit
+    val rectangleGetFieldX : object -> int
+    val rectangleGetFieldY : object -> int
+    val rectangleGetFieldWidth : object -> int
+    val rectangleGetFieldHeight : object -> int
+    val rectangleSetFieldX : object * int -> unit
+    val rectangleSetFieldY : object * int -> unit
+    val rectangleSetFieldWidth : object * int -> unit
+    val rectangleSetFieldHeight : object * int -> unit
+    val segmentGetFieldX1 : object -> int
+    val segmentGetFieldY1 : object -> int
+    val segmentGetFieldX2 : object -> int
+    val segmentGetFieldY2 : object -> int
+    val segmentSetFieldX1 : object * int -> unit
+    val segmentSetFieldY1 : object * int -> unit
+    val segmentSetFieldX2 : object * int -> unit
+    val segmentSetFieldY2 : object * int -> unit
+    val spanGetFieldX : object -> int
+    val spanGetFieldY : object -> int
+    val spanGetFieldWidth : object -> int
+    val spanSetFieldX : object * int -> unit
+    val spanSetFieldY : object * int -> unit
+    val spanSetFieldWidth : object * int -> unit
+    val colorGetFieldPixel : object -> int
+    val colorGetFieldRed : object -> int
+    val colorGetFieldGreen : object -> int
+    val colorGetFieldBlue : object -> int
+    val colorSetFieldPixel : object * int -> unit
+    val colorSetFieldRed : object * int -> unit
+    val colorSetFieldGreen : object * int -> unit
+    val colorSetFieldBlue : object * int -> unit
+    val colormapGetFieldSize : object -> int
+    val colormapGetFieldColors : object -> object
+    val colormapGetFieldVisual : object -> object
+    val colormapGetFieldWindowingData : object -> object
+    val colormapSetFieldSize : object * int -> unit
+    val colormapSetFieldColors : object * object -> unit
+    val colormapSetFieldVisual : object * object -> unit
+    val colormapSetFieldWindowingData : object * object -> unit
+    val colormapGetType : unit -> int
+    val colormapNew : object * bool -> object
+    val colormapRef : object -> object
+    val colormapUnref : object -> unit
+    val colormapGetSystem : unit -> object
+    val colormapGetScreen : object -> object
+    val colormapGetSystemSize : unit -> int
+    val colormapChange : object * int -> unit
+    val colormapAllocColors : object * object * int * bool * bool * object -> int
+    val colormapAllocColor : object * object * bool * bool -> bool
+    val colormapFreeColors : object * object * int -> unit
+    val colormapQueryColor : object * int * object -> unit
+    val colormapGetVisual : object -> object
+    val colorCopy : object -> object
+    val colorFree : object -> unit
+    val colorParse : string * object -> int
+    val colorHash : object -> int
+    val colorEqual : object * object -> bool
+    val colorGetType : unit -> int
+    val colorsStore : object * object * int -> unit
+    val colorWhite : object * object -> int
+    val colorBlack : object * object -> int
+    val colorAlloc : object * object -> int
+    val colorChange : object * object -> int
+    val colorsAlloc : object * bool * int * int -> int * int * int
+    val colorsAlloc' : object * bool * int * int * int * int -> int * int * int
+    val colorsFree : object * int * int -> int
+    val colorsFree' : object * int * int * int -> int
+    val cursorGetFieldType : object -> GdkEnums.GdkCursorType
+    val cursorGetFieldRefCount : object -> int
+    val cursorSetFieldType : object * GdkEnums.GdkCursorType -> unit
+    val cursorSetFieldRefCount : object * int -> unit
+    val cursorGetType : unit -> int
+    val cursorNewForDisplay : object * GdkEnums.GdkCursorType -> object
+    val cursorNew : GdkEnums.GdkCursorType -> object
+    val cursorNewFromPixmap : object * object * object * object * int * int -> object
+    val cursorGetDisplay : object -> object
+    val cursorRef : object -> object
+    val cursorUnref : object -> unit
+    val dragContextGetFieldProtocol : object -> GdkEnums.GdkDragProtocol
+    val dragContextGetFieldIsSource : object -> bool
+    val dragContextGetFieldSourceWindow : object -> object
+    val dragContextGetFieldDestWindow : object -> object
+    val dragContextGetFieldTargets : object -> object list
+    val dragContextGetFieldActions : object -> GdkEnums.GdkDragAction
+    val dragContextGetFieldSuggestedAction : object -> GdkEnums.GdkDragAction
+    val dragContextGetFieldAction : object -> GdkEnums.GdkDragAction
+    val dragContextGetFieldStartTime : object -> int
+    val dragContextGetFieldWindowingData : object -> object
+    val dragContextSetFieldProtocol : object * GdkEnums.GdkDragProtocol -> unit
+    val dragContextSetFieldIsSource : object * bool -> unit
+    val dragContextSetFieldSourceWindow : object * object -> unit
+    val dragContextSetFieldDestWindow : object * object -> unit
+    val dragContextSetFieldTargets : object * object list -> unit
+    val dragContextSetFieldActions : object * GdkEnums.GdkDragAction -> unit
+    val dragContextSetFieldSuggestedAction : object * GdkEnums.GdkDragAction -> unit
+    val dragContextSetFieldAction : object * GdkEnums.GdkDragAction -> unit
+    val dragContextSetFieldStartTime : object * int -> unit
+    val dragContextSetFieldWindowingData : object * object -> unit
+    val dragContextGetType : unit -> int
+    val dragContextNew : unit -> object
+    val dragContextRef : object -> unit
+    val dragContextUnref : object -> unit
+    val dragStatus : object * GdkEnums.GdkDragAction * int -> unit
+    val dropReply : object * bool * int -> unit
+    val dropFinish : object * bool * int -> unit
+    val dragGetSelection : object -> object
+    val dragBegin : object * object list -> object
+    val dragFindWindowForScreen : object * object * object * int * int -> object * GdkEnums.GdkDragProtocol
+    val dragFindWindowForScreen' : object * object * object * int * int * object * GdkEnums.GdkDragProtocol -> object * GdkEnums.GdkDragProtocol
+    val dragGetProtocol : int -> int * GdkEnums.GdkDragProtocol
+    val dragGetProtocol' : int * GdkEnums.GdkDragProtocol -> int * GdkEnums.GdkDragProtocol
+    val dragFindWindow : object * object * int * int -> object * GdkEnums.GdkDragProtocol
+    val dragFindWindow' : object * object * int * int * object * GdkEnums.GdkDragProtocol -> object * GdkEnums.GdkDragProtocol
+    val dragMotion : object * object * GdkEnums.GdkDragProtocol * int * int * GdkEnums.GdkDragAction * GdkEnums.GdkDragAction * int -> bool
+    val dragDrop : object * int -> unit
+    val dragAbort : object * int -> unit
+    val deviceKeyGetFieldKeyval : object -> int
+    val deviceKeyGetFieldModifiers : object -> GdkEnums.GdkModifierType
+    val deviceKeySetFieldKeyval : object * int -> unit
+    val deviceKeySetFieldModifiers : object * GdkEnums.GdkModifierType -> unit
+    val deviceAxisGetFieldUse : object -> GdkEnums.GdkAxisUse
+    val deviceAxisGetFieldMin : object -> real
+    val deviceAxisGetFieldMax : object -> real
+    val deviceAxisSetFieldUse : object * GdkEnums.GdkAxisUse -> unit
+    val deviceAxisSetFieldMin : object * real -> unit
+    val deviceAxisSetFieldMax : object * real -> unit
+    val deviceGetFieldName : object -> string
+    val deviceGetFieldSource : object -> GdkEnums.GdkInputSource
+    val deviceGetFieldMode : object -> GdkEnums.GdkInputMode
+    val deviceGetFieldHasCursor : object -> bool
+    val deviceGetFieldNumAxes : object -> int
+    val deviceGetFieldAxes : object -> object
+    val deviceGetFieldNumKeys : object -> int
+    val deviceGetFieldKeys : object -> object
+    val deviceSetFieldName : object * string -> unit
+    val deviceSetFieldSource : object * GdkEnums.GdkInputSource -> unit
+    val deviceSetFieldMode : object * GdkEnums.GdkInputMode -> unit
+    val deviceSetFieldHasCursor : object * bool -> unit
+    val deviceSetFieldNumAxes : object * int -> unit
+    val deviceSetFieldAxes : object * object -> unit
+    val deviceSetFieldNumKeys : object * int -> unit
+    val deviceSetFieldKeys : object * object -> unit
+    val timeCoordGetFieldTime : object -> int
+    val timeCoordSetFieldTime : object * int -> unit
+    val deviceGetType : unit -> int
+    val devicesList : unit -> object list
+    val deviceSetSource : object * GdkEnums.GdkInputSource -> unit
+    val deviceSetMode : object * GdkEnums.GdkInputMode -> bool
+    val deviceSetKey : object * int * int * GdkEnums.GdkModifierType -> unit
+    val deviceSetAxisUse : object * int * GdkEnums.GdkAxisUse -> unit
+    val deviceGetState : object * object -> real * GdkEnums.GdkModifierType
+    val deviceGetState' : object * object * real * GdkEnums.GdkModifierType -> real * GdkEnums.GdkModifierType
+    val deviceGetHistory : object * object * int * int -> bool * object * int
+    val deviceGetHistory' : object * object * int * int * object * int -> bool * object * int
+    val deviceFreeHistory : int -> object
+    val deviceFreeHistory' : object * int -> object
+    val deviceGetAxis : object * GdkEnums.GdkAxisUse -> bool * real * real
+    val deviceGetAxis' : object * real * GdkEnums.GdkAxisUse * real -> bool * real * real
+    val inputSetExtensionEvents : object * int * GdkEnums.GdkExtensionMode -> unit
+    val deviceGetCorePointer : unit -> object
+    val eventAnyGetFieldType : object -> GdkEnums.GdkEventType
+    val eventAnyGetFieldWindow : object -> object
+    val eventAnyGetFieldSendEvent : object -> int
+    val eventAnySetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventAnySetFieldWindow : object * object -> unit
+    val eventAnySetFieldSendEvent : object * int -> unit
+    val eventExposeGetFieldType : object -> GdkEnums.GdkEventType
+    val eventExposeGetFieldWindow : object -> object
+    val eventExposeGetFieldSendEvent : object -> int
+    val eventExposeGetFieldRegion : object -> object
+    val eventExposeGetFieldCount : object -> int
+    val eventExposeSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventExposeSetFieldWindow : object * object -> unit
+    val eventExposeSetFieldSendEvent : object * int -> unit
+    val eventExposeSetFieldRegion : object * object -> unit
+    val eventExposeSetFieldCount : object * int -> unit
+    val eventNoExposeGetFieldType : object -> GdkEnums.GdkEventType
+    val eventNoExposeGetFieldWindow : object -> object
+    val eventNoExposeGetFieldSendEvent : object -> int
+    val eventNoExposeSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventNoExposeSetFieldWindow : object * object -> unit
+    val eventNoExposeSetFieldSendEvent : object * int -> unit
+    val eventVisibilityGetFieldType : object -> GdkEnums.GdkEventType
+    val eventVisibilityGetFieldWindow : object -> object
+    val eventVisibilityGetFieldSendEvent : object -> int
+    val eventVisibilityGetFieldState : object -> GdkEnums.GdkVisibilityState
+    val eventVisibilitySetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventVisibilitySetFieldWindow : object * object -> unit
+    val eventVisibilitySetFieldSendEvent : object * int -> unit
+    val eventVisibilitySetFieldState : object * GdkEnums.GdkVisibilityState -> unit
+    val eventMotionGetFieldType : object -> GdkEnums.GdkEventType
+    val eventMotionGetFieldWindow : object -> object
+    val eventMotionGetFieldSendEvent : object -> int
+    val eventMotionGetFieldTime : object -> int
+    val eventMotionGetFieldX : object -> real
+    val eventMotionGetFieldY : object -> real
+    val eventMotionGetFieldAxes : object -> object
+    val eventMotionGetFieldState : object -> int
+    val eventMotionGetFieldIsHint : object -> int
+    val eventMotionGetFieldDevice : object -> object
+    val eventMotionGetFieldXRoot : object -> real
+    val eventMotionGetFieldYRoot : object -> real
+    val eventMotionSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventMotionSetFieldWindow : object * object -> unit
+    val eventMotionSetFieldSendEvent : object * int -> unit
+    val eventMotionSetFieldTime : object * int -> unit
+    val eventMotionSetFieldX : object * real -> unit
+    val eventMotionSetFieldY : object * real -> unit
+    val eventMotionSetFieldAxes : object * object -> unit
+    val eventMotionSetFieldState : object * int -> unit
+    val eventMotionSetFieldIsHint : object * int -> unit
+    val eventMotionSetFieldDevice : object * object -> unit
+    val eventMotionSetFieldXRoot : object * real -> unit
+    val eventMotionSetFieldYRoot : object * real -> unit
+    val eventButtonGetFieldType : object -> GdkEnums.GdkEventType
+    val eventButtonGetFieldWindow : object -> object
+    val eventButtonGetFieldSendEvent : object -> int
+    val eventButtonGetFieldTime : object -> int
+    val eventButtonGetFieldX : object -> real
+    val eventButtonGetFieldY : object -> real
+    val eventButtonGetFieldAxes : object -> object
+    val eventButtonGetFieldState : object -> int
+    val eventButtonGetFieldButton : object -> int
+    val eventButtonGetFieldDevice : object -> object
+    val eventButtonGetFieldXRoot : object -> real
+    val eventButtonGetFieldYRoot : object -> real
+    val eventButtonSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventButtonSetFieldWindow : object * object -> unit
+    val eventButtonSetFieldSendEvent : object * int -> unit
+    val eventButtonSetFieldTime : object * int -> unit
+    val eventButtonSetFieldX : object * real -> unit
+    val eventButtonSetFieldY : object * real -> unit
+    val eventButtonSetFieldAxes : object * object -> unit
+    val eventButtonSetFieldState : object * int -> unit
+    val eventButtonSetFieldButton : object * int -> unit
+    val eventButtonSetFieldDevice : object * object -> unit
+    val eventButtonSetFieldXRoot : object * real -> unit
+    val eventButtonSetFieldYRoot : object * real -> unit
+    val eventScrollGetFieldType : object -> GdkEnums.GdkEventType
+    val eventScrollGetFieldWindow : object -> object
+    val eventScrollGetFieldSendEvent : object -> int
+    val eventScrollGetFieldTime : object -> int
+    val eventScrollGetFieldX : object -> real
+    val eventScrollGetFieldY : object -> real
+    val eventScrollGetFieldState : object -> int
+    val eventScrollGetFieldDirection : object -> GdkEnums.GdkScrollDirection
+    val eventScrollGetFieldDevice : object -> object
+    val eventScrollGetFieldXRoot : object -> real
+    val eventScrollGetFieldYRoot : object -> real
+    val eventScrollSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventScrollSetFieldWindow : object * object -> unit
+    val eventScrollSetFieldSendEvent : object * int -> unit
+    val eventScrollSetFieldTime : object * int -> unit
+    val eventScrollSetFieldX : object * real -> unit
+    val eventScrollSetFieldY : object * real -> unit
+    val eventScrollSetFieldState : object * int -> unit
+    val eventScrollSetFieldDirection : object * GdkEnums.GdkScrollDirection -> unit
+    val eventScrollSetFieldDevice : object * object -> unit
+    val eventScrollSetFieldXRoot : object * real -> unit
+    val eventScrollSetFieldYRoot : object * real -> unit
+    val eventKeyGetFieldType : object -> GdkEnums.GdkEventType
+    val eventKeyGetFieldWindow : object -> object
+    val eventKeyGetFieldSendEvent : object -> int
+    val eventKeyGetFieldTime : object -> int
+    val eventKeyGetFieldState : object -> int
+    val eventKeyGetFieldKeyval : object -> int
+    val eventKeyGetFieldLength : object -> int
+    val eventKeyGetFieldString : object -> string
+    val eventKeyGetFieldHardwareKeycode : object -> int
+    val eventKeyGetFieldGroup : object -> int
+    val eventKeySetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventKeySetFieldWindow : object * object -> unit
+    val eventKeySetFieldSendEvent : object * int -> unit
+    val eventKeySetFieldTime : object * int -> unit
+    val eventKeySetFieldState : object * int -> unit
+    val eventKeySetFieldKeyval : object * int -> unit
+    val eventKeySetFieldLength : object * int -> unit
+    val eventKeySetFieldString : object * string -> unit
+    val eventKeySetFieldHardwareKeycode : object * int -> unit
+    val eventKeySetFieldGroup : object * int -> unit
+    val eventCrossingGetFieldType : object -> GdkEnums.GdkEventType
+    val eventCrossingGetFieldWindow : object -> object
+    val eventCrossingGetFieldSendEvent : object -> int
+    val eventCrossingGetFieldSubwindow : object -> object
+    val eventCrossingGetFieldTime : object -> int
+    val eventCrossingGetFieldX : object -> real
+    val eventCrossingGetFieldY : object -> real
+    val eventCrossingGetFieldXRoot : object -> real
+    val eventCrossingGetFieldYRoot : object -> real
+    val eventCrossingGetFieldMode : object -> GdkEnums.GdkCrossingMode
+    val eventCrossingGetFieldDetail : object -> GdkEnums.GdkNotifyType
+    val eventCrossingGetFieldFocus : object -> bool
+    val eventCrossingGetFieldState : object -> int
+    val eventCrossingSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventCrossingSetFieldWindow : object * object -> unit
+    val eventCrossingSetFieldSendEvent : object * int -> unit
+    val eventCrossingSetFieldSubwindow : object * object -> unit
+    val eventCrossingSetFieldTime : object * int -> unit
+    val eventCrossingSetFieldX : object * real -> unit
+    val eventCrossingSetFieldY : object * real -> unit
+    val eventCrossingSetFieldXRoot : object * real -> unit
+    val eventCrossingSetFieldYRoot : object * real -> unit
+    val eventCrossingSetFieldMode : object * GdkEnums.GdkCrossingMode -> unit
+    val eventCrossingSetFieldDetail : object * GdkEnums.GdkNotifyType -> unit
+    val eventCrossingSetFieldFocus : object * bool -> unit
+    val eventCrossingSetFieldState : object * int -> unit
+    val eventFocusGetFieldType : object -> GdkEnums.GdkEventType
+    val eventFocusGetFieldWindow : object -> object
+    val eventFocusGetFieldSendEvent : object -> int
+    val eventFocusGetFieldIn : object -> int
+    val eventFocusSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventFocusSetFieldWindow : object * object -> unit
+    val eventFocusSetFieldSendEvent : object * int -> unit
+    val eventFocusSetFieldIn : object * int -> unit
+    val eventConfigureGetFieldType : object -> GdkEnums.GdkEventType
+    val eventConfigureGetFieldWindow : object -> object
+    val eventConfigureGetFieldSendEvent : object -> int
+    val eventConfigureGetFieldX : object -> int
+    val eventConfigureGetFieldY : object -> int
+    val eventConfigureGetFieldWidth : object -> int
+    val eventConfigureGetFieldHeight : object -> int
+    val eventConfigureSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventConfigureSetFieldWindow : object * object -> unit
+    val eventConfigureSetFieldSendEvent : object * int -> unit
+    val eventConfigureSetFieldX : object * int -> unit
+    val eventConfigureSetFieldY : object * int -> unit
+    val eventConfigureSetFieldWidth : object * int -> unit
+    val eventConfigureSetFieldHeight : object * int -> unit
+    val eventPropertyGetFieldType : object -> GdkEnums.GdkEventType
+    val eventPropertyGetFieldWindow : object -> object
+    val eventPropertyGetFieldSendEvent : object -> int
+    val eventPropertyGetFieldAtom : object -> object
+    val eventPropertyGetFieldTime : object -> int
+    val eventPropertyGetFieldState : object -> int
+    val eventPropertySetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventPropertySetFieldWindow : object * object -> unit
+    val eventPropertySetFieldSendEvent : object * int -> unit
+    val eventPropertySetFieldAtom : object * object -> unit
+    val eventPropertySetFieldTime : object * int -> unit
+    val eventPropertySetFieldState : object * int -> unit
+    val eventSelectionGetFieldType : object -> GdkEnums.GdkEventType
+    val eventSelectionGetFieldWindow : object -> object
+    val eventSelectionGetFieldSendEvent : object -> int
+    val eventSelectionGetFieldSelection : object -> object
+    val eventSelectionGetFieldTarget : object -> object
+    val eventSelectionGetFieldProperty : object -> object
+    val eventSelectionGetFieldTime : object -> int
+    val eventSelectionGetFieldRequestor : object -> int
+    val eventSelectionSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventSelectionSetFieldWindow : object * object -> unit
+    val eventSelectionSetFieldSendEvent : object * int -> unit
+    val eventSelectionSetFieldSelection : object * object -> unit
+    val eventSelectionSetFieldTarget : object * object -> unit
+    val eventSelectionSetFieldProperty : object * object -> unit
+    val eventSelectionSetFieldTime : object * int -> unit
+    val eventSelectionSetFieldRequestor : object * int -> unit
+    val eventProximityGetFieldType : object -> GdkEnums.GdkEventType
+    val eventProximityGetFieldWindow : object -> object
+    val eventProximityGetFieldSendEvent : object -> int
+    val eventProximityGetFieldTime : object -> int
+    val eventProximityGetFieldDevice : object -> object
+    val eventProximitySetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventProximitySetFieldWindow : object * object -> unit
+    val eventProximitySetFieldSendEvent : object * int -> unit
+    val eventProximitySetFieldTime : object * int -> unit
+    val eventProximitySetFieldDevice : object * object -> unit
+    val eventClientGetFieldType : object -> GdkEnums.GdkEventType
+    val eventClientGetFieldWindow : object -> object
+    val eventClientGetFieldSendEvent : object -> int
+    val eventClientGetFieldMessageType : object -> object
+    val eventClientGetFieldDataFormat : object -> int
+    val eventClientSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventClientSetFieldWindow : object * object -> unit
+    val eventClientSetFieldSendEvent : object * int -> unit
+    val eventClientSetFieldMessageType : object * object -> unit
+    val eventClientSetFieldDataFormat : object * int -> unit
+    val eventSettingGetFieldType : object -> GdkEnums.GdkEventType
+    val eventSettingGetFieldWindow : object -> object
+    val eventSettingGetFieldSendEvent : object -> int
+    val eventSettingGetFieldAction : object -> GdkEnums.GdkSettingAction
+    val eventSettingGetFieldName : object -> string
+    val eventSettingSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventSettingSetFieldWindow : object * object -> unit
+    val eventSettingSetFieldSendEvent : object * int -> unit
+    val eventSettingSetFieldAction : object * GdkEnums.GdkSettingAction -> unit
+    val eventSettingSetFieldName : object * string -> unit
+    val eventWindowStateGetFieldType : object -> GdkEnums.GdkEventType
+    val eventWindowStateGetFieldWindow : object -> object
+    val eventWindowStateGetFieldSendEvent : object -> int
+    val eventWindowStateGetFieldChangedMask : object -> GdkEnums.GdkWindowState
+    val eventWindowStateGetFieldNewWindowState : object -> GdkEnums.GdkWindowState
+    val eventWindowStateSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventWindowStateSetFieldWindow : object * object -> unit
+    val eventWindowStateSetFieldSendEvent : object * int -> unit
+    val eventWindowStateSetFieldChangedMask : object * GdkEnums.GdkWindowState -> unit
+    val eventWindowStateSetFieldNewWindowState : object * GdkEnums.GdkWindowState -> unit
+    val eventDNDGetFieldType : object -> GdkEnums.GdkEventType
+    val eventDNDGetFieldWindow : object -> object
+    val eventDNDGetFieldSendEvent : object -> int
+    val eventDNDGetFieldContext : object -> object
+    val eventDNDGetFieldTime : object -> int
+    val eventDNDGetFieldXRoot : object -> int
+    val eventDNDGetFieldYRoot : object -> int
+    val eventDNDSetFieldType : object * GdkEnums.GdkEventType -> unit
+    val eventDNDSetFieldWindow : object * object -> unit
+    val eventDNDSetFieldSendEvent : object * int -> unit
+    val eventDNDSetFieldContext : object * object -> unit
+    val eventDNDSetFieldTime : object * int -> unit
+    val eventDNDSetFieldXRoot : object * int -> unit
+    val eventDNDSetFieldYRoot : object * int -> unit
+    val eventGetType : unit -> int
+    val eventsPending : unit -> bool
+    val eventGet : unit -> object
+    val eventPeek : unit -> object
+    val eventGetGraphicsExpose : object -> object
+    val eventPut : object -> unit
+    val eventNew : GdkEnums.GdkEventType -> object
+    val eventCopy : object -> object
+    val eventFree : object -> unit
+    val eventGetTime : object -> int
+    val eventGetState : object -> bool * GdkEnums.GdkModifierType
+    val eventGetState' : object * GdkEnums.GdkModifierType -> bool * GdkEnums.GdkModifierType
+    val eventGetCoords : object -> bool * real * real
+    val eventGetCoords' : object * real * real -> bool * real * real
+    val eventGetRootCoords : object -> bool * real * real
+    val eventGetRootCoords' : object * real * real -> bool * real * real
+    val eventGetAxis : object * GdkEnums.GdkAxisUse -> bool * real
+    val eventGetAxis' : object * GdkEnums.GdkAxisUse * real -> bool * real
+    val eventHandlerSet : object * object * object -> unit
+    val eventSetScreen : object * object -> unit
+    val eventGetScreen : object -> object
+    val setShowEvents : bool -> unit
+    val getShowEvents : unit -> bool
+    val addClientMessageFilter : object * object * object -> unit
+    val settingGet : string * object -> bool
+    val displayGetFieldQueuedEvents : object -> object list
+    val displayGetFieldQueuedTail : object -> object list
+    val displayGetFieldDoubleClickTime : object -> int
+    val displayGetFieldCorePointer : object -> object
+    val displayGetFieldPointerHooks : object -> object
+    val displayGetFieldClosed : object -> int
+    val displaySetFieldQueuedEvents : object * object list -> unit
+    val displaySetFieldQueuedTail : object * object list -> unit
+    val displaySetFieldDoubleClickTime : object * int -> unit
+    val displaySetFieldCorePointer : object * object -> unit
+    val displaySetFieldPointerHooks : object * object -> unit
+    val displaySetFieldClosed : object * int -> unit
+    val displayGetType : unit -> int
+    val displayOpen : string -> object
+    val displayGetName : object -> string
+    val displayGetNScreens : object -> int
+    val displayGetScreen : object * int -> object
+    val displayGetDefaultScreen : object -> object
+    val displayPointerUngrab : object * int -> unit
+    val displayKeyboardUngrab : object * int -> unit
+    val displayPointerIsGrabbed : object -> bool
+    val displayBeep : object -> unit
+    val displaySync : object -> unit
+    val displayClose : object -> unit
+    val displayListDevices : object -> object list
+    val displayGetEvent : object -> object
+    val displayPeekEvent : object -> object
+    val displayPutEvent : object * object -> unit
+    val displayAddClientMessageFilter : object * object * object * object -> unit
+    val displaySetDoubleClickTime : object * int -> unit
+    val displayGetDefault : unit -> object
+    val displayGetCorePointer : object -> object
+    val displayGetPointer : object -> object * int * int * GdkEnums.GdkModifierType
+    val displayGetPointer' : object * object * int * int * GdkEnums.GdkModifierType -> object * int * int * GdkEnums.GdkModifierType
+    val displayGetWindowAtPointer : object -> object * int * int
+    val displayGetWindowAtPointer' : object * int * int -> object * int * int
+    val displaySetPointerHooks : object * object -> object
+    val displayOpenDefaultLibgtkOnly : unit -> object
+    val gCValuesGetFieldFont : object -> object
+    val gCValuesGetFieldFunction : object -> GdkEnums.GdkFunction
+    val gCValuesGetFieldFill : object -> GdkEnums.GdkFill
+    val gCValuesGetFieldTile : object -> object
+    val gCValuesGetFieldStipple : object -> object
+    val gCValuesGetFieldClipMask : object -> object
+    val gCValuesGetFieldSubwindowMode : object -> GdkEnums.GdkSubwindowMode
+    val gCValuesGetFieldTsXOrigin : object -> int
+    val gCValuesGetFieldTsYOrigin : object -> int
+    val gCValuesGetFieldClipXOrigin : object -> int
+    val gCValuesGetFieldClipYOrigin : object -> int
+    val gCValuesGetFieldGraphicsExposures : object -> int
+    val gCValuesGetFieldLineWidth : object -> int
+    val gCValuesGetFieldLineStyle : object -> GdkEnums.GdkLineStyle
+    val gCValuesGetFieldCapStyle : object -> GdkEnums.GdkCapStyle
+    val gCValuesGetFieldJoinStyle : object -> GdkEnums.GdkJoinStyle
+    val gCValuesSetFieldFont : object * object -> unit
+    val gCValuesSetFieldFunction : object * GdkEnums.GdkFunction -> unit
+    val gCValuesSetFieldFill : object * GdkEnums.GdkFill -> unit
+    val gCValuesSetFieldTile : object * object -> unit
+    val gCValuesSetFieldStipple : object * object -> unit
+    val gCValuesSetFieldClipMask : object * object -> unit
+    val gCValuesSetFieldSubwindowMode : object * GdkEnums.GdkSubwindowMode -> unit
+    val gCValuesSetFieldTsXOrigin : object * int -> unit
+    val gCValuesSetFieldTsYOrigin : object * int -> unit
+    val gCValuesSetFieldClipXOrigin : object * int -> unit
+    val gCValuesSetFieldClipYOrigin : object * int -> unit
+    val gCValuesSetFieldGraphicsExposures : object * int -> unit
+    val gCValuesSetFieldLineWidth : object * int -> unit
+    val gCValuesSetFieldLineStyle : object * GdkEnums.GdkLineStyle -> unit
+    val gCValuesSetFieldCapStyle : object * GdkEnums.GdkCapStyle -> unit
+    val gCValuesSetFieldJoinStyle : object * GdkEnums.GdkJoinStyle -> unit
+    val gCGetFieldClipXOrigin : object -> int
+    val gCGetFieldClipYOrigin : object -> int
+    val gCGetFieldTsXOrigin : object -> int
+    val gCGetFieldTsYOrigin : object -> int
+    val gCGetFieldColormap : object -> object
+    val gCSetFieldClipXOrigin : object * int -> unit
+    val gCSetFieldClipYOrigin : object * int -> unit
+    val gCSetFieldTsXOrigin : object * int -> unit
+    val gCSetFieldTsYOrigin : object * int -> unit
+    val gCSetFieldColormap : object * object -> unit
+    val gcGetType : unit -> int
+    val gcNew : object -> object
+    val gcNewWithValues : object * object * GdkEnums.GdkGCValuesMask -> object
+    val gcRef : object -> object
+    val gcUnref : object -> unit
+    val gcGetValues : object * object -> unit
+    val gcSetValues : object * object * GdkEnums.GdkGCValuesMask -> unit
+    val gcSetForeground : object * object -> unit
+    val gcSetBackground : object * object -> unit
+    val gcSetFont : object * object -> unit
+    val gcSetFunction : object * GdkEnums.GdkFunction -> unit
+    val gcSetFill : object * GdkEnums.GdkFill -> unit
+    val gcSetTile : object * object -> unit
+    val gcSetStipple : object * object -> unit
+    val gcSetTsOrigin : object * int * int -> unit
+    val gcSetClipOrigin : object * int * int -> unit
+    val gcSetClipMask : object * object -> unit
+    val gcSetClipRectangle : object * object -> unit
+    val gcSetClipRegion : object * object -> unit
+    val gcSetSubwindow : object * GdkEnums.GdkSubwindowMode -> unit
+    val gcSetExposures : object * bool -> unit
+    val gcSetLineAttributes : object * int * GdkEnums.GdkLineStyle * GdkEnums.GdkCapStyle * GdkEnums.GdkJoinStyle -> unit
+    val gcSetDashes : object * int * int vector * int -> unit
+    val gcOffset : object * int * int -> unit
+    val gcCopy : object * object -> unit
+    val gcSetColormap : object * object -> unit
+    val gcGetColormap : object -> object
+    val gcSetRgbFgColor : object * object -> unit
+    val gcSetRgbBgColor : object * object -> unit
+    val gcGetScreen : object -> object
+    val rgbCmapGetFieldNColors : object -> int
+    val rgbCmapGetFieldInfoList : object -> object list
+    val rgbCmapSetFieldNColors : object * int -> unit
+    val rgbCmapSetFieldInfoList : object * object list -> unit
+    val rgbInit : unit -> unit
+    val rgbXpixelFromRgb : int -> int
+    val rgbGcSetForeground : object * int -> unit
+    val rgbGcSetBackground : object * int -> unit
+    val rgbFindColor : object * object -> unit
+    val drawRgbImage : object * object * int * int * int * int * GdkEnums.GdkRgbDither * string * int -> unit
+    val drawRgbImageDithalign : object * object * int * int * int * int * GdkEnums.GdkRgbDither * string * int * int * int -> unit
+    val drawRgb32Image : object * object * int * int * int * int * GdkEnums.GdkRgbDither * string * int -> unit
+    val drawRgb32ImageDithalign : object * object * int * int * int * int * GdkEnums.GdkRgbDither * string * int * int * int -> unit
+    val drawGrayImage : object * object * int * int * int * int * GdkEnums.GdkRgbDither * string * int -> unit
+    val drawIndexedImage : object * object * int * int * int * int * GdkEnums.GdkRgbDither * string * int * object -> unit
+    val rgbCmapNew : int -> object * int
+    val rgbCmapNew' : int * int -> object * int
+    val rgbCmapFree : object -> unit
+    val rgbSetVerbose : bool -> unit
+    val rgbSetInstall : bool -> unit
+    val rgbSetMinColors : int -> unit
+    val rgbGetColormap : unit -> object
+    val rgbGetVisual : unit -> object
+    val rgbDitherable : unit -> bool
+    val pixbufErrorQuark : unit -> int
+    val pixbufGetType : unit -> int
+    val pixbufRef : object -> object
+    val pixbufUnref : object -> unit
+    val pixbufGetColorspace : object -> GdkEnums.GdkColorspace
+    val pixbufGetNChannels : object -> int
+    val pixbufGetHasAlpha : object -> bool
+    val pixbufGetBitsPerSample : object -> int
+    val pixbufGetPixels : object -> string
+    val pixbufGetWidth : object -> int
+    val pixbufGetHeight : object -> int
+    val pixbufGetRowstride : object -> int
+    val pixbufNew : GdkEnums.GdkColorspace * bool * int * int * int -> object
+    val pixbufCopy : object -> object
+    val pixbufNewSubpixbuf : object * int * int * int * int -> object
+    val pixbufNewFromFile : string -> object * object
+    val pixbufNewFromFile' : string * object -> object * object
+    val pixbufNewFromData : string * GdkEnums.GdkColorspace * bool * int * int * int * int * object * object -> object
+    val pixbufNewFromInline : int * string * bool -> object * object
+    val pixbufNewFromInline' : int * string * bool * object -> object * object
+    val pixbufFill : object * int -> unit
+    val pixbufSave : object * string * string * Core.arg -> bool * object
+    val pixbufSave' : object * string * string * object * Core.arg -> bool * object
+    val pixbufSavev : object * string * string -> bool * string * string * object
+    val pixbufSavev' : object * string * string * string * string * object -> bool * string * string * object
+    val pixbufAddAlpha : object * bool * int * int * int -> object
+    val pixbufCopyArea : object * int * int * int * int * object * int * int -> unit
+    val pixbufSaturateAndPixelate : object * object * real * bool -> unit
+    val pixbufScale : object * object * int * int * int * int * real * real * real * real * GdkEnums.GdkInterpType -> unit
+    val pixbufComposite : object * object * int * int * int * int * real * real * real * real * GdkEnums.GdkInterpType * int -> unit
+    val pixbufScaleSimple : object * int * int * GdkEnums.GdkInterpType -> object
+    val pixbufCompositeColorSimple : object * int * int * GdkEnums.GdkInterpType * int * int * int * int -> object
+    val pixbufAnimationGetType : unit -> int
+    val pixbufAnimationNewFromFile : string -> object * object
+    val pixbufAnimationNewFromFile' : string * object -> object * object
+    val pixbufAnimationRef : object -> object
+    val pixbufAnimationUnref : object -> unit
+    val pixbufAnimationGetWidth : object -> int
+    val pixbufAnimationGetHeight : object -> int
+    val pixbufAnimationIsStaticImage : object -> bool
+    val pixbufAnimationGetStaticImage : object -> object
+    val pixbufAnimationGetIter : object * object -> object
+    val pixbufAnimationIterGetType : unit -> int
+    val pixbufAnimationIterGetDelayTime : object -> int
+    val pixbufAnimationIterGetPixbuf : object -> object
+    val pixbufAnimationIterOnCurrentlyLoadingFrame : object -> bool
+    val pixbufAnimationIterAdvance : object * object -> bool
+    val pixbufGetOption : object * string -> string
+    val pixbufGetFormats : unit -> object list
+    val pixbufFormatGetName : object -> string
+    val pixbufFormatGetDescription : object -> string
+    val pixbufFormatGetMimeTypes : object -> object
+    val pixbufFormatGetExtensions : object -> object
+    val pixbufFormatIsWritable : object -> bool
+    val pixbufLoaderGetFieldPriv : object -> object
+    val pixbufLoaderSetFieldPriv : object * object -> unit
+    val pixbufLoaderGetType : unit -> int
+    val pixbufLoaderNew : unit -> object
+    val pixbufLoaderNewWithType : string -> object * object
+    val pixbufLoaderNewWithType' : string * object -> object * object
+    val pixbufLoaderSetSize : object * int * int -> unit
+    val pixbufLoaderWrite : object * string * int -> bool * object
+    val pixbufLoaderWrite' : object * string * int * object -> bool * object
+    val pixbufLoaderGetPixbuf : object -> object
+    val pixbufLoaderGetAnimation : object -> object
+    val pixbufLoaderClose : object -> bool * object
+    val pixbufLoaderClose' : object * object -> bool * object
+    val pixbufLoaderGetFormat : object -> object
+    val pixbufAlphaModeGetType : unit -> int
+    val colorspaceGetType : unit -> int
+    val pixbufErrorGetType : unit -> int
+    val interpTypeGetType : unit -> int
+    val drawableGetType : unit -> int
+    val drawableSetData : object * string * object * object -> unit
+    val drawableGetData : object * string -> object
+    val drawableGetSize : object -> int * int
+    val drawableGetSize' : object * int * int -> int * int
+    val drawableSetColormap : object * object -> unit
+    val drawableGetColormap : object -> object
+    val drawableGetVisual : object -> object
+    val drawableGetDepth : object -> int
+    val drawableGetScreen : object -> object
+    val drawableGetDisplay : object -> object
+    val drawableRef : object -> object
+    val drawableUnref : object -> unit
+    val drawPoint : object * object * int * int -> unit
+    val drawLine : object * object * int * int * int * int -> unit
+    val drawRectangle : object * object * bool * int * int * int * int -> unit
+    val drawArc : object * object * bool * int * int * int * int * int * int -> unit
+    val drawPolygon : object * object * bool * object * int -> unit
+    val drawString : object * object * object * int * int * string -> unit
+    val drawText : object * object * object * int * int * string * int -> unit
+    val drawTextWc : object * object * object * int * int * int -> int
+    val drawTextWc' : object * object * object * int * int * int * int -> int
+    val drawDrawable : object * object * object * int * int * int * int * int * int -> unit
+    val drawImage : object * object * object * int * int * int * int * int * int -> unit
+    val drawPoints : object * object * object * int -> unit
+    val drawSegments : object * object * object * int -> unit
+    val drawLines : object * object * object * int -> unit
+    val drawPixbuf : object * object * object * int * int * int * int * int * int * GdkEnums.GdkRgbDither * int * int -> unit
+    val drawGlyphs : object * object * object * int * int * object -> unit
+    val drawLayoutLine : object * object * int * int * object -> unit
+    val drawLayout : object * object * int * int * object -> unit
+    val drawLayoutLineWithColors : object * object * int * int * object * object * object -> unit
+    val drawLayoutWithColors : object * object * int * int * object * object * object -> unit
+    val drawableGetImage : object * int * int * int * int -> object
+    val drawableGetClipRegion : object -> object
+    val drawableGetVisibleRegion : object -> object
+    val cursorTypeGetType : unit -> int
+    val dragActionGetType : unit -> int
+    val dragProtocolGetType : unit -> int
+    val filterReturnGetType : unit -> int
+    val eventTypeGetType : unit -> int
+    val eventMaskGetType : unit -> int
+    val visibilityStateGetType : unit -> int
+    val scrollDirectionGetType : unit -> int
+    val notifyTypeGetType : unit -> int
+    val crossingModeGetType : unit -> int
+    val propertyStateGetType : unit -> int
+    val windowStateGetType : unit -> int
+    val settingActionGetType : unit -> int
+    val fontTypeGetType : unit -> int
+    val capStyleGetType : unit -> int
+    val fillGetType : unit -> int
+    val functionGetType : unit -> int
+    val joinStyleGetType : unit -> int
+    val lineStyleGetType : unit -> int
+    val subwindowModeGetType : unit -> int
+    val gcValuesMaskGetType : unit -> int
+    val imageTypeGetType : unit -> int
+    val extensionModeGetType : unit -> int
+    val inputSourceGetType : unit -> int
+    val inputModeGetType : unit -> int
+    val axisUseGetType : unit -> int
+    val propModeGetType : unit -> int
+    val fillRuleGetType : unit -> int
+    val overlapTypeGetType : unit -> int
+    val rgbDitherGetType : unit -> int
+    val byteOrderGetType : unit -> int
+    val modifierTypeGetType : unit -> int
+    val inputConditionGetType : unit -> int
+    val statusGetType : unit -> int
+    val grabStatusGetType : unit -> int
+    val visualTypeGetType : unit -> int
+    val windowClassGetType : unit -> int
+    val windowTypeGetType : unit -> int
+    val windowAttributesTypeGetType : unit -> int
+    val windowHintsGetType : unit -> int
+    val windowTypeHintGetType : unit -> int
+    val wmDecorationGetType : unit -> int
+    val wmFunctionGetType : unit -> int
+    val gravityGetType : unit -> int
+    val windowEdgeGetType : unit -> int
+    val fontGetFieldType : object -> GdkEnums.GdkFontType
+    val fontGetFieldAscent : object -> int
+    val fontGetFieldDescent : object -> int
+    val fontSetFieldType : object * GdkEnums.GdkFontType -> unit
+    val fontSetFieldAscent : object * int -> unit
+    val fontSetFieldDescent : object * int -> unit
+    val fontGetType : unit -> int
+    val fontRef : object -> object
+    val fontUnref : object -> unit
+    val fontId : object -> int
+    val fontEqual : object * object -> bool
+    val fontLoadForDisplay : object * string -> object
+    val fontFromDescriptionForDisplay : object * object -> object
+    val fontLoad : string -> object
+    val fontsetLoad : string -> object
+    val fontFromDescription : object -> object
+    val stringWidth : object * string -> int
+    val textWidth : object * string * int -> int
+    val textWidthWc : object * int -> int * int
+    val textWidthWc' : object * int * int -> int * int
+    val charWidth : object * int -> int
+    val charWidthWc : object * int -> int
+    val stringMeasure : object * string -> int
+    val textMeasure : object * string * int -> int
+    val charMeasure : object * int -> int
+    val stringHeight : object * string -> int
+    val textHeight : object * string * int -> int
+    val charHeight : object * int -> int
+    val textExtents : object * string * int -> int * int * int * int * int
+    val textExtents' : object * string * int * int * int * int * int * int -> int * int * int * int * int
+    val textExtentsWc : object * int -> int * int * int * int * int * int
+    val textExtentsWc' : object * int * int * int * int * int * int * int -> int * int * int * int * int * int
+    val stringExtents : object * string -> int * int * int * int * int
+    val stringExtents' : object * string * int * int * int * int * int -> int * int * int * int * int
+    val imageGetFieldType : object -> GdkEnums.GdkImageType
+    val imageGetFieldVisual : object -> object
+    val imageGetFieldByteOrder : object -> GdkEnums.GdkByteOrder
+    val imageGetFieldWidth : object -> int
+    val imageGetFieldHeight : object -> int
+    val imageGetFieldDepth : object -> int
+    val imageGetFieldBpp : object -> int
+    val imageGetFieldBpl : object -> int
+    val imageGetFieldBitsPerPixel : object -> int
+    val imageGetFieldMem : object -> object
+    val imageGetFieldColormap : object -> object
+    val imageGetFieldWindowingData : object -> object
+    val imageSetFieldType : object * GdkEnums.GdkImageType -> unit
+    val imageSetFieldVisual : object * object -> unit
+    val imageSetFieldByteOrder : object * GdkEnums.GdkByteOrder -> unit
+    val imageSetFieldWidth : object * int -> unit
+    val imageSetFieldHeight : object * int -> unit
+    val imageSetFieldDepth : object * int -> unit
+    val imageSetFieldBpp : object * int -> unit
+    val imageSetFieldBpl : object * int -> unit
+    val imageSetFieldBitsPerPixel : object * int -> unit
+    val imageSetFieldMem : object * object -> unit
+    val imageSetFieldColormap : object * object -> unit
+    val imageSetFieldWindowingData : object * object -> unit
+    val imageGetType : unit -> int
+    val imageNew : GdkEnums.GdkImageType * object * int * int -> object
+    val imageGet : object * int * int * int * int -> object
+    val imageRef : object -> object
+    val imageUnref : object -> unit
+    val imagePutPixel : object * int * int * int -> unit
+    val imageGetPixel : object * int * int -> int
+    val imageSetColormap : object * object -> unit
+    val imageGetColormap : object -> object
+    val keymapKeyGetFieldKeycode : object -> int
+    val keymapKeyGetFieldGroup : object -> int
+    val keymapKeyGetFieldLevel : object -> int
+    val keymapKeySetFieldKeycode : object * int -> unit
+    val keymapKeySetFieldGroup : object * int -> unit
+    val keymapKeySetFieldLevel : object * int -> unit
+    val keymapGetFieldDisplay : object -> object
+    val keymapSetFieldDisplay : object * object -> unit
+    val keymapGetType : unit -> int
+    val keymapGetDefault : unit -> object
+    val keymapGetForDisplay : object -> object
+    val keymapLookupKey : object * object -> int
+    val keymapTranslateKeyboardState : object * int * GdkEnums.GdkModifierType * int -> bool * int * int * int * GdkEnums.GdkModifierType
+    val keymapTranslateKeyboardState' : object * int * GdkEnums.GdkModifierType * int * int * int * int * GdkEnums.GdkModifierType -> bool * int * int * int * GdkEnums.GdkModifierType
+    val keymapGetEntriesForKeyval : object * int -> bool * object * int
+    val keymapGetEntriesForKeyval' : object * int * object * int -> bool * object * int
+    val keymapGetEntriesForKeycode : object * int -> bool * object * object * int
+    val keymapGetEntriesForKeycode' : object * int * object * object * int -> bool * object * object * int
+    val keymapGetDirection : object -> PangoEnums.PangoDirection
+    val keyvalName : int -> string
+    val keyvalFromName : string -> int
+    val keyvalConvertCase : int -> int * int
+    val keyvalConvertCase' : int * int * int -> int * int
+    val keyvalToUpper : int -> int
+    val keyvalToLower : int -> int
+    val keyvalIsUpper : int -> bool
+    val keyvalIsLower : int -> bool
+    val keyvalToUnicode : int -> int
+    val unicodeToKeyval : int -> int
+    val displayManagerGet : unit -> object
+    val displayManagerGetDefaultDisplay : object -> object
+    val displayManagerSetDefaultDisplay : object * object -> unit
+    val displayManagerListDisplays : object -> object list
+    val pangoContextGetForScreen : object -> object
+    val pangoContextGet : unit -> object
+    val pangoContextSetColormap : object * object -> unit
+    val pangoLayoutLineGetClipRegion : object * int * int * int -> object * int
+    val pangoLayoutLineGetClipRegion' : object * int * int * int * int -> object * int
+    val pangoLayoutGetClipRegion : object * int * int * int -> object * int
+    val pangoLayoutGetClipRegion' : object * int * int * int * int -> object * int
+    val pangoAttrStippleGetFieldStipple : object -> object
+    val pangoAttrStippleSetFieldStipple : object * object -> unit
+    val pangoAttrEmbossedGetFieldEmbossed : object -> bool
+    val pangoAttrEmbossedSetFieldEmbossed : object * bool -> unit
+    val pangoAttrStippleNew : object -> object
+    val pangoAttrEmbossedNew : bool -> object
+    val pixbufRenderThresholdAlpha : object * object * int * int * int * int * int * int * int -> unit
+    val pixbufRenderToDrawable : object * object * object * int * int * int * int * int * int * GdkEnums.GdkRgbDither * int * int -> unit
+    val pixbufRenderToDrawableAlpha : object * object * int * int * int * int * int * int * GdkEnums.GdkPixbufAlphaMode * int * GdkEnums.GdkRgbDither * int * int -> unit
+    val pixbufRenderPixmapAndMaskForColormap : object * object * int -> object * object
+    val pixbufRenderPixmapAndMaskForColormap' : object * object * object * object * int -> object * object
+    val pixbufRenderPixmapAndMask : object * int -> object * object
+    val pixbufRenderPixmapAndMask' : object * object * object * int -> object * object
+    val pixbufGetFromDrawable : object * object * object * int * int * int * int * int * int -> object
+    val pixbufGetFromImage : object * object * object * int * int * int * int * int * int -> object
+    val pixmapObjectGetFieldImpl : object -> object
+    val pixmapObjectGetFieldDepth : object -> int
+    val pixmapObjectSetFieldImpl : object * object -> unit
+    val pixmapObjectSetFieldDepth : object * int -> unit
+    val pixmapGetType : unit -> int
+    val pixmapNew : object * int * int * int -> object
+    val bitmapCreateFromData : object * string * int * int -> object
+    val pixmapCreateFromData : object * string * int * int * int * object * object -> object
+    val pixmapCreateFromXpm : object * object * string -> object * object
+    val pixmapCreateFromXpm' : object * object * object * string -> object * object
+    val pixmapColormapCreateFromXpm : object * object * object * string -> object * object
+    val pixmapColormapCreateFromXpm' : object * object * object * object * string -> object * object
+    val pixmapCreateFromXpmD : object * object -> object * object * string
+    val pixmapCreateFromXpmD' : object * object * object * string -> object * object * string
+    val pixmapColormapCreateFromXpmD : object * object * object -> object * object * string
+    val pixmapColormapCreateFromXpmD' : object * object * object * object * string -> object * object * string
+    val pixmapForeignNew : int -> object
+    val pixmapLookup : int -> object
+    val pixmapForeignNewForDisplay : object * int -> object
+    val pixmapLookupForDisplay : object * int -> object
+    val atomIntern : string * bool -> object
+    val atomName : object -> string
+    val propertyGet : object * object * object * int * int * int -> bool * object * int * int * string
+    val propertyGet' : object * object * object * int * int * int * object * int * int * string -> bool * object * int * int * string
+    val propertyChange : object * object * object * int * GdkEnums.GdkPropMode * string * int -> unit
+    val propertyDelete : object * object -> unit
+    val textPropertyToTextList : object * int * string * int -> int * object
+    val textPropertyToTextList' : object * int * string * int * object -> int * object
+    val textPropertyToUtf8List : object * int * string * int -> int * object
+    val textPropertyToUtf8List' : object * int * string * int * object -> int * object
+    val utf8ToCompoundText : string -> bool * object * int * string * int
+    val utf8ToCompoundText' : string * object * int * string * int -> bool * object * int * string * int
+    val stringToCompoundText : string -> int * object * int * string * int
+    val stringToCompoundText' : string * object * int * string * int -> int * object * int * string * int
+    val textPropertyToUtf8ListForDisplay : object * object * int * string * int -> int * object
+    val textPropertyToUtf8ListForDisplay' : object * object * int * string * int * object -> int * object
+    val utf8ToStringTarget : string -> string
+    val utf8ToCompoundTextForDisplay : object * string -> bool * object * int * string * int
+    val utf8ToCompoundTextForDisplay' : object * string * object * int * string * int -> bool * object * int * string * int
+    val freeTextList : unit -> string
+    val freeTextList' : string -> string
+    val freeCompoundText : string -> unit
+    val regionNew : unit -> object
+    val regionPolygon : object * int * GdkEnums.GdkFillRule -> object
+    val regionCopy : object -> object
+    val regionRectangle : object -> object
+    val regionDestroy : object -> unit
+    val regionGetClipbox : object * object -> unit
+    val regionGetRectangles : object -> object * int
+    val regionGetRectangles' : object * object * int -> object * int
+    val regionEmpty : object -> bool
+    val regionEqual : object * object -> bool
+    val regionPointIn : object * int * int -> bool
+    val regionRectIn : object * object -> GdkEnums.GdkOverlapType
+    val regionOffset : object * int * int -> unit
+    val regionShrink : object * int * int -> unit
+    val regionUnionWithRect : object * object -> unit
+    val regionIntersect : object * object -> unit
+    val regionUnion : object * object -> unit
+    val regionSubtract : object * object -> unit
+    val regionXor : object * object -> unit
+    val regionSpansIntersectForeach : object * object * int * bool * object * object -> unit
+    val screenGetFieldClosed : object -> int
+    val screenSetFieldClosed : object * int -> unit
+    val screenGetType : unit -> int
+    val screenGetDefaultColormap : object -> object
+    val screenSetDefaultColormap : object * object -> unit
+    val screenGetSystemColormap : object -> object
+    val screenGetSystemVisual : object -> object
+    val screenGetRgbColormap : object -> object
+    val screenGetRgbVisual : object -> object
+    val screenGetRootWindow : object -> object
+    val screenGetDisplay : object -> object
+    val screenGetNumber : object -> int
+    val screenGetWidth : object -> int
+    val screenGetHeight : object -> int
+    val screenGetToplevelWindows : object -> object list
+    val screenGetNMonitors : object -> int
+    val screenGetMonitorGeometry : object * int * object -> unit
+    val screenGetMonitorAtPoint : object * int * int -> int
+    val screenGetMonitorAtWindow : object * object -> int
+    val screenGetDefault : unit -> object
+    val screenGetSetting : object * string * object -> bool
+    val selectionOwnerSet : object * object * int * bool -> bool
+    val selectionOwnerGet : object -> object
+    val selectionOwnerSetForDisplay : object * object * object * int * bool -> bool
+    val selectionOwnerGetForDisplay : object * object -> object
+    val selectionConvert : object * object * object * int -> unit
+    val selectionPropertyGet : object -> bool * string * object * int
+    val selectionPropertyGet' : object * string * object * int -> bool * string * object * int
+    val selectionSendNotify : int * object * object * object * int -> unit
+    val selectionSendNotifyForDisplay : object * int * object * object * object * int -> unit
+    val visualGetFieldType : object -> GdkEnums.GdkVisualType
+    val visualGetFieldDepth : object -> int
+    val visualGetFieldByteOrder : object -> GdkEnums.GdkByteOrder
+    val visualGetFieldColormapSize : object -> int
+    val visualGetFieldBitsPerRgb : object -> int
+    val visualGetFieldRedMask : object -> int
+    val visualGetFieldRedShift : object -> int
+    val visualGetFieldRedPrec : object -> int
+    val visualGetFieldGreenMask : object -> int
+    val visualGetFieldGreenShift : object -> int
+    val visualGetFieldGreenPrec : object -> int
+    val visualGetFieldBlueMask : object -> int
+    val visualGetFieldBlueShift : object -> int
+    val visualGetFieldBluePrec : object -> int
+    val visualSetFieldType : object * GdkEnums.GdkVisualType -> unit
+    val visualSetFieldDepth : object * int -> unit
+    val visualSetFieldByteOrder : object * GdkEnums.GdkByteOrder -> unit
+    val visualSetFieldColormapSize : object * int -> unit
+    val visualSetFieldBitsPerRgb : object * int -> unit
+    val visualSetFieldRedMask : object * int -> unit
+    val visualSetFieldRedShift : object * int -> unit
+    val visualSetFieldRedPrec : object * int -> unit
+    val visualSetFieldGreenMask : object * int -> unit
+    val visualSetFieldGreenShift : object * int -> unit
+    val visualSetFieldGreenPrec : object * int -> unit
+    val visualSetFieldBlueMask : object * int -> unit
+    val visualSetFieldBlueShift : object * int -> unit
+    val visualSetFieldBluePrec : object * int -> unit
+    val visualGetType : unit -> int
+    val visualGetBestDepth : unit -> int
+    val visualGetBestType : unit -> GdkEnums.GdkVisualType
+    val visualGetSystem : unit -> object
+    val visualGetBest : unit -> object
+    val visualGetBestWithDepth : int -> object
+    val visualGetBestWithType : GdkEnums.GdkVisualType -> object
+    val visualGetBestWithBoth : int * GdkEnums.GdkVisualType -> object
+    val queryDepths : unit -> object * int
+    val queryDepths' : object * int -> object * int
+    val queryVisualTypes : unit -> object * int
+    val queryVisualTypes' : object * int -> object * int
+    val listVisuals : unit -> object list
+    val visualGetScreen : object -> object
+    val windowAttrGetFieldTitle : object -> string
+    val windowAttrGetFieldEventMask : object -> int
+    val windowAttrGetFieldX : object -> int
+    val windowAttrGetFieldY : object -> int
+    val windowAttrGetFieldWidth : object -> int
+    val windowAttrGetFieldHeight : object -> int
+    val windowAttrGetFieldWclass : object -> GdkEnums.GdkWindowClass
+    val windowAttrGetFieldVisual : object -> object
+    val windowAttrGetFieldColormap : object -> object
+    val windowAttrGetFieldWindowType : object -> GdkEnums.GdkWindowType
+    val windowAttrGetFieldCursor : object -> object
+    val windowAttrGetFieldWmclassName : object -> string
+    val windowAttrGetFieldWmclassClass : object -> string
+    val windowAttrGetFieldOverrideRedirect : object -> bool
+    val windowAttrSetFieldTitle : object * string -> unit
+    val windowAttrSetFieldEventMask : object * int -> unit
+    val windowAttrSetFieldX : object * int -> unit
+    val windowAttrSetFieldY : object * int -> unit
+    val windowAttrSetFieldWidth : object * int -> unit
+    val windowAttrSetFieldHeight : object * int -> unit
+    val windowAttrSetFieldWclass : object * GdkEnums.GdkWindowClass -> unit
+    val windowAttrSetFieldVisual : object * object -> unit
+    val windowAttrSetFieldColormap : object * object -> unit
+    val windowAttrSetFieldWindowType : object * GdkEnums.GdkWindowType -> unit
+    val windowAttrSetFieldCursor : object * object -> unit
+    val windowAttrSetFieldWmclassName : object * string -> unit
+    val windowAttrSetFieldWmclassClass : object * string -> unit
+    val windowAttrSetFieldOverrideRedirect : object * bool -> unit
+    val geometryGetFieldMinWidth : object -> int
+    val geometryGetFieldMinHeight : object -> int
+    val geometryGetFieldMaxWidth : object -> int
+    val geometryGetFieldMaxHeight : object -> int
+    val geometryGetFieldBaseWidth : object -> int
+    val geometryGetFieldBaseHeight : object -> int
+    val geometryGetFieldWidthInc : object -> int
+    val geometryGetFieldHeightInc : object -> int
+    val geometryGetFieldMinAspect : object -> real
+    val geometryGetFieldMaxAspect : object -> real
+    val geometryGetFieldWinGravity : object -> GdkEnums.GdkGravity
+    val geometrySetFieldMinWidth : object * int -> unit
+    val geometrySetFieldMinHeight : object * int -> unit
+    val geometrySetFieldMaxWidth : object * int -> unit
+    val geometrySetFieldMaxHeight : object * int -> unit
+    val geometrySetFieldBaseWidth : object * int -> unit
+    val geometrySetFieldBaseHeight : object * int -> unit
+    val geometrySetFieldWidthInc : object * int -> unit
+    val geometrySetFieldHeightInc : object * int -> unit
+    val geometrySetFieldMinAspect : object * real -> unit
+    val geometrySetFieldMaxAspect : object * real -> unit
+    val geometrySetFieldWinGravity : object * GdkEnums.GdkGravity -> unit
+    val windowObjectGetFieldImpl : object -> object
+    val windowObjectGetFieldParent : object -> object
+    val windowObjectGetFieldUserData : object -> object
+    val windowObjectGetFieldX : object -> int
+    val windowObjectGetFieldY : object -> int
+    val windowObjectGetFieldExtensionEvents : object -> int
+    val windowObjectGetFieldFilters : object -> object list
+    val windowObjectGetFieldChildren : object -> object list
+    val windowObjectGetFieldBgPixmap : object -> object
+    val windowObjectGetFieldPaintStack : object -> object list
+    val windowObjectGetFieldUpdateArea : object -> object
+    val windowObjectGetFieldUpdateFreezeCount : object -> int
+    val windowObjectGetFieldWindowType : object -> int
+    val windowObjectGetFieldDepth : object -> int
+    val windowObjectGetFieldResizeCount : object -> int
+    val windowObjectGetFieldState : object -> GdkEnums.GdkWindowState
+    val windowObjectGetFieldGuffawGravity : object -> int
+    val windowObjectGetFieldInputOnly : object -> int
+    val windowObjectGetFieldModalHint : object -> int
+    val windowObjectGetFieldDestroyed : object -> int
+    val windowObjectGetFieldEventMask : object -> GdkEnums.GdkEventMask
+    val windowObjectSetFieldImpl : object * object -> unit
+    val windowObjectSetFieldParent : object * object -> unit
+    val windowObjectSetFieldUserData : object * object -> unit
+    val windowObjectSetFieldX : object * int -> unit
+    val windowObjectSetFieldY : object * int -> unit
+    val windowObjectSetFieldExtensionEvents : object * int -> unit
+    val windowObjectSetFieldFilters : object * object list -> unit
+    val windowObjectSetFieldChildren : object * object list -> unit
+    val windowObjectSetFieldBgPixmap : object * object -> unit
+    val windowObjectSetFieldPaintStack : object * object list -> unit
+    val windowObjectSetFieldUpdateArea : object * object -> unit
+    val windowObjectSetFieldUpdateFreezeCount : object * int -> unit
+    val windowObjectSetFieldWindowType : object * int -> unit
+    val windowObjectSetFieldDepth : object * int -> unit
+    val windowObjectSetFieldResizeCount : object * int -> unit
+    val windowObjectSetFieldState : object * GdkEnums.GdkWindowState -> unit
+    val windowObjectSetFieldGuffawGravity : object * int -> unit
+    val windowObjectSetFieldInputOnly : object * int -> unit
+    val windowObjectSetFieldModalHint : object * int -> unit
+    val windowObjectSetFieldDestroyed : object * int -> unit
+    val windowObjectSetFieldEventMask : object * GdkEnums.GdkEventMask -> unit
+    val windowObjectGetType : unit -> int
+    val windowNew : object * object * int -> object
+    val windowDestroy : object -> unit
+    val windowGetWindowType : object -> GdkEnums.GdkWindowType
+    val windowAtPointer : unit -> object * int * int
+    val windowAtPointer' : int * int -> object * int * int
+    val windowShow : object -> unit
+    val windowHide : object -> unit
+    val windowWithdraw : object -> unit
+    val windowShowUnraised : object -> unit
+    val windowMove : object * int * int -> unit
+    val windowResize : object * int * int -> unit
+    val windowMoveResize : object * int * int * int * int -> unit
+    val windowReparent : object * object * int * int -> unit
+    val windowClear : object -> unit
+    val windowClearArea : object * int * int * int * int -> unit
+    val windowClearAreaE : object * int * int * int * int -> unit
+    val windowRaise : object -> unit
+    val windowLower : object -> unit
+    val windowFocus : object * int -> unit
+    val windowSetUserData : object * object -> unit
+    val windowSetOverrideRedirect : object * bool -> unit
+    val windowAddFilter : object * object * object -> unit
+    val windowRemoveFilter : object * object * object -> unit
+    val windowScroll : object * int * int -> unit
+    val windowShapeCombineMask : object * object * int * int -> unit
+    val windowShapeCombineRegion : object * object * int * int -> unit
+    val windowSetChildShapes : object -> unit
+    val windowMergeChildShapes : object -> unit
+    val windowIsVisible : object -> bool
+    val windowIsViewable : object -> bool
+    val windowGetState : object -> GdkEnums.GdkWindowState
+    val windowSetStaticGravities : object * bool -> bool
+    val windowForeignNew : int -> object
+    val windowLookup : int -> object
+    val windowForeignNewForDisplay : object * int -> object
+    val windowLookupForDisplay : object * int -> object
+    val windowSetHints : object * int * int * int * int * int * int * int -> unit
+    val windowSetTypeHint : object * GdkEnums.GdkWindowTypeHint -> unit
+    val windowSetModalHint : object * bool -> unit
+    val windowSetSkipTaskbarHint : object * bool -> unit
+    val windowSetSkipPagerHint : object * bool -> unit
+    val windowSetGeometryHints : object * object * GdkEnums.GdkWindowHints -> unit
+    val setSmClientId : string -> unit
+    val windowBeginPaintRect : object * object -> unit
+    val windowBeginPaintRegion : object * object -> unit
+    val windowEndPaint : object -> unit
+    val windowSetTitle : object * string -> unit
+    val windowSetRole : object * string -> unit
+    val windowSetTransientFor : object * object -> unit
+    val windowSetBackground : object * object -> unit
+    val windowSetBackPixmap : object * object * bool -> unit
+    val windowSetCursor : object * object -> unit
+    val windowGetUserData : object -> object
+    val windowGetUserData' : object * object -> object
+    val windowGetGeometry : object -> int * int * int * int * int
+    val windowGetGeometry' : object * int * int * int * int * int -> int * int * int * int * int
+    val windowGetPosition : object -> int * int
+    val windowGetPosition' : object * int * int -> int * int
+    val windowGetOrigin : object -> int * int * int
+    val windowGetOrigin' : object * int * int -> int * int * int
+    val windowGetDeskrelativeOrigin : object -> bool * int * int
+    val windowGetDeskrelativeOrigin' : object * int * int -> bool * int * int
+    val windowGetRootOrigin : object -> int * int
+    val windowGetRootOrigin' : object * int * int -> int * int
+    val windowGetFrameExtents : object * object -> unit
+    val windowGetPointer : object -> object * int * int * GdkEnums.GdkModifierType
+    val windowGetPointer' : object * int * int * GdkEnums.GdkModifierType -> object * int * int * GdkEnums.GdkModifierType
+    val windowGetParent : object -> object
+    val windowGetToplevel : object -> object
+    val windowGetChildren : object -> object list
+    val windowPeekChildren : object -> object list
+    val windowGetEvents : object -> GdkEnums.GdkEventMask
+    val windowSetEvents : object * GdkEnums.GdkEventMask -> unit
+    val windowSetIconList : object * object list -> unit
+    val windowSetIcon : object * object * object * object -> unit
+    val windowSetIconName : object * string -> unit
+    val windowSetGroup : object * object -> unit
+    val windowSetDecorations : object * GdkEnums.GdkWMDecoration -> unit
+    val windowGetDecorations : object -> bool * GdkEnums.GdkWMDecoration
+    val windowGetDecorations' : object * GdkEnums.GdkWMDecoration -> bool * GdkEnums.GdkWMDecoration
+    val windowSetFunctions : object * GdkEnums.GdkWMFunction -> unit
+    val windowGetToplevels : unit -> object list
+    val windowIconify : object -> unit
+    val windowDeiconify : object -> unit
+    val windowStick : object -> unit
+    val windowUnstick : object -> unit
+    val windowMaximize : object -> unit
+    val windowUnmaximize : object -> unit
+    val windowFullscreen : object -> unit
+    val windowUnfullscreen : object -> unit
+    val windowRegisterDnd : object -> unit
+    val windowBeginResizeDrag : object * GdkEnums.GdkWindowEdge * int * int * int * int -> unit
+    val windowBeginMoveDrag : object * int * int * int * int -> unit
+    val windowInvalidateRect : object * object * bool -> unit
+    val windowInvalidateRegion : object * object * bool -> unit
+    val windowInvalidateMaybeRecurse : object * object * object * object -> unit
+    val windowGetUpdateArea : object -> object
+    val windowFreezeUpdates : object -> unit
+    val windowThawUpdates : object -> unit
+    val windowProcessAllUpdates : unit -> unit
+    val windowProcessUpdates : object * bool -> unit
+    val windowSetDebugUpdates : bool -> unit
+    val windowConstrainSize : object * int * int * int -> int * int
+    val windowConstrainSize' : object * int * int * int * int * int -> int * int
+    val windowGetInternalPaintInfo : object -> object * int * int
+    val windowGetInternalPaintInfo' : object * object * int * int -> object * int * int
+    val setPointerHooks : object -> object
+    val getDefaultRootWindow : unit -> object
+    val parseArgs : unit -> int * object
+    val parseArgs' : int * object -> int * object
+    val exit : int -> unit
+    val setLocale : unit -> string
+    val getProgramClass : unit -> string
+    val setProgramClass : string -> unit
+    val errorTrapPush : unit -> unit
+    val errorTrapPop : unit -> int
+    val setUseXshm : bool -> unit
+    val getUseXshm : unit -> bool
+    val getDisplay : unit -> string
+    val getDisplayArgName : unit -> string
+    val inputAddFull : int * GdkEnums.GdkInputCondition * object * object * object -> int
+    val inputAdd : int * GdkEnums.GdkInputCondition * object * object -> int
+    val inputRemove : int -> unit
+    val pointerGrab : object * bool * GdkEnums.GdkEventMask * object * object * int -> GdkEnums.GdkGrabStatus
+    val keyboardGrab : object * bool * int -> GdkEnums.GdkGrabStatus
+    val pointerUngrab : int -> unit
+    val keyboardUngrab : int -> unit
+    val pointerIsGrabbed : unit -> bool
+    val screenWidth : unit -> int
+    val screenHeight : unit -> int
+    val screenWidthMm : unit -> int
+    val screenHeightMm : unit -> int
+    val beep : unit -> unit
+    val flush : unit -> unit
+    val setDoubleClickTime : int -> unit
+    val rectangleIntersect : object * object * object -> bool
+    val rectangleUnion : object * object * object -> unit
+    val rectangleGetType : unit -> int
+    val wcstombs : unit -> string * int
+    val wcstombs' : int -> string * int
+    val mbstowcs : string * int -> int * int
+    val mbstowcs' : int * string * int -> int * int
+    val eventSendClientMessage : object * int -> bool
+    val eventSendClientmessageToall : object -> unit
+    val eventSendClientMessageForDisplay : object * object * int -> bool
+    val notifyStartupComplete : unit -> unit
+    val threadsEnter : unit -> unit
+    val threadsLeave : unit -> unit
+    val threadsInit : unit -> unit
+    val pixbufNewFromXpmData : string vector -> object
+    val colorNew : int * int * int -> object
+    val pointNew : int * int -> object
+    val rectangleNew : int * int * int * int -> object
+end
+  </PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.html">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>

@@ -1,0 +1,375 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+import structure Label         from "Label"
+import structure Type          from "Type"
+import structure PervasiveType from "PervasiveType"
+
+import structure PrettyPrint   from "../utility/PrettyPrint"
+import structure PPMisc        from "PPMisc"
+import structure PPPath        from "PPPath"
+import signature PP_TYPE       from "PP_TYPE-sig"
+
+
+structure PPType :> PP_TYPE =
+struct
+    open Type
+    open PrettyPrint
+    open PPMisc
+    infixr ^^ ^/^
+
+    val debug = false
+
+    (* Helpers *)
+
+    fun unapply  t     = unapply'(t,[])
+    and unapply'(t,ts) =
+	case inspect t
+	 of Apply(t1,t2) => unapply'(t1,t2::ts)
+	  | _            => (t,ts)
+
+    fun unarg t =
+	case inspect t
+	 of Apply(t1,t2) =>
+	    if not(equal(t1, PervasiveType.typ_strict)) then SOME t else
+	    (case inspect t2
+	     of Prod r =>
+		if isEmptyRow r
+		then NONE
+		else SOME t2
+	      | _ => SOME t2
+	    )
+	  | _ => SOME t
+
+    fun unarrow  t     = unarrow'(t,[])
+    and unarrow'(t,ts) =
+	case inspect t
+	 of Arrow(t1,t2) => unarrow'(t2,t1::ts)
+	  | _            => (List.rev ts, t)
+
+    fun unarrowKind  k     = unarrowKind'(k,[])
+    and unarrowKind'(k,ks) =
+	case inspectKind k
+	 of ArrowKind(k1,k2) => unarrowKind'(k2,k1::ks)
+	  | _                => (List.rev ks, k)
+
+
+  (* Simple objects *)
+
+    fun ppLab l = text(Label.toString l)
+    fun ppMLab l = text("#" ^ Label.toString l)
+
+
+  (* Name management for holes *)
+
+    val counter = ref 0
+    val holes   = Map.map() : int Map.t
+
+    fun holeIndex t =
+	case Map.lookup(holes, canonical t)
+	 of SOME n => n
+	  | NONE =>
+	let
+	    val n = !counter+1
+	in
+	    (* Clean up map *)
+	    List.app (fn t => Map.removeExistent(holes, t))
+		(Map.foldi (fn(t,_,ts) => if isUnknown(fromCanonical t)
+					  then ts else t::ts) [] holes);
+	    Map.insertDisjoint(holes, canonical t, n);
+	    counter := n;
+	    n
+	end
+
+
+  (* Precedences *)
+
+    val rootPrec	= 0
+    val ofPrec		= 0	(* datatypes (vid1 of ty1 | vid of ty2) *)
+    val annPrec		= 1	(* kind annotation (ty : kind) *)
+    val bindPrec	= 2	(* binders (exist ty1 . ty2) *)
+    val arrowPrec	= 3	(* arrows (ty1 -> ty2) *)
+    val starPrec	= 4	(* tuple (ty1 * ... * tyn) *)
+    val appPrec		= 5	(* type application (tyseq tycon) *)
+    val atomPrec	= 6
+
+    fun parenPrec p (p',doc) =
+	if p > p' then
+	    paren doc
+	else
+	    doc
+
+
+  (* Constraints *)
+
+    fun ppConstraint Unconstrained      = empty
+      | ppConstraint Intensional        = text "[...]"
+      | ppConstraint(Extensional(p,ps)) = brack(ppCommaList PPPath.ppPath(p::ps))
+
+
+  (* Variables *)
+
+    fun ppVar'(isBound,n,a) =
+	let
+	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
+	    val i = n div 26
+	    val k = kindVar a
+	in
+	    text(if isEqKind k then "'" else "") ^^
+	    text "'" ^^
+	    text(if isBound then "" else "_") ^^
+	    text c ^^ (if i = 0 then empty else text(Int.toString i)) ^^
+	    (if isExtKind k then text "_ext" else empty) ^^
+	    ppConstraint(constraintVar a)
+ 	end
+
+    fun ppVar(n,a) = ppVar'(true,n,a)
+
+
+  (* Types *)
+
+    fun ppTyp t = ppTyp'([], 0, ref 0, Map.map(), rootPrec, t)
+    and ppTyp'(ps,i,j,m,prec,t) =
+	let
+	    val t' = canonical t
+	in
+	    case Map.lookup(m,t')
+	      of SOME doc => doc
+	       | NONE     => let val doc = ppTyp''(ps,i,j,m,prec,t) in
+				 Map.insert(m,t',doc) ; doc
+			     end
+	end
+    and ppTyp''(ps,i,j,m,prec,t) =
+	if isAbbrev t then
+	    let
+		val (t1,t2) = asAbbrev t
+	    in
+		ppTyp'(ps,i,j,m, prec, if debug then t2 else t1)
+(*DEBUG
+		parenPrec prec (asPrec,
+		    fbox(
+			ppTyp'(ps, i, j, m, asPrec+1, t1) ^^
+			text " as" ^/^
+			ppTyp'(ps, i, j, m, asPrec+1, t2)
+		    )
+		)
+*)
+	    end
+	else case inspect t
+	 of Unknown c =>
+	    let
+		val k   = kind t
+		val doc = text((if isEqKind k then "''" else "'") ^
+				Int.toString(holeIndex t))
+			  ^^ ppConstraint c
+	    in
+		ppAnn(ps,i,j,m,prec,doc,k)
+	    end
+	  | Var a =>			(* unbound! *)
+	    let
+		val k   = kindVar a
+		val doc = ppVar'(false,!j,a)
+	    in
+		j := !j+1;
+		ppAnn(ps,i+1,j,m,prec,doc,k)
+	    end
+	  | Con p =>
+		PPPath.ppPath' ps p
+	  | Arrow _ =>
+	    let
+		val (ts,t') = unarrow t
+		val  prec'  = arrowPrec + 1
+		val  docs   = List.map (fn t => ppTyp'(ps,i,j,m,prec',t)) ts
+	    in
+		parenPrec prec (arrowPrec,
+		    fbox(below(nest(
+			List.foldr
+			    (fn(doc1,doc2) => doc1 ^^ text " ->" ^/^ doc2)
+			    (ppTyp'(ps,i,j,m,prec',t')) docs
+		    )))
+		)
+	    end
+	  | Prod r =>
+	    if isTupleRow r then
+		case asTupleRow r
+		 of #[] =>
+			text "unit"
+		  | #[t] =>
+			brace(
+			    ppField(":", ps,i,j,m,annPrec+1, Label.fromInt 1, t)
+			)
+		  | ts =>
+			parenPrec prec (starPrec,
+			    fbox(below(nest(
+				ppStarList (fn t => ppTyp'(ps,i,j,m,starPrec+1,t))
+					   (Vector.toList ts)
+			    )))
+			)
+	    else
+		brace(
+		    fbox(below(
+			ppRow(",", " :", ps, i, j, m, annPrec+1, r, [])
+		    ))
+		)
+	  | Sum r =>
+		if debug then text "..." else
+		parenPrec prec (ofPrec,
+		    fbox(below(
+			ppRow(" |", " of", ps, i, j, m, ofPrec+1, r, [])
+		    ))
+		)
+	  | All(a,t') =>
+		if debug then ppBind("forall",ps,i,j,m,prec,a,t') else
+		(Map.insert(m, canonical(var a), ppVar'(true,i,a));
+		 ppTyp'(ps,i+1,j,m,prec,t'))
+	  | Exist(a,t') =>
+		ppBind("exist",ps,i,j,m,prec,a,t')
+	  | Lambda(a,t') =>
+		ppBind("fn",ps,i,j,m,prec,a,t')
+	  | Apply(t1,t2) =>
+	    let
+		val (t',ts) = unapply t
+	    in
+		parenPrec prec (appPrec,
+		    fbox(below(nest(
+			ppSeqPrec (fn prec => fn t => ppTyp'(ps,i,j,m,prec,t))
+		    		  appPrec ts ^/^
+			ppTyp'(ps, i, j, m, appPrec+1, t')
+		    )))
+		)
+	    end
+	  | Mu t' =>
+	    if debug then text "datatype" else
+	    let
+		val k   = kind t'
+		val doc = ppVar'(true, i, newVar(k, Unconstrained))
+	    in
+		Map.insert(m, canonical t, doc);
+		parenPrec prec (bindPrec,
+		    fbox(
+			text "rec" ^/^
+			ppAnn(ps,i,j,m,rootPrec,doc,k) ^^
+			text " =>" ^/^
+			ppTyp'(ps,i+1,j,m,bindPrec,t')
+		    )
+		)
+	    end
+
+    and ppBind(head,ps,i,j,m,prec,a,t) =
+	let
+	    val k   = kindVar a
+	    val doc = ppVar'(true,i,a)
+	in
+	    Map.insert(m, canonical(var a), doc);
+	    parenPrec prec (bindPrec,
+		fbox(
+		    text head ^/^
+		    ppAnn(ps,i,j,m,rootPrec,doc,k) ^^
+		    text " =>" ^/^
+		    ppTyp'(ps,i+1,j,m,bindPrec,t)
+		)
+	    )
+	end
+
+    and ppRow(sep,ann,ps,i,j,m,prec,r,ls) =
+	case inspectRow r
+	 of UnknownRow ls' =>
+	    let
+		fun filterLabs(l::ls, l'::ls') =
+		    (case Label.compare(l,l')
+		       of EQUAL   => filterLabs(ls, ls')
+			| LESS    => raise Type.Row
+			| GREATER => l'::filterLabs(l::ls, ls'))
+		  | filterLabs(_, ls') = ls'
+	    in
+		case filterLabs(List.rev ls, ls')
+		  of [] => text "..."
+		   | ls => text "..." ^/^ ppCommaList ppMLab ls
+	    end
+	  | EmptyRow		=> empty
+	  | FieldRow(l,t,r')	=>
+	    let
+		val doc1 = ppField(ann,ps,i,j,m,prec,l,t)
+		val doc2 = ppRow(sep,ann,ps,i,j,m,prec,r',l::ls)
+	    in
+		if isEmpty doc2
+		then doc1
+		else doc1 ^^ text sep ^/^ doc2
+	    end
+
+    and ppField(ann,ps,i,j,m,prec,l,t) =
+	case unarg t
+	 of NONE    => ppLab l
+	  | SOME t' =>
+	    fbox(below(nest(
+		ppLab l ^^
+		text ann ^/^
+		ppTyp'(ps,i,j,m,prec,t')
+	    )))
+
+
+  (* Kinds *)
+
+    and ppKind  k                = ppKind'([], 0, ref 0, Map.map(), rootPrec, k)
+    and ppKind'(ps,i,j,m,prec,k) =
+	case inspectKind k
+	 of StarKind =>
+		text "#"
+	  | ExtKind =>
+		text "#+"
+	  | EqKind k' =>
+		ppKind'(ps,i,j,m,atomPrec,k') ^^ text "="
+	  | ArrowKind _ =>
+	    let
+		val (ks,k') = unarrowKind k
+		val  prec'  = arrowPrec + 1
+		val  docs   = List.map (fn k => ppKind'(ps,i,j,m,prec',k)) ks
+	    in
+		parenPrec prec (arrowPrec,
+		    fbox(below(nest(
+			List.foldr
+			    (fn(doc1,doc2) => doc1 ^^ text " ->" ^/^ doc2)
+			    (ppKind'(ps,i,j,m,prec',k')) docs
+		    )))
+		)
+	    end
+	  | SingKind t =>
+	        text "<" ^^
+		ppTyp'(ps, i, j, m, rootPrec, t) ^^
+		text ">"
+
+    and ppAnn(ps,i,j,m,prec,doc,k) =
+	case Type.inspectKind k
+	 of (Type.StarKind | Type.ExtKind) =>
+		doc
+	  | Type.EqKind k' =>
+		ppAnn(ps,i,j,m,prec,doc,k')
+	  | Type.ArrowKind _ =>
+		parenPrec prec (annPrec,
+		    abox(below(nest(
+			doc ^^ text " :" ^/^
+			ppKind'(ps,i,j,m,rootPrec,k)
+		    )))
+		)
+	  | Type.SingKind t =>
+		parenPrec prec (annPrec,
+		    abox(below(nest(
+			doc ^^ text " =" ^/^
+			ppTyp'(ps,i,j,m,rootPrec,t)
+		    )))
+		)
+
+  (* External view *)
+
+    val ppTyp' = fn(ps,i,m) => fn t => ppTyp'(ps,i,ref 0,m,rootPrec,t)
+end

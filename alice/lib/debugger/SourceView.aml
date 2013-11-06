@@ -1,0 +1,55 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature VIEW   from "VIEW-sig"
+import structure Model  from "Model"
+import structure Socket from "../../lib/system/Socket"
+import structure TextIO from "../../lib/system/TextIO"
+
+structure SourceView :> VIEW =
+    struct
+	type view = Socket.socket list ref * Model.model ref
+	
+	fun new () =
+	    let
+		val socketList = ref nil
+		fun serve (socket, host, port) =
+		    if List.exists (fn s => s = socket) (!socketList)
+			then ()
+		    else socketList := socket :: (!socketList)
+		val (serversocket, port) = Socket.server(SOME 5555, serve)
+		val _ = TextIO.print ("Server Port: " ^ (Int.toString port))
+	    in
+		(socketList, ref (Model.new()))
+	    end
+	fun update (view as (sockets, model)) thread =
+	    let 
+		val (file, line, column) = 
+		    Model.getCurrentposition(!model, thread)
+		(* remove file: from filename *)
+		fun removePrefix s1 s2 =
+		    if String.isPrefix s1 s2 
+			then String.extract(s2, String.size s1, NONE)
+		    else s2
+		val _ = if file = "" then [] 
+			else List.map (fn s => Socket.output(s,
+			      (removePrefix "file:" file) ^ "," ^
+			      Int.toString line ^ "," ^
+			      Int.toString column)) (!sockets)
+	    in
+		()
+	    end handle Unknown_Thread => ()
+	    
+	fun initialize(view as (_, modelRef), model) =
+	    (Model.addView(model, update view);
+	     modelRef := model)
+    end

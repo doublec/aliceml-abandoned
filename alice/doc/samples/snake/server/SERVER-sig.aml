@@ -1,0 +1,21 @@
+(* Alice Snake 2.0 - Server
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+import structure Remote   from "x-alice:/lib/distribution/Remote"
+import structure Protocol from "../common/Protocol"
+
+signature SERVER =
+sig
+
+    val startServer: Protocol.client_interface * Protocol.config -> 
+                        Remote.ticket * Protocol.server_interface
+    (** POST: isSome (#startGame server_interface) *)
+
+end

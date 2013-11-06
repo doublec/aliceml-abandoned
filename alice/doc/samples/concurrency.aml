@@ -1,0 +1,36 @@
+import structure Stream from "x-alice:/lib/data/Stream"
+
+val nThreads = 500
+val n = valOf(Int.fromString(List.hd(CommandLine.arguments())))
+val final = nThreads * n
+
+fun incrementer next =
+    let
+	val (messageStream, messageList) = Stream.stream()
+
+	fun loop(j::js, s) =
+	    case next of
+		  SOME take => (take j; loop(js, 0))
+		| NONE =>
+		  let
+		      val sum = s + j
+		  in
+		      if sum < final
+		      then loop(js, sum)
+		      else (print(Int.toString sum ^ "\n");
+			    OS.Process.exit OS.Process.success)
+		  end
+
+	fun take j = Stream.send(messageStream, j+1)
+   in
+	spawn loop(messageList, 0);
+	SOME take
+   end
+
+fun threadChain(0, next) = next
+  | threadChain(n, next) = threadChain(n-1, incrementer next)
+
+val firstThread = threadChain(nThreads, NONE)
+
+fun loop(0,f,x) = () | loop(n,f,x) = (f x; loop(n-1,f,x))
+val _ = loop(n, valOf firstThread , 0)

@@ -1,0 +1,11 @@
+autom4te.cache
+config.cache
+config.log
+config.status
+configure
+Makefile
+gtkraw.c gtkheader.c
+UnsafeGdk.oz UnsafeGtk.oz UnsafeGtkCanvas.oz
+GDK-sig.aml GTK-sig.aml GTK_CANVAS-sig.aml
+autom4te-*.cache
+*.ozf

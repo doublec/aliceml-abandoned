@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkBatchCompiler   from "MkBatchCompiler"
+import structure RecursiveCompiler from "RecursiveCompiler"
+
+structure SMLToSeamBatchCompiler =
+    MkBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
+		    val executableHeader =
+			"#!/bin/sh\nexec alicerun $0 \"$@\"\n"
+		    val extension = "alc")

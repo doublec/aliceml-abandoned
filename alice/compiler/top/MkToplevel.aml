@@ -1,0 +1,318 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Foreign              from "../../lib/system/Foreign"
+import structure TextIO               from "../../lib/system/TextIO"
+import structure IO                   from "../../lib/system/IO"
+import structure OS                   from "../../lib/system/OS"
+import structure Url                  from "../../lib/system/Url"
+import structure Signal               from "../../lib/system/Signal"
+
+import structure Reflect              from "../../lib/system/Reflect"
+import structure Component            from "../../lib/system/Component"
+import structure PPComponent          from "../../lib/system/PPComponent"
+import structure PPMismatch           from "../../lib/rtt/PPMismatch"
+import structure PrettyPrint          from "../../lib/utility/PrettyPrint"
+
+import structure Target               from "../infrastructure/Target"
+import structure MkOptionParser       from "MkOptionParser"
+import signature RECURSIVE_COMPILER'  from "RECURSIVE_COMPILER-sig"
+import signature INTERACTIVE_TOPLEVEL from "INTERACTIVE_TOPLEVEL-sig"
+
+functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER') :
+    INTERACTIVE_TOPLEVEL =
+struct
+    structure Switches = RecursiveCompiler.Switches
+    structure OptionParser = MkOptionParser Switches
+
+    fun usage fail = TextIO.output(if fail then
+                                       TextIO.stdErr
+                                   else TextIO.stdOut,
+                                   "Usage: alice [options]\n" ^
+				   OptionParser.helpText)
+
+    val banner     = OptionParser.banner
+    val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
+    val prompt     = "- "
+    val contPrompt = "  "
+
+    (* Signal handling *)
+
+    datatype 'a term = TERM of 'a
+    fun unTERM (TERM x) = x
+
+    (* Global handler to avoid space leak (we cannot remove them) *)
+    val interrupt = ref NONE : Signal.signal Promise.promise option ref
+
+    fun handler s =
+	(case Ref.exchange (interrupt, NONE) of
+	     NONE => ()
+	   | SOME p => Promise.fulfill (p, s) handle Promise.Promise => ();
+	 Signal.register (s, handler))
+         (* Signal handlers are currently auto-removed after triggering *)
+    val _ = Signal.register (Signal.SIGINT, handler)
+    val _ = Signal.register (Signal.SIGSTOP, handler)
+
+    fun run ((thread, result), stoppable) =
+	let
+	    val p = Promise.promise ()
+	in
+	    interrupt := SOME p;
+	    case Future.awaitEither (result, Promise.future p) of
+		FST (TERM x) => SOME x (* raises if f raised exn *)
+	      | SND Signal.SIGSTOP if stoppable => SOME (spawn unTERM result)
+	      | SND Signal.SIGINT =>
+		(Thread.terminate thread handle Thread.Terminated => (); NONE)
+	      | SND _ => run ((thread, result), stoppable)
+	end
+
+    fun interruptable f = run (Thread.spawnThread (TERM o f), false)
+    fun stoppableInterruptable f = run (Thread.spawnThread (TERM o f), true)
+
+
+    (* Use *)
+
+    val useFiles: string list ref = ref nil
+
+    fun use filename =
+	let
+	    val new = Hole.hole ()
+	    val old = Ref.exchange (useFiles, new)
+	in
+	    Hole.fill (new, old @ [filename])
+	end
+
+    fun readInput () =
+	case readInput' prompt of [] => NONE
+				| ss => SOME(String.concat ss)
+
+    and readInput' prompt =
+	(TextIO.print prompt;
+	 case TextIO.inputLine(TextIO.stdIn)
+	  of NONE      => []
+	   | SOME "\n" => "\n" :: readInput' contPrompt
+	   | SOME line => if String.sub(line, String.size line - 2) = #";"
+			  then [line]
+			  else line :: readInput' contPrompt
+	)
+
+    fun baseUrl () =
+	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+		       SOME "file")
+
+    fun eval compile (printSig, source, context) =
+	Foreign.catch (fn _ => eval' compile (printSig, source, context),
+		       fn e =>
+			  (TextIO.output (TextIO.stdErr, Foreign.exnMessage e);
+			   SOME context))
+    and eval' compile (printSig, source, context) =
+	(case stoppableInterruptable (fn _ => compile (context, source)) of
+	     NONE => NONE
+	   | SOME contextTarget =>
+	     let
+		 val stopped = Future.isFuture contextTarget
+		 val (context', target) = contextTarget
+	     in
+		 case target of
+		     Target.COMPONENT {eval, component, ...} =>
+		     let
+			 val _ = if !Switches.Debug.dumpPhases then
+				     (TextIO.output (Switches.Debug.dumpOut,
+						     "-- Evaluation...\n");
+				      TextIO.flushOut Switches.Debug.dumpOut)
+				 else ()
+			 val result = if stopped then
+					  SOME (spawn eval (baseUrl ()))
+				      else
+					  stoppableInterruptable (eval o baseUrl)
+		     in
+			 case result of
+			     NONE => NONE (* interrupted *)
+			   | SOME package => (* completed or stopped *)
+			     if not printSig then SOME context' else
+			     interruptable
+			     (fn _ =>
+			      let
+				  val (str, inf) =
+				      if Future.isFuture package then
+					  (lazy #1 (Reflect.reflectPackage package),
+					   valOf (Component.inf (component ())))
+				      else
+					  Reflect.reflectPackage package
+				  val doc = PPComponent.ppComp (str, inf)
+			      in
+				  PrettyPrint.output(TextIO.stdOut, doc, 79);
+				  TextIO.print "\n";
+				  context'
+			      end)
+		     end
+		   | Target.FOREIGN _ =>
+			 raise RecursiveCompiler.Crash
+			     "Toplevel.eval: cross-compilation not supported"
+	     end)
+	handle RecursiveCompiler.Error => SOME context
+	     | RecursiveCompiler.Crash s =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal failure at " ^ s ^ "\n");
+		    SOME context)   (*--** is this cool or what? *)
+	     | Component.Failure (url, Component.Eval (Assert (file, line))) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "assertion failure at " ^
+				   file ^ ":" ^ Int.toString line ^ "\n");
+		    SOME context)
+	     | Component.Failure (url, Component.Eval exn) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "uncaught exception " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toStringRaw url)
+				    then "\n"
+				    else " while evaluating \"" ^
+					 Url.toStringRaw url ^ "\"\n"));
+		    SOME context)
+	     | Component.Failure (_, Component.Mismatch
+				     {component, request, cause}) =>
+	       let
+		   val s = "failure type-checking \"" ^
+			   Url.toStringRaw component ^ "\"" ^
+			   (case request of
+				NONE => "\n"
+			      | SOME url => "\nas requested by \"" ^
+					    Url.toStringRaw url ^ "\":")
+	       in
+		   PrettyPrint.output
+		   (TextIO.stdErr,
+		    PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
+		    79);
+		    TextIO.output (TextIO.stdErr, "\n");
+		   SOME context
+	       end
+	     | Component.Failure (url, IO.Io _) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "failure loading \"" ^
+				   Url.toStringRaw url ^ "\"\n");
+		    SOME context)
+	     | Component.Failure (url, Component.Internal exn) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal exception " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toStringRaw url)
+				    then "\n"
+				    else " while linking \"" ^
+					 Url.toStringRaw url ^ "\"\n"));
+		    SOME context)
+	     | Component.Failure (url, exn) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "unknown failure " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toStringRaw url)
+				    then "\n"
+				    else " while linking \"" ^
+					 Url.toStringRaw url ^ "\"\n"));
+		    SOME context)
+	     | Assert (file, line) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal assertion failure at " ^
+				   file ^ ":" ^ Int.toString line ^ "\n");
+		    SOME context)   (*--** is this cool or what? *)
+	     | exn =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal exception " ^
+				   General.exnName exn ^ "\n");
+		    SOME context)   (*--** is this cool or what? *)
+
+    val evalString = eval RecursiveCompiler.compileString
+    val evalFile   = eval RecursiveCompiler.compileFile
+
+    fun loop context =
+	case interruptable readInput
+	 of NONE => (TextIO.print "\ninterrupted\n"; loop context)
+	  | SOME NONE => TextIO.print ("\n" ^ bye)
+	  | SOME (SOME source) =>
+	case evalString (true, source, context)
+	 of NONE => (TextIO.print "interrupted\n"; loop context)
+	  | SOME context => loopUses context
+
+    and loopUses context =
+	let
+	    val new = Hole.hole ()
+	    val old = Ref.exchange (useFiles, new)
+	in
+	    case old of
+		filename::rest =>
+		    (Hole.fill (new, rest);
+		     case evalFile (true, filename, context)
+		       of SOME context' => loopUses context'
+		        | NONE => (TextIO.print "\ninterrupted\n";
+				   useFiles := nil;
+				   loop context))
+	      | nil =>
+		    (Hole.fill (new, nil);
+		     loop context)
+	end
+
+    fun main'(("--help"|"-h"|"-?")::_) = (usage false; OS.Process.success)
+      | main'("--version"::_) =
+	(TextIO.output (TextIO.stdOut, "alice "^OptionParser.version ^ "\n\n");
+         TextIO.output (TextIO.stdOut, OptionParser.copyright ^ "\n");
+         OS.Process.success)
+      | main'(_::_) = (usage true; OS.Process.failure)
+      | main' nil =
+	let
+	    open RecursiveCompiler.Switches
+	in
+	    TextIO.print banner;
+	    Language.unsafeImport := true;
+	    case evalString (false, "", RecursiveCompiler.Context.empty) of
+	         NONE => 
+		    (TextIO.output (TextIO.stdErr,
+				    "alice: could not initialise environment\n");
+		     OS.Process.failure)
+	       | SOME context =>
+		    (Language.implicitImportFile := NONE;
+		     Language.unsafeImport := false;
+		     loop context;
+		     OS.Process.success)
+	end
+
+    fun defaults () = (* override defaults from MkSwitches here *)
+	let
+	    open RecursiveCompiler.Switches
+	in
+	    Language.implicitImportFile := SOME "x-alice:/alicec.import";
+	    Warn.inaccessibleExport := false
+	end
+
+    fun main arguments =
+	if RecursiveCompiler.isCrossCompiler then
+	    (TextIO.output (TextIO.stdErr,
+			    "alice: cross-compilation not supported by \
+			    \interactive toplevel\n");
+	     OS.Process.failure)
+	else
+	    let
+		open RecursiveCompiler.Switches
+	    in
+		defaults ();
+		Debug.dumpPhases := false;
+		Language.allowUnclosedComponents := true;
+		Language.reexportImport := true;
+		Language.retainFullImport := true;
+		Global.traceComponentAccess := true;
+                main' (OptionParser.parse arguments)
+	    end
+	    handle exn =>
+		(TextIO.output(TextIO.stdErr,
+			       "alice: uncaught internal exception " ^
+			       General.exnName exn ^ "\n");
+		 OS.Process.failure)
+end

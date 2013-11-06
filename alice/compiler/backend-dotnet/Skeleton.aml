@@ -1,0 +1,37 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO   from "../../lib/system/TextIO"
+import structure Config   from "../../lib/system/Config"
+import signature SKELETON from "SKELETON-sig"
+
+structure Skeleton :> SKELETON =
+    struct
+	fun module name =
+	    ".module '" ^ name ^ "'\n\
+	    \.assembly '" ^ name ^ "'\n\
+	    \{\n\
+	    \  .hash algorithm 0x0008004\n\
+	    \  .ver 0:0:0:0\n\
+	    \}\n"
+
+	fun readFile filename =
+	    let
+		val file   = TextIO.openIn filename
+		val source = TextIO.inputAll file
+		val _      = TextIO.closeIn file
+	    in
+		source
+	    end
+
+	fun externals () = readFile (Config.homeDir () ^ "/" ^ "Skeleton.il")
+    end

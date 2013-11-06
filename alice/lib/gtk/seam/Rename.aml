@@ -1,0 +1,36 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature RENAME =
+sig
+    val renameFun :     string -> string
+    val renameField :   string -> string
+end
+
+structure Rename =
+struct
+    val renameTable = [
+        (* raise is a keyword we rename lower just for consistency purposes *)
+        ("lower", "lowerWindow"),
+        ("raise", "raiseWindow"),
+        ("open", "openDisplay"),
+        ("ref",  "reference"),
+        ("type", "ty")
+    ]
+
+    fun renameFun name =
+        case List.find (fn (k, _) => k = name) renameTable of
+            SOME (_, v) => v
+          | NONE        => name
+
+    val renameField = renameFun
+end

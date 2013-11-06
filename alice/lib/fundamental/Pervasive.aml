@@ -1,0 +1,304 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(* For the compiler to work properly, __pervasive must contain at least
+ * the following: (**)
+
+    structure __pervasive :
+    sig
+	(* to encode datatypes: *)
+	__eqeqtype 'a ref
+	eqtype 'a strict
+	type 'a conarrow
+
+	(* to enable derived forms: *)
+	exttype exn
+	datatype 'a list = nil | :: of 'a * 'a list
+    end
+
+(* With RTT enabled it also needs to have: *)
+
+    structure __pervasive :
+    sig
+	... as above ...
+
+	(* to encode runtime types: *)
+	structure RTT :
+	sig
+	    structure Label :		LABEL'
+	    structure Path :		PATH'
+	    structure Type :		TYPE'
+	    structure Fixity :		FIXITY'
+	    structure Inf :		INF'
+	    structure PervasiveType :	PERVASIVE_TYPE'
+	    structure DynMatch :	DYN_MATCH'
+	end
+    end
+
+ *)
+
+(* Step 1: Type lib *)
+import structure __pervasive from "RTT"
+
+local
+	(* Define RTT signature *)
+	structure __pervasive =
+	struct
+	    open __pervasive
+
+	    __primitive exttype exn      = "exn"
+	    __primitive type 'a ref      = "ref"
+	    __primitive eqtype 'a strict = "strict"
+	    __primitive type 'a conarrow = "conarrow"
+	end
+	__primitive type int    = "int"
+	__primitive type string = "string"
+	__primitive type 'a vector = "vector"
+	type unit = {}
+	datatype 'a list = nil | op:: of 'a * 'a list
+	signature RTT =
+	sig
+	    structure Label :
+	    sig
+		type lab
+
+		val fromString :	string -> lab
+	    end
+
+	    structure Path :
+	    sig
+		type path
+
+		val invent :		unit    -> path
+		val pervasive :		string  -> path
+		val fromLab :		Label.lab -> path
+		val fromString :	string  -> path
+	    end
+
+	    structure Type :
+	    sig
+		type var
+		type typ
+		type row
+		type kind
+		type constraint
+
+		val Unconstrained :	constraint
+		val Intensional :	constraint
+		val Extensional :	Path.path * Path.path list -> constraint
+
+		val starKind :		unit -> kind
+		val extKind :		unit -> kind
+		val singKind :		typ -> kind
+		val eqKind :		kind -> kind
+		val arrowKind :		kind * kind -> kind
+
+		val unknown :		kind -> typ
+		val var :		var -> typ
+		val con :		Path.path * kind -> typ
+		val arrow :		typ * typ -> typ
+		val tuple :		typ vector -> typ
+		val prod :		row -> typ
+		val sum :		row -> typ
+		val all :		var * typ -> typ
+		val exist :		var * typ -> typ
+		val lambda :		var * typ -> typ
+		val apply :		typ * typ -> typ
+		val abbrev :		typ * typ -> typ
+
+		val newVar :		kind * constraint -> var
+		val kind :		typ -> kind
+
+		val unknownRow :	unit -> row
+		val emptyRow :		unit -> row
+		val extendRow :		Label.lab * typ * row -> row
+
+		val fix :		(typ * typ) vector -> unit
+
+		val asProd :		typ -> row
+	    end
+
+	    structure Fixity :
+	    sig
+		type fix
+		type assoc
+
+		val LEFT :		assoc
+		val RIGHT :		assoc
+		val NEITHER :		assoc
+		val NONFIX :		fix
+		val PREFIX :		int -> fix
+		val POSTFIX :		int -> fix
+		val INFIX :		int * assoc -> fix
+	    end
+
+	    structure Inf :
+	    sig
+		type mod
+		type inf
+		type sign
+		type kind
+		type rea
+
+		val emptySig :		unit -> sign
+		val extendFix :		sign * Label.lab * Fixity.fix -> unit
+		val extendVal :		sign * Label.lab * Type.typ -> unit
+		val extendTyp :		sign * Path.path * Type.kind -> unit
+		val extendMod :		sign * Path.path * inf -> unit
+		val extendInf :		sign * Path.path * kind -> unit
+
+		val lookupMod :		sign * Label.lab -> inf
+		val lookupTyp' :	sign * Label.lab -> Type.typ
+		val lookupInf' :	sign * Label.lab -> inf
+
+		val mod :		Path.path * inf -> mod
+		val top :		unit -> inf
+		val con :		Path.path * kind -> inf
+		val sign :		sign -> inf
+		val arrow :		Path.path * inf * inf -> inf
+		val sing :		mod -> inf
+		val lambda :		Path.path * inf * inf -> inf
+		val apply :		inf * mod -> inf
+
+		val asSig :		inf -> sign
+		val asArrow :		inf -> Path.path * inf * inf
+
+		val groundKind :	unit -> kind
+		val depKind :		Path.path * inf * kind -> kind
+		val singKind :		inf -> kind
+
+		val kind :		inf -> kind
+		val instance :		Path.path * inf -> inf * rea
+		val match :		inf * inf -> rea
+		val infimum :		inf * inf -> inf
+
+		type mismatch
+		exception Mismatch of mismatch
+	    end
+
+	    structure PervasiveType :
+	    sig
+		val lookup :		string -> Type.typ
+	    end
+
+	    structure DynMatch :
+	    sig
+		type module
+		val match :		module * Inf.inf -> Inf.rea
+		val matchWith :		Inf.rea * module * Inf.inf -> unit
+		val strengthen :	module * Inf.inf -> Inf.inf
+		val strengthenWith :	Inf.rea * module * Inf.inf -> Inf.inf
+		val thin :		module * Inf.inf -> module
+		val seal :		module * Inf.inf -> module
+		val unpackMatch :	module * Inf.inf * Inf.inf -> module
+	    end
+	end
+
+
+    (* Step 2: Hide rtt types to prevent transitive imports *)
+    __primitive functor Cast (structure X : RTT signature S) : S = "Cast"
+    __primitive type lab	= "RTT.lab"
+    __primitive type path	= "RTT.path"
+    __primitive type var	= "RTT.var"
+    __primitive type typ	= "RTT.typ"
+    __primitive type row	= "RTT.row"
+    __primitive type tkind	= "RTT.tkind"
+    __primitive type constraint	= "RTT.constraint"
+    __primitive type fix	= "RTT.fix"
+    __primitive type assoc	= "RTT.assoc"
+    __primitive type mod	= "RTT.mod"
+    __primitive type inf	= "RTT.inf"
+    __primitive type sign	= "RTT.sign"
+    __primitive type kind	= "RTT.kind"
+    __primitive type rea	= "RTT.rea"
+    __primitive type mismatch	= "RTT.mismatch"
+    __primitive type module	= "RTT.module"
+
+    structure __pervasive =
+    struct
+	structure RTT = Cast (
+	    structure X = __pervasive.RTT
+	    signature S = RTT
+		where type Label.lab	= lab
+		  and type Path.path	= path
+		  and type Type.var	= var
+		  and type Type.typ	= typ
+		  and type Type.row	= row
+		  and type Type.kind	= tkind
+		  and type Type.constraint = constraint
+		  and type Fixity.fix	= fix
+		  and type Fixity.assoc	= assoc
+		  and type Inf.mod	= mod
+		  and type Inf.inf	= inf
+		  and type Inf.sign	= sign
+		  and type Inf.kind	= kind
+		  and type Inf.rea	= rea
+		  and type Inf.mismatch	= mismatch
+		  and type DynMatch.module = module
+	)
+    end
+
+    (* Step 3: Redefine primitive types encoding datatypes
+     *         (accesses re-typed type lib). *)
+    structure __pervasive =
+    struct
+	open __pervasive
+
+	__primitive exttype exn      = "exn"
+	__primitive type 'a ref      = "ref"
+	__primitive eqtype 'a strict = "strict"
+	__primitive type 'a conarrow = "conarrow"
+    end
+
+    __primitive type int    = "int"
+    __primitive type string = "string"
+(*
+    signature PERVASIVE =
+    sig
+	type exn = __pervasive.exn
+	type ref = __pervasive.ref
+	type strict = __pervasive.strict
+	type conarrow = __pervasive.conarrow
+	datatype bool    = false | true
+	datatype 'a list = nil | op:: of 'a * 'a list
+	exception Assert of string * int
+	structure RTT : RTT = __pervasive.RTT
+    end
+*)
+in
+    (* Step 4: Extend with actual content
+     *         (requires type lib and datatype encoding) *)
+    structure __pervasive (*:> PERVASIVE*) =
+    struct
+	open __pervasive
+
+	datatype bool      = false | true
+	datatype 'a list   = nil | op:: of 'a * 'a list
+	datatype 'a option = NONE | SOME of 'a
+	__primitive exception Assert of string * int = "General.Assert"
+    end
+end (* local *)
+
+structure Int		= struct __primitive eqtype int	   = "int"    end
+structure Word31	= struct __primitive eqtype word   = "word"   end
+structure Word32	= struct __primitive eqtype word   = "''Word32.word" end
+structure Real		= struct __primitive eqtype real   = "real"   end
+structure Char		= struct __primitive eqtype char   = "char"   end
+structure String	= struct __primitive eqtype string = "string" end
+structure IntInf	= struct __primitive eqtype int    = "''IntInf.int" end
+structure LargeInt	= IntInf
+structure Word          = Word31
+structure LargeWord	= Word32
+structure LargeReal	= Real
+structure WideChar	= Char
+structure WideString 	= String

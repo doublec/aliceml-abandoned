@@ -1,0 +1,3 @@
+import "linker/Main"
+
+Future.await Main.main

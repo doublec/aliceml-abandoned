@@ -1,0 +1,56 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Modeling
+
+exception FalseInput
+
+fun steiner n space  = 
+   if ((n mod 6) = 1) orelse ((n mod 6) = 3)
+   then
+    let 
+       val n' = (n *(n - 1)) div 6
+       val ss = List.tabulate(n',(fn x => 
+                  FS.upperBound(space,#[(1,n)])))
+       fun intersect(space,[y])= ()
+         | intersect(space,y::ys)= (List.app(fn x =>
+              let 
+                 val tmp = FS.setvar space
+              in       
+                (FS.relOp(space,y,FS.INTER,x,FS.SEQ,tmp);
+                 FS.cardRange(space,0,1,tmp))
+             end)
+                (ys);intersect(space,ys))
+    in
+       List.app(fn x => FS.cardRange(space,3,3,x))ss;
+       intersect(space,ss);
+       let 
+          val n1 = n + 1
+          val n1n1 = n1 * n1
+          val ivarlist = List.map(fn x => 
+              let 
+                 val tmp = FD.rangeVec(space,3,(1,n))
+              in
+                (FS.match(space,x,tmp);Vector.toList tmp)
+             end)(ss)
+          fun redundantconstr(s,[y]) = ()
+            | redundantconstr(space,y as [y1,y2,y3]::ys)= 
+              (List.map(fn x as [x1,x2,x3] =>
+                post(space,`n1n1 `* FD(y1) `+ `n1 `* FD(y2) `+
+                            FD(y3) `< `n1n1 `* FD(x1) `+ `n1 `* 
+                            FD(x2) `+ FD(x3),FD.DOM))(ys);
+               redundantconstr(space,ys))
+       in
+          redundantconstr(space,ivarlist)
+       end;
+       FS.setvarbranch(space,Vector.fromList ss,
+                             FS.FSB_NONE,FS.FSB_MIN);    
+       ss
+    end
+    else                 
+     raise FalseInput   
+           
+(* Explorer.exploreOne(steiner 9) *)      

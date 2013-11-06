@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stream from "Stream"
+import structure Model from "Model"
+import structure Debugger from "../../lib/system/Debugger"
+
+signature EVENTLISTENER = 
+    sig
+	type eventlistener
+
+	val new         : (Model.event Stream.stream) -> eventlistener
+	val update      : eventlistener -> unit -> unit
+	val addModel    : (Model.event -> unit) * eventlistener -> unit
+
+    end

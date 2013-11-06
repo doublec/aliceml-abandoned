@@ -1,0 +1,155 @@
+open AbsSyn
+
+
+
+%%
+
+%header (functor MkLrVals (structure Token:         TOKEN)
+        )
+
+%name Parser
+
+%eop EOF
+
+%term     EOF 
+  | ID of string
+  | INT of int | REAL of real | STRING of string 
+  | COMMA | COLON | DOT | LPAR | RPAR | LBRACK | RBRACK
+  | LBRACE | RBRACE
+  | EQ | AND | OF | AS 
+  | DRARROW | BAR
+
+(* jacke extensions *)
+  | TOKEN | ASSOCL | ASSOCR | NONASSOC | RULE | PARSER | PREC | SKIP
+
+(* others *)
+  | MLKEY of string | MLTOK of string
+
+
+%nonterm  start of parsetreeWithPos list
+	| program of parsetreeWithPos list
+	| jackedec' of parsetreeWithPos list
+	| jackedec of parsetreeWithPos
+	| explist of atexp list
+	| atexp of atexp
+        | typeid of string
+	| tokbinds of (string * string option) list 
+	| tokbind of string * string option 
+	| idlist of string list
+	| rulebinds of Prule list
+        | rulebind of Prule 
+	| parsbinds of (string * string option * string) list 
+	| parsbind of string * string option * string 
+	| bnfexp of bnfexpWithPos 
+
+%pos int
+%eop EOF
+%noshift EOF
+%nodefault
+
+(* precedence annotations *)
+%nonassoc EQ
+%left AND
+%left SKIP
+%left BAR
+%left DRARROW
+%left PREC
+%left COMMA
+%left AS
+
+
+
+%%
+
+
+
+
+
+start	: program	   ( program )
+
+
+program	: explist jackedec'( PMLCode (EXP (explist), explistleft, explistright)
+			     :: jackedec')
+
+        | explist          ( [PMLCode (EXP (explist),
+				       explistleft, explistright)] )
+
+
+jackedec': jackedec jackedec'     ( jackedec :: jackedec' )
+	 | jackedec               ( [jackedec] )
+
+
+jackedec: TOKEN tokbinds  ( PTokenDec (tokbinds, TOKENleft, tokbindsright) )
+        | ASSOCL idlist   ( PAssoclDec (idlist, ASSOCLleft, idlistright) )
+	| ASSOCR idlist   ( PAssocrDec (idlist, ASSOCRleft, idlistright) )
+	| NONASSOC idlist ( PNonassocDec (idlist, NONASSOCleft, idlistright) )
+	| RULE rulebinds  ( PRuleDec (rev rulebinds, RULEleft, rulebindsright) )
+	| PARSER parsbinds( PParserDec (parsbinds, PARSERleft, parsbindsright) )
+	| MLKEY explist   ( PMLCode (EXP (ATEXP (MLKEY) :: explist),
+				     MLKEYleft, explistright) )
+
+
+tokbinds: tokbind              ( [tokbind] )
+	| tokbind BAR tokbinds ( tokbind::tokbinds )
+
+tokbind : ID              ( (ID, NONE) )
+	| ID OF typeid    ( (ID, SOME typeid) )
+
+typeid  : ID              ( ID )
+        | ID DOT typeid   ( ID ^ "." ^ typeid )
+
+idlist  : ID          ( [ID] )
+	| ID idlist   ( ID :: idlist )
+
+rulebinds: rulebind                ( [rulebind] )
+	 | rulebinds AND rulebind  ( rulebind :: rulebinds )
+
+rulebind: ID EQ bnfexp                 ( (ID, NONE, bnfexp) )
+	| ID COLON typeid EQ bnfexp    ( (ID, SOME typeid, bnfexp) )
+
+parsbinds: parsbind                ( [parsbind] )
+	 | parsbinds AND parsbind  ( parsbind :: parsbinds )
+
+parsbind: ID EQ ID                     ( (ID1, NONE, ID2) )
+	| ID COLON typeid EQ ID        ( (ID1, SOME typeid, ID2) )
+
+bnfexp  : SKIP                  ( PSkip )
+	| ID                    ( PSymbol (ID, IDleft, IDright) )
+	| LPAR bnfexp RPAR      ( bnfexp )
+	| ID AS bnfexp          ( PAs (ID, bnfexp, IDleft, bnfexpright) )
+	| bnfexp COMMA bnfexp   ( PSeq ([bnfexp1, bnfexp2],
+					bnfexp1left, bnfexp2right) )
+	| bnfexp PREC ID        ( PPrec (bnfexp, ID, bnfexpleft, IDright) )
+	| bnfexp DRARROW LPAR explist RPAR
+                                ( PTransform (bnfexp, EXP (explist),
+					      bnfexpleft, RPARright) )
+	| bnfexp BAR bnfexp     ( PAlt ([bnfexp1, bnfexp2],
+					bnfexp1left, bnfexp2right) )
+
+
+
+explist	: atexp explist      ( atexp :: explist )
+	| 		     ( [] )
+
+
+
+atexp 	: AND		    ( ATEXP "and" )
+        | OF                ( ATEXP "of" )
+        | AS                ( ATEXP "as" )
+	| EQ		    ( ATEXP "=" )
+	| DRARROW	    ( ATEXP "=>" )
+	| BAR		    ( ATEXP "|" )
+	| LBRACK            ( ATEXP "[" )
+	| RBRACK            ( ATEXP "]" )
+	| COMMA	            ( ATEXP "," )
+        | COLON             ( ATEXP ":" )
+	| LBRACE	    ( ATEXP "{" )
+	| RBRACE	    ( ATEXP "}" )
+        | DOT               ( ATEXP "." )
+	| LPAR explist RPAR ( PAREXP (EXP (explist)) )
+	| INT		    ( ATEXP (Int.toString INT) )
+	| REAL		    ( ATEXP (Real.toString REAL) )
+	| STRING	    ( ATEXP (STRING) )
+	| ID		    ( ATEXP (ID) )
+	| MLTOK		    ( ATEXP (MLTOK) )
+

@@ -1,0 +1,546 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestWord8Vector :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun testMaxLen () =
+	Test.test (fn x => x = (0xfffff0 - 1) * 4) Word8Vector.maxLen
+
+    fun testSub () =
+	let
+	    val testVec = Word8Vector.fromList 
+			      (List.map Word8.fromInt [0,1,2,3,4,5])
+
+	    fun t (v, i) = if i < 0 orelse Word8Vector.length v <= i 
+			       then NONE 
+			   else SOME (List.nth (Word8Vector.toList v, i))
+			       
+	    fun t' x = let
+			   val r = t x
+		       in
+			   Word8Vector.sub x = valOf r
+			    handle Subscript => Option.isNone r
+		       end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8Vector Gen.word8, Gen.int)) 
+	       (Test.test t');
+	    Test.test (fn (x, i) => Word8Vector.sub (x, i) = Word8.fromInt i) 
+		                                                   (testVec, 3)
+	end
+
+    fun testUpdate () = 
+	let
+	    fun t (v, i, x) = 
+		if i < 0 orelse Word8Vector.length v <= i
+		    then NONE 
+		else SOME (Word8Vector.update (v, i, x))
+
+	    fun t' (v, i, x) = let
+				   val v' = t (v, i, x)
+			       in
+				   if Option.isSome v' 
+				       then Word8Vector.sub (valOf v', i) = x
+				   else Word8Vector.sub (v, i) = x
+				    handle Subscript => Option.isNone v'
+			       end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.word8Vector Gen.word8, 
+				      Gen.int, Gen.word8))
+	       (Test.test t')
+	end
+
+    fun testToList () =
+	let
+	    fun t' (v, i, xs) = if i >= Word8Vector.length v
+				  then List.rev xs
+			      else t' (v, i + 1, (Word8Vector.sub (v, i))::xs)
+
+	    fun t v = t' (v, 0, []) = Word8Vector.toList v
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8) (Test.test t)
+	end
+
+    fun testFromList () =
+	let
+	    fun t'' ([]   , v, i) = v
+	      | t'' (x::xs, v, i) = t'' (xs, Word8Vector.update (v, i, x), 
+					 i - 1)
+
+	    val null = Word8.fromInt 0
+	    fun t' xs = let
+			    val size = List.length xs
+			    val null = Word8.fromInt 0
+			in 
+			    if size > Word8Vector.maxLen 
+				then NONE
+			    else SOME (t'' (List.rev xs, 
+					    Word8Vector.fromList (
+					   List.tabulate (size, fn x => null)),
+					    size - 1))
+			end
+			    
+	    fun t xs = let
+			   val r = t' xs
+		       in
+		       Word8Vector.equal Word8.equal (Word8Vector.fromList xs, 
+						      valOf (t' xs))
+			           handle Size => Option.isNone r
+		       end
+
+	    fun h xs = (Word8Vector.fromList xs; true)
+		         handle Size => List.length xs > Word8Vector.maxLen
+	in
+	    Gen.try 100 (Gen.list Gen.word8) 
+	       (Test.test (fn l => h l andalso t l))
+	end
+
+    fun testConcat () =
+	Gen.try 100 (Gen.list (Gen.word8Vector Gen.word8)) 
+	(Test.test (fn xs => List.concat (List.map Word8Vector.toList xs) =
+		             Word8Vector.toList (Word8Vector.concat xs)))
+
+    fun testLength () =
+	Gen.try 1000 (Gen.word8Vector Gen.word8)
+	   (Test.test (fn v => List.length (Word8Vector.toList v) =
+		               Word8Vector.length v))
+	    
+    fun testTabulate () =
+	let (*
+	    val w1 = Word8.fromInt 128
+	    val w2 = Word8.fromInt 128
+	    fun t' x = Word8.fromInt x
+	    val t1 = Word8Vector.toList (Word8Vector.tabulate (142, t'))
+	    val t2 = List.tabulate (142, t')
+	    val b1 = w1 = w2
+	    val b2 = Word8.equal (List.nth (t1, 128), List.nth (t2, 128))
+	    val b3 = Word8.equal (List.nth (t1, 128), List.nth (t1, 128))
+	    val b4 = Word8.equal (List.nth (t2, 128), List.nth (t2, 128))
+->
+            val w1 : word = 0wx80
+	    val w2 : word = 0wx80
+	    val t' : int -> word = _fn
+	    val t1 : word list =
+		[0wx0, 0wx1, 0wx2, 0wx3, 0wx4, 0wx5, 0wx6, 0wx7, 0wx8, 0wx9, 0wxA, 0wxB, 0wxC, 0wxD, 0wxE, 0wxF, ...]
+	    val t2 : word list =
+		[0wx0, 0wx1, 0wx2, 0wx3, 0wx4, 0wx5, 0wx6, 0wx7, 0wx8, 0wx9, 0wxA, 0wxB, 0wxC, 0wxD, 0wxE, 0wxF, ...]
+	    val b1 : bool = true
+	    val b2 : bool = false
+	    val b3 : bool = true
+	    val b4 : bool = true
+-
+*)
+
+	    fun gg ([], []) i = true
+	      | gg ( [], _) i = false
+	      | gg (_, []) i = false
+	      | gg (x::xs, y::ys) i = if x = y then gg (xs, ys) (i + 1)
+				      else (print (Word8.toString x ^ "   " ^
+						   Word8.toString y ^ "   " ^
+						   Int.toString i ^ "\n"); 
+					    false)
+
+	    fun t (n, f) = Word8Vector.toList (Word8Vector.tabulate (n, f)) =
+		           List.tabulate (n, f)
+			     handle Size => n < 0 orelse Word8Vector.maxLen < n
+
+	    fun t' x = Word8.fromInt x + Word8.fromInt 1
+	in
+	    Gen.try 1000 Gen.int (Test.test (fn x => t (x, t')))
+	end
+
+    fun testContains () =
+	let
+	    fun t (v, x) = Word8Vector.contains Word8.equal v x =
+		           List.contains (Word8Vector.toList v) x
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8Vector Gen.word8, 
+				    Gen.word8)) (Test.test t)
+	end
+
+    fun testNotContains () =
+	let
+	    fun t (v, x) = Word8Vector.notContains Word8.equal v x = 
+		           Bool.not (Word8Vector.contains Word8.equal v x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8Vector Gen.word8, 
+				    Gen.word8)) (Test.test t)
+	end
+
+    fun testSort () =
+	let
+	    fun t f v = List.sort f (Word8Vector.toList v) =
+		        Word8Vector.toList (Word8Vector.sort f v)
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8) 
+	       (Test.test (fn v => t Word8.compare v))
+	end
+
+    fun testIsSorted () =
+	let
+	    fun t f v = Word8Vector.isSorted f v =
+		        List.isSorted f (Word8Vector.toList v)
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8) 
+	       (Test.test (fn v => t Word8.compare v))
+	end
+
+    fun testCollate () =
+	let
+	    fun t f (v1, v2) = 
+		List.collate f (Word8Vector.toList v1, 
+				Word8Vector.toList v2) =
+		Word8Vector.collate f (v1, v2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8Vector Gen.word8, 
+				    Gen.word8Vector Gen.word8))
+	       (Test.test (fn x => t Word8.compare x))
+	end
+
+    fun testEqual () =
+	let
+	    fun t f (v1, v2) = Word8Vector.equal f (v1, v2) =
+		               List.equal f (Word8Vector.toList v1, 
+					     Word8Vector.toList v2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8Vector Gen.word8, 
+				    Gen.word8Vector Gen.word8))
+	        (Test.test (fn x => t Word8.equal x))
+	end
+
+    fun testRev () =
+	let
+	    fun t v = List.rev (Word8Vector.toList v) =
+		      Word8Vector.toList (Word8Vector.rev v)
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8) (Test.test t)
+	end
+
+    fun testAll () =
+	let
+	    fun t f v = List.all f (Word8Vector.toList v)
+
+	    fun f x = x > Word8.fromInt 0
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8) 
+	     (Test.test (fn v => Word8Vector.all f v = t f v))
+	end
+
+    fun testExists () =
+	let
+	    fun t f v = List.exists f (Word8Vector.toList v)
+		
+	    fun f x = x > Word8.fromInt 0
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8)
+	     (Test.test (fn v => Word8Vector.exists f v = t f v))
+	end
+
+    fun testFind () =
+	let
+	    fun t f v = List.find f (Word8Vector.toList v)
+		
+	    fun f x = x > Word8.fromInt 0
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8)
+	     (Test.test (fn v => Word8Vector.find f v = t f v))
+	end
+
+    fun testAlli () =
+	let
+	    fun t f v = List.alli f (Word8Vector.toList v)
+
+	    fun f (i, x) = Word8.fromInt i = x
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8) 
+	     (Test.test (fn v => Word8Vector.alli f v = t f v))
+	end
+
+    fun testExistsi () =
+	let
+	    fun t f v = List.existsi f (Word8Vector.toList v)
+		
+	    fun f (i, x) = Word8.fromInt i = x
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8)
+	     (Test.test (fn v => Word8Vector.existsi f v = t f v))
+	end
+
+    fun testFindi () =
+	let
+	    fun t f v = List.findi f (Word8Vector.toList v)
+		
+	    fun f (i, x) = Word8.fromInt i = x
+	in
+	    Gen.try 1000 (Gen.word8Vector Gen.word8)
+	     (Test.test (fn v => Word8Vector.findi f v = t f v))
+	end
+
+    fun testFoldl () =
+	let
+	    val test1 = List.map Word8.fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (a, b) = b@[a]
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = Word8Vector.fromList xs
+				in 
+				    Word8Vector.foldl List.:: nil v1 =
+				    List.rev xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.word8) 
+	        (Test.test (fn xs => 
+			    let
+				val v = Word8Vector.fromList xs
+			    in 
+				Word8Vector.foldl f nil v =
+				List.foldl f nil xs
+			    end))
+	end
+
+    fun testFoldr () =
+	let
+	    val test1 = List.map Word8.fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = Word8Vector.fromList xs
+				in 
+				    Word8Vector.foldr List.:: nil v1 =
+				    xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.word8) 
+	        (Test.test (fn xs => 
+			    let
+				val v = Word8Vector.fromList xs
+			    in 
+				Word8Vector.foldr List.:: nil v =
+				List.foldr List.:: nil xs
+			    end))
+	end
+
+    fun testFoldli () =
+	let
+	    val test1 = List.map Word8.fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (i, a, b) = b@[a + Word8.fromInt i]
+
+	    fun f' (i, a, b) = a::b
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = Word8Vector.fromList xs
+				in 
+				    Word8Vector.foldli f' nil v1 =
+				    List.rev xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.word8) 
+	        (Test.test (fn xs => 
+			    let
+				val v = Word8Vector.fromList xs
+			    in 
+				Word8Vector.foldli f nil v =
+				List.foldli f nil xs
+			    end))
+	end
+
+    fun testFoldri () =
+	let
+	    val test1 = List.map Word8.fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (i, a, b) = (a + Word8.fromInt i) :: b
+
+	    fun f' (i, a, b) = a::b
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = Word8Vector.fromList xs
+				in 
+				    Word8Vector.foldri f' nil v1 =
+				    xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.word8) 
+	        (Test.test (fn xs => 
+			    let
+				val v = Word8Vector.fromList xs
+			    in 
+				Word8Vector.foldri f nil v =
+				List.foldri f nil xs
+			    end))
+	end
+
+    fun testApp () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y x = y := (x :: !y)
+	in
+	    Gen.try 10 (Gen.word8Vector Gen.word8)
+	      (Test.test (fn v => (List.app (f x1) (Word8Vector.toList v);
+				   Word8Vector.app (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppr () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y x = y := (x :: !y)
+	in
+	    Gen.try 10 (Gen.word8Vector Gen.word8)
+	      (Test.test (fn v => (List.appr (f x1) (Word8Vector.toList v);
+				    Word8Vector.appr (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y (i, x) = y := ((Word8.fromInt i + x) :: !y)
+	in
+	    Gen.try 10 (Gen.word8Vector Gen.word8)
+	      (Test.test (fn v => (List.appi (f x1) (Word8Vector.toList v);
+				   Word8Vector.appi (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppri () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y (i, x) = y := ((Word8.fromInt i + x) :: !y)
+	in
+	    Gen.try 10 (Gen.word8Vector Gen.word8)
+	      (Test.test (fn v => (List.appri (f x1) (Word8Vector.toList v);
+				    Word8Vector.appri (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+
+    fun testMap () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x i = (x := i :: !x; i + Word8.fromInt 5)
+
+	in
+	    Gen.try 100 (Gen.word8Vector Gen.word8) 
+	       (Test.test (fn v => (x1 := nil;
+				    x2 := nil;
+				    Word8Vector.toList 
+					(Word8Vector.map (t x1) v) =
+				    List.map (t x2) (Word8Vector.toList v) 
+				    andalso !x1 = !x2 andalso 
+				    !x1 = List.rev (Word8Vector.toList v))))
+	end
+
+    fun testMapi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x (i, a) = (x := a :: !x; a + Word8.fromInt i + 
+					        Word8.fromInt 5)
+	in
+	    Gen.try 100 (Gen.word8Vector Gen.word8) 
+	       (Test.test (fn v => (x1 := nil; x2 := nil;
+				    Word8Vector.toList 
+					(Word8Vector.mapi (t x1) v) =
+				    List.mapi (t x2) (Word8Vector.toList v)
+				    andalso !x1 = !x2 andalso
+				    !x2 = List.rev (Word8Vector.toList v))))
+	end
+
+    val suite = ("Word8Vector", [("maxLen", testMaxLen),
+				 ("sub", testSub),
+				 ("update", testUpdate),
+				 ("length", testLength),
+				 ("toList", testToList),
+				 ("fromList", testFromList),
+				 ("tabulate", testTabulate),
+				 ("concat", testConcat),
+				 ("contains", testContains),
+				 ("notContains", testNotContains),
+				 ("sort", testSort),
+				 ("isSorted", testIsSorted),
+				 ("equal", testEqual),
+				 ("collate", testCollate),
+				 ("rev", testRev),
+				 ("all", testAll),
+				 ("exists", testExists),
+				 ("find", testFind),
+				 ("alli", testAlli),
+				 ("existsi", testExistsi),
+				 ("findi", testFindi),
+				 ("foldl", testFoldl),
+				 ("foldr", testFoldr),
+				 ("foldri", testFoldri),
+				 ("foldli", testFoldli),
+				 ("map", testMap),
+				 ("mapi", testMapi),
+				 ("app", testApp),
+				 ("appr", testAppr),
+				 ("appi", testAppi),
+				 ("appri", testAppri)])
+end
+
+

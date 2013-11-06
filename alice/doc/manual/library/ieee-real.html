@@ -1,0 +1,64 @@
+<?php include("macros.php3"); ?>
+<?php heading("The IEEEReal structure", "The <TT>IEEEReal</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature IEEE_REAL
+    structure IEEEReal : IEEE_REAL
+  </PRE>
+
+  <P>
+    The Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/ieee-float.html"><TT>IEEEReal</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="real.html"><TT>Real</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature IEEE_REAL =
+    sig
+	 exception Unordered
+
+	 datatype real_order    = LESS | EQUAL | GREATER | UNORDERED
+	 datatype float_class   = NAN | INF | ZERO | NORMAL | SUBNORMAL
+	 datatype rounding_mode = TO_NEAREST | TO_NEGINF | TO_POSINF | TO_ZERO
+	 type decimal_approx    = {kind : float_class, sign : bool, digits : int list,  exp : int}
+
+	 val getRoundingMode : unit -> rounding_mode
+	 val setRoundingMode : rounding_mode -> unit
+
+	 val toString :        decimal_approx -> string
+	 val fromString :      string -> decimal_approx option
+	 val scan :            (char, 'a) StringCvt.reader -> (decimal_approx, 'a) StringCvt.reader
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Like the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/ieee-float.html"><TT>IEEEReal</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>exception Unordered</TT>
+    </DT>
+    <DD>
+      <P>Indicates that two values are incomparable with respect to a partial
+      ordering. Equal to <TT>General.Unordered</TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

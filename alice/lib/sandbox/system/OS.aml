@@ -1,0 +1,158 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature OS     from "../../system/OS-sig"
+import structure OS     from "../../system/OS"
+import signature POLICY from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure OS : OS =
+struct
+    type syserror = OS.syserror
+    exception SysErr = OS.SysErr
+
+    val errorMsg = OS.errorMsg
+    val errorName = OS.errorName
+    val syserror  = OS.syserror
+
+    structure FileSys =
+    struct
+        type dirstream = OS.FileSys.dirstream
+        datatype access_mode = A_READ | A_WRITE | A_EXEC
+        eqtype file_id = OS.FileSys.file_id
+    
+        fun openDir path =
+            let
+                val path' = Policy.File.check ("readFile", "OS.FileSys.openDir", path)
+            in
+                OS.FileSys.openDir path'
+            end
+
+        val readDir   = OS.FileSys.readDir
+        val rewindDir = OS.FileSys.rewindDir
+        val closeDir  = OS.FileSys.closeDir
+
+        val chDir  = OS.FileSys.chDir
+        
+        fun getDir () =
+            let
+                do Policy.Unit.check ("getDir", "OS.FileSys.getDir", ())
+            in
+                OS.FileSys.getDir ()
+            end
+        
+        fun mkDir path =
+            let
+                val path' = Policy.File.check ("writeFile", "OS.FileSys.mkDir", path)
+            in
+                OS.FileSys.mkDir path'
+            end
+
+        fun rmDir path =
+            let
+                val path' = Policy.File.check ("writeFile", "OS.FileSys.rmDir", path)
+            in
+                OS.FileSys.rmDir path'
+            end
+            
+        fun isDir path =
+            let
+                val path' = Policy.File.check ("readFile", "OS.FileSys.isDir", path)
+            in
+                OS.FileSys.isDir path'
+            end
+
+        fun fileSize path =
+            let
+                val path' = Policy.File.check ("readFile", "OS.FileSys.fileSize", path)
+            in
+                OS.FileSys.fileSize path'
+            end        
+        
+        fun modTime path =
+            let
+                val path' = Policy.File.check ("readFile", "OS.FileSys.modTime", path)
+            in
+                OS.FileSys.modTime path'
+            end
+
+        fun remove path =
+            let
+                val path' = Policy.File.check ("writeFile", "OS.FileSys.remove", path)
+            in
+                OS.FileSys.remove path'
+            end
+
+        fun tmpName () =
+            let
+                val _ = Policy.File.check ("writeFile", "OS.FileSys.tmpName", getDir())
+            in
+                OS.FileSys.tmpName ()
+            end
+
+        fun getHomeDir () =
+            let
+                do Policy.Unit.check ("getHomeDir", "OS.FileSys.getHomeDir", ())
+            in
+                OS.FileSys.getHomeDir ()
+            end
+
+        fun getApplicationConfigDir file =
+            let
+                val file' = Policy.File.check ("getApplicationConfigDir",
+                                              "OS.FileSys.getApplicationConfigDir", file)
+            in
+                OS.FileSys.getApplicationConfigDir file'
+            end
+    end
+
+    structure Process =
+    struct
+        type status = OS.Process.status
+    
+        val success = OS.Process.success
+        val failure = OS.Process.failure
+        val isSuccess = OS.Process.isSuccess
+    
+        fun system cmd =
+            let
+                val cmd' = Policy.String.check ("sysCall", "OS.Process.system", cmd)
+            in
+                OS.Process.system cmd'
+            end
+    
+        val atExit = OS.Process.atExit
+        
+        fun exit status =
+            let
+                val status' = Policy.Int.check ("terminate", "OS.Process.exit", status)
+            in
+                OS.Process.exit status'
+            end
+    
+        fun terminate status =
+            let
+                val status' = Policy.Int.check ("terminate", "OS.Process.terminate", status)
+            in
+                OS.Process.terminate status'
+            end
+    
+        fun getEnv sysVar =
+            let
+                val sysVar' = Policy.String.check ("getEnv", "OS.Process.getEnv", sysVar)
+            in
+                OS.Process.getEnv sysVar'
+            end
+        
+        val sleep = OS.Process.sleep
+        val atExn = OS.Process.atExn
+    end
+
+    structure IO = OS.IO
+    structure Path = OS.Path
+end

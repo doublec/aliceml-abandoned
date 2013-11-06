@@ -1,0 +1,22 @@
+(*
+ * Interpreter for F+rec - Abstract Syntax
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+structure Syntax =
+struct
+    type con = int
+    type id  = string
+
+    datatype typ = Bool
+		 | Int
+		 | Arrow of typ * typ
+
+    datatype exp = Con of con
+		 | Id  of id
+		 | If  of exp * exp * exp
+		 | App of exp * exp
+		 | Abs of id * typ * exp
+		 | Rec of id * id * typ * typ * exp
+end

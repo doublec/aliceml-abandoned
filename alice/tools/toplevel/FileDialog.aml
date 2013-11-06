@@ -1,0 +1,141 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+(* import structure Core from "./../lib/gtk/newprep/Core" *)
+import structure Gui from "Gui"
+import structure Config from "x-alice:/lib/system/Config"
+
+structure FileDialog =
+    struct
+        (* Hack: on Windoze, Gtk does not recognize / as arc seperator. *)
+        fun windozisePath p =
+	    if Config.platform <> Config.WIN32 then p
+	    else String.map (fn #"/" => #"\\" | c => c) p
+
+        fun openFile(msg,fileName) =
+            let
+	        val fileNameUtf8 = Gtk.latin1ToUtf8 fileName
+	        val fileSel = Gtk.FileSelection.new msg
+		val _ = if fileName <> "" then
+		         Gtk.FileSelection.setFilename(fileSel, windozisePath fileNameUtf8)
+			else ()
+                val _ = Gtk.Window.setPosition (fileSel, Gtk.WindowPosition.MOUSE)
+                val _ = Gtk.Widget.showAll fileSel
+		val _ = Gtk.Window.present fileSel
+                val response = Gtk.Dialog.run fileSel
+                val ret =
+                    case Gtk.ResponseType.fromInt response of
+                        Gtk.ResponseType.OK =>
+                        SOME (OS.Path.mkCanonical (Gtk.utf8ToLatin1 (Gtk.FileSelection.getFilename fileSel)))
+                      | _ => NONE
+            in
+                Gtk.Widget.destroy fileSel;
+                ret
+            end
+
+        fun modifiedWarning(msg1,msg2,close,arg) =
+            let
+                val modifiedDia = Gui.modified_dialog
+            in
+		Gtk.Label.setText(Gui.modified_msg1, msg1);
+		Gtk.Label.setText(Gui.modified_msg2, msg2);
+		Gtk.Dialog.setDefaultResponse(modifiedDia,
+				    Gtk.ResponseType.toInt Gtk.ResponseType.CANCEL);
+                Gtk.Window.setKeepAbove (modifiedDia, true);
+                Gtk.Window.setPosition (modifiedDia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll modifiedDia;
+		Gtk.Window.present modifiedDia;
+		Gtk.Window.setModal(modifiedDia, true);
+		case Gtk.ResponseType.fromInt (Gtk.Dialog.run modifiedDia) of
+		    Gtk.ResponseType.CLOSE => close arg
+		  | _ => ();
+                Gtk.Widget.hide modifiedDia;
+		Gtk.Window.setModal(modifiedDia, false)
+            end
+
+        fun overwriteWarning(msg1,msg2,close,arg) =
+            let
+                val overwriteDia = Gui.overwrite_dialog
+            in
+		Gtk.Label.setText(Gui.overwrite_msg1, msg1);
+		Gtk.Label.setText(Gui.overwrite_msg2, msg2);
+		Gtk.Dialog.setDefaultResponse(overwriteDia,
+                                             Gtk.ResponseType.toInt Gtk.ResponseType.CLOSE);
+                Gtk.Window.setKeepAbove (overwriteDia, true);
+                Gtk.Window.setPosition (overwriteDia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll overwriteDia;
+		Gtk.Window.present overwriteDia;
+		Gtk.Window.setModal(overwriteDia, true);
+		case Gtk.ResponseType.fromInt (Gtk.Dialog.run overwriteDia) of
+		    Gtk.ResponseType.CLOSE => close arg
+		  | _ => ();
+                Gtk.Widget.hide overwriteDia;
+		Gtk.Window.setModal(overwriteDia, false)
+            end
+
+        fun quitWarning (interactive,filename) =
+            let
+                val dia = Gui.save_on_quit_dialog
+		val filenameUtf8 = Gtk.latin1ToUtf8 filename
+            in
+		Gtk.Widget.setSensitive(Gui.save_on_quit_cancel_button,
+				       interactive);
+		Gtk.Label.setText(Gui.save_on_quit_label,
+				 "File '"^filenameUtf8^"' was modified.");
+		Gtk.Dialog.setDefaultResponse(dia,
+				    Gtk.ResponseType.toInt Gtk.ResponseType.OK);
+                Gtk.Window.setKeepAbove (dia, true);
+                Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll dia;
+		Gtk.Window.present dia;
+		Gtk.Window.setModal(dia, true);
+		Gtk.Dialog.run dia
+		    before (Gtk.Widget.hide dia;
+		            Gtk.Window.setModal(dia, false))
+            end
+
+        fun fileNotFound (startup,filename) =
+            let
+                val dia = Gui.file_not_found_dialog
+            in
+		Gtk.Widget.setSensitive (Gui.file_not_found_quit_button,
+				       startup);
+		Gtk.Label.setText(Gui.could_not_load_label,
+				 "Could not load file '"^filename^"'.");
+		Gtk.Dialog.setDefaultResponse (dia,
+					     Gtk.ResponseType.toInt
+					     Gtk.ResponseType.OK);
+                Gtk.Window.setKeepAbove (dia, true);
+                Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll dia;
+		Gtk.Window.present dia;
+		Gtk.Window.setModal (dia, true);
+		Gtk.Dialog.run dia
+		    before (Gtk.Widget.hide dia;
+			    Gtk.Window.setModal (dia, false))
+            end
+
+        fun message msg =
+            let
+                val msgDia =
+                    Gtk.MessageDialog.new(Gui.mainwidget,
+                                         [Gtk.DialogFlags.MODAL],
+                                         Gtk.MessageType.WARNING,
+                                         Gtk.ButtonsType.CLOSE,
+                                         msg)
+            in
+                Gtk.Dialog.run msgDia;
+                Gtk.Widget.destroy msgDia
+            end
+    end

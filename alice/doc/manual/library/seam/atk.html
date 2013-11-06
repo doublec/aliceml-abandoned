@@ -1,0 +1,605 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Atk structure", "The <TT>Atk</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature ATK
+    structure Atk : ATK</PRE>
+
+ <P>
+   The <TT>Atk</TT> structure provides a set of interfaces for accessibility.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="glib.html"><TT>GLib</TT></A>,
+   <A href="pango.html"><TT>Pango</TT></A>,
+   <A href="gdk.html"><TT>Gdk</TT></A>,
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+   <A href="gtkbuilder.html"><TT>GtkBuilder</TT></A>
+ </P>
+
+ <?php section("import", "import"); ?>
+
+  <PRE>
+    import signature ATK from "x-alice:/lib/gtk/ATK-sig"
+    import structure Atk from "x-alice:/lib/gtk/Atk"
+  </PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature ATK =
+sig
+    type object = Core.object
+    type gtype = Core.gtype
+    type gvalue = Core.gvalue
+    type prop   = Core.prop
+    type prop_initializer = Core.prop_initializer
+(* begin of CORE-sig.aml *)
+
+
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+
+    type callback_function = object * arg list -> unit
+    val signalConnect        : object * string * callback_function -> int
+    val signalConnectAfter   : object * string * callback_function -> int
+    val signalDisconnect     : object * int -> unit
+    val signalHandlerBlock   : object * int -> unit
+    val signalHandlerUnblock : object * int -> unit
+
+    val latin1ToUtf8 : string -> string
+    val utf8ToLatin1 : string -> string
+
+    val lock : Lock.lock
+
+
+    structure Types :
+    sig
+        val string : gtype
+        val int    : gtype
+        val float  : gtype
+        val double : gtype
+        val pixbuf : gtype
+    end
+
+    structure Value :
+    sig
+        (* exception TypeError *)
+
+        val undefined : unit -> gvalue
+
+        val int : int -> gvalue
+        val enum : int * gtype -> gvalue
+        val string : string -> gvalue
+        val float : real -> gvalue
+        val double : real -> gvalue
+        val bool : bool -> gvalue
+        val object : object -> gvalue
+            
+        val toInt : gvalue -> int
+        val toString : gvalue -> string
+        val toReal : gvalue -> real
+        val toBool : gvalue -> bool
+        val toObject : gvalue -> object
+
+        val getType : gvalue -> gtype
+    end
+
+    structure Prop :
+    sig
+        val setL : object -> prop_initializer list -> unit
+
+        val set : 'a prop -> object * 'a -> unit
+        val get : 'a prop -> object -> 'a 
+
+        val rawSet : object * string * gvalue -> unit
+        val rawGet : object * string -> gvalue
+
+        val name : 'a prop -> string
+
+        val prop : 'a prop * 'a -> prop_initializer
+
+        (* creation *)
+        val newProp : string * ('a -> gvalue) * (gvalue -> 'a) -> 'a prop
+    end
+(* end of CORE-sig.aml *)
+
+    structure CoordType :
+    sig
+        datatype t =
+            SCREEN
+          | WINDOW
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure KeyEventType :
+    sig
+        datatype t =
+            LAST_DEFINED
+          | PRESS
+          | RELEASE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TextBoundary :
+    sig
+        datatype t =
+            CHAR
+          | LINE_END
+          | LINE_START
+          | SENTENCE_END
+          | SENTENCE_START
+          | WORD_END
+          | WORD_START
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TextAttribute :
+    sig
+        datatype t =
+            BG_COLOR
+          | BG_FULL_HEIGHT
+          | BG_STIPPLE
+          | DIRECTION
+          | EDITABLE
+          | FAMILY_NAME
+          | FG_COLOR
+          | FG_STIPPLE
+          | INDENT
+          | INVISIBLE
+          | JUSTIFICATION
+          | LANGUAGE
+          | LEFT_MARGIN
+          | PIXELS_ABOVE_LINES
+          | PIXELS_BELOW_LINES
+          | PIXELS_INSIDE_WRAP
+          | RIGHT_MARGIN
+          | RISE
+          | SCALE
+          | SIZE
+          | STRETCH
+          | STRIKETHROUGH
+          | STYLE
+          | UNDERLINE
+          | VARIANT
+          | WEIGHT
+          | WRAP_MODE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure StateType :
+    sig
+        datatype t =
+            ACTIVE
+          | ARMED
+          | BUSY
+          | CHECKED
+          | DEFUNCT
+          | EDITABLE
+          | ENABLED
+          | EXPANDABLE
+          | EXPANDED
+          | FOCUSABLE
+          | FOCUSED
+          | HORIZONTAL
+          | ICONIFIED
+          | INVALID
+          | LAST_DEFINED
+          | MODAL
+          | MULTISELECTABLE
+          | MULTI_LINE
+          | OPAQUE
+          | PRESSED
+          | RESIZABLE
+          | SELECTABLE
+          | SELECTED
+          | SENSITIVE
+          | SHOWING
+          | SINGLE_LINE
+          | STALE
+          | TRANSIENT
+          | VERTICAL
+          | VISIBLE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure RelationType :
+    sig
+        datatype t =
+            CONTROLLED_BY
+          | CONTROLLER_FOR
+          | LABELLED_BY
+          | LABEL_FOR
+          | LAST_DEFINED
+          | MEMBER_OF
+          | NODE_CHILD_OF
+          | NULL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Layer :
+    sig
+        datatype t =
+            BACKGROUND
+          | CANVAS
+          | INVALID
+          | MDI
+          | OVERLAY
+          | POPUP
+          | WIDGET
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Role :
+    sig
+        datatype t =
+            ACCEL_LABEL
+          | ALERT
+          | ANIMATION
+          | ARROW
+          | CALENDAR
+          | CANVAS
+          | CHECK_BOX
+          | CHECK_MENU_ITEM
+          | COLOR_CHOOSER
+          | COLUMN_HEADER
+          | COMBO_BOX
+          | DATE_EDITOR
+          | DESKTOP_FRAME
+          | DESKTOP_ICON
+          | DIAL
+          | DIALOG
+          | DIRECTORY_PANE
+          | DRAWING_AREA
+          | FILE_CHOOSER
+          | FILLER
+          | FONT_CHOOSER
+          | FRAME
+          | GLASS_PANE
+          | HTML_CONTAINER
+          | ICON
+          | IMAGE
+          | INTERNAL_FRAME
+          | INVALID
+          | LABEL
+          | LAST_DEFINED
+          | LAYERED_PANE
+          | LIST
+          | LIST_ITEM
+          | MENU
+          | MENU_BAR
+          | MENU_ITEM
+          | OPTION_PANE
+          | PAGE_TAB
+          | PAGE_TAB_LIST
+          | PANEL
+          | PASSWORD_TEXT
+          | POPUP_MENU
+          | PROGRESS_BAR
+          | PUSH_BUTTON
+          | RADIO_BUTTON
+          | RADIO_MENU_ITEM
+          | ROOT_PANE
+          | ROW_HEADER
+          | SCROLL_BAR
+          | SCROLL_PANE
+          | SEPARATOR
+          | SLIDER
+          | SPIN_BUTTON
+          | SPLIT_PANE
+          | STATUSBAR
+          | TABLE
+          | TABLE_CELL
+          | TABLE_COLUMN_HEADER
+          | TABLE_ROW_HEADER
+          | TEAR_OFF_MENU_ITEM
+          | TERMINAL
+          | TEXT
+          | TOGGLE_BUTTON
+          | TOOL_BAR
+          | TOOL_TIP
+          | TREE
+          | TREE_TABLE
+          | UNKNOWN
+          | VIEWPORT
+          | WINDOW
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Util :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure StateSet :
+    sig
+        (* constructors *)
+        (* methods *)
+        val xorSets : object * object -> object
+        val orSets : object * object -> object
+        val andSets : object * object -> object
+        val removeState : object * StateType.t -> bool
+        val containsStates : object * (StateType.t vector) -> bool
+        val containsState : object * StateType.t -> bool
+        val clearStates : object -> unit
+        val addStates : object * (StateType.t vector) -> unit
+        val addState : object * StateType.t -> bool
+        val isEmpty : object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RelationSet :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getRelationByType : object * RelationType.t -> object
+        val getRelation : object * int -> object
+        val getNRelations : object -> int
+        val add : object * object -> unit
+        val remove : object * object -> unit
+        val contains : object * RelationType.t -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Relation :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getTarget : object -> object
+        val getRelationType : object -> RelationType.t
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Registry :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getFactory : object * gtype -> object
+        val getFactoryType : object * gtype -> gtype
+        val setFactoryType : object * gtype * gtype -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure NoOpObjectFactory :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ObjectFactory :
+    sig
+        (* constructors *)
+        (* methods *)
+        val invalidate : object -> unit
+        val createAccessible : object * object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure NoOpObject :
+    sig
+        (* constructors *)
+        val new : object -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Object :
+    sig
+        (* constructors *)
+        (* methods *)
+        val removePropertyChangeHandler : object * int -> unit
+        val setRole : object * Role.t -> unit
+        val setParent : object * object -> unit
+        val setDescription : object * string -> unit
+        val setName : object * string -> unit
+        val getIndexInParent : object -> int
+        val refStateSet : object -> object
+        val getMdiZorder : object -> int
+        val getLayer : object -> Layer.t
+        val getRole : object -> Role.t
+        val refRelationSet : object -> object
+        val refAccessibleChild : object * int -> object
+        val getNAccessibleChildren : object -> int
+        val getParent : object -> object
+        val getDescription : object -> string
+        val getName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Hyperlink :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getNAnchors : object -> int
+        val isValid : object -> bool
+        val getStartIndex : object -> int
+        val getEndIndex : object -> int
+        val getObject : object * int -> object
+        val getUri : object * int -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Implementor:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Text:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Streamable:
+    sig
+        val contentGetType : unit -> gtype
+    end
+    structure Image:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Focus:
+    sig
+        val trackerNotify : object -> unit
+        val trackerInit : object -> unit
+    end
+    structure Add:
+    sig
+        val keyEventListener : Core.object * object -> int
+        val globalEventListener : object * string -> int
+        val focusTracker : object -> int
+    end
+    structure Hypertext:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Editable:
+    sig
+        val textGetType : unit -> gtype
+    end
+    structure Document:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Table:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Remove:
+    sig
+        val keyEventListener : int -> unit
+        val globalEventListener : int -> unit
+        val focusTracker : int -> unit
+    end
+    structure Get:
+    sig
+        val toolkitVersion : unit -> string
+        val toolkitName : unit -> string
+        val root : unit -> object
+        val defaultRegistry : unit -> object
+    end
+    structure Selection:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Component:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Action:
+    sig
+        val getType : unit -> gtype
+    end
+end
+</PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.html">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+dir=`dirname $0`
+dir=`(cd $dir && pwd)`
+
+case `uname -s` in
+CYGWIN*)
+    dir=`cygpath -w -s "$dir"`
+    ;;
+*)
+    ;;
+esac
+
+ALICEC_MOZART=$dir/alicec-mozart.exe
+export ALICEC_MOZART
+
+exec sml @SMLload=$dir/alicec-mozart "$@"

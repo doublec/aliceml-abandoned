@@ -1,0 +1,45 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* A path in the search tree. *)
+
+(* In the case of 'best search',
+ * the path may also contain 'better than' constraints,
+ * that is, contraints corresponding to a 'best' message.
+ * This is necessary because choices in the search tree
+ * depend on *ALL* previous constraints, including 'better than' constraints.
+ *) 
+
+structure Path =
+struct
+  
+  (* An element of the path is the branch number
+   * and a possible 'best' constraint. *)
+  type 'a item = int * ('a option)
+    
+  (* A path in the search tree. *)
+  type 'a path = ('a item) list
+  type t = path
+
+  val root = []
+    
+  fun toString [] = "[]"
+    | toString ((n, NONE) :: xs) =
+    (Int.toString n ^ "-" ^ toString xs)
+    | toString ((n, SOME _) :: xs) =
+    (Int.toString n ^ "{*}-" ^ toString xs)
+    
+end

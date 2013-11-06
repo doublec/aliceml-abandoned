@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# script to run Java benchmarks
+# usage: dojava java|kaffe bench iterations size
+
+unset  CLASSPATH
+export CLASSPATH
+
+if [ $# != 4 ]; then
+   echo 2>&1 "usage: $0 java|kaffe bench iterations size"
+   exit 1
+fi
+
+cmd=$1
+bench=$2
+iter=$3
+size=$4
+
+if [ $cmd = "java" ]; then
+    blank=""
+else
+    blank=" "
+fi
+
+#opts="-ms${blank}50000000 -mx${blank}60000000  -verbosegc"
+#opts="-Xint -Xmx600m"
+opts="-Xint"
+
+if [ $bench = "all" ]; then
+
+    $cmd $opts Benchmarks fib $iter 31
+    $cmd $opts Benchmarks fibthread $iter 20
+    $cmd $opts Benchmarks threadcrea $iter 100000
+    $cmd $opts Benchmarks tak $iter 8
+    $cmd $opts Benchmarks nrev $iter 3000
+#    $cmd $opts Benchmarks quick $iter 30
+#    $cmd $opts Benchmarks quickho $iter 30
+#    $cmd $opts Benchmarks quickarray $iter 30
+#    $cmd $opts Benchmarks queens $iter 10
+#    $cmd $opts Benchmarks mandel $iter 4711
+#    $cmd $opts Benchmarks mandelloop $iter 4711
+    $cmd $opts Benchmarks derivvirt $iter 30
+    exit 0
+fi
+
+exec $cmd $opts Benchmarks $bench $iter $size
+

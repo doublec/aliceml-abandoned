@@ -1,0 +1,34 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Path  from "Path"
+
+signature RSPACE =
+
+(* a is the type of solutions.
+ * root is the root space.
+ * order   is given a space and a solution S.
+ *         It posts constraints meaning "better than S".
+ * rdist   is the recomputation distance:
+ *           0 always performs recomputation (equivalent to infinite rdist)
+ *           1 for no recomputation (that is, always clone the spaces)
+ *           n for recomputation every n steps
+ *)
+fct (type a
+     val root   : Space.space
+     val order  : Space.space * a -> unit
+     val rdist  : int ) ->
+sig
+  type rspace
+  val space    : a Path.t -> rspace  (* Fail *)
+  val path     : rspace -> a Path.t  (* This path is in reverse order. *)
+  val status   : rspace -> Space.status  (* Implicit cloning may happen *)
+  val getLeft  : rspace -> rspace  (* NotBranching *)
+  val getRight : rspace -> rspace  (* NotBranching *)
+  val getSpace : rspace -> Space.space
+  val best     : rspace * a -> rspace (* Add a new contraint. *)
+end
+
+exception NotBranching
+(* The exception NotBranching is raised when getLeft or getRight is called
+ * on a rspace which is SOLVED or FAILED. 
+ *)
+

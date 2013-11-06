@@ -1,0 +1,81 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                           from "Pervasive"
+import __primitive
+       type unit and int and bool and option and order from "ToplevelTypes"
+
+signature LIST =
+sig
+    datatype 'a list = nil | op:: of 'a * 'a list
+    type     'a t    = 'a list						(**)
+
+    exception Empty
+
+    val null :		'a list -> bool
+    val length :	'a list -> int
+
+    val hd :		'a list -> 'a
+    val tl :		'a list -> 'a list
+    val last :		'a list -> 'a
+    val getItem :	'a list -> ('a * 'a list) option
+    val nth :		'a list * int -> 'a
+    val sub :		'a list * int -> 'a				(**)
+    val take :		'a list * int -> 'a list
+    val drop :		'a list * int -> 'a list
+    val split :		'a list * int -> 'a list * 'a list		(**)
+
+    val rev :		'a list -> 'a list
+    val op @ :		'a list * 'a list -> 'a list
+    val revAppend :	'a list * 'a list -> 'a list
+    val concat :	'a list list -> 'a list
+    val tabulate :	int * (int -> 'a) -> 'a list
+
+    val app :		('a -> unit) -> 'a list -> unit
+    val appr :		('a -> unit) -> 'a list -> unit			(**)
+    val map :		('a -> 'b) -> 'a list -> 'b list
+    val mapPartial :	('a -> 'b option) -> 'a list -> 'b list
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val all :		('a -> bool) -> 'a list -> bool
+    val exists :	('a -> bool) -> 'a list -> bool
+    val find :		('a -> bool) -> 'a list -> 'a option
+    val filter :	('a -> bool) -> 'a list -> 'a list
+    val partition :	('a -> bool) -> 'a list -> 'a list * 'a list
+
+    val index :		'a list -> (int * 'a) list			(**)
+    val appi :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val appri :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list		(**)
+    val mapiPartial :	(int * 'a -> 'b option) -> 'a list -> 'b list	(**)
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val alli :		(int * 'a -> bool) -> 'a list -> bool		(**)
+    val existsi :	(int * 'a -> bool) -> 'a list -> bool		(**)
+    val findi :		(int * 'a -> bool) -> 'a list -> (int * 'a) option (**)
+    val filteri :	(int * 'a -> bool) -> 'a list -> (int * 'a) list   (**)
+    val partitioni :	(int * 'a -> bool) -> 'a list -> (int * 'a) list *
+							 (int * 'a) list   (**)
+    val contains :	''a list -> ''a -> bool				(**)
+    val notContains :	''a list -> ''a -> bool				(**)
+
+    val equal :		('a * 'a -> bool) -> 'a list * 'a list -> bool	(**)
+    val collate :	('a * 'a -> order) -> 'a list * 'a list -> order
+
+    val isSorted :	('a * 'a -> order) -> 'a list -> bool		(**)
+    val sort :		('a * 'a -> order) -> 'a list -> 'a list	(**)
+end

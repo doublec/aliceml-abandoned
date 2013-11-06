@@ -1,0 +1,143 @@
+<?php include("macros.php3"); ?>
+<?php heading("Pickling", "pickling") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>A <EM>pickle</EM> is a serialized and closed representation of a value,
+stored in a file, for instance. Pickles can be used to exchange arbitrary data structures
+between processes. Pickles may contain higher-order values (i.e., functions)
+as well as complete modules (e.g., implementations of abstract types).
+Pickling is type-safe: a pickle is in fact a serialized representation
+of a <A href="packages.html">package</A>, a pair of a value and its type.
+Types are checked at unpickling time.</P>
+
+
+<?php section("semantics", "semantics") ?>
+
+<P>When a value is pickled, this comprehends the transitive closure of all
+objects referenced by that value. We distinguish three sorts of values:</P>
+
+<UL>
+<LI> <I>Functional</I>
+     values do not contain any mutable objects.  Functional values can
+     be pickled. Unpickling a functional value results in an object
+     indistinguishable from the original object. </LI>
+
+<LI> <I>Stateful</I>
+     values do contain mutable objects like references or arrays.  Stateful
+     values can also be pickled. In contrast to functional values, unpickling
+     a stateful value always returns a fresh copy of state the object was
+     in at pickling time.  Sharing between stateful objects within a single
+     pickle is maintained. </LI>
+
+<LI> <I>Sited</I>
+     values contain <EM>resources</EM>.  A resource is an object that cannot be
+     meaningfully interpreted outside of the process it was created in,
+     or that represents a security-relevant capability.
+     Sited values may not be pickled: any attempt to pickle a sited value
+     results in a runtime exception. This is necessary to enable
+     security and <A href="components.html#managers">sandboxing</A>.</LI>
+</UL>
+
+<P>Special care must be taken to avoid runtime errors from attempts to
+pickle sited values.  Resources may be operating system handles (for example,
+open files) or computational resources (for example, first-class threads).
+Higher-order values may be sited without this being visible in their
+type, for instance, when a function closure references a sited object.
+Moreover, all functions that create resources are themselves sited.</P>
+
+<P><A href="futures.html">Futures</A> are never pickled. Instead, pickling
+<A href="futures.html#request">requests</A> all futures in the value to be
+pickled.</P>
+
+
+<?php section("export", "persistent modules") ?>
+
+<P>Pickling is available through the structure <A
+href="library/pickle.html"><TT>Pickle</TT></A>. The canonical operation to
+create a pickle is the operation</P>
+
+<PRE class=code>
+save : string * package -> unit</PRE>
+
+<P>For example, the <TT>Int</TT> module can be exported as a pickle as
+follows:</P>
+
+<PRE class=code>
+Pickle.save("Int." ^ Pickle.extension, pack Int : INTEGER)</PRE>
+
+<P>The package will be serialized to a file with the specified name. The string
+<TT>Pickle.extension</TT> gives the file extension idiomatically used for
+pickles on the current platform. If the module contained references to any
+sited objects, an <A href="library/io.html"><TT>IO.Io</TT></A> exception
+would be raised, with <TT>Sited</TT> indicating the cause of the
+failure (<TT>Int</TT> is not sited, however).</P>
+
+<P>The inverse operation is unpickling, available through the operation</P>
+
+<PRE class=code>
+load : string -> package</PRE>
+
+<P>For example:</P>
+
+<PRE class=code>
+structure Int' = unpack Pickle.load("Int." ^ Pickle.extension) : INTEGER</PRE>
+
+<P>If unpickling is successful, <TT>Int'</TT> will be accessible as a structure
+with signature <TT>INTEGER</TT>. Loading of a pickle may fail with an
+<A href="library/io.html"><TT>IO.Io</TT></A> exception.</P>
+
+
+<?php subsection("export-sharing", "sharing") ?>
+
+<P>Pickled modules can contain abstract types. Sometimes it is
+necessary to express sharing between abstract types of different
+pickles. The way to deal with this is using appropriate type constraints upon
+unpacking the loaded package. For example, consider an abstract datatype</P>
+
+<PRE class=code>
+signature T =
+sig
+    type t
+    val mk : int -> t
+    val f : t -> int
+end</PRE>
+
+<P>that is stored in a pickle <TT>p1</TT>. Another pickle <TT>p2</TT> contains
+a value of that type. Both can be loaded and used together:</P>
+
+<PRE class=code>
+structure T = unpack p1 : T
+structure V = unpack p2 : (val x : T.t)
+
+val n = T.f V.x
+</PRE>
+
+<P>See also the section on <A
+href="packages.html#package-sharing">sharing across packages</A>.</P>
+
+
+<?php section("components", "pickles and components") ?>
+
+<P>Pickles are closely related to <A href="components.html">components</A>.
+In fact, a pickle is the special case of an <A
+href="components.html#evaluated">evaluated component</A>, residing in a file.
+Pickles can thus be imported through <A href="components.html#source">import
+announcements</A>.</P>
+
+<P>The load operations for pickles can access arbitrary components. The file
+name argument is interpreted as an URI. If the file at the designated location
+does not contain a plain pickle, the component will be linked and evaluated by
+the current component manager and its export is returned. This may cause
+arbitrary side effects. In particular, it may trigger the loading of
+additional, transitively imported components, if their exports are
+required.</P>
+
+<P>Note that evaluation of components causes the creation of new <A
+href="packages.html#dynamic">generative types</A>. Thus, if a non-pickle
+component is loaded twice, any generative types contained in its export will
+be incompatible between both instances. The same holds for exceptions.</P>
+
+
+<?php footing() ?>

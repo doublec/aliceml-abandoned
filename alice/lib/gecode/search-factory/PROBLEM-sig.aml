@@ -1,0 +1,46 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Debug from "Debug"
+
+(* Specification of the constraint problem, including recomputation policy,
+ * debug level, and branch and bound optimization. *)
+signature PROBLEM =
+sig
+  type solution (* The type of solutions *)
+  type space
+
+  val root : space  (* Root node *)
+  val readSolution : space -> solution
+
+  (* Recomputation *)
+  val copyq : int -> bool (* All spaces s.t. 'copyq depth = true' are cloned *)
+
+  (* Branch and bound *)
+  val bab : bool (* Indicates if branch and bound is active. *)
+  val bound : space * solution -> unit (* bound the given space *)
+  val compare : solution * solution -> bool
+         (* compare (x,y) is true iff y is better than x.
+          * This function is called only if you use
+          * the function 'Search.init' or 'Search.betterThan'.
+          * --> It is NOT used by local search
+	  * --> It is NOT used by local Branch and Bound search 
+	  * --> It IS used by distributed search with Branch and Bound. *)
+
+  (* Debug level *)
+  val mask : Debug.db_mask
+end
+

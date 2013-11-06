@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url  from "Url"
+import structure Http from "Http"
+
+signature HTTP_CLIENT =
+    sig
+	type document = {contentType: string, body: string}
+
+	exception Authority
+
+	val request: Url.t * Http.request -> Http.response  (* Io, Authority *)
+	val get: Url.t -> Http.response                     (* Io, Authority *)
+	val post: Url.t * document -> Http.response         (* Io, Authority *)
+    end

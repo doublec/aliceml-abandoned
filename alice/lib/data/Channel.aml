@@ -1,0 +1,221 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature CHANNEL from "CHANNEL-sig"
+
+structure Channel :> CHANNEL =
+struct
+    open Promise
+
+    (* We do not use channel-level locks in this implementation
+     * because we wish to be able to read and write at the same time,
+     * that is, reading an empty channel blocks until an element is put,
+     * or until the channel is closed. *)
+
+    (* The underlying representation of a channel is a list. *
+     * The state of a channel consists in
+     *   - a pointer to the first element of the list
+     *   - a promise to the not-yet-here last element of the list
+     *   - the number of elements of the list
+     *   - A promise which is fulfilled when the channel is closed.
+     *)
+
+    (* Invariants :
+     *   While reading is locked, at least 'count' elements are available.
+     *   If the channel is closed, the list ends by nil
+     *        and contains 'count' elements (while reading is locked)
+     *  See the end of the file for other invariants.
+     *)
+
+    type 'a channel = 
+	{first  : ('a list) ref ,
+	 last   : ('a list) Promise.t ref ,
+	 count  : int ref ,
+	 closed : unit Promise.t }
+
+    type t = channel
+
+    exception Empty = Empty
+
+    fun channel () =
+	let val p = promise ()
+	in
+	    {first  = ref (future p),
+	     last   = ref p,
+	     count  = ref 0,
+	     closed = promise () }
+	end
+
+    (* Atomically update a reference r with f (!r) *)
+    fun updateRef (r, f) =
+      let
+          val pr = promise ()
+          val old = Ref.exchange (r, future pr)
+      in
+        fulfill (pr, f old)
+      end
+
+    (* Atomically update a reference r with #1 f (!r) and returns #2 f (!r) *)
+    fun updateRefRet (r, f) =
+      let
+          val pr = promise ()
+          val old = Ref.exchange (r, future pr)
+          val (new, ret) = f old
+      in
+        fulfill (pr, new) ;
+        ret
+      end
+
+    fun add (chan: 'a channel, n) = updateRef (#count chan, fn i => i+n)
+    fun incr chan = add (chan, 1)
+    fun decr chan = add (chan, ~1)
+
+    fun isClosed (chan:'a channel) = Future.isDetermined (future(#closed chan))
+    fun waitClosed (chan:'a channel) = Future.await (future(#closed chan))
+
+    fun isEmpty (chan: 'a channel) = !(#count chan) = 0
+
+    fun getSome chan =
+      updateRefRet (#first chan,
+                    fn nil   => (nil, NONE)
+                     | x::xs => (decr chan; (xs, SOME x)))
+
+    fun get chan = case getSome chan of NONE => raise Empty | SOME x => x
+    val pop = get
+
+    fun getSomeNB chan =
+      updateRefRet (#first chan,
+                    fn x => if isEmpty chan then (x, NONE)
+                            else case x of
+                              nil   => assert false
+                            | x::xs => (decr chan; (xs, SOME x)))
+
+    fun put (chan,x) =
+	let val p  = promise ()
+	    val p' = Ref.exchange (#last chan, p)
+	in
+	    if isClosed chan then fulfill (p', future p)		
+	    else
+		(incr chan ;
+		 fulfill (p', x::(future p)))
+	end
+
+    fun push (chan,x) =
+	(* A special case when the channel is empty,
+	 * because a reader may be blocked on reading the first element. *)
+	let val p = promise ()
+	    val pa = promise ()
+	    val p' = Ref.exchange (#last chan, p)
+	    val xs = Ref.exchange (#first chan, future pa)
+	in
+	    if isClosed chan then
+		(fulfill (p', future p) ;
+		 fulfill (pa, xs))
+	    else if isEmpty chan then
+		(* If it is empty, push and put are equivalent. *)
+		(incr chan ;
+		 fulfill (p', x::(future p)) ;
+		 fulfill (pa, xs))
+	    else
+		(incr chan ;
+		 fulfill (pa, x :: xs) ;
+		 fulfill (p', future p))
+	end
+
+    fun close chan =
+      if isClosed chan then ()
+      else
+	let val p = promise ()
+            val p' = Ref.exchange (#last chan, p)
+	in
+          fulfill (#closed chan, ()) ;
+          fulfill (p', nil)
+	end
+
+    fun peek (chan: 'a channel) =
+	case !(#first chan)
+	    of x::_ => x
+	  | nil  => raise Empty
+
+    fun listSkip (0,l) = l
+      | listSkip (n,[]) = assert false
+      | listSkip (n,x::xs) = listSkip (n-1,xs)
+
+    (* Because of concurrent writes, it seems
+     * impossible to do purge directly. *)
+    fun purge (chan: 'a channel) =
+	let val p  = promise ()
+	    (* Prevent reading *)
+	    val l  = Ref.exchange (#first chan, future p)
+	    val n  = !(#count chan)
+	    (* Remove n elements from the list. *)
+	    val _ = add (chan, ~n)
+	    val ll = listSkip (n, l)
+	in
+	    fulfill(p,ll)
+	end
+		     
+    fun listCopy (0,p,l) = future p
+      | listCopy (n,p,[]) = assert false
+      | listCopy (n,p,x::xs) = x::listCopy(n-1,p,xs)
+
+    fun clone (chan: 'a channel) = 
+	let val p  = promise ()
+	    val l  = Ref.exchange (#first chan, future p)
+	    val n  = !(#count chan)
+	    val _  = fulfill (p, l)
+	    val p' = promise ()
+	    val ll = listCopy (n,p',l)
+	in
+	    {first  = ref ll,
+	     last   = ref p',
+	     count  = ref n,
+	     closed = promise () }
+	end
+	
+    fun appG getSome =
+      let fun loop f ch = case getSome ch of NONE => ()
+                                           | SOME x => (f x ; loop f ch)
+      in loop end
+
+    fun app   f = appG getSome   f
+    fun appNB f = appG getSomeNB f
+
+    fun toListG getSome = 
+      let fun loop ch = lazy case getSome ch of NONE => nil
+                                              | SOME x => x :: loop ch
+      in loop end
+
+    fun toList   ch = toListG getSome   ch
+    fun toListNB ch = toListG getSomeNB ch
+
+end
+
+(* Invariants :
+ *   Let Prd be the following predicate (its type is channel * 'a list -> bool)
+ *  
+ *  =====
+ *   Prd(ch,l) = either (1) l is an undetermined future of a promise p
+ *               or     (2) l is nil
+ *               or     (3) l is x :: xs
+ *
+ *            (2) implies ch is closed
+ *            (3) implies Prd(ch, xs)
+ *            (1) implies either (a) p is !(#last ch)
+ *                                   and no thread handles p
+ *                        or     (b) exactly one thread handles p
+ *  =====
+ *
+ *  The following invariant holds : for all channel ch, Pr(ch, !(#first ch))
+ *   !(#count ch) is the number of elements that can be read without blocking
+ *   if !(#count ch) is 0, we are in the case (1) or (2)
+ *
+ *        
+ *)
+

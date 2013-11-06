@@ -1,0 +1,74 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature TYPES =
+    sig
+	type space
+
+	datatype status = CHOICE of int | FAILED | SOLVED | UNKNOWN
+	type node_info =
+	    {alternative : int, connection : Gtk.object option ref,
+	     dirty : bool ref,
+	     groupOffset : int ref, hasSolBelow : bool ref, hidden : bool ref,
+	     offset : int ref, oldOffset : int option ref,
+	     openChildren : int ref,
+	     ownBest : space option ref, shape : (int * int) list ref,
+	     space : space option ref, clone : space option ref,
+	     dist : int ref,
+	     status : status ref,
+	     vNode : Gtk.object option ref}
+	datatype tree = N of node_info * tree option ref * tree vector ref
+	type explorer_state =
+	    {breakAfter : int ref, breakAfterNodes : int ref,
+	     cancelSearch : bool ref, curInspAction : string ref,
+	     gtk :
+             {actionGroup : Gtk.object ref, actionHandler : int ref,
+              canvas : Gtk.object, contextId : int ref,
+              menu : {inspectionActions : Gtk.object ref},
+	      rootGroup : Gtk.object ref,
+              scale : real ref, shadowGroup : Gtk.object ref,
+	      window : Gtk.object},
+	     hideFailed : bool ref,
+	     inspect : ((space -> unit) * string) list ref,
+	     refreshAfter : int ref,
+	     status :
+             {all : int ref, choice : int ref, failed : int ref,
+              solved : int ref},
+	     tree :
+             {bestSpace : space option ref,
+              constrain : (space * space -> unit) option ref,
+              currentNode : tree option ref, rootSpace : space option ref,
+              tree : tree ref, mrd : int ref},
+	     zoomFollows : bool ref}
+	val setTree : explorer_state option ref -> tree -> unit
+	val getTree : explorer_state option ref -> tree
+	val getCurrentNode : explorer_state option ref -> tree option
+	val getBestSpace : explorer_state option ref -> space option
+	val getConstrain :
+	    explorer_state option ref -> (space * space -> unit) option
+	val getSearchState : explorer_state option ref -> int * int * int
+	val resetSearchState : explorer_state option ref -> unit
+	val cancelSearch : explorer_state option ref -> bool
+	val setCancelSearch : explorer_state option ref -> unit
+	val resetCancelSearch : explorer_state option ref -> unit
+	val addChoice : explorer_state option ref -> unit
+	val addFailed : explorer_state option ref -> unit
+	val addSolved : explorer_state option ref * space -> unit
+	val getHideFailed : explorer_state option ref -> bool
+	val setHideFailed : explorer_state option ref -> bool -> unit
+	val getZoomFollows : explorer_state option ref -> bool
+	val setZoomFollows : explorer_state option ref -> bool -> unit
+	val getDist : tree -> int
+	val getMrd : explorer_state option ref -> int
+    end

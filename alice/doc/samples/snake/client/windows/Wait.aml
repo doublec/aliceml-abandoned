@@ -1,0 +1,169 @@
+(* Alice Snake 2.0 - WaitWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature WAIT   from "WAIT-sig"
+
+import structure Gtk    from "GtkSupport"
+import structure Gdk    from "GtkSupport"
+
+import structure Color  from "../../common/Color"
+
+import structure Text   from "Text"
+
+
+structure Wait :> WAIT =
+struct
+
+    type ready_cb = unit -> string option
+
+    type cancel_cb = unit -> unit
+
+    type wait_widget = {object : Gtk.object,
+			insertPlayer : string * Color.color -> unit,
+			removePlayer : string * Color.color -> unit}
+
+    (* converts a Color.color into a Gdk.color *)
+    fun colorToGdkColor (colormap, c) =
+	let
+	    val (r, g, b) = Color.rgb c
+	    fun conv n = Real.round (65535.0 * n)
+	    val color = Gdk.Color.new { red = conv r, green = conv g, blue = conv b }
+	in
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
+	    color
+	end
+
+    (* inserts all connected players into text widget *)
+    fun playersJoined (p : wait_widget, players) = 
+	                 List.app (#insertPlayer p) players
+	
+    (* removes one player from text widget *)
+    fun playerDisconnected (p : wait_widget, name, color) = 
+	                #removePlayer p (name, color)
+	
+    fun gameStarted _ = ()
+    (* cause in server mode this signal should never appear *)
+
+
+    (* builds the waiting window *)
+    fun mkWaitWindow (parent, alreadyConn, readyCB, cancelCB, ticket) =
+	let
+	    val waiting          = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val dialogVBox       = Gtk.VBox.new (false, 0)
+	    val connectedLabel   = Gtk.Label.new "Connected Players : "
+	    val separator1       = Gtk.HSeparator.new ()
+	    val separator2       = Gtk.HSeparator.new ()
+	    val disconnectButton = Gtk.Button.newWithLabel "Disconnect"
+	    val startButton      = Gtk.Button.newWithLabel "Start"
+	    val buttonHBox       = Gtk.HButtonBox.new ()
+	    val urlHBox          = Gtk.HBox.new (false, 10)
+	    val urlLabel         = Gtk.Label.new "Server-URL: "
+	    val serverUrl        = Gtk.Entry.new ()
+
+	    (* the textwindow where the connected player will be listed *)
+	    val playerText        = Gtk.createTextWidget ()
+	    val playerWindow      = 
+		Gtk.ScrolledWindow.new (Gtk.null, Gtk.null)
+
+	    val colormap = Gdk.Colormap.getSystem ()
+
+	    (* [insert(name, color)] inserts one player with name and color in
+	       connected-players list *)
+	    fun insertPlayer (name, color) = 
+		let
+		    val text  = name ^ " has connected!\n"
+		    val color = colorToGdkColor (colormap, color)
+		in
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
+		end
+
+	    (* inserts "Name: name Color: color has disconnected" 
+	       in playetText *)
+	    fun removePlayer (name, color) =
+		let
+		    val text  = name ^ " has disconnected!\n"
+		    val color = colorToGdkColor (colormap, color)
+		in
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
+		end
+
+	    val waitWindow = {object = waiting,
+			      removePlayer,
+			      insertPlayer}
+		
+	    (* the mainQuit procedure resets also the used refs *)
+	    fun mainQuit () = (Gtk.Widget.destroy waiting; cancelCB ())
+		
+	    (* the signal the server gives to start the game,
+	     also resets the refs and destroyes the window *)
+	    fun start () = 
+		(Gtk.Widget.destroy waiting;
+		 case readyCB () of
+		     NONE          => ()
+		   | SOME errorMsg => 
+			   (Text.mkTextWindow (parent, "ERROR!", errorMsg);()))
+	in
+
+	    playersJoined (waitWindow, alreadyConn);
+	    Gtk.Window.setModal (waiting, true);
+	    Gtk.Window.setTitle (waiting, "Waiting...");
+	    Gtk.Window.setPosition (waiting, Gtk.WindowPosition.CENTER);
+	    Gtk.TextView.setEditable (playerText, false);
+	    
+	    (* connects the signals with procedures *)
+	    Gtk.signalConnect (waiting, "delete-event", 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (startButton, "clicked",
+			       fn _ => start ());
+	    Gtk.signalConnect (disconnectButton, "clicked", 
+			       fn _ => mainQuit ());
+	    
+	    (* set some default configurations *)
+	    Gtk.Entry.setText (serverUrl, ticket);
+	    Gtk.Container.setBorderWidth (waiting, 10);
+	    Gtk.Misc.setAlignment (connectedLabel, 0.0, 0.5);
+	    Gtk.Entry.setEditable (serverUrl, false);
+	    Gtk.Window.setDefaultSize(waiting, 300, 400);
+	    Gtk.ScrolledWindow.setPolicy (playerWindow, 
+					 Gtk.PolicyType.NEVER, 
+					 Gtk.PolicyType.ALWAYS);
+	    
+	    (* pack everything in boxes *)
+	    Gtk.Box.packStart (buttonHBox, startButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, disconnectButton, 
+			      true, true, 5);
+	    
+	    Gtk.Box.packStart (urlHBox, urlLabel, false, false, 5);
+	    Gtk.Box.packStart (urlHBox, serverUrl, false, false, 5);
+	    
+	    Gtk.Container.add (playerWindow, playerText);
+	    
+	    Gtk.Box.packStart (dialogVBox, urlHBox, false, false, 0);
+	    Gtk.Box.packStart (dialogVBox, separator2, false, 
+			      false, 5);
+	    Gtk.Box.packStart (dialogVBox, connectedLabel, false, 
+			      false, 5);
+	    Gtk.Box.packStart (dialogVBox, playerWindow, true, 
+			      true, 0);
+	    Gtk.Box.packStart (dialogVBox, separator1, false, 
+			      false, 5);
+	    Gtk.Box.packStart (dialogVBox, buttonHBox, false, 
+			      false, 5);
+	    
+	    (* pack everything in container and show it all *)
+	    Gtk.Container.add (waiting, dialogVBox);
+	    Gtk.Widget.showAll waiting;
+ 
+	    waitWindow
+	    
+	end
+    
+end

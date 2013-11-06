@@ -1,0 +1,46 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive type unit and bool and exn from "ToplevelTypes"
+import __primitive structure Time             from "Time"
+
+signature THREAD =					(**)
+sig
+    type thread
+    type t = thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
+
+    exception Terminate
+    exception Terminated
+
+    val thread :	(unit -> unit) -> thread
+    val spawnThread :	(unit -> 'a) -> thread * 'a
+
+    val current :	unit -> thread
+    val state :		thread -> state
+
+    val yield :		thread -> unit
+    val sleep :		Time.time -> unit
+
+    val raiseIn :	thread * exn -> unit   (* Terminated *)
+    val terminate :	thread -> unit
+
+    val suspend :	thread -> unit
+    val resume :	thread -> unit
+    val isSuspended :	thread -> bool
+end

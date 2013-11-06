@@ -1,0 +1,197 @@
+PROPOSAL FOR JACKE
+==================
+
+Jacke is supposed to be a Yacc tool with the following properties:
+
+- SML consistent syntax
+- embeddable into ordinary SML code
+- compositional structure
+- multiple start symbols
+- ability to handle inherited attributes
+- optionally: rule templates
+
+Here is the grammar (without templates):
+
+  yaccdec ::=	topdec				SML toplevel declaration
+		`token' tokbind			token declaration
+		`assocl' symid_1 ... symid_n	left associative symbols (n>=1)
+		`assocr' symid_1 ... symid_n	right associative symbols (n>=1)
+		`nonassoc' symid_1 ... symid_n	non assocative symbols (n>=1)
+		`rule' rulebind			production rule
+		`parser' parsbind		start symbol
+						empty
+		yaccdec <`;'> yaccdec		sequence
+
+  tokbind ::=	symid <`of' ty> <`|' tokbind>
+
+  rulebind ::=	symid <atpat> <`:' ty> `=' bnfexp <`and' rulebind>
+
+  parsbind ::=	vid <atpat> <`:' ty> `=' symid <atexp>
+
+  bnfexp ::=	`skip'				epsilon
+		symid				terminal or non-terminal symbol
+		`(' bnfexp `)'
+		bnfexp atexp			attribute
+		vid `as' bnfexp			naming
+		bnfexp `,' bnfexp		sequence
+		bnfexp `prec' symid		precedence annotation
+		bnfexp `when' exp		contitional rule
+		bnfexp `=>' exp			result transformation
+		bnfexp `|' bnfexp		alternative
+
+  Note: Attributes may only be applied to `skip' and to rule symids.
+
+Tokens are declared very much like SML datatypes. Associativity declarations
+mimic SML infix directives.
+
+Rule bindings declare the actual production (which are usually mutual
+recursive). The right hand sides of rule bindings are extended BNF expressions.
+They are compositional in structure, i.e. result transformations (`=>') and
+alternatives (`|') may be nested arbitrarily. Consequently, BNF expressions can
+be used very much like parser combinators.
+
+Conceptionally, each BNF expression returns a value, a synthesized attribute.
+For `skip' and simple token identifiers (without token attributes), this is ().
+Tokens with attributes (those having an `of' part) just return their attribute.
+Sequential expressions return a tuple of their component results. Alternative
+expressions return the result of the rule that was successful. The combinator
+`=>' allows results to be transformed into a different value. On the left hand
+side of a rule binding a type annotation can be used to document the type of
+the intended return value.
+
+The `as' expression allows a subexpression result to be named, so that it is
+available in the following expressions (e.g. to transform it or to use it
+inside attribute applications). As short hand, expressions only consisting of a
+symbol identifier "symid" behave as if the expression "symid as symid" had been
+written. This often allows more compact rules and corresponds to the scheme
+used to name the results of subderivations in New Jersey's ML-Yacc.
+
+Productions may contain an optional argument pattern representing
+inherited attributes. To pass these attributes, each occurence of such a
+non-terminal symbol in an BNF expression must be followed by a corresponding
+attribute application (see example below). As short hand, attribute expressions
+may be applied to `skip' as well. This has no effect besides evaluation of the
+expression and can be utilized to generate side effects during parsing.
+
+Parser bindings declare the start symbols. Only these actually generate global
+SML functions. A parser binding just denotes the corresponding start symbol,
+optionally followed by an appropriate attribute value. The parser may also
+require an attribute argument itself.
+
+Here is a sample parser evaluating a simple expression syntax with let:
+
+	type env = (string,int) map
+
+	token PLUS | MINUS | TIMES | LET | IN | EQUAL
+	    | ID of string | NUM of int
+
+	assocl TIMES
+	assocl PLUS MINUS
+
+	rule exp E : int =
+		  NUM
+		| ID  					=> lookup(E, ID)
+		| n1 as exp E, oper, n2 as exp E	=> oper(n1, n2)
+		| LET, ID, EQUAL, n1 as exp E, IN, n2 as exp(insert(E, ID, n1))
+							=> n2
+	and oper =
+		  PLUS	=> op+
+		| MINUS	=> op-
+		| TIMES	=> op*
+
+	parser eval = exp empty		(* start with empty environment *)
+
+In rule `exp' note how the NUM subexpression has no result transformation, as
+it already returns the desired value. Also note, how the identifiers `ID' and
+`oper' appear on the right hand side as if they had been bound via `as'. The
+example also shows how the environment is inherited and extended during
+parsing. The above specification will generate the following SML objects:
+
+	type env = (string,int) map	(* just copied *)
+
+	datatype token = PLUS | MINUS | TIMES | LET | IN | EQUAL |
+			 ID of string | NUM of int
+
+	val eval : lexer -> int
+
+The `lexer' type will be specified in an appropriate library and will probably
+be some function type, to allow lazy input.
+
+The given Jacke grammar can quite easily be extended to provide rule templates
+(generic rules parameterised over BNF expressions). Such templates are available
+in Gump. The following modifications are necessary:
+
+  rulebind ::=	symid symid_1 .. symid_n <atpat> <`:' ty>	(n>=0)
+			`=' bnfexp <`and' rulebind>
+
+  bnfexp ::=	...
+		symid bnfexp_1 .. bnfexp_n			(n>=0)
+
+A rule binding containing symid parameters is parameterised over the
+corresponding number of actual BNF expressions. When the rule identifier appears
+on some right hand side it has to be supplied with these BNF expressions. Some
+simple examples for rule templates are the following combinators:
+
+	rule opt X =
+		  skip	=> NONE
+		| X	=> SOME X
+
+	rule many X =
+		  skip => []
+		| some X
+
+	and some X =
+		  X			=> [X]
+		| X, xs as many X	=> X::xs
+
+For convenience, it might be nice to allow infix identifiers.
+
+Of course, the start symbol refered to in a parser binding may not be a
+template rule.
+
+Note: It might even be possible to allow higher order rule templates: a rule
+parameter could be a template as well.
+
+
+
+LEXER
+=====
+
+Here is the proposed grammar for the lexer:
+
+  lexdec ::=	topdec				SML toplevel declaration
+		`regexp' regbind		regular expression
+		`lexer' lexbind			lexer
+						empty
+		lexdec <`;'> lexdec		sequence
+
+  regbind ::=	regid `=' regexp <`and' regbind>
+
+  lexbind ::=	vid <atpat> `=' lmatch <`and' lexbind>
+
+  lmatch ::=	lrule <`|' lmatch>
+  lrule ::=	regexp `=>' exp
+
+  regexp ::=	`_'				any character
+		string				exact match
+		`eof'				end-of-file
+		`[' chars `]'
+		`[^' chars `]'
+		regid
+		`(' regexp `)'
+		regexp `*'
+		regexp `+'
+		regexp `?'
+		regexp `{' num <`,' num> `}'	n (or n to m) repetitions
+		regexp regexp
+		regexp `|' regexp
+
+Each lexbind will generate a single scanner function of the same name. The
+right hand sides of lex rules can contain recursive calls to the same (or to
+another) lexer, as in OCaml's Yacc. This allows continuation after recognition
+of non-token strings, such as comments.
+
+The only interesting thing to note here is the ability to pass an additional
+argument to a lexer. This has been proposed by Christian Lindig and allows
+stateless scanning of stuff like nested comments when used in recursive lexer
+calls.

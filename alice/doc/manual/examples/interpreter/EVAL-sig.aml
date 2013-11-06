@@ -1,0 +1,15 @@
+(*
+ * Interpreter for F - Evaluation
+ *
+ * 2000/02/02 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Value  from "Value"
+import structure Env    from "Env"
+
+signature EVAL =
+sig
+    exception Error
+    val eval : Value.value Env.env -> Syntax.exp -> Value.value	(* [Error] *)
+end

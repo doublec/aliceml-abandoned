@@ -1,0 +1,25 @@
+import structure MkRedBlackMap      from "x-alice:/lib/data/MkRedBlackMap"
+import structure MkRedBlackSet      from "x-alice:/lib/data/MkRedBlackSet"
+
+structure BoolVector = 
+    struct 
+    	open Vector 
+	    type elem   = bool 
+	    type vector = bool vector 
+        type t      = bool t
+    end
+
+structure IntSet =
+    MkRedBlackSet (type t = int val compare = Int.compare)
+    
+    
+structure IntMap =
+    MkRedBlackMap (type t = int val compare = Int.compare)
+    
+    
+structure StringMap =
+    MkRedBlackMap (type t = string val compare = String.compare)
+    
+
+structure SetMap =
+    MkRedBlackMap (type t = IntSet.set val compare = IntSet.compare)

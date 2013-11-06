@@ -1,0 +1,94 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure TextIO        from "x-alice:/lib/system/TextIO"
+import structure Inspector     from "x-alice:/lib/tools/Inspector"
+import structure Packer        from "x-alice:/lib/distribution/Packer"
+import structure Remote        from "x-alice:/lib/distribution/Remote"
+import structure MkManager     from "MkManager"
+import signature MANAGER       from "MANAGER-sig"
+import structure Process       from "Process"
+import signature WORKER_PARCEL from "WORKER_PARCEL-sig"
+import signature SCRIPT        from "SCRIPT-sig"
+import signature PAR_SEARCH    from "PAR_SEARCH-sig"
+
+structure ParSearch :> PAR_SEARCH =
+    struct
+	datatype mode = ONE | ALL | BEST
+	    
+	functor MkEngine(structure Script : SCRIPT) =
+	    struct
+		functor MkWorker(structure Manager : MANAGER) =
+		    struct
+			fun worker(_,  _, nil)        = nil
+			  | worker(i, data, host::hr) =
+			    let
+				val (mode, package) = data
+
+				structure Parcel =
+				    struct
+					val id            = i
+					val mode          = mode
+					val script        = package
+					structure Manager = Manager
+				    end
+			
+				structure T = Remote.Offer(structure X = Parcel
+							   signature S = WORKER_PARCEL)
+			    in
+				(Process.workerSite(host, T.ticket);
+				 worker((i + 1), data, hr))
+			    end
+			  | worker _                  = raise Subscript
+		    end
+		
+		fun modeToInt ONE  = 0
+		  | modeToInt ALL  = 0
+		  | modeToInt BEST = 1
+
+		fun modeToModeInt ONE  = 0
+		  | modeToModeInt ALL  = 1
+		  | modeToModeInt BEST = 2
+
+		fun engine (hosts, mode) =
+		    let
+			(* Build tiny Logger *)
+			val os = TextIO.openOut "/home/bruni/worklog.txt"
+			    
+			structure Logger =
+			    struct
+				fun log s = TextIO.output(os, s)
+			    end
+
+			structure Manager = MkManager(structure Logger    = Logger
+						      val mode            = (modeToModeInt mode)
+						      structure Script    = Script)
+			structure Worker  = MkWorker(structure Manager = Manager)
+			structure P       = Packer.Pack(structure X = Script
+							signature S = SCRIPT)
+			    
+			val sols     = Promise.promise ()
+			val workers  = Worker.worker(0, (modeToInt mode, P.package), hosts)
+			val canStart = Promise.promise ()
+			val haveSols = Promise.promise ()
+		    in
+			(Manager.prepare canStart;
+			 Future.await(Promise.future canStart);
+			 Manager.get sols;
+			 Manager.sync haveSols;
+			 Future.await(Promise.future haveSols);
+			 TextIO.closeOut os;
+			 Promise.future sols)
+		    end
+	    end
+    end

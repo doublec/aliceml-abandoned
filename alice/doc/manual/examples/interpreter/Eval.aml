@@ -1,0 +1,46 @@
+(*
+ * Interpreter for F+rec - Evaluation
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Value  from "Value"
+import structure Env    from "Env"
+import signature EVAL   from "EVAL-sig"
+
+structure Eval :> EVAL =
+struct
+    open Syntax
+    open Env
+    open Value
+
+    exception Error = Value.Error
+
+    fun eval V (Con c) =
+	    Value.constant c
+      | eval V (Id x) =
+	    (lookup(x,V) handle Unbound _ => raise Error)
+      | eval V (If (e1,e2,e3)) =
+	    (case eval V e1
+	     of Num 1 => eval V e2
+	      | Num 0 => eval V e3
+	      | _     => raise Error
+	    )
+      | eval V (App (e1,e2)) =
+	let
+	    val v1 = eval V e1
+	    val v2 = eval V e2
+	in
+	    case v1
+	     of Num _         => raise Error
+	      | Op oper       => Value.applyOp (oper,v2)
+	      | Proc (x,e,V') => eval (insert (x,v2,V')) e
+	      | RecProc (x1,x2,e,V') =>
+		eval (insert (x2,v2, insert (x1,v1,V'))) e
+	end
+      | eval V (Abs (x,t,e)) =
+	    Proc (x,e,V)
+      | eval V (Rec (x1,x2,t2,t1,e)) =
+	    RecProc (x1,x2,e,V)
+end

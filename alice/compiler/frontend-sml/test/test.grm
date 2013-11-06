@@ -1,0 +1,28 @@
+%%
+
+%name Parser
+%pos  unit
+
+%verbose
+
+%term EOF | ANY | WHERE | SIGNATURE
+%eop  EOF
+%noshift EOF
+
+%nonterm dec | sigexp | rea
+%start dec
+
+%right WHERE
+%left ANY
+
+%%
+
+  dec:	  sigexp					() (*0*)
+
+  sigexp:
+	  ANY						() (*1*)
+	| sigexp WHERE rea				() (*2*)
+
+  rea:
+	  SIGNATURE ANY					() (*3*)
+	| SIGNATURE ANY WHERE rea			() (*4*)

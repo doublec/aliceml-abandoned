@@ -1,0 +1,85 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint   from "x-alice:/lib/utility/PrettyPrint"
+import structure PPValue       from "x-alice:/lib/system/PPValue"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Test          from "Test"
+import signature REPORT        from "REPORT-sig"
+
+
+structure Report :> REPORT =
+struct
+
+    fun printSpc n = 
+	let
+	   fun print' (i, s) = if i = 0 then s else print' (i - 1,s ^ " ")
+	in
+	   print' (23 - String.size n, n)
+        end
+
+    fun printPts n = 
+	let
+	   fun print' (i, s) = if i = 0 then s else print' (i - 1,s ^ ".")
+	in
+	   print' (23 - String.size n, n)
+        end
+
+
+    fun printFailExn (out, n, exn, sample) =
+        (TextIO.output      (out, "\t" ^ printSpc (n ^ ":") ^ "exception raised:\n");
+         PrettyPrint.output (out, PPValue.ppVal PervasiveType.typ_exn exn, 80);
+         TextIO.output      (out, "\n");
+         TextIO.output      (out, "\t" ^ printSpc "with argument:" ^ sample ^ "\n"))
+    
+    
+    fun fmtFail (out, _) ((n, _), Test.FAIL_ASSERT _, sample) = 
+	TextIO.output (out, "\t" ^ printSpc (n ^ ":")
+			^ "testcase failed!\n\t   " 
+                        ^ printSpc "with argument:"
+			^ sample ^ "\n")
+      | fmtFail (out, true) ((n, _), Test.FAIL_EXN exn, sample) =
+	if exnName exn = "MissingFunction"
+	then TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ 
+				 "missing function in structure\n\n")
+	else printFailExn (out, n, exn, sample)
+      | fmtFail (out, false) ((n, _), Test.FAIL_EXN exn, sample) =
+	if exnName exn = "MissingFunction"
+	then ()
+	else printFailExn (out, n, exn, sample)
+      | fmtFail (out, _) ((n, _), Test.FAIL_TIMEOUT, sample) =
+	TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ "timeout expired\n")
+
+
+    fun report (out, cfg : Test.config) { name, passed, failed, failures } =
+	let
+	    val str = printPts name
+	    val showM = #showMissing cfg
+        in
+            if failed = 0
+	    then TextIO.output (out, "\n" ^ str ^ "ok\t(" 
+                                ^ Int.toString passed ^ ") passed\n")
+            else
+	 	(TextIO.output (out, "\n" ^ str ^ "FAILED\t("
+                                 ^ Int.toString passed ^ "/" 
+                                 ^ Int.toString (passed+failed) 
+                                 ^ ") passed\n");
+	    List.app (fmtFail (out, showM)) failures)
+	end
+
+
+    fun run out cfg = report (out, cfg) o (Test.run cfg)
+
+
+    fun runAll out cfg = List.app (run out cfg)  
+end
+

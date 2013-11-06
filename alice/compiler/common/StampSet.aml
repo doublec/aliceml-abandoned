@@ -1,0 +1,16 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stamp        from "Stamp"
+import structure MkHashImpSet from "../../lib/data/MkHashImpSet"
+
+structure StampSet = MkHashImpSet(Stamp)

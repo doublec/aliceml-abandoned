@@ -1,0 +1,64 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space";
+
+open Modeling
+
+(* agelist ensures the constraint a > b > c *)
+fun age_list space =
+    let
+    	val ages as #[a,b,c] = FD.intvarVec(space,3,#[(0,9)])
+    in 
+    	FD.rel(space,a,FD.GR,b);
+    	FD.rel(space,b,FD.GR,c);
+    	ages
+    end
+
+
+fun makefamily space =
+    let
+    	val boysages  = age_list space
+    	val girlsages = age_list space
+    	val tmp1 = FD.range(space,(0,243))
+    	val tmp2 = FD.range(space,(0,243))
+    	val ages as #[a,b,c,d,e,f] = 
+    		Vector.concat([boysages,girlsages])
+    	fun squares_sum(#[x,y,z],res)= 
+            post(space,FD(x)`* FD(x)`+ 
+                       FD(y)`* FD(y)`+
+                       FD(z)`* FD(z) `= FD(res),FD.DOM)
+    in
+    	FD.distinct(space,ages,FD.DOM);
+    	post(space,FD(a) `+ FD(b) `+ FD(c) 
+    	        `= FD(d) `+ FD(e) `+ FD(f),FD.DOM);
+    	squares_sum(boysages,tmp1);
+    	squares_sum(girlsages,tmp2);
+    	FD.rel(space,tmp1,FD.EQ,tmp2);
+    	{boys= #[Vector.sub(ages,0),Vector.sub(ages,1),
+                 Vector.sub(ages,2)],
+    	 girls = #[Vector.sub(ages,3),Vector.sub(ages,4),
+    	           Vector.sub(ages,5)]}
+    end
+    	
+    	
+fun family space = 
+    let
+    	val maria = makefamily space
+    	val clara = makefamily space
+    	val ageofmariasyoungestgirl = Vector.sub(#girls maria,2)
+    	val ageofclarasyoungestgirl = Vector.sub(#girls clara,2)
+    	val ages = Vector.concat([#boys (maria),#girls (maria),
+    	                          #boys(clara),#girls(clara)])
+    in
+    	Vector.app(fn x => 
+    	      FD.rel(space,x,FD.GR,ageofmariasyoungestgirl))
+    	          (#boys maria);
+    	FD.relI(space,ageofclarasyoungestgirl,FD.EQ,0);
+    	post(space,SUMV(ages) `= `60,FD.DOM);
+    	FD.branch(space,ages,FD.B_SIZE_MIN,FD.B_MIN);
+    	{maria,clara}
+    end	  	
+ 
+(* Explorer.exploreAll family *)   	
+    	

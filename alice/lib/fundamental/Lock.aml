@@ -1,0 +1,57 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                         from "Pervasive"
+import __primitive type unit datatype option and ref from "ToplevelTypes"
+import __primitive infix 4 = infix 3 :=
+		   val op= and op! and op:=          from "ToplevelValues"
+import __primitive structure Ref                     from "Ref"
+import __primitive structure Promise                 from "Promise"
+import __primitive structure Future                  from "Future"
+import __primitive structure Thread                  from "Thread"
+import __primitive signature LOCK                    from "LOCK-sig"
+
+local
+    structure Lock : LOCK =					(**)
+    struct
+	type lock = unit ref * Thread.t option ref
+	type t = lock
+
+	fun lock () = (ref (), ref NONE)
+
+	fun sync (signal, thread) f x =
+	    let
+		val self = SOME (Thread.current ())
+	    in
+		if !thread = self then f x else
+		let
+		    val p = Promise.promise ()
+		in
+		    Future.await (Ref.exchange (signal, Promise.future p)); 
+		    thread := self; 
+		    f x
+		    finally (thread := NONE; Promise.fulfill (p, ()))
+		end
+	    end
+    end
+
+    __primitive eqtype lock = "''Lock.lock"
+    __primitive functor Cast (structure X : LOCK signature S) : S = "Cast"
+in
+    structure Lock = Cast (signature S = LOCK where type lock = lock
+			   structure X = Lock)
+end

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+#PATH=/opt/alice-devel/bin:$PATH
+
+INFILE=$1
+BASEFILE=`basename $INFILE .ante`
+OUTFILE=$BASEFILE.ant
+AMLFILE=$BASEFILE.aml
+
+echo >$AMLFILE
+echo >>$AMLFILE 'import "Ante" import "Instructions" open Ante'
+#cat >>$AMLFILE lib.ante
+cat >>$AMLFILE $INFILE
+echo >>$AMLFILE ';Instructions.output ignore (TextIO.stdOut, compile ant);'
+echo >>$AMLFILE 'OS.Process.exit OS.Process.success : unit;'
+
+alicec $AMLFILE
+alicerun $BASEFILE >$OUTFILE
+rm $AMLFILE

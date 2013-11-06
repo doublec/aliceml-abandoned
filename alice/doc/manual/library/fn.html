@@ -1,0 +1,147 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Fn structure", "The <TT>Fn</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature FN
+    structure Fn : FN
+  </PRE>
+
+  <P>
+    The structure <tt>Fn</tt> defines basic generic combinators for functions
+    that are useful for a wide range of programming tasks.
+  </P>
+
+  <P>See also:
+    <A href="general.html"><TT>General</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature FN =
+    sig
+	val id :      'a -> 'a
+	val const :   'a -> 'b -> 'a
+	val apply :   ('a -> 'b) * 'a -> 'b
+	val o :       ('b -> 'c) * ('a -> 'b) -> ('a -> 'c)
+	val curry :   ('a * 'b -> 'c) -> ('a -> 'b -> 'c)
+	val uncurry : ('a -> 'b -> 'c) -> ('a * 'b -> 'c)
+	val flip :    ('a * 'b -> 'c) -> ('b * 'a -> 'c)
+	val repeat :  int -> ('a -> 'a) -> ('a -> 'a)
+	val forever : ('a -> 'a) -> 'a -> 'b
+	val iter :    int -> (unit -> unit) -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+<!--
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/general.html"><TT>General</TT></A> structure.
+  </P>
+-->
+
+  <DL>
+    <DT>
+	<TT>val id : 'a -> 'a</TT>
+    </DT>
+    <DD><P>
+	<TT>id</TT> is the identity function. Thus, <TT>id <I>a</I></TT>
+	is equivalent to <TT><I>a</I></TT>.
+    </P></DD>
+
+    <DT>
+	<TT>val const : 'a -> 'b -> 'a</TT>
+    </DT>
+    <DD><P>
+	<TT>const <I>a</I></TT> is a constant function that always returns
+	<TT><I>a</I></TT>. Thus, <TT>const <I>a b</I></TT> is equivalent to
+	<TT><I>a</I></TT>, except for side-effects.
+    </P></DD>
+
+    <DT>
+	<TT>val apply : ('a -> 'b) * 'a -> 'b</TT>
+    </DT>
+    <DD><P>
+	<TT>apply(<I>f</I>,<I>a</I>)</TT> applies <TT><I>f</I></TT> to
+	<TT><I>a</I></TT>. Thus, it is equivalent to <TT><I>f a</I></TT>.
+    </P></DD>
+
+    <DT>
+	<TT>val o : ('b -> 'c) * ('a -> 'b) -> ('a -> 'c)</TT>
+    </DT>
+    <DD><P>
+	<TT><I>f</I> o <I>g</I></TT> is the function composition of
+	<TT><I>f</I></TT>
+	and <TT><I>g</I></TT>. Thus, <TT>(<I>f</I> o <I>g</I>) <I>a</I></TT> is
+	equivalent to <TT><I>f</I>(<I>g a</I>)</TT>.
+    </P></DD>
+
+    <DT>
+	<TT>val curry : ('a * 'b -> 'c) -> ('a -> 'b -> 'c)</TT>
+    </DT>
+    <DD><P>
+	<TT>curry <I>f</I></TT> transforms the binary function
+	<TT><I>f</I></TT> into curried form. Thus, <TT>curry <I>f a b</I></TT>
+	is equivalent to <TT><I>f</I>(<I>a</I>,<I>b</I>)</TT>.
+    </P></DD>
+
+    <DT>
+	<TT>val uncurry : ('a -> 'b -> 'c) -> ('a * 'b -> 'c)</TT>
+    </DT>
+    <DD><P>
+	<TT>uncurry <I>f</I></TT> transforms a curried function
+	<TT><I>f</I></TT> into a binary function. Thus, <TT>uncurry <I>f</I>
+	(<I>a</I>,<I>b</I>)</TT> is equivalent to <TT><I>f a b</I></TT>.
+    </P></DD>
+
+    <DT>
+	<TT>val flip : ('a * 'b -> 'c) -> ('b * 'a -> 'c)</TT>
+    </DT>
+    <DD><P>
+	<TT>flip <I>f</I></TT> switches the argument order of the binary
+	function
+	<TT><I>f</I></TT>. Thus, <TT>flip <I>f</I> (<I>a</I>,<I>b</I>)</TT> is
+	equivalent to <TT><I>f</I>(<I>b</I>,<I>a</I>)</TT>.
+   </P></DD>
+
+    <DT>
+	<TT>val repeat : int -> ('a -> 'a) -> ('a -> 'a)</TT>
+    </DT>
+    <DD><P>
+	<TT>repeat <I>n f</I></TT> is the <TT><I>n</I></TT>-fold composition
+	of <TT><I>f</I></TT>. Thus, <TT>repeat <I>n f a</I></TT> is equivalent
+	to <TT><I>f</I>(</TT>...<TT>(<I>f</I>(<I>a</I>))</TT>...<TT>)</TT>,
+	where <TT><I>f</I></TT> occurs <TT><I>n</I></TT> times.
+    </P></DD>
+
+    <DT>
+	<TT>val forever : ('a -> 'a) -> 'a -> 'b</TT>
+    </DT>
+    <DD><P>
+	<TT>forever <I>f a</I></TT> performs infinite repetition of the function
+	<TT><I>f</I></TT>. Thus, <TT>forever <I>f</I></TT> can be thought of as
+	being equivalent to <TT>repeat &infin; <I>f</I></TT>.
+    </P></DD>
+
+    <DT>
+	<TT>val iter : int -> (unit -> unit) -> unit</TT>
+    </DT>
+    <DD><P>
+	<TT>iter <I>n f</I></TT> performs <TT><I>n</I></TT> times the
+	application <TT><I>f</I>()</TT>. Thus, <TT>iter <I>n f</I></TT> is
+	equivalent to <TT>(<I>f</I>();</TT>...<TT>;<I>f</I>())</TT>, with
+	<TT><I>f</I></TT> occurring <TT><I>n</I></TT> times.
+    </P></DD>
+  </DL>
+
+<?php footing() ?>

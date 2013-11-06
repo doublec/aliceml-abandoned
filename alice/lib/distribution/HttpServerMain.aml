@@ -1,0 +1,78 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import structure CommandLine from "x-alice:/lib/system/CommandLine"
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Http        from "x-alice:/lib/system/Http"
+import structure HttpServer  from "x-alice:/lib/system/HttpServer"
+
+signature HTTP_SERVER_MAIN =
+    sig
+	val main: string list -> OS.Process.status
+    end
+
+structure HttpServerMain :> HTTP_SERVER_MAIN =
+    struct
+	val documentRoot = "/tmp/httproot"
+
+	fun documentHandler (request: Http.request) =
+	    let
+		val relFile = Url.toString (Url.setQuery (#uri request, NONE))
+		val file = TextIO.openIn (documentRoot ^ relFile)
+		val body = TextIO.inputAll file
+	    in
+		TextIO.closeIn file;
+		Http.makeResponse
+		    {statusCode = 200, contentType = "text/plain", body}
+	    end
+
+	fun debugHandler (request: Http.request) =
+	    Http.makeResponse
+		{statusCode = 200, contentType = "text/plain",
+		 body = (#method request ^ " " ^
+			 Url.toString (#uri request) ^ " " ^
+			 #protocol request ^ "\n" ^
+			 Http.StringMap.foldi
+			     (fn (name, value, rest) =>
+				 name ^ ": " ^ value ^ "\n" ^ rest)
+			     "" (#headers request))}
+
+	val blackHole: unit = Promise.future (Promise.promise ())
+
+	fun start port =
+	    let
+		val port = HttpServer.start (SOME port)
+	    in
+		HttpServer.register
+		    (Url.setPath (Url.empty, ["debug"]), debugHandler);
+		HttpServer.register (Url.empty, documentHandler);
+		TextIO.print ("started server at port " ^
+			      Int.toString port ^ "\n");
+		Future.await blackHole
+	    end
+
+	fun usage () =
+	    (TextIO.output
+	     (TextIO.stdErr,
+	      "Usage: " ^ CommandLine.name () ^ " <port>\n");
+	     OS.Process.failure)
+
+	fun main [portString] =
+	    (case Int.fromString portString of
+		 SOME port => (start port; OS.Process.success)
+	       | NONE => usage ())
+	  | main _ = usage ()
+    end
+
+val _ = OS.Process.exit (HttpServerMain.main (CommandLine.arguments ()))

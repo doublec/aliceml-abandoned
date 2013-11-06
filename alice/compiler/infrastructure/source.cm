@@ -1,0 +1,7 @@
+Group is
+
+	../../lib/system/sources.cm
+	../../lib/utility/sources.cm
+
+	SOURCE-sig.aml
+	Source.aml

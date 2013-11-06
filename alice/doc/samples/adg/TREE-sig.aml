@@ -1,0 +1,26 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+signature TREE = 
+sig
+
+    val nodes : (string * string * string * (string * string) list) list ref
+    val edges : (string * string * (string * string) list) list ref
+
+    val insertNode : string * ((string * string) list) -> (string * bool)
+    val insertEdge : string * string * ((string * string) list) -> unit
+
+    val isImport : string -> bool
+    val isLibImport : string -> bool
+    val isUnsafeImport : string -> bool
+    val isRegExImport : string * string -> bool
+end

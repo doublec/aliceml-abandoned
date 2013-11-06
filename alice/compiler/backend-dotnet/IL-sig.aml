@@ -1,0 +1,185 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+signature IL =
+    sig
+	type id = string
+
+	type dottedname = id vector
+
+	(* Class Attributes *)
+
+	type isPublic = bool
+
+	type classVisibility = isPublic
+
+	datatype classInheritance =
+	    AbstractClass
+	  | InterfaceClass
+	  | SealedClass
+	  | ValueClass
+	  | RegularClass
+
+	type classAttr = classVisibility * classInheritance
+
+	(* Method Attributes *)
+
+	datatype memberVisibility =
+	    Private
+	  | Assembly
+	  | Public
+	  | FamilyAndAssembly
+	  | Family
+	  | FamilyOrAssembly
+	datatype methKind =
+	    Static
+	  | Instance
+	  | Abstract
+	  | Virtual
+	  | Final
+
+	type methAttr = memberVisibility * methKind
+
+	(* Field Attributes *)
+
+	type static = bool
+	type initonly = bool
+
+	type fieldAttr = memberVisibility * static * initonly
+
+	(* Types *)
+
+	datatype ty =
+	    ClassTy of dottedname
+	  | ValueClassTy of dottedname
+	  | ArrayTy of ty
+	  | CharTy
+	  | VoidTy
+	  | BoolTy
+	  | Int32Ty
+	  | Float64Ty
+	  | ObjectTy
+	  | StringTy
+
+	(* Instructions *)
+
+	type label = int
+
+	type isInstance = bool
+
+	datatype cond =
+	    EQ
+	  | GE
+	  | GE_UN
+	  | GT
+	  | GT_UN
+	  | LE
+	  | LE_UN
+	  | LT
+	  | LT_UN
+	  | NE_UN
+	  | TRUE
+	  | FALSE
+
+	datatype instr =
+	    Add
+	  | AddOvf
+	  | And
+	  | B of cond * label
+	  | Box of dottedname
+	  | Br of label
+	  | Call of isInstance * dottedname * id * ty vector * ty
+	  | Callvirt of dottedname * id * ty vector * ty
+	  | Castclass of ty
+	  | Ceq
+	  | Cgt
+	  | CgtUn
+	  | Clt
+	  | CltUn
+	  | Comment of string
+	  | Div
+	  | DivUn
+	  | Dup
+	  | Isinst of ty
+	  | Label of label
+	  | Ldarg of int
+	  | LdcI4 of int
+	  | LdcR8 of LargeReal.real
+	  | LdelemRef
+	  | Ldfld of dottedname * id * ty
+	  | LdindI4
+	  | LdindU2
+	  | LdindR8
+	  | Ldlen
+	  | Ldloc of int
+	  | Ldloca of int
+	  | Ldnull
+	  | Ldsfld of dottedname * id * ty
+	  | Ldstr of string
+	  | Leave of label
+	  | Newarr of ty
+	  | Newobj of dottedname * ty vector
+	  | Mul
+	  | Neg
+	  | Not
+	  | Or
+	  | Pop
+	  | Rem
+	  | RemUn
+	  | Ret
+	  | Rethrow
+	  | Shl
+	  | Shr
+	  | ShrUn
+	  | Starg of int
+	  | StelemRef
+	  | Stfld of dottedname * id * ty
+	  | Stloc of int
+	  | Stsfld of dottedname * id * ty
+	  | Sub
+	  | SubOvf
+	  | Switch of label vector
+	  | Tail
+	  | Throw
+	  | Try of label * label * dottedname * label * label
+	  | Unbox of dottedname
+	  | Xor
+
+	(* Top-Level Declarations *)
+
+	type extends = dottedname
+	type implements = dottedname vector
+
+	type locals = ty vector * bool   (* initialize *)
+
+	datatype classDecl =
+	    Field of id * fieldAttr * ty
+	  | Method of id * methAttr * ty vector * ty * locals * instr list
+
+	type isEntrypoint = bool
+
+	datatype decl =
+	    Class of
+	    dottedname * classAttr * extends * implements * classDecl list
+	  | GlobalMethod of
+	    id * isPublic * ty vector * ty * isEntrypoint * locals * instr list
+
+	type sign = FlatGrammar.sign
+	type program = decl list * sign
+	type t = program
+
+	val outputProgram: string * program -> unit
+    end

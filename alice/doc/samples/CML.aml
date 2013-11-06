@@ -1,0 +1,349 @@
+(* wait : 'a -> unit *)
+
+fun wait x = ignore (await x) handle _ => ()
+
+(* awaitAll : 'a vector -> 'a vector *)
+
+fun awaitAll xs = Vector.map await xs
+
+(* awaitEither : 'a * 'b -> ('a,'b) alt *)
+
+fun awaitEither (x,y) =
+    let
+	val p = promise ()
+    in
+	spawn (wait x; fulfill (p, FST x));
+	spawn (wait y; fulfill (p, SND y));
+	await (future p)
+    end
+
+(* awaitOne : 'a vector -> int * 'a *)
+
+
+val ac = ref 0
+
+fun awaitOne xs =
+    let
+	val p = promise ()
+	val n = future p
+val _=ac:= !ac+1
+val s=Int.toString(!ac)
+    in
+(*
+	Vector.appi (fn (i,x) => spawn (wait x; fulfill (p,i))) xs; 
+	(n, Vector.sub (xs,n))
+*)
+print ("{awaitOne."^s^" " ^ Int.toString(Vector.length xs) ^ "}"); 
+Vector.appi (fn (i,x) => spawn (
+print ("{awaitOne."^s^".1 " ^ Int.toString i ^ "/" ^ Int.toString(Vector.length xs) ^ "}"); 
+wait x; 
+print ("{awaitOne."^s^".2 " ^ Int.toString i ^ "/" ^ Int.toString(Vector.length xs) ^ "}"); 
+fulfill (p,i); 
+print ("{awaitOne."^s^".3 " ^ Int.toString i ^ "/" ^ Int.toString(Vector.length xs) ^ "}")
+)) xs; 
+print ("{awaitOne."^s^".4 " ^ Int.toString(Vector.length xs) ^ "}"); 
+(n, Vector.sub (xs,n))
+before print ("{awaitOne."^s^".5 " ^ Int.toString(Vector.length xs) ^ "}")
+    end
+
+
+signature CHANNEL =
+sig
+    type 'a channel
+    val channel : unit -> 'a channel
+    val put : 'a channel * 'a -> unit
+    val get : 'a channel -> 'a
+    val putLock : 'a channel -> ('a -> unit) * (unit -> unit)
+    val getLock : 'a channel -> (unit -> 'a) * (unit -> unit)
+end
+
+structure SyncChannel : CHANNEL =
+struct
+    datatype 'a put = PUT of 'a get promise option
+    and      'a get = GET of 'a * 'a put promise option
+    type 'a channel = 'a put ref * 'a get ref
+* int
+val count = ref 0
+
+    fun channel () =
+	let
+	    val get' = promise ()
+	in
+count := !count + 1; 
+print ("[channel "^Int.toString (!count)^"]\n"); 
+	    (ref (PUT get'), ref (future get'), !count)
+	end
+
+    fun put ((put, get, n), x) =
+	let
+	    val put' = promise ()
+	    val PUT get' = Ref.exchange (put, future put')
+	in
+print ("[put "^Int.toString n^"]\n"); 
+	    fulfill (get', GET (x, put'))
+	end
+
+    fun get (put,get,n) =
+	let
+            val get' = promise ()
+	    val GET (x, put') = Ref.exchange (get, future get')
+        in
+print ("[get "^Int.toString n^"]\n"); 
+	    fulfill (put', PUT get'); 
+	    x
+        end
+end
+
+
+structure SyncChannel : CHANNEL =
+struct
+    open Promise
+
+    type 'a channel = ('a * unit promise) list promise ref * ('a * unit promise) list ref
+* int
+val count = ref 0
+
+    fun channel () =
+	let
+	    val p = promise ()
+	in
+count := !count + 1; 
+print ("[channel "^Int.toString (!count)^"]\n"); 
+	    (ref p, ref (future p), !count)
+	end
+
+    fun put ((putr,getr,n), x) =
+	let
+	    val p' = promise ()
+	    val p  = Ref.exchange (putr, p')
+	    val ack = promise ()
+	in
+	    fulfill (p, (x,ack)::future p'); 
+	    await (future ack)
+;print ("[put "^Int.toString n^"]\n")
+	end
+
+    fun get (putr, getr, n) =
+	let
+            val p' = promise ()
+	    val xacks = Ref.exchange (getr, future p')
+	    val (x,ack) = hd xacks
+        in
+            fulfill (p', tl xacks); 
+	    fulfill (ack, ()); 
+print ("[got "^Int.toString n^"]\n"); 
+	    x
+        end
+
+    fun putLock (putr,getr,n) =
+	let
+	    val p' = promise ()
+	    val p  = Ref.exchange (putr, p')
+	in
+	    
+print ("[putLock "^Int.toString n^" ready]\n"); 
+	    (fn x =>
+		let
+		    val ack = promise ()
+		in
+		    fulfill (p, (x,ack)::future p'); 
+		    await (future ack)
+;print ("[putLock "^Int.toString n^" done]\n")
+		end,
+	     fn x => (fulfill (p, future p')
+;print ("[putLock "^Int.toString n^" aborted]\n")))
+	end
+
+    fun getLock (putr, getr, n) =
+	let
+            val p' = promise ()
+	    val xacks = await (Ref.exchange (getr, future p'))
+        in
+print ("[getLock "^Int.toString n^" ready]\n"); 
+	    (fn () =>
+		let
+		    val (x,ack) = hd xacks
+		in
+	            fulfill (p', tl xacks); 
+		    fulfill (ack, ()); 
+print ("[getLock "^Int.toString n^" done]\n"); 
+		    x
+		end,
+	     fn () => (fulfill (p', xacks)
+;print ("[getLock "^Int.toString n^" aborted]\n")))
+        end
+end
+
+
+
+(* CML without nack and guards and with one-shot events *)
+
+type 'a event = 'a (* future *)
+
+fun sync ev = await ev
+fun recvEvt ch = spawn recv ch
+fun sendEvt chx = spawn send chx
+fun wrap (ev, f) = spawn f (await ev)
+fun choose evs = spawn #2 (awaitN evs)
+fun select evs = sync (choose evs)
+val never = future (promise ())
+fun alwaysEvt x = x
+
+
+(* CML without nack *)
+
+type 'a event = unit -> 'a (* future *)
+
+fun sync ev = await (eval ev)
+fun recvEvt ch = fn () => spawn recv ch
+fun sendEvt chx = fn () => spawn send chx
+fun wrap (ev, f) = fn () => spawn f (await (ev ()))
+fun guard f = fn () => spawn f () ()
+fun choose evs = fn () => spawn #2 (awaitOne (map eval evs))
+fun select evs = sync (choose evs)
+val never = fn () => future (promise ())
+fun alwaysEvt x = fn () => x
+
+
+(* CML with nack *)
+
+signature CML =
+sig
+    type 'a event
+    val sendEvt : 'a channel * 'a -> unit event
+    val recvEvt : 'a channel -> 'a event
+    val send : 'a channel * 'a -> unit
+    val recv : 'a channel -> 'a
+    val wrap : 'a event * ('a -> 'b) -> 'b event
+    val wrapHandler : 'a event * (exn -> 'a event) -> 'a event
+    val select : 'a event list -> 'a
+    val sync : 'a event -> 'a
+    val choose : 'a event list -> 'a event
+    val guard : (unit -> 'a event) -> 'a event
+    val withNack : (unit event -> 'a event) -> 'a event
+    val never : 'a event
+    val alwaysEvt : 'a -> 'a event
+    val joinEvt : 'a -> unit event
+    val timeOutEvt : Time.time -> unit event
+end
+
+structure CML : CML =
+struct
+    type 'a event = unit -> (*future*) unit -> 'a
+
+(*    fun sync ev = ev () ()*)
+fun sync ev = let val g = ev () in wait g; print "[synced]\n"; g () end
+
+    val never = fn a => future (promise ())
+    fun alwaysEvt x = fn a => const x
+(*    fun recvEvt ch = fn a => spawn const (get ch)*)
+fun recvEvt ch = fn a => spawn let val x = get ch in print "[recvEvt]\n"; fn () => (print "[recvEvt chosen]\n"; x) end
+
+    fun sendEvt chx = fn a => spawn (put chx; print "[sendEvt]\n"; fn () => print "[sendEvt chosen]\n")
+    fun joinEvt x = fn a => spawn (wait x; ignore)
+    fun timeOutEvt t = fn a => spawn (Thread.sleep t; ignore)
+    fun wrap (ev, f) = fn a => let val g = ev a in spawn (wait g; f o g) end
+    fun wrapHandler (ev, f) = fn a => let val g = ev a in spawn (wait g; fn () => g () handle e => f e a ()) end
+    fun guard f = fn a => spawn f () a
+    fun withNack f = fn a => spawn f (alwaysEvt a) a
+
+fun evt (a, f, g) =
+spawn case awaitEither (a, f())
+of FST _ => raise Terminate
+ | SND x => g x
+
+    fun choose evs = fn a => spawn
+	let
+val _ = print "[choose]\n"
+	    val ps = List.map (fn _ => promise ()) evs
+	    val gs = ListPair.map (fn (ev,p) => ev (future p)) (evs, ps)
+val _ = print "[choosing...]\n"
+	    val (n,g) = awaitOne (Vector.fromList gs)
+	in
+print ("[chose "^Int.toString(n+1)^"/"^Int.toString(length evs)^"]\n"); 
+	    List.appi (fn (i,p) => fulfill (p, if i = n then a else ())) ps; 
+	    g
+	end
+
+    fun send chx = sync (sendEvt chx)
+    fun recv ch = sync (recvEvt ch)
+    fun select evs = sync (choose evs)
+end
+
+(*
+    fun choose evs = fn a => spawn
+	let
+	    val p = promise ()
+	    val n = future p
+	    val xps = List.map (fn evi =>
+				let val pi = promise () in (evi pi, pi) end) evs
+	in
+	    List.appi (fn (i, (xi,_)) => spawn (wait xi; fulfill (p,i))) xps; 
+	    List.appi (fn (i, (_,pi)) =>
+		       fulfill (pi, if i = n then a else ())) xps; 
+	    #1 (List.nth (xps, n))
+	end
+*)
+
+
+(* Examples *)
+
+signature CELL =
+sig
+    type 'a cell
+    val cell : 'a -> 'a cell
+    val put : 'a cell * 'a -> unit
+    val get : 'a cell -> 'a
+end
+
+structure Cell :> CELL =
+struct
+    structure Ch = SyncChannel
+
+    datatype 'a request = GET | PUT of 'a
+    type 'a cell = 'a request channel * 'a channel
+
+    fun cell x =
+	let
+	    val request = channel ()
+	    val reply   = channel ()
+	    fun loop x =
+		case get request
+		 of GET    => (Ch.put (reply, x); loop x)
+		  | PUT x' => loop x'
+	in
+	    spawn loop x; 
+	    (request, reply)
+	end
+
+    fun put ((request, _), x) = Ch.put (request, PUT x)
+    fun get (request, reply)  = (Ch.put (request, GET); Ch.get reply)
+end
+
+
+structure Cell : CELL =
+struct
+    open CML
+
+    type 'a cell = 'a channel * 'a channel
+
+    fun cell x =
+	let
+	    val getCh = channel ()
+	    val putCh = channel ()
+	    fun loop x =
+(print "[loop]\n"; 
+		select
+		[
+		    wrap (sendEvt (getCh, x), fn () => (print "[send]\n"; loop x)),
+		    wrap (recvEvt putCh, fn x' => (print "[recv]\n"; loop x'))
+		]
+)
+	in
+	    spawn loop x; 
+	    (getCh, putCh)
+	end
+
+    fun put ((_, putCh), x) = send (putCh, x)
+    fun get (getCh, _) = recv getCh
+end

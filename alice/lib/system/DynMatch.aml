@@ -1,0 +1,281 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name    from "../rtt/Name"
+import structure Label   from "../rtt/Label"
+import structure Path    from "../rtt/Path"
+import structure PathMap from "../rtt/PathMap"
+import structure Type    from "../rtt/Type"
+import structure Inf     from "../rtt/Inf"
+import structure Reflect from "Reflect"
+import structure UnsafeValue from "UnsafeValue"
+import signature DYN_MATCH from "DYN_MATCH-sig"
+
+structure DynMatch : DYN_MATCH =
+struct
+    type module = Reflect.module
+    exception Hidden
+
+    (* Keep in sync with compiler/frontend-common/NameTranslation! *)
+    fun trName f (Name.ExId s)	= Name.ExId(f s)
+      | trName f  n		= n
+    fun trLab f l		= Label.fromName(trName f (Label.toName l))
+    val trValLab		= Fn.id
+    val trTypLab		= trLab(fn s => "$" ^ s)
+    val trModLab		= trLab(fn s => s ^ "$")
+    val trInfLab		= trLab(fn s => "$" ^ s ^ "$")
+
+    fun match(m, j) =
+	let
+	    val rea = Inf.rea()
+	in
+	    matchWith(rea, m, j);
+	    rea
+	end
+    and matchWith(rea, m, j) =
+	case Inf.inspect j
+	 of Inf.Sig s => matchSig(rea, m, Inf.items s)
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _ | Inf.Arrow _ | Inf.Sing _) => ()
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and matchSig(rea, m, []) = ()
+      | matchSig(rea, m, item::items) =
+	case Inf.inspectItem item
+	 of (Inf.FixItem _ | Inf.ValItem _) =>
+	        matchSig(rea, m, items)
+	  | Inf.TypItem(p,k) =>
+	    if Type.isSingKind k then matchSig(rea, m, items) else
+	    let
+		val l = trTypLab(Path.toLab p)
+		val t = lazy UnsafeValue.projPoly(m,l)
+	    in
+		PathMap.insert(#typ_rea rea, p, t);
+		matchSig(rea, m, items)
+	    end
+	  | Inf.ModItem(p,j) =>
+	    if Inf.isSing j then matchSig(rea, m, items) else
+	    let
+		val l  = trModLab(Path.toLab p)
+		val m' = lazy UnsafeValue.projPoly(m,l)
+	    in
+		matchWith(rea,m',j);
+		matchSig(rea, m, items)
+	    end
+	  | Inf.InfItem(p,k) =>
+	    if Inf.isSingKind k then matchSig(rea, m, items) else
+	    let
+		val l = trInfLab(Path.toLab p)
+		val j = lazy UnsafeValue.projPoly(m,l)
+	    in
+		PathMap.insert(#inf_rea rea, p, j);
+		matchSig(rea, m, items)
+	    end
+	  | Inf.HiddenItem _ => raise Hidden
+
+
+    fun strengthen(m, j) = strengthen'(m, NONE, j)
+    and strengthen'(m, po, j) = strengthenWith'(Inf.rea(), m, po, j)
+    and strengthenWith(rea, m, j) = strengthenWith'(rea, m, NONE, j)
+    and strengthenWith'(rea, m, po, j) =
+	    Inf.realise(rea, strengthenWith''(rea, m, po, j))
+    and strengthenWith''(rea, m, po, j) =
+	case Inf.inspect j
+	 of Inf.Sig s =>
+	    let
+		val s' = Inf.emptySig()
+	    in
+		if strengthenSig(rea, s', m, po, Inf.items s)
+		then Inf.sign s'
+		else j
+	    end
+	  | Inf.Con p =>
+	    (case PathMap.lookup(#inf_rea rea, p)
+	     of NONE    => j
+	      | SOME j' => (*TODO: currently quadratic*)
+		strengthen'(m, po, #1(Inf.instance(Option.valOf po, j')))
+	    )
+	  | (Inf.Top | Inf.Apply _ | Inf.Arrow _ | Inf.Sing _) => j
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and strengthenSig(rea, s', m, po, []) = false
+      | strengthenSig(rea, s', m, po, item::items) =
+	case Inf.inspectItem item
+	 of Inf.FixItem(l,f) =>
+		strengthenSig(rea, s', m, po, items) before
+		Inf.extendFix(s',l,f)
+	  | Inf.ValItem(l,t) =>
+		strengthenSig(rea, s', m, po, items) before
+		Inf.extendVal(s',l,t)
+	  | Inf.TypItem(p,k) =>
+	    if Type.isSingKind k then
+		strengthenSig(rea, s', m, po, items) before
+		Inf.extendTyp(s',p,k)
+	    else
+		let
+		    val l' = trTypLab(Path.toLab p)
+		    val t  = UnsafeValue.projPoly(m,l')
+		in
+		    PathMap.insert(#typ_rea rea, p, t);
+		    strengthenSig(rea, s', m, po, items);
+		    Inf.extendTyp(s', Path.instance p, Type.singKind t);
+		    true
+		end
+	  | Inf.ModItem(p,j) =>
+	    if Inf.isSing j then
+		strengthenSig(rea, s', m, po, items) before
+		Inf.extendMod(s',p,j)
+	    else
+		let
+		    val _  = strengthenSig(rea, s', m, po, items);
+		    val l' = trModLab(Path.toLab p)
+		    val m' = UnsafeValue.projPoly(m,l')
+		    val j' = strengthenWith''(rea, m', SOME p, j)
+		in
+		    Inf.extendMod(s', p ,j');
+		    not(Inf.same(j,j'))
+		end
+	  | Inf.InfItem(p,k) =>
+	    if Inf.isSingKind k then
+		strengthenSig(rea, s', m, po, items) before
+		Inf.extendInf(s',p,k)
+	    else
+		let
+		    val l' = trInfLab(Path.toLab p)
+		    val j  = UnsafeValue.projPoly(m,l')
+		in
+		    PathMap.insert(#inf_rea rea, p, j);
+		    strengthenSig(rea, s', m, po, items);
+		    Inf.extendInf(s', Path.instance p, Inf.singKind j);
+		    true
+		end
+	  | Inf.HiddenItem _ => raise Hidden
+
+
+    fun thin(m, j) =
+	case Inf.inspect j
+	 of Inf.Sig s =>
+	    let
+		val lvs = thinSig([], m, Inf.items s)
+	    in
+		UnsafeValue.prodPoly(Vector.fromList lvs)
+	    end
+	  | Inf.Arrow(p,j1,j2) =>
+	    UnsafeValue.cast (
+		fn x =>
+		let
+		    val rea = match(x,j1)
+		    val j2' = Inf.realise(rea,j2)
+		in
+		    thin(UnsafeValue.cast m x, j2')
+		end)
+	  | Inf.Sing m' => thin(m, #2(Inf.asMod m'))
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and thinSig(lvs, m, []) = lvs
+      | thinSig(lvs, m, item::items) =
+	case Inf.inspectItem item
+	 of Inf.FixItem _ =>
+	        thinSig(lvs, m, items)
+	  | Inf.ValItem(l,_) =>
+	    let
+		val l' = trValLab l
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.TypItem(p,k) =>
+	    let
+		val l' = trTypLab(Path.toLab p)
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.ModItem(p,j) =>
+	    let
+		val l' = trModLab(Path.toLab p)
+		val v  = UnsafeValue.cast(thin(UnsafeValue.projPoly(m,l'), j))
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.InfItem(p,k) =>
+	    let
+		val l' = trInfLab(Path.toLab p)
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.HiddenItem _ => raise Hidden
+
+
+    fun seal(m, j) =
+	case Inf.inspect j
+	 of Inf.Sig s =>
+	    let
+		val lvs = sealSig([], m, Inf.items s)
+	    in
+		UnsafeValue.prodPoly(Vector.fromList lvs)
+	    end
+	  | Inf.Arrow(p,j1,j2) =>
+	    UnsafeValue.cast (
+		fn x =>
+		let
+		    val rea = match(x,j1)
+		    val j2' = Inf.realise(rea,j2)
+		in
+		    thin(UnsafeValue.cast m x, j2')
+		end)
+	  | Inf.Sing m' => thin(m, #2(Inf.asMod m'))
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and sealSig(lvs, m, []) = lvs
+      | sealSig(lvs, m, item::items) =
+	case Inf.inspectItem item
+	 of Inf.FixItem _ =>
+	        sealSig(lvs, m, items)
+	  | Inf.ValItem(l,_) =>
+	    let
+		val l' = trValLab l
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        sealSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.TypItem(p,k) =>
+	    let
+		val l' = trTypLab(Path.toLab p)
+		val v  = UnsafeValue.cast(Type.con(p,k))
+	    in
+	        sealSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.ModItem(p,j) =>
+	    let
+		val l' = trModLab(Path.toLab p)
+		val v  = UnsafeValue.cast(seal(UnsafeValue.projPoly(m,l'), j))
+	    in
+	        sealSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.InfItem(p,k) =>
+	    let
+		val l' = trInfLab(Path.toLab p)
+		val v  = UnsafeValue.cast(Inf.con(p,k))
+	    in
+	        sealSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.HiddenItem _ => raise Hidden
+
+    fun unpackMatch(m, j1, j2) = (Inf.match(j1,j2); m)
+end

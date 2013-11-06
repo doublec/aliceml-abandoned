@@ -1,0 +1,18 @@
+signature QUEUE =
+sig
+
+  type queue
+  type t = queue
+  type elem    
+
+  exception Empty
+  
+  val queue    : unit -> queue
+  val put      : queue * elem * int -> unit
+  val get      : queue -> elem
+  val app      : (elem -> unit) -> queue -> unit
+  val close    : queue -> unit  
+  val purge    : queue -> unit
+  val isClosed : queue -> bool
+
+end

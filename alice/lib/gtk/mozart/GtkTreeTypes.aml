@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+structure GtkTreeTypes =
+    struct
+	datatype c_type = TYPE of string * string
+	datatype arg    = ARG of c_type * string
+	    
+	type func_data   = {name:string, ret:c_type, args: arg list}
+	type struct_item = {field:string, ptrs:string, alias:string}
+	type enum_item   = {field:string, value:int option}
+	type class_item  = {space:string, name:string}
+
+	datatype class = CLASS of class_item * class_item
+
+	datatype tree_item =
+	    FUNCTION  of string * func_data
+	  | STRUCTURE of string * struct_item list
+	  | UNION     of string * struct_item list
+	  | ENUM      of string * enum_item list
+	  | ALIAS     of string * string * string
+	  | CLASSES   of class list
+	  | NOTYPE
+    end

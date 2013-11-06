@@ -1,0 +1,52 @@
+(*
+ * Interpreter for F+rec - Lexer
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+import structure Token from "Token"
+import signature LEXER from "LEXER-sig"
+
+structure Lexer :> LEXER =
+struct
+    open Token
+    open Char
+
+    exception Error
+
+    fun digit c					= ord c - ord #"0"
+
+    fun idOrRes l				= idOrRes'(implode (List.rev l))
+    and idOrRes' "if"				= IF
+      | idOrRes' "then"				= THEN
+      | idOrRes' "else"				= ELSE
+      | idOrRes' "fn"				= FN
+      | idOrRes' "rec"				= REC
+      | idOrRes' "bool"				= BOOL
+      | idOrRes' "int"				= INT
+      | idOrRes'  s				= ID s
+
+
+    fun munch ts []				= List.rev ts
+      | munch ts (#" " :: cs)			= munch ts cs
+      | munch ts (#"\t" :: cs)			= munch ts cs
+      | munch ts (#"\n" :: cs)			= munch ts cs
+      | munch ts (#"(" :: cs)			= munch (LPAR::ts) cs
+      | munch ts (#")" :: cs)			= munch (RPAR::ts) cs
+      | munch ts (#":" :: cs)			= munch (COLON::ts) cs
+      | munch ts (#"-" :: #">" :: cs)		= munch (ARROW::ts) cs
+      | munch ts (#"=" :: #">" :: cs)		= munch (DARROW::ts) cs
+      | munch ts (cs as c::_) where (isDigit c)	= con ts cs
+      | munch ts (cs as c::_) where (isAlpha c)	= id ts cs
+      | munch ts _				= raise Error
+
+    and id  ts cs				= id' ts [] cs
+    and id' ts l (c::cs) where (isAlphaNum c)	= id' ts (c::l) cs
+      | id' ts l   cs				= munch (idOrRes l :: ts) cs
+
+    and con  ts cs				= con' ts 0 cs
+    and con' ts n (c::cs) where (isDigit c)	= con' ts (10*n + digit c) cs
+      | con' ts n   cs				= munch (CON n :: ts) cs
+
+    fun lex s					= munch [] (String.explode s)
+end

@@ -1,0 +1,78 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Path structure", "The <TT>Path</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    structure Path : PATH</PRE>
+   <P>
+     The <TT>Path</TT> structure is used to represent paths in a search tree.
+     A path is essentially a sequence of numbers, possibly interleaved with <I>best solutions</I>, that
+     are inserted in the case of Branch & Bound.
+   </P>
+
+  <P>
+    See also:
+    <A href="sf-problem.html"><TT>PROBLEM</TT></A>,
+    <A href="sf-search.html"><TT>SEARCH</TT></A>.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import structure Path from "x-alice:/lib/gecode/search-factory/Path"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature SEARCH =
+sig
+
+  type 'a <A href="#item">item</A> = int * ('a option)
+  type 'a <A href="#path">path</A> = ('a item) list
+  type <A href="#path">t</A> = path
+
+  val <A href="#root">root</A> : 'a path    
+  val <A href="#toString">toString</A> : 'a path -> string
+
+end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type 'a <A name="item">item</A></TT>
+    </DT>
+    <DD>
+      <P>A path is a sequence of items. <TT>'a</TT> is the type of solutions.
+         An item is a branch number plus an optional <I>best</I> solution.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>type 'a <A name="path">path</A> = ('a item) list</TT>
+    </DT>
+    <DD>
+      <P>The type of a path in the search tree, that is a sequence of items.
+      </P>
+    </DD>
+
+
+    <DT>
+      <TT><A name="root">root</A></TT>
+    </DT>
+    <DD>
+      <P>The top-node of the search tree, that is, the empty list.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="toString">toString</A> <I>path</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a string that represents the path (as a sequence of numbers). 
+         <I>Best</I> solutions are indicated with a star.
+      </P>
+    </DD>
+
+  </DL>
+  
+<?php footing(); ?>

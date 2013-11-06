@@ -1,0 +1,89 @@
+STOC ROAD-MAP
+
+
+Source text
+ |
+ | -------- frontend-sml ---------------
+ |
+ | ParsingPhase:
+ |	- Lexing
+ |	- Parsing
+ |	- Derived form elimination
+ V
+InputGrammar
+ |
+ | AbstractionPhase:
+ |	- Fixity resolution
+ |	- Binding analysis
+ |	- Syntactic restrictions
+ |	- more Derived form elimination
+ |
+ | -------------------------------------
+ V
+AbstractGrammar
+ |
+ | -------- frontend-common ------------
+ |
+ | ElaborationPhase:
+ |	- Admissibility checking
+ |	- Type inference
+ |	- Overloading resolution
+ |	- Interface checking
+ |      - import rewriting
+ V
+TypedGrammar (= AbstractGrammar')
+ |
+ | TranslationPhase:
+ |	- Overloading translation
+ |	- Module translation
+ |	- Run-time type translation
+ |
+ | -------------------------------------
+ V
+IntermediateGrammar
+ |
+ | CheckIntermediate
+ V
+IntermediateGrammar
+ |
+ | -------- backend-common -------------
+ |
+ | FlatteningPhase:
+ |	- Pattern matching compilation and checking
+ |	- Trivialization of recursive bindings
+ |	- Linearization
+ V
+FlatGrammar
+ |
+ | ValuePropagationPhase:
+ |	- Value propagation
+ |	- Reraise detection
+ |	- Test parallelization
+ |	- Selection evaluation
+ |	- Selection lifting
+ |	- Constant folding (TBD)
+ |	- Constant hoisting
+ |	- Inlining (TBD)
+ |	- Specialization
+ |	- Function and constructor print name computation
+ V
+FlatGrammar'
+ |
+ | LivenessAnalysisPhase:
+ |	- Liveness analysis
+ |	- Dead code elimination:
+ |	  - Removal of unreferenced side-effect-free expressions
+ |	  - Removal of bogus shared statements
+ |	  - Removal of unused imports
+ |	  - Initialization reordering
+ V
+FlatGrammar''
+ |
+ | -------- backend-seam ---------------
+ |
+ | CodeGenPhase:
+ |	- Code generation
+ |
+ | -------------------------------------
+ V
+Seam code

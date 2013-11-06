@@ -1,0 +1,253 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Defaults from "Defaults"
+
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES      from "TYPES-sig"
+import signature TREE_NODE  from "TREE_NODE-sig"
+
+functor MkTreeNode (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    :
+    TREE_NODE
+    where type tree = Types.tree
+    where type status = Types.status
+    =
+struct
+    type tree = Types.tree
+    type status = Types.status
+
+    open Types
+    open Defaults
+
+    fun getStatus (N({status=ref status,...},_,_)) = status
+    fun addChild (p as N(_, _, children), c as N(_, parent, _)) =
+	(children := Vector.fromList (c::(Vector.toList (!children)));
+	 parent := SOME p)
+
+    fun noOfChildren (N(_,_,ref children)) = Vector.length (children)
+
+   fun setHasSolBelow (N({hasSolBelow=hasSolBelow,...},ref mom,_)) =
+       if (!hasSolBelow) then ()
+       else (hasSolBelow := true; case mom of NONE => ()
+					    | SOME m => setHasSolBelow m)
+
+   val rootExtent = (0,0)
+   val rootShape = [rootExtent]
+   val hiddenShape = [rootExtent, (~hiddenHalfWidthI, hiddenHalfWidthI)]
+
+   fun merge (ps, nil, _) = ps
+     | merge ((pl,pr)::ps, (ql, qr)::qs, d) =
+       let
+	   fun doMerge (nil, nil, _, _) = nil
+	     | doMerge (nil, (ql,qr)::qs, dl, _) = ((ql+dl, qr)::qs)
+	     | doMerge ((pl,pr)::ps, nil, _, dr) = ((pl, pr+dr)::ps)
+	     | doMerge ((pl,pr)::ps, (ql,qr)::qs, dl, dr) =
+	       (pl,qr)::(doMerge (ps, qs, dl+ql-pl, dr+pr-qr))
+       in
+	   (pl,qr+d)::(doMerge (ps, qs, d+ql-pl, pr-d-qr))
+       end
+     | merge _ = raise Subscript (* make pattern matching exh. *)
+
+   fun fit (ps, qs) =
+       let
+	   fun doFind (nil,     _,  _,       _,  g) = g
+	     | doFind (_,       _,  nil,     _,  g) = g
+	     | doFind ((_,a2)::ar, sa, (b1,_)::br, sb, g) =
+	       let
+		   val nsa = sa+a2
+		   val nsb = sb+b1
+	       in
+		   doFind (ar, nsa, br, nsb,
+			   Int.max(g, nsa-nsb+horSpaceI))
+	       end
+       in
+	   doFind (ps, 0, qs, 0, horSpaceI)
+       end
+
+   fun fitLeft nil = (0, nil)
+     | fitLeft (e::er) = 
+       let
+	   fun doFitLeft (_,   nil,     prevGap) = (prevGap, nil)
+	     | doFitLeft (acc, e::er, prevGap) =
+	       let
+		   val gap = fit (acc, e)
+		   val (width, l) = doFitLeft (merge (acc, e, gap), er, gap)
+	       in
+		   (width, (gap-prevGap)::l)
+	       end
+       in
+	   doFitLeft (e, er, 0)
+       end
+
+   fun fitRight nil = (nil, nil)
+     | fitRight (e::er) =
+       let
+	   val (gaps, newShape) = fitRight er
+	   val x = fit (e, newShape)
+       in
+	   (x::gaps, merge (e, newShape, x))
+       end
+
+   fun calcOffsets (ps, qs, halfWidth) =
+       let
+	   fun doIt (nil, _, _) = nil
+	     | doIt (p::pr, q::qr, relpos) =
+	       let
+		   val newRelPos = (p+q) div 2 + relpos
+	       in
+		   newRelPos::(doIt (pr, qr, newRelPos))
+	       end
+	     | doIt _ = raise Subscript (* make pattern matching exh. *)
+       in
+	   ~halfWidth::(doIt (ps, qs, ~halfWidth))
+       end
+
+   fun computeLayout nil = (nil, nil)
+     | computeLayout [shape] = (shape, [0])
+     | computeLayout [s1,s2] =
+       let
+	   val width = fit (s1, s2)
+	   val ((a,b),newshape) = 
+	       case merge (s1, s2, width) of
+		   (y::yr) => (y,yr)
+		 | nil => raise Subscript (* make pattern matching exh. *)
+	   val halfwidth = width div 2
+       in
+	   ( (a-halfwidth, b-width+halfwidth)::newshape,
+	     [~halfwidth,halfwidth] )
+       end
+     | computeLayout shapes =
+       let
+	   val (width, leftGaps) = fitLeft shapes
+	   val (rightGaps, (a, b), newshape) = 
+	       case fitRight shapes of
+		   (r, ab::ns) => (r,ab,ns)
+		 | _ => raise Subscript (* make pattern matching exh. *)
+	   val halfwidth = width div 2
+       in
+	   ( (a-halfwidth, b-width+halfwidth)::newshape,
+	     calcOffsets (leftGaps, rightGaps, halfwidth) )
+       end
+
+   fun correctSTShape ((a,b)::str, (my1,my2)) = (a-my1, b-my2)::str
+     | correctSTShape (stShape, _) = stShape
+
+   fun offsetKids(nil, _) = ()
+     | offsetKids((k as N({offset=offset,oldOffset=oldOffset,...},_,_))::kr,
+                  off::offr) =
+       if off<>(!offset) then
+	   (oldOffset := SOME (!offset); offset := off; offsetKids(kr, offr))
+       else
+	   (oldOffset := NONE; offsetKids(kr, offr))
+     | offsetKids _ = raise Subscript (* make pattern matching exh. *)
+
+   fun layoutNode (N ({offset=offset, shape=shape, hidden=ref hidden,
+		       dirty=dirty, ...}, _, 
+		      ref children)) =
+       if (!dirty) then
+	   let
+	       val newShape =
+                   if (children= #[]) then
+		       rootShape
+		   else
+		       if hidden then
+			   hiddenShape
+		       else
+			   let
+			       val childrenL = Vector.toList children
+			       val subShapes = List.map layoutNode childrenL
+			       val myExtent = rootExtent
+			       val (subTreeShape,
+				    subOffsets) = computeLayout subShapes
+			       val correctedSubTreeShape =
+				   correctSTShape (subTreeShape, myExtent)
+			   in
+			       offsetKids(childrenL,
+					  subOffsets);
+			       myExtent::correctedSubTreeShape
+			   end
+	   in
+	       shape := newShape;
+	       newShape
+	   end
+       else
+	   (!shape)
+
+   fun getShape (N ({shape=ref shape,...},_,_)) = shape
+
+   fun getBBox shape =
+       let
+	   fun doIt (nil, _, _, curMinLeft, curMaxRight, curDepth) =
+	       (curMinLeft, curMaxRight, curDepth)
+	     | doIt ((sl,sr)::ss, lastLeft, lastRight,
+	             curMinLeft, curMaxRight, curDepth) =
+	       doIt (ss, lastLeft+sl, lastRight+sr,
+	             Int.min(curMinLeft, lastLeft+sl),
+	             Int.max(curMaxRight, lastRight+sr),
+	             curDepth+1)
+       in
+	   doIt (shape, 0, 0, 0, 0, 0)
+       end
+
+   fun isInSubtree (N({shape=shape, offset=offset,...},
+		      _,_), depth, momX, findX) =
+       let
+	   fun rightBorder (0,     _,   xpos) = SOME xpos
+	     | rightBorder (depth, nil, xpos) = NONE
+	     | rightBorder (depth, (_,r2)::rr, xpos)  =
+	       rightBorder (depth-1, rr, r2+xpos)
+       in
+	   case rightBorder (depth, tl (!shape), momX+(!offset)) of
+	       NONE   => false
+	     | SOME x => findX<x
+       end
+
+   fun findKids ([k], depth, momX, findX) =
+       if (noOfChildren k)>0 then findByX (k, depth-1, momX, findX)
+       else k
+     | findKids (k::kr, depth, momX, findX) =
+       if isInSubtree (k, depth-1, momX, findX) then
+	   if (noOfChildren k)>0 then
+	       findByX (k, depth-1, momX, findX)
+	   else k
+       else findKids (kr, depth, momX, findX)
+     | findKids _ = raise Subscript (* make pattern matching exh. *)
+
+   and findByX (node, 0, _, _) = node
+     | findByX (node as
+		     N({hidden=ref true, ...},
+		       _, _), _, _, _) = node
+     | findByX (node as
+		     N(_, _, ref #[]),
+                _, _, _) = node
+     | findByX (node as
+		     N({offset=offset, hidden=hidden, ...},
+		       ref parent, ref children),
+	        depth, rootX, findX) =
+       findKids (Vector.toList children, depth, (rootX+(!offset)),
+                 findX)
+     | findByX (n, _, _, _) = n
+
+   fun getCenter node =
+       let
+	   fun gc (N({offset=offset,...},parent,_), x, y) =
+	       case (!parent) of
+		   NONE => (x, y+verSpaceI)
+		 | SOME p => gc (p, x+(!offset), y+verSpaceI)	       
+       in
+	   gc (node, 0, 0)
+       end
+
+   end       

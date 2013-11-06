@@ -1,0 +1,44 @@
+Group is
+
+	../../lib/utility/sources.cm
+	../../lib/rtt/name.cm
+	../../lib/rtt/label.cm
+	../../lib/rtt/path.cm
+	../../lib/rtt/type.cm
+	../../lib/rtt/fixity.cm
+	../../lib/rtt/interface.cm
+	../infrastructure/sources.cm
+	../common/intermediate-grammar.cm
+	../common/check.cm
+(*DEBUG*)
+elaboration-phase.cm
+	typed-grammar.cm
+
+	LABEL_LIB-sig.aml
+	LabelLib.aml
+	PATH_LIB-sig.aml
+	PathLib.aml
+	TYPE_LIB-sig.aml
+	TypeLib.aml
+	PERVASIVE_TYPE_LIB-sig.aml
+	PervasiveTypeLib.aml
+	FIXITY_LIB-sig.aml
+	FixityLib.aml
+	INF_LIB-sig.aml
+	InfLib.aml
+	DYN_MATCH_LIB-sig.aml
+	DynMatchLib.aml
+
+	NAME_TRANSLATION-sig.aml
+	NameTranslation.aml
+	LABEL_TRANSLATION-sig.aml
+	LabelTranslation.aml
+	TYPE_TRANSLATION-sig.aml
+	TypeTranslation.aml
+	TRANSLATION_ENV-sig.aml
+	TranslationEnv.aml
+
+	INTERMEDIATE_CONS-sig.aml
+	IntermediateCons.aml
+	TRANSLATION_PHASE-sig.aml
+	MkTranslationPhase.aml

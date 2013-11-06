@@ -1,0 +1,83 @@
+<?php include("macros.php3"); ?>
+<?php heading("The OS.Process structure", "The <TT>OS.Process</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature OS_PROCESS
+    structure Process : OS_PROCESS
+  </PRE>
+
+  <P>
+    An extension of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/os-process.html"><TT>OS.Process</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="os.html"><TT>OS</TT></A>,
+    <A href="thread.html"><TT>Thread</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature OS_PROCESS =
+    sig
+	type status
+
+	val success :   status
+	val failure :   status
+	val isSuccess : status -> bool
+
+	val system :    string -> status
+	val atExit :    (unit -> unit) -> unit
+	val atExn :     (exn -> unit) -> unit
+	val exit :      status -> 'a
+	val terminate : status -> 'a
+	val getEnv :    string -> string option
+	val sleep :     Time.time -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/os-process.html"><TT>OS.Process</TT></A> structure.
+  </P>
+
+  <P>
+    <I>Limitations:</I>
+  </P>
+
+  <UL>
+    <LI>The function <TT>sleep</TT> only suspends the calling <EM>thread</EM>
+    and is thus equivalent to <TT>Thread.sleep</TT>.</LI>
+  </UL>
+
+  <DL>
+    <DT>
+      <TT>atExn <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>Registers an action <TT><I>f</I></TT> to be executed when the root
+      thread of the running program terminates with an uncaught exception
+      <TT><I>ex</I></TT>, which will be passed to <TT><I>f</I></TT>.
+      Actions will be executed in the reverse order of registration. 
+      Exceptions raised when <TT><I>f</I></TT> is invoked that escape it are
+      trapped and logged to <I>stderr</I> but otherwise ignored. Calls in
+      <TT><I>f</I></TT> to <TT>atExn</TT> are ignored. A call to <TT>exit</TT>,
+      <TT>terminate</TT>, or similar functions will abort
+      execution of the remaining registered actions. If all actions have been
+      executed, the process is terminated, as if <TT>(terminate failure)</TT> had
+      been called.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

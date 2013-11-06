@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive             from "Pervasive"
+import __primitive structure CharVector  from "CharVector"
+import __primitive signature MONO_VECTOR from "MONO_VECTOR-sig"
+
+structure WideCharVector : MONO_VECTOR = CharVector

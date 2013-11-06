@@ -1,0 +1,118 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Hole structure", "The <TT>Hole</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature HOLE
+    structure Hole : HOLE
+  </PRE>
+
+  <P>
+    The <TT>Hole</TT> structure provides operations to create and inspect
+    <EM>holes</EM>. A hole is a place-holder for an undetermined value,
+    reminiscent of a "logic" variable in logic programming. A hole is very
+    much like a <A href="promise.html"><I>promise</I></A>, but is transparent
+    in its type. <I>Filling</I> a hole globally replaces the hole with a value.
+    Unlike a <EM>future</EM>, accessing a hole does not imply synchronization,
+    but causes the exception <TT>Hole</TT> to be raised (this includes calls to
+    <TT>Future.status</TT>). It is possible to extract a future from
+    a hole, though.
+  </P>
+
+  <P>
+    <B>The use of the <TT>Hole</TT> structure is strongly discouraged!</B>
+    For most tasks, <A href="promise.html"><TT>Promise</TT></A> is the
+    prefarable choice, as it is safer from a typing point of view and
+    compatible with concurrent programming. Holes
+    should be considered a low-level concept.
+  </P>
+
+  <P>See also:
+    <A href="future.html"><TT>Future</TT></A>,
+    <A href="promise.html"><TT>Promise</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature HOLE =
+    sig
+	exception Hole
+
+	val hole :     unit -> 'a
+	val future :   'a -> 'a
+
+	val fill :     'a * 'a  -> unit
+	val fail :     'a * exn -> unit
+
+	val isHole :   'a -> bool
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>exception Hole</TT>
+    </DT>
+    <DD>
+      <P>Raised on any attempt to access a hole, and on any attempt to
+      pass a non-hole to any of the functions in this structure.</P>
+    </DD>
+
+    <DT>
+      <TT>hole ()</TT>
+    </DT>
+    <DD>
+      <P>Creates a new hole and an associated future. Returns the
+      hole.</P>
+    </DD>
+
+    <DT>
+      <TT>future <I>h</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the future associated with the hole <TT><I>h</I></TT>. If
+      <TT><I>h</I></TT> is not a hole, <TT>h</TT> is returned.</P>
+    </DD>
+
+    <DT>
+      <TT>fill (<I>h</I>, <I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P>Replaces the hole <TT><I>h</I></TT> and its associated future with
+      the value <TT><I>v</I></TT>. If <TT><I>v</I></TT> is the hole or its
+      future itself, the exception <TT>Future.Cyclic</TT> is raised instead.
+      If <TT><I>h</I></TT> is not a hole, <TT>Hole</TT> is raised.</P>
+    </DD>
+
+    <DT>
+      <TT>fail (<I>h</I>, <I>ex</I>)</TT>
+    </DT>
+    <DD>
+      <P>Requests the exception <TT><I>ex</I></TT>, fails the
+      future associated with the hole <TT><I>h</I></TT> with <TT><I>ex</I></TT>,
+      and fills the hole with the same failed future.
+      If <TT><I>h</I></TT> is not a hole, <TT>Hole</TT> is raised.
+      Equivalent to</P>
+      <PRE>
+        (Future.await <I>ex</I>; fill (<I>h</I>, spawn raise <I>ex</I>))</PRE>
+    </DD>
+
+    <DT>
+      <TT>isHole <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>v</I></TT> is a hole,
+      <TT>false</TT> otherwise.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

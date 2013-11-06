@@ -1,0 +1,12 @@
+Group is
+
+    ../../bootstrap/component.cm
+    ../../lib/system/resolver.cm
+    ../infrastructure/crash.cm
+    compiler.cm
+
+    DEPENDENCY-sig.aml
+    Dependency.aml
+
+    RECURSIVE_COMPILER-sig.aml
+    MkRecursiveCompiler.aml

@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import signature TIMER           from "TIMER-sig"
+import structure Time            from "Time"
+
+
+structure Timer : TIMER =
+struct
+    __primitive type cpu_timer  = "Timer.cpu_timer"
+    __primitive type real_timer = "Timer.real_timer"
+
+    __primitive val cast : 'a -> 'b = "Unsafe.cast"
+
+    fun startRealTimer () = cast (Time.now ())
+
+    fun totalRealTimer () = cast Time.zeroTime
+
+    fun checkRealTimer t  = cast (Time.- (Time.now (), cast t))
+end

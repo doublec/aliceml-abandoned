@@ -1,0 +1,69 @@
+We are happy to announce version 1.0 of the Alice programming
+system:
+
+     http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with extensive
+support for type-safe programming of concurrent, distributed
+and open systems. It also features cutting-edge constraint
+programming technology in the tradition of Oz/Mozart.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and full modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     constraint propagation and programmable search for
+     solving hard combinatorical problems
+  Virtual Machine
+     portable implementation with support for just-in-time
+     compilation
+  Interactive tools
+     graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  SEAM Virtual Machine
+     A newly designed VM with support for just-in-time compilation
+     improves execution speed by a factor of up to 5 compared to
+     previous versions. Mozart is no longer required to run Alice.
+     [http://www.ps.uni-sb.de/seam/]
+  GECODE Constraint Library
+     Constraints are now based on Gecode, an up-coming, cutting-edge
+     constraint library that is more than 10 times faster than the
+     previous implementation and features a significant number of
+     new, state-of-the-art constraints. [http://www.gecode.org]
+  Graphical Tools
+     Inspector and Explorer have been reimplemented, providing
+     more functionality and better looks.
+  Component Model Overhaul
+     The component system has been cleaned up and is now more
+     flexible. Components are fully dynamic.
+  Standard Library
+     Now contains all mandatory modules of the Standard ML Basis.
+     [http://www.standardml.org/Basis]
+
+For a detailed list of changes see:
+
+     http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Alice is open source under a BSD-style license. Binary packages
+are currently available for Linux and Windows.
+
+Enjoy,
+
+        - The Alice Team

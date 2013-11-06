@@ -1,0 +1,108 @@
+%%
+
+%name Parser
+
+%pos  unit
+
+%verbose
+
+
+
+%term	(* End of file *)
+	  EOF
+
+	(* Reserved words for the core language *)
+	| ABSTYPE | AND | ANDALSO | AS | CASE | DO | DATATYPE | ELSE
+	| END | EXCEPTION | FN | FUN | HANDLE | IF | IN | INFIX
+	| INFIXR | LET | LOCAL | NONFIX | OF | OP | OPEN | ORELSE
+	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
+	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
+	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
+	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| ANY | FCT | PACK | UNPACK
+	| IMPORT | FROM
+	| PRIMITIVE | OVERLOAD | INSTANCE | PREBOUND | EQEQTYPE
+
+	(* Additional reserved words for the modules language *)
+	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
+	| SIGNATURE | STRUCT | STRUCTURE | WHERE | COLONGREATER
+
+	(* Special constants *)
+	| ZERO | DIGIT of int | NUMERIC of LargeInt.int
+	| INT of LargeInt.int | WORD of LargeWord.word
+	| REAL of LargeReal.real
+	| STRING of WideString.string | CHAR of WideChar.char
+
+	(* Identifiers *)
+	| ALPHA of string | SYMBOL of string | STAR
+	| TYVAR of string | ETYVAR of string
+
+%eop     EOF
+%noshift EOF
+
+
+%left  SHARING
+%left  SEMICOLON
+%right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CONSTRUCTOR EXCEPTION
+       STRUCTURE FUNCTOR SIGNATURE
+       IMPORT
+       PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
+%right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
+%right AND
+%left  DARROW		(* L/R is arbitrary *)
+%left  BAR		(* L/R is arbitrary *)
+%left  DO		(* L/R is arbitrary *)
+%left  ELSE		(* L/R is arbitrary *)
+%left  RAISE		(* L/R is arbitrary *)
+%right HANDLE
+%right ORELSE
+%right ANDALSO
+%right WHERE
+%left  WITHVAL
+%left  WITHFUN
+%right AS
+%right NON		(* L/R is arbitrary *)
+%left  COLON COLONGREATER
+%right ARROW
+
+
+%start dec
+
+%nonterm
+	  dec				of Dec
+	| sigexp			of SigExp
+	|    sigexp'			of SigExp (* excludes where *)
+	| sigbind			of SigBind
+	|    sigexp__AND_sigbind_opt	of SigExp * SigBind option
+	|    rea__AND_sigbind_opt	of Rea * SigBind option
+	| rea				of Rea
+	|    AND_rea_opt		of Rea option
+	|    sigexp__AND_rea_opt	of SigExp * Rea option
+
+%%
+
+  dec:	  sigbind					() (*0*)
+
+  sigexp:
+	  sigexp'					() (*1*)
+	| sigexp WHERE rea				() (*2*)
+  sigexp':
+	  ANY						() (*3*)
+
+  sigbind:
+	  ALPHA EQUALS sigexp__AND_sigbind_opt		() (*4*)
+
+  sigexp__AND_sigbind_opt:
+	  sigexp'					() (*5*)
+	| sigexp WHERE					() (*6*)
+
+  rea:
+	 SIGNATURE sigexp__AND_rea_opt			() (*7*)
+
+  AND_rea_opt:
+	  AND rea					() (*8*)
+	| (*empty*)					() (*9*)
+
+  sigexp__AND_rea_opt:
+	  sigexp' AND_rea_opt				() (*10*)
+	| sigexp WHERE rea				() (*11*)

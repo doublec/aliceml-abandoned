@@ -1,0 +1,129 @@
+(*
+ * Author:
+ *   Gabor Szokoli <szokoli@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Gabor Szokoli, 2003
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Linear    from "x-alice:/lib/gecode/Linear"
+import structure Print     from "x-alice:/lib/system/Print"
+open Linear
+
+fun forNeighbours f nil = ()
+| forNeighbours f (_::nil) = ()
+| forNeighbours f (a::b::l) = let val _=f(a,b) in forNeighbours f (b::l) end
+
+
+fun shifted space n i (a,b) = 
+	if i=n then () else
+		let
+			val iInA = FD.boolvar space
+			val ip1InB = FD.boolvar space
+		in
+			FS.Reified.isIn (space,a,i,iInA);
+			FS.Reified.isIn (space,b,(i+1),ip1InB);			
+			FD.rel(space,FD.Reflect.boolvar2intvar iInA, FD.EQ, FD.Reflect.boolvar2intvar ip1InB );
+			shifted space n (i+1) (a,b)
+		end
+
+fun szo tags word =
+    let
+	val space = Space.new()
+	val wordLength = List.length word
+        val root =
+            List.map (List.map
+              (fn c=>(c,
+		 FS.upperBound
+                     (space,
+                      FD.domainFromList (List.rev (List.foldli ( fn (i,c2,l)=>
+	                if c=c2 then i::l else l) nil word)))
+        ))) tags
+        val pureRoot = List.map (List.map (fn (c,v)=>v)) root
+        val flatRoot = List.concat root
+        val flatPureRoot = List.concat pureRoot
+        val allTags = FS.upperBound (space,#[(0,wordLength-1)])
+    in
+    	List.app (forNeighbours (shifted space wordLength (0-1))) pureRoot;
+    	FS.partitionN (space,Vector.fromList flatPureRoot, allTags); 
+	   	FS.convex(space,allTags); 
+
+
+        (* distribution *)
+        FS.setvarbranch(space,Vector.fromList flatPureRoot,FS.FSB_NONE,FS.FSB_MIN); 
+        (root,allTags,space)
+     end
+
+
+fun fromto (n,m) = if n>m then nil else n::(fromto ((n+1),m))
+
+fun getStarts((_,l)::_) = List.concat (List.map fromto (Vector.toList l) )
+
+fun nonEmpty (_,nil) = false | nonEmpty _ = true
+
+val tags = [["i","t"],
+			["s","a","g"],
+			["s","e","g"],
+			["t","a","l","a","n"],
+			["t","e","l","e","n"],
+			["h","e","t","e","t","l","e","n"],
+			["h","a","t","a","t","l","a","n"],
+			["a","s"],
+			["e","s"],
+			["k","e","d","e","s"],
+			["k","a","d","a","s"],
+			["e"],["i"], 
+			["t","e","k"],
+			["t","o","k"],			
+			["e","r","t"]		
+			] 
+(*val tags2=[["a","b","a"],["b","a","a"]]
+*)
+val word = ["m","e","g","s","z","e","n","t","s","e","g","t","e","l","e","n","i","t","h","e","t","e","t","l","e","n","s","e","g","e","s","k","e","d","e","s","e","i","t","e","k","e","r","t"]
+val word2 = ["o","o","o","e","o","o","o","o","e","o","o","o","o","s","e","g","t","e","l","e","n","i","t","h","e","t","e","t","l","e","n","s","e","g","e","s","k","e","d","e","s","e","i","t","e","k","e","r","t"]
+(*val (root,allTags,space) = szo tags word 
+*)
+val (root,allTags,space) = szo tags word
+
+
+
+val flatRoot = List.concat root
+
+fun better (s,b) = 
+	let
+		val (_,x) = FS.Reflect.card (b,allTags)
+	in
+		FS.cardRange (s, x+1,1000,allTags)
+	end
+
+val sol = Search.searchBest (space,better)
+val sols = (case sol of NONE => nil | SOME(s)=>[s] )
+val _ =List.app (fn sol => 
+	let
+		val root2 = List.map ( List.map (fn (c,v)=>(c,FS.Reflect.upperBound(sol,v))) ) root
+		
+		val startVects = List.map getStarts root2
+		val _= Print.printVal( List.filter nonEmpty (ListPair.zip (tags,startVects)))
+		val _ = print "\n"		
+(*		val _ = List.app (fn (c,v) => Print.printVal (c,FS.Reflect.upperBound(sol,v))) flatRoot
+		val _ = print "\n"
+*)
+		val _ = Print.printVal (FS.Reflect.upperBound(sol, allTags))
+		
+	in	
+		print "\n\n"
+	end) sols
+
+val _ = OS.Process.exit OS.Process.success

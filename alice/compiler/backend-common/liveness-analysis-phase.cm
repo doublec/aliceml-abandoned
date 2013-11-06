@@ -1,0 +1,15 @@
+Group
+
+    functor MkLivenessAnalysisPhase
+
+is
+
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+
+    flat-grammar.cm
+    output-flat-grammar.cm
+    intermediate-aux.cm
+
+    LIVENESS_ANALYSIS_PHASE-sig.aml
+    MkLivenessAnalysisPhase.aml

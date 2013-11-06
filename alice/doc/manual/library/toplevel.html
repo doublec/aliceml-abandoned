@@ -1,0 +1,180 @@
+<?php include("macros.php3"); ?>
+<?php heading("The top-level environment", "The top-level environment") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <P>
+    This section describes the top-level environment, i.e. all items that
+    are available unqualified. It extends the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/top-level-chapter.html">top-level
+    environment</A>.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <P>
+    The following table presents the top-level types and their defining
+    structures. Items marked <TT>(*)</TT> are extensions to the Standard Basis.
+  </P>
+
+  <TT>
+  <TABLE>
+    <TR> <TD>type unit = {}</TD> <TD><A href="general.html">General.unit</A></TD> </TR>
+    <TR> <TD>eqtype int</TD> <TD><A href="integer.html">Int.t</A></TD> </TR>
+    <TR> <TD>eqtype word</TD> <TD><A href="word.html">Word.t</A></TD> </TR>
+    <TR> <TD>eqtype real</TD> <TD><A href="real.html">Real.t</A></TD> </TR>
+    <TR> <TD>eqtype char</TD> <TD><A href="char.html">Char.t</A></TD> </TR>
+    <TR> <TD>eqtype string</TD> <TD><A href="string.html">String.t</A></TD> </TR>
+    <TR> <TD>eqtype substring</TD> <TD><A href="substring.html">Substring.t</A></TD> </TR>
+    <TR> <TD>exttype exn</TD> <TD><A href="general.html">Exn.t</A></TD> </TR>
+    <TR> <TD>eqtype 'a vector</TD> <TD><A href="vector.html">Vector.t</A></TD> </TR>
+    <TR> <TD>eqtype 'a array</TD> <TD><A href="array.html">Array.t</A></TD> </TR>
+    <TR> <TD>datatype 'a ref = ref of 'a</TD> <TD><A href="ref.html">Ref.t</A></TD> </TR>
+    <TR> <TD>datatype bool = false | true</TD> <TD><A href="bool.html">Bool.t</A></TD> </TR>
+    <TR> <TD>datatype order = LESS | EQUAL | GREATER</TD> <TD><A href="general.html">General.order</A></TD> </TR>
+    <TR> <TD>datatype 'a option = NONE | SOME of 'a</TD> <TD><A href="option.html">Option.t</A></TD> </TR>
+    <TR> <TD>datatype 'a list = nil | op:: of 'a * 'a list</TD> <TD><A href="list.html">List.t</A></TD> </TR>
+    <TR> <TD>datatype ('a,'b) alt = FST of 'a | SND of 'b</TD> <TD><A href="alt.html">Alt.t</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>type ('a,'b) pair = 'a * 'b</TD> <TD><A href="pair.html">Pair.t</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>type package</TD> <TD><A href="package.html">Package.t</A></TD> <TD>(*)</TD> </TR>
+  </TABLE>
+  </TT>
+
+  <P>
+    The global exceptions are the following:
+  </P>
+
+  <TT>
+  <TABLE>
+    <TR> <TD>exception Alt</TD> <TD><A href="alt.html">Alt.Alt</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>exception Assert of string * int</TD> <TD><A href="general.html">General.Assert</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>exception Bind</TD> <TD><A href="general.html">General.Bind</A></TD> </TR>
+    <TR> <TD>exception Chr</TD> <TD><A href="general.html">General.Chr</A></TD> </TR>
+    <TR> <TD>exception Div</TD> <TD><A href="general.html">General.Div</A></TD> </TR>
+    <TR> <TD>exception Domain</TD> <TD><A href="general.html">General.Domain</A></TD> </TR>
+    <TR> <TD>exception Empty</TD> <TD><A href="list.html">List.Empty</A></TD> </TR>
+    <TR> <TD>exception Fail of string</TD> <TD><A href="general.html">General.Fail</A></TD> </TR>
+    <TR> <TD>exception Match</TD> <TD><A href="general.html">General.Match</A></TD> </TR>
+    <TR> <TD>exception Option</TD> <TD><A href="option.html">Option.Option</A></TD> </TR>
+    <TR> <TD>exception Overflow</TD> <TD><A href="general.html">General.Overflow</A></TD> </TR>
+    <TR> <TD>exception Size</TD> <TD><A href="general.html">General.Size</A></TD> </TR>
+    <TR> <TD>exception Span</TD> <TD><A href="general.html">General.Span</A></TD> </TR>
+    <TR> <TD>exception Subscript</TD> <TD><A href="general.html">General.Subscript</A></TD> </TR>
+    <TR> <TD>exception Unordered</TD> <TD><A href="general.html">General.Unordered</A></TD> <TD>(*)</TD> </TR>
+  </TABLE>
+  </TT>
+
+  <P>
+    The next table presents all non-overloaded functions:
+  </P>
+
+  <TT>
+  <TABLE>
+    <TR> <TD>val = : ''a * ''a -> ''a</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
+    <TR> <TD>val &lt;&gt; : ''a * ''a -> ''a</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
+    <TR> <TD>val real : int -> real</TD> <TD><A href="real.html">Real.fromInt</A></TD> </TR>
+    <TR> <TD>val ceil : real -> int</TD> <TD><A href="real.html">Real.ceil</A></TD> </TR>
+    <TR> <TD>val floor : real -> int</TD> <TD><A href="real.html">Real.floor</A></TD> </TR>
+    <TR> <TD>val trunc : real -> int</TD> <TD><A href="real.html">Real.trunc</A></TD> </TR>
+    <TR> <TD>val round : real -> int</TD> <TD><A href="real.html">Real.round</A></TD> </TR>
+    <TR> <TD>val ord : char -> int</TD> <TD><A href="char.html">Char.ord</A></TD> </TR>
+    <TR> <TD>val chr : int -> char</TD> <TD><A href="char.html">Char.chr</A></TD> </TR>
+    <TR> <TD>val str : char -> string</TD> <TD><A href="string.html">String.str</A></TD> </TR>
+    <TR> <TD>val size : char -> int</TD> <TD><A href="string.html">String.size</A></TD> </TR>
+    <TR> <TD>val ^ : string * string -> string</TD> <TD><A href="string.html">String.^</A></TD> </TR>
+    <TR> <TD>val concat : string list -> string</TD> <TD><A href="string.html">String.concat</A></TD> </TR>
+    <TR> <TD>val explode : string -> char list</TD> <TD><A href="string.html">String.explode</A></TD> </TR>
+    <TR> <TD>val implode : char list -> string</TD> <TD><A href="string.html">String.implode</A></TD> </TR>
+    <TR> <TD>val substring : string * int * int -> string</TD> <TD><A href="string.html">String.substring</A></TD> </TR>
+    <TR> <TD>val vector : 'a list -> 'a vector</TD> <TD><A href="vector.html">Vector.fromList</A></TD> </TR>
+    <TR> <TD>val await : 'a -> 'a</TD> <TD><A href="future.html">Future.await</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val ! : 'a ref -> 'a</TD> <TD><A href="ref.html">Ref.!</A></TD> </TR>
+    <TR> <TD>val := : 'a ref * 'a -> unit</TD> <TD><A href="ref.html">Ref.:=</A></TD> </TR>
+    <TR> <TD>val :=: : 'a ref * 'a ref -> unit</TD> <TD><A href="ref.html">Ref.:=:</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val exnName : exn -> string</TD> <TD><A href="general.html">General.exnName</A></TD> </TR>
+    <TR> <TD>val exnMessage : exn -> string</TD> <TD><A href="general.html">General.exnName</A></TD> </TR>
+    <TR> <TD>val not : bool -> bool</TD> <TD><A href="bool.html">Bool.not</A></TD> </TR>
+    <TR> <TD>val inverse : order -> order</TD> <TD><A href="general.html">General.inverse</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val isSome : 'a option -> bool</TD> <TD><A href="option.html">Option.isSome</A></TD> </TR>
+    <TR> <TD>val isNone : 'a option -> bool</TD> <TD><A href="option.html">Option.isNone</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val valOf : 'a option -> 'a</TD> <TD><A href="option.html">Option.valOf</A></TD> </TR>
+    <TR> <TD>val getOpt : 'a option * 'a -> 'a</TD> <TD><A href="option.html">Option.getOpt</A></TD> </TR>
+    <TR> <TD>val isFst : ('a,'b) alt -> bool</TD> <TD><A href="alt.html">Alt.isFst</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val isSnd : ('a,'b) alt -> bool</TD> <TD><A href="alt.html">Alt.isSnd</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val null : 'a list -> bool</TD> <TD><A href="list.html">List.null</A></TD> </TR>
+    <TR> <TD>val hd : 'a list -> 'a</TD> <TD><A href="list.html">List.hd</A></TD> </TR>
+    <TR> <TD>val tl : 'a list -> 'a list</TD> <TD><A href="list.html">List.tl</A></TD> </TR>
+    <TR> <TD>val length : 'a list -> int</TD> <TD><A href="list.html">List.length</A></TD> </TR>
+    <TR> <TD>val rev : 'a list -> 'a list</TD> <TD><A href="list.html">List.rev</A></TD> </TR>
+    <TR> <TD>val @ : 'a list * 'a list -> 'a list</TD> <TD><A href="list.html">List.@</A></TD> </TR>
+    <TR> <TD>val app : ('a -> unit) -> 'a list -> unit</TD> <TD><A href="list.html">List.app</A></TD> </TR>
+    <TR> <TD>val appr : ('a -> unit) -> 'a list -> unit</TD> <TD><A href="list.html">List.appr</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val map : ('a -> 'b) -> 'a list -> 'b list</TD> <TD><A href="list.html">List.map</A></TD> </TR>
+    <TR> <TD>val foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b</TD> <TD><A href="list.html">List.foldl</A></TD> </TR>
+    <TR> <TD>val foldr : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b</TD> <TD><A href="list.html">List.foldr</A></TD> </TR>
+    <TR> <TD>val ignore : 'a -> unit</TD> <TD><A href="general.html">General.ignore</A></TD> </TR>
+    <TR> <TD>val before : 'a * unit -> 'a</TD> <TD><A href="general.html">General.before</A></TD> </TR>
+    <TR> <TD>val o : ('a -> 'b) -> ('c -> 'a) -> ('c -> 'b)</TD> <TD><A href="general.html">General.o</A></TD> </TR>
+  </TABLE>
+  </TT>
+
+  <P>
+    The following functions are only available in the
+    <A href="../interactive.html">interactive toplevel</A>:
+  </P>
+
+  <TT>
+  <TABLE>
+    <TR> <TD>val exit : 'a -> unit</TD> <TD><I>primitive</I></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val inspect : 'a -> unit</TD> <TD><A href="inspector.html">Inspector.inspect</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val printVal : 'a -> unit</TD> <TD><A href="print.html">Print.printVal</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val use : string -> unit</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
+  </TABLE>
+  </TT>
+
+  <P>
+    Note that the <TT>use</TT> function can operate on URLs, not just local
+    file names.
+  </P>
+
+  <P>
+    All arithmetic functions are overloaded:
+  </P>
+
+  <TT>
+  <TABLE>
+    <TR> <TD>val ~ : <I>num</I> -> <I>num</I></TD> </TR>
+    <TR> <TD>val abs : <I>num</I> -> <I>num</I></TD> </TR>
+    <TR> <TD>val + : <I>num</I> * <I>num</I> -> <I>num</I></TD> </TR>
+    <TR> <TD>val - : <I>num</I> * <I>num</I> -> <I>num</I></TD> </TR>
+    <TR> <TD>val * : <I>num</I> * <I>num</I> -> <I>num</I></TD> </TR>
+    <TR> <TD>val div : <I>wordint</I> * <I>wordint</I> -> <I>wordint</I></TD> </TR>
+    <TR> <TD>val mod : <I>wordint</I> * <I>wordint</I> -> <I>wordint</I></TD> </TR>
+    <TR> <TD>val / : <I>real</I> * <I>real</I> -> <I>real</I></TD> </TR>
+    <TR> <TD>val &lt; : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
+    <TR> <TD>val > : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
+    <TR> <TD>val &lt;= : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
+    <TR> <TD>val >= : <I>numtext</I> * <I>numtext</I> -> bool</TD> </TR>
+  </TABLE>
+  </TT>
+
+  <P>
+    The initial infix declarations are as follows:
+  </P>
+
+  <PRE>
+    infix  7  * / div mod
+    infix  6  + - ^
+    infixr 5  :: @
+    infix  4  = &lt;&gt; > >= &lt; &lt;=
+    infix  3  := :=: o
+    infix  0  before
+  </PRE>
+
+<?php footing() ?>

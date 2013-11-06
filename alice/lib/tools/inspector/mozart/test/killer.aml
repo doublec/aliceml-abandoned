@@ -1,0 +1,4 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+datatype t = C of {red: int, green: int, blue: int};
+
+val _ = Inspector.inspect (C {red = 0, green = 255, blue = 255})

@@ -1,0 +1,429 @@
+
+
+ICFP 2001 Programming Contest 
+Challenge Task 
+version 2
+
+
+
+
+
+
+
+
+
+
+
+<7><PL><B>ICFP 2001 Programming Contest
+Challenge Task
+version 2</B></PL></7>
+
+<5>Damien Doligez, Luc Maranget, Pierre Weis</5>
+<I>This document is also available as </I><U><b><I>PDF</I></b></U><I>, </I><U><b><I>Postcript</I></b></U><I> and </I><U><b><I>plain text</I></b></U><I>.</I>
+
+
+<6><PL><B>1   The SML/NG markup language</B></PL></6>
+The W4C (World Wide Wireless Web Consortium) has just published the
+specification of SML/NG (Simple Markup Language -- New Generation), a
+simplified version of XXHTML designed for the new generation of
+hypertext rendering micro-devices, running on hardware with reduced
+computational capacity such as wristtop computers, thumbnail-worn PDAs,
+and internet-enabled ice boxes.
+
+The programming task is to design and implement an optimiser for
+SML/NG that will simplify the source documents and reduce their size.
+
+
+
+<6><PL><B>2   Description of SML/NG</B></PL></6>
+A document is composed of text and tags. A tag is a sequence of
+characters (the tag's <EM>name</EM>) between &lt; and &gt;.
+Anything else in a document is called <EM>text</EM>. For example,
+
+                foo&lt;b&gt;bar&lt;/b&gt;
+is the text foo followed by tag &lt;b&gt;, text bar,
+and tag &lt;/b&gt;.
+
+The characters &lt;
+and &gt; can only appear in a document as part of a tag (but of course
+the strings &amp;lt; and &amp;gt; can appear in the text).
+
+
+
+<5>2.1   Tags</5>
+A tag whose name begins with the character / is a closing tag. The
+corresponding open tag has the same name without the leading /.
+For instance, &lt;/b&gt; is the closing tag corresponding to the open
+tag &lt;b&gt;.
+
+All tags in a document appear in pairs, composed of an open tag and the
+corresponding closing tag (in this order). The region of the document
+between two matching tags is called the <EM>range</EM> of this pair.
+For example, in &lt;b&gt;bar&lt;/b&gt;, the range of the &lt;b&gt;, &lt;/b&gt; pair
+is the text bar.
+
+Tags are properly nested: for any two ranges, either they are disjoint
+or one is entirely included in the other.
+
+Each tag changes the attributes of text within its range as described below:
+
+
+<TT>B</TT> (bold) set the B attribute
+
+<TT>EM</TT> (emphasis) invert the EM attribute
+
+<TT>I</TT> (italic) set the I attribute
+
+<TT>PL</TT> (plain) reset the U level to 0 and unset the B, EM, I, S,
+ and TT attributes
+
+<TT>S</TT> (strong emphasis) set the S attribute
+
+<TT>TT</TT> (typewriter) set the TT attribute
+
+<TT>U</TT> (underline) increment the U level (but not above 3)
+
+<TT>0</TT>...<TT>9</TT> (size) set the size to 0...9
+
+<TT>r</TT> (color) set the color to red
+
+<TT>g</TT> set the color to green
+
+<TT>b</TT> set the color to blue
+
+<TT>c</TT> set the color to cyan
+
+<TT>m</TT> set the color to magenta
+
+<TT>y</TT> set the color to yellow
+
+<TT>k</TT> set the color to black
+
+<TT>w</TT> set the color to white
+<B>Note:</B> case <EM>is</EM> significant in tag names.
+
+There is one additional interaction between the attributes: S hides the
+EM state
+(i.e. where the S attribute is set, the EM attribute is irrelevant).
+
+
+
+<5>2.2   White space</5>
+There are 4 non-printing characters: SPC (ASCII code 0x20), CR
+(ASCII code 0x0D), LF (ASCII code 0x0A), and TAB (ASCII code 0x09).
+Any sequence of these characters is called white space and is
+equivalent to one SPC character, except where the TT attribute is set.
+In the parts of the document where TT is set,
+the whitespace characters
+are significant and must be preserved exactly.
+A document contains only these four characters and printable ASCII
+characters (codes 0x21 to 0x7E, included).
+
+There is another interaction between whitespace and flags: the EM, I,
+B, and S attributes are irrelevant for whitespace; moreover, color is
+irrelevant where U = 0.
+
+
+
+<5>2.3   BNF grammar</5>
+The BNF grammar of documents is given below.
+
+
+
+
+<I>document</I> ::= <I>document document</I> 
+           | <I>textchar</I> * 
+           | &lt;B&gt; <I>document</I> &lt;/B&gt; 
+           | &lt;EM&gt; <I>document</I> &lt;/EM&gt; 
+           | &lt;I&gt; <I>document</I> &lt;/I&gt; 
+           | &lt;PL&gt; <I>document</I> &lt;/PL&gt; 
+           | &lt;S&gt; <I>document</I> &lt;/S&gt; 
+           | &lt;TT&gt; <I>document</I> &lt;/TT&gt; 
+           | &lt;U&gt; <I>document</I> &lt;/U&gt; 
+           | &lt;0&gt; <I>document</I> &lt;/0&gt; 
+           | &lt;1&gt; <I>document</I> &lt;/1&gt; 
+           | &lt;2&gt; <I>document</I> &lt;/2&gt; 
+           | &lt;3&gt; <I>document</I> &lt;/3&gt; 
+           | &lt;4&gt; <I>document</I> &lt;/4&gt; 
+           | &lt;5&gt; <I>document</I> &lt;/5&gt; 
+           | &lt;6&gt; <I>document</I> &lt;/6&gt; 
+           | &lt;7&gt; <I>document</I> &lt;/7&gt; 
+           | &lt;8&gt; <I>document</I> &lt;/8&gt; 
+           | &lt;9&gt; <I>document</I> &lt;/9&gt; 
+           | &lt;r&gt; <I>document</I> &lt;/r&gt; 
+           | &lt;g&gt; <I>document</I> &lt;/g&gt; 
+           | &lt;b&gt; <I>document</I> &lt;/b&gt; 
+           | &lt;c&gt; <I>document</I> &lt;/c&gt; 
+           | &lt;m&gt; <I>document</I> &lt;/m&gt; 
+           | &lt;y&gt; <I>document</I> &lt;/y&gt; 
+           | &lt;k&gt; <I>document</I> &lt;/k&gt; 
+           | &lt;w&gt; <I>document</I> &lt;/w&gt;
+
+<I>textchar</I> ::= any printable character except &lt; and &gt; 
+           | CR | LF | TAB | SPC
+
+
+
+<6><PL><B>3   Specification</B></PL></6>
+This section defines the <EM>meaning</EM> of a document.
+Two documents are said to be equivalent if they have the same meaning.
+
+The meaning of a document is a sequence of decorated characters;
+a decorated character is a character associated with a property record.
+A property record has 8 fields:
+
+
+<B>b</B> a boolean
+
+<B>em</B> a boolean
+
+<B>i</B> a boolean
+
+<B>s</B> a boolean
+
+<B>tt</B> a boolean
+
+<B>u</B> an integer between 0 and 3 (included)
+
+<B>size</B> an integer between 0 and 9 (included)
+
+<B>color</B> an element of {<I>r</I>, <I>g</I>, <I>b</I>, <I>c</I>, <I>m</I>, <I>y</I>, <I>k</I>, <I>w</I>}
+To compute the meaning of a document given a current context (a
+context is a property record), consider the document as a 
+sequence of characters and tags. Treat each element of this sequence
+in turn as follows:
+
+
+if it is a printing character, output it, decorated by the current
+ context
+
+if it is a whitespace character, compute the current space context,
+ which is the current context modified in the
+ following way: the <B>s</B>, <B>em</B>, <B>i</B>, and <B>b</B> flags are
+ unset, and if <B>u</B> is
+ 0 then <B>color</B> is set to <I>w</I>. If the <B>tt</B> flag is true
+ in the current
+ context, then output the input character decorated by the current
+ space context; else if the previous character was
+ a SPC decorated with the same space context then do nothing;
+ otherwise, output a SPC decorated with the current space context.
+
+if it is an open tag, save the current context and change it
+ according to the tag name as follows:
+ 
+
+ <TT>B</TT> set the <B>b</B> flag
+ 
+<TT>EM</TT> invert the <B>em</B> flag if the <B>s</B> flag is not set;
+ otherwise do nothing
+ 
+<TT>I</TT> set the <B>i</B> flag
+ 
+<TT>PL</TT> unset the <B>u</B>, <B>s</B>, <B>em</B>, <B>i</B>, <B>b</B>,
+ and <B>tt</B> flags
+ 
+<TT>S</TT> set the <B>s</B> flag and unset the <B>em</B> flag
+ 
+<TT>TT</TT> set the <B>tt</B> flag
+ 
+<TT>U</TT> if <B>u</B> is less than 3, increment it;
+ otherwise do nothing
+ 
+<TT>0</TT>...<TT>9</TT> set <B>size</B> accordingly
+ 
+<TT>r</TT>, <TT>g</TT>, <TT>b</TT>, etc. set <B>color</B> accordingly
+ 
+
+if it is a closing tag, restore the context that was saved at the
+ corresponding open tag
+The meaning of the document is the sequence of decorated characters
+output by the above algorithm.
+
+A root context is any context with <B>u</B> = 0 and <B>b</B> = <B>em</B> =
+<B>i</B> = <B>s</B> = <B>tt</B> = false (<B>size</B> and <B>color</B> can
+have any value).
+Two documents are <EM>equivalent</EM> if they have the same meaning in every
+possible root context (i.e. for all values of <B>size</B> and <B>color</B>).
+
+You can use the on-line document checker and equivalence tester at
+<U><b><TT>http://cristal.inria.fr/ICFP2001/prog-contest/validator.html</TT></b></U>
+
+
+
+<5>Examples</5>
+For example, the following pairs of documents are equivalent:
+
+    &lt;r&gt;  xxx &lt;/r&gt;&lt;b&gt; yyy  &lt;/b&gt;
+    &lt;r&gt; xxx  &lt;b&gt;  yyy &lt;/b&gt;&lt;/r&gt;
+    
+    &lt;EM&gt; xxx &lt;EM&gt; yyy &lt;/EM&gt; zzz &lt;/EM&gt;
+    &lt;EM&gt; xxx&lt;/EM&gt; yyy &lt;EM&gt;  zzz &lt;/EM&gt;
+    
+    &lt;B&gt; xxx &lt;B&gt; yyy &lt;/B&gt;&lt;/B&gt;
+    &lt;B&gt; xxx  yyy &lt;/B&gt;
+    
+    &lt;r&gt; xxx &lt;/r&gt;&lt;b&gt; &lt;/b&gt;&lt;r&gt; yyy &lt;/r&gt;
+    &lt;r&gt; xxx yyy &lt;/r&gt;
+    
+    &lt;EM&gt; xxx &lt;S&gt; yyy &lt;/S&gt;&lt;/EM&gt;
+    &lt;EM&gt; xxx &lt;/EM&gt;&lt;S&gt; yyy &lt;/S&gt;
+    
+    &lt;I&gt; xxx &lt;/I&gt; yyy &lt;I&gt; zzz &lt;/I&gt;
+    &lt;I&gt; xxx &lt;PL&gt; yyy &lt;/PL&gt; zzz &lt;/I&gt;
+    
+The following pairs of documents are not equivalent:
+
+    &lt;TT&gt;&lt;r&gt;  xxx &lt;/r&gt;&lt;b&gt; yyy  &lt;/b&gt;&lt;/TT&gt;
+    &lt;TT&gt;&lt;r&gt; xxx  &lt;b&gt;  yyy &lt;/b&gt;&lt;/r&gt;&lt;/TT&gt;
+Reason: multiple spaces are significant within TT.
+
+    
+    &lt;B&gt; xxx &lt;I&gt; yyy &lt;/I&gt; zzz &lt;/B&gt;
+    &lt;B&gt; xxx &lt;/B&gt;&lt;I&gt; yyy &lt;/I&gt;&lt;B&gt; zzz &lt;/B&gt;
+Reason: yyy is both in italics and in bold in the first document
+but only in italics in the second one.
+
+
+    &lt;U&gt; xxx &lt;U&gt; yyy &lt;/U&gt;&lt;/U&gt;
+    &lt;U&gt; xxx  yyy &lt;/U&gt;
+Reason: yyy is underlined twice in the first document but only once
+in the second one.
+
+    
+    &lt;U&gt;&lt;r&gt; xxx &lt;/r&gt;&lt;b&gt; &lt;/b&gt;&lt;r&gt; yyy &lt;/r&gt;&lt;/U&gt;
+    &lt;U&gt;&lt;r&gt; xxx   yyy &lt;/r&gt;&lt;/U&gt;
+Reason: the first document has three underlined spaces between xxx
+and yyy because the middle one is in blue; the second document
+has only one red underlined space at that point.
+
+
+
+<6><PL><B>4   The task</B></PL></6>
+You must write a program to optimise SML/NG documents. Your program
+will be given a correct SML/NG document on its standard input, and it
+must output (on stdout) an equivalent document that is as small as
+possible. The size of a document is simply defined as its length in
+bytes.
+
+For example, opportunities for optimisation include the following:
+
+
+
+<B>whitespace compression</B>
+replacing a white space sequence with a single space or newline
+
+
+<B>redundancy elimination</B>
+
+changing
+<TT>&lt;B&gt;&lt;I&gt;&lt;B&gt;foo&lt;/B&gt;&lt;/I&gt;&lt;/B&gt;</TT>
+
+into
+<TT>&lt;I&gt;&lt;B&gt;foo&lt;/B&gt;&lt;/I&gt;</TT>
+
+
+<B>overlap inversion</B>
+
+changing
+<TT>&lt;B&gt;&lt;I&gt;bla bla&lt;/I&gt;&lt;/B&gt;&lt;TT&gt;&lt;I&gt;&lt;B&gt;foo bar&lt;/B&gt;&lt;/I&gt; truc&lt;/TT&gt;</TT>
+
+into
+<TT>&lt;B&gt;&lt;I&gt;bla bla&lt;TT&gt;foo bar&lt;/TT&gt;&lt;/I&gt;&lt;/B&gt;&lt;TT&gt; truc&lt;/TT&gt;</TT>
+
+
+<B>PL shortcut</B>
+
+changing
+<TT>&lt;I&gt;&lt;S&gt;&lt;TT&gt;foo&lt;/TT&gt;&lt;/S&gt;&lt;/I&gt; bar &lt;TT&gt;&lt;S&gt;&lt;I&gt; gee&lt;/I&gt;&lt;/S&gt;&lt;/TT&gt;</TT>
+
+into
+<TT>&lt;I&gt;&lt;S&gt;&lt;TT&gt;foo&lt;PL&gt; bar &lt;/PL&gt; gee&lt;/TT&gt;&lt;/S&gt;&lt;/I&gt;</TT>
+
+
+<B>whitespace simplification</B>
+
+changing
+<TT>&lt;B&gt;&lt;I&gt;&lt;r&gt;bla bla &lt;/r&gt; &lt;/I&gt; &lt;/B&gt; &lt;r&gt;&lt;I&gt; barfoo&lt;/I&gt;&lt;/r&gt;</TT>
+
+into
+<TT>&lt;I&gt;&lt;r&gt;&lt;B&gt;bla bla &lt;/B&gt;barfoo&lt;/r&gt;&lt;/I&gt;</TT>
+
+
+<B>EM elimination</B>
+
+changing
+<TT>&lt;S&gt; foo &lt;EM&gt; bar &lt;/EM&gt; &lt;/S&gt; &lt;EM&gt; &lt;EM&gt; foo &lt;/EM&gt; &lt;/EM&gt;.</TT>
+
+into
+<TT>&lt;S&gt; foo bar&lt;/S&gt; foo .</TT>
+
+
+<B>color nesting</B>
+
+changing
+<TT>&lt;r&gt;aaa&lt;/r&gt;&lt;g&gt;bbb&lt;/g&gt;&lt;b&gt;ccc&lt;/b&gt;&lt;g&gt;ddd&lt;/g&gt;&lt;r&gt;eee&lt;/r&gt;</TT>
+
+into
+<TT>&lt;r&gt;aaa&lt;g&gt;bbb&lt;b&gt;ccc&lt;/b&gt;ddd&lt;/g&gt;eee&lt;/r&gt;</TT>
+There will also be a limitation on the amount of time that your program
+may use to do its work. The time limit will depend on the input file and it
+will be given to your program as a number of seconds, both in its first
+command-line argument and in the <TT>TLIMIT</TT> environment variable. The
+limit will never be less that 180 (i.e. 3 minutes).
+
+Note that the limit is real time (a.k.a wall-clock time), not CPU time.
+
+
+
+<6><PL><B>5   Judgement criteria</B></PL></6>
+Your programs will be ranked according to the following criteria:
+
+
+Correctness. Every program that crashes or gives the wrong
+result (i.e. some output that is not equivalent to the input) on any
+one of our test inputs will be
+mercilessly eliminated from the competition.
+
+Stupidity. Every program that gives a result bigger than the
+input on any of the inputs will also be eliminated.
+
+Output size. The remaining programs will be ranked according
+to the size of their outputs on a well-chosen set of inputs. The
+inputs will be generated using a variety of techniques such as hand-writing,
+translation from HTML, random generation. These inputs can be big
+(up to a few megabytes).
+
+Speed of optimisation. If the top programs are very close to
+each other using the previous criterion, we will use speed as a tie breaker.
+
+
+<6><PL><B>6   Online stuff</B></PL></6>
+The following Web pages may be of interest to you:
+
+
+Contest home page: <U><b><TT>http://cristal.inria.fr/ICFP2001/prog-contest/</TT></b></U>
+
+FAQ: <U><b><TT>http://cristal.inria.fr/ICFP2001/prog-contest/faq.html</TT></b></U>
+
+News: <U><b><TT>http://cristal.inria.fr/ICFP2001/prog-contest/news.html</TT></b></U>
+
+Document checker and equivalence tester:
+ <U><b><TT>http://cristal.inria.fr/ICFP2001/prog-contest/validator.html</TT></b></U>
+
+Procedure for submitting entries:
+ <U><b><TT>http://cristal.inria.fr/ICFP2001/prog-contest/procedure.html</TT></b></U>
+
+
+<6><PL><B>7   Good luck</B></PL></6>
+
+Have fun !
+
+
+
+
+
+
+<EM>This document was translated from L<c>A</c>T<g>E</g>X by
+</EM><U><b><EM>H</EM><EM><2><c>E</c></2></EM><EM>V</EM><EM><2><c>E</c></2></EM><EM>A</EM></b></U><EM>.
+</EM>
+

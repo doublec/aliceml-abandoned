@@ -1,0 +1,210 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+
+import structure Defaults     from "Defaults"
+
+import structure ExplorerGUI            from "ExplorerGUI"
+import structure AboutDialog            from "AboutDialog"
+import functor   ExplorerGUISignals
+       signature EXPLORERGUISIGNALS_SIG from "ExplorerGUISignals"
+
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature CANVAS_HELPER from "CANVAS_HELPER-sig"
+import signature EVENT_HANDLER from "EVENT_HANDLER-sig"
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+import signature MAIN_WINDOW   from "MAIN_WINDOW-sig"
+
+functor MkMainWindow (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    (EventHandler : EVENT_HANDLER
+     where type explorer_state = Types.explorer_state
+     where type tree = Types.tree
+     where type space = Space.space)
+    (CanvasHelper : CANVAS_HELPER
+     where type explorer_state = Types.explorer_state)
+    :
+    MAIN_WINDOW
+    where type explorer_state = Types.explorer_state
+    =
+  struct
+      open Types
+
+  val itr = Real.fromInt
+
+  fun updateInspectionActionsMenu
+          (actionsList, serve,
+	   state as
+                 ref (SOME {gtk={menu={inspectionActions},
+                                 ...},...})
+	   : explorer_state option ref) =
+    let
+	val sub = Gtk.Menu.new()
+                  
+	val entries =
+	    List.foldl
+            (fn ((_,n),nil) =>
+                let
+                    val mi = 
+			Gtk.RadioMenuItem.newWithLabel([], n)
+                in
+                    Gtk.signalConnect(mi, "toggled",
+                                      EventHandler.selectInspectionAction
+                                          (serve, state));
+                    [mi]
+                end
+	      | ((_,n),res as (prev::_)) =>
+		let
+		    val mi =
+			Gtk.RadioMenuItem.newWithLabel
+                            (Gtk.RadioMenuItem.getGroup prev, n)
+		in
+                    Gtk.signalConnect(mi, "toggled",
+                                      EventHandler.selectInspectionAction
+                                          (serve, state));
+		    mi::res
+		end)
+	    nil
+	    actionsList
+    in
+	List.app (fn m => Gtk.MenuShell.append(sub, m)) entries;
+        Gtk.MenuItem.removeSubmenu(!inspectionActions);
+	Gtk.MenuItem.setSubmenu((!inspectionActions), sub);
+	Gtk.Widget.showAll (!inspectionActions)
+    end
+    | updateInspectionActionsMenu _ = ()
+
+  fun createMainWindow serve =
+      let
+	  val state = ref NONE
+	  val xDim = 40000
+	  val yDim = 25000
+	  val (canvas, rootGroup, shadowGroup, actionGroup, actionHandler) =
+	      CanvasHelper.createCanvas (state, serve, xDim, yDim)
+
+          val w = ExplorerGUI.aliceexplorer
+          val _ = Gtk.Container.add(ExplorerGUI.scrolledwindow, canvas)
+
+          val cid = Gtk.Statusbar.getContextId(ExplorerGUI.statusbar,
+                                              "Alice explorer")
+
+          structure Signals : EXPLORERGUISIGNALS_SIG =
+            struct
+              val on_save_activate = EventHandler.saveHandler (serve, state)
+              fun on_save_as_activate _ = ()
+              val on_reset_activate =
+                  EventHandler.resetHandler
+                      (createMainWindow, CanvasHelper.resetCanvas,
+                       serve, state)
+              val on_quit_activate =
+                  EventHandler.exitHandler
+                      (CanvasHelper.resetCanvas, serve, state)
+              val on_unhide_activate =
+                  EventHandler.nodeHideHandler (createMainWindow, serve, state)
+              val on_unhide_all_activate =
+                  EventHandler.nodeUnhideHandler
+                      (createMainWindow, serve, state)
+              val on_hide_failed_activate =
+                  EventHandler.hideFailedHandler
+                      (createMainWindow, serve, state)
+              val on_next_solution_activate =
+                  EventHandler.exploreOneHandler
+                      (createMainWindow, setStatusMsg, serve, state)
+              val on_next_n_solutions_activate =
+                  EventHandler.exploreNHandler
+                      (createMainWindow, setStatusMsg, serve, state)
+              val on_all_solutions_activate =
+                  EventHandler.exploreAllHandler
+                      (createMainWindow, setStatusMsg, serve, state)
+	      val on_one_step_activate = EventHandler.exploreStepHandler
+                      (createMainWindow, setStatusMsg, serve, state)
+              val on_view_activate =
+                  EventHandler.viewOptionsHandler (w, serve, state)
+              val on_search_activate =
+                  EventHandler.searchOptionsHandler (w, serve, state)
+              fun on_about_activate _ = AboutDialog.openDialog()
+              val on_zoom_to_fit_clicked =
+                  EventHandler.zoomToFitHandler (serve, state)
+              val on_scale_value_changed =
+                  CanvasHelper.scaleCanvasHandler
+                      (serve, state, ExplorerGUI.scale)
+              fun on_cancel_search_activate _ =
+                  Types.setCancelSearch state
+	      val on_go_to_child_activate = EventHandler.goToChild (serve,state)
+	      val on_go_to_parent_activate = EventHandler.goToParent (serve,state)
+	      val on_go_to_left_sibling_activate = EventHandler.goToLeft (serve,state)
+	      val on_go_to_right_sibling_activate = EventHandler.goToRight (serve,state)
+            end
+          
+          structure S = ExplorerGUISignals(structure S = Signals)
+
+      in
+	  Gtk.Widget.showAll w;
+          Gtk.Statusbar.push(ExplorerGUI.statusbar,cid,
+                            "Ready.");
+	  state := SOME {gtk={canvas=canvas,
+                              rootGroup=rootGroup,
+                              shadowGroup=shadowGroup,
+                              actionGroup=actionGroup,
+                              actionHandler=actionHandler,
+			      scale=ref Defaults.defScale,
+                              window=w,
+                              menu={inspectionActions=
+                                    ref ExplorerGUI.inspection1},
+                              contextId=ref cid},
+                         tree={tree=ref (ExplorerNode.createNode(state, NONE, 0)),
+                               rootSpace=ref NONE,
+			       bestSpace=ref NONE,
+			       constrain=ref NONE,
+			       currentNode=ref NONE,
+			       mrd = ref 5},
+			 inspect=ref nil,
+                         curInspAction=ref "",
+                         refreshAfter=ref 20,
+                         breakAfter=ref 0,
+                         breakAfterNodes=ref 0,
+                         hideFailed=ref true,
+                         zoomFollows=ref false,
+                         cancelSearch=ref false,
+                         status={all=ref 0,
+				 choice=ref 0,
+                                 solved=ref 0,
+                                 failed=ref 0}
+			 };
+	  state
+      end
+
+  and refresh (serve, state as ref (SOME {tree={tree=ref tree,...},...})) =
+      EventHandler.refreshAfterSearch (tree, createMainWindow) (serve, state)
+    | refresh _ = ()
+  and setStatusMsg (state as
+                          ref (SOME {gtk={contextId=contextId,...},...}) :
+                    Types.explorer_state option ref,
+                    msg, push) =
+      if push then
+          (Gtk.Statusbar.push(ExplorerGUI.statusbar, !contextId, msg); ())
+      else
+          Gtk.Statusbar.pop(ExplorerGUI.statusbar, !contextId)
+    | setStatusMsg _ = ()
+
+  fun setWindowTitle title =
+    Gtk.Window.setTitle(ExplorerGUI.aliceexplorer, title)
+
+  end

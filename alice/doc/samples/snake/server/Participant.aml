@@ -1,0 +1,159 @@
+(* Alice Snake 2.0 - Participant (impl)
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+
+import signature PARTICIPANT   from "PARTICIPANT-sig"
+import structure Protocol      from "../common/Protocol"
+import structure Color         from "../common/Color"
+import structure Snake         from "Snake"
+
+
+structure Participant :> PARTICIPANT =
+struct
+
+    type id = int
+
+    type player_info = {
+	       points     : int ref,
+               gamePoints : int ref,
+	       name       : string,
+	       color      : Color.color,
+	       nextDir    : Protocol.direction ref,
+               gatePos    : (int * int) ref,
+	       deathCount : int ref
+		       }
+
+    datatype state =
+	CONNECTED
+      | PLAYING  of player_info * Snake.snake
+      | HALF_FINISHED of player_info * int ref
+      | FINISHED of player_info * id option ref 
+      | DEAD     of player_info * id option ref
+      | WATCHING of id option ref
+      | DISCONNECTED    (* TODO: Do we need it? *)
+
+
+    type participant = { 
+        id:             id,
+        interface:      Protocol.client_interface,
+        state:          state ref,
+        connected:      bool ref
+    }
+
+    
+    fun participant (id, interface) =
+        {id, interface, state = ref CONNECTED, 
+        connected = ref true }
+
+    fun playerInfo (p: participant) =
+        case ! ( #state p ) of
+            PLAYING (st, _)         => st
+        |   HALF_FINISHED (st, _)   => st
+        |   FINISHED (st, _)        => st
+        |   DEAD (st, _)            => st
+        |   _                       => assert false
+
+
+    fun snake (p: participant) =
+        case ! ( #state p ) of
+            PLAYING (_, sn) => sn
+        |   _               => assert false
+
+    fun id (p: participant) = #id p
+
+    fun client_interface (p: participant) = #interface p
+
+    fun state (p: participant) = #state p
+
+    fun changeObserved (p: participant, id) =
+        case ! ( #state p) of
+            FINISHED (_, r)     => r := id
+        |   WATCHING r          => r := id
+        |   DEAD (_, r)         => r := id
+        |   _                   => ()
+
+    fun observes (p: participant, ob) =
+        case ! (#state p) of
+            FINISHED (_, ref (SOME id)) => id = ob
+        |   WATCHING (ref (SOME id))    => id = ob
+        |   DEAD (_, ref (SOME id))     => id = ob
+        |   _                           => false
+
+    fun nameNColor p = 
+        let
+            val info    = playerInfo p
+            val name    = #name info
+            val color   = #color info
+        in
+            (name, color)
+        end
+    
+    fun disconnect (p: participant) = #connected p := false
+
+    fun isConnected (p: participant) = ! ( #connected p )
+
+    structure Map = MkRedBlackMap (Int)
+    
+    type pmap = participant Map.map
+    
+    (* [allParticpants p] returns all participants which 
+       satisfy the predicate [p].  
+     *)
+    fun allParticipants p map = List.filter p ( List.map #2  (Map.toList map) )
+    
+    (* [allPlayers ()] returns all snakes which are 
+       still playing.
+     *)
+    val allPlayers    = allParticipants 
+            (fn p =>
+                isConnected p andalso 
+                (case !(state p) of
+                    PLAYING _               => true
+                 |   _                      => false))
+    
+    val allHalfFinished   = allParticipants 
+            (fn p => 
+                isConnected p andalso
+                (case !(state p) of 
+                     HALF_FINISHED _        => true
+                 |   _                      => false)) 
+
+
+    val allNonFinished    = allParticipants 
+            (fn p =>
+                (isConnected p andalso 
+                (case !(state p) of
+                     PLAYING _              => true
+                 |   HALF_FINISHED _        => true
+                 |   _                      => false))) 
+
+
+   val allConnected = allParticipants isConnected 
+
+    val allWithPoints  = allParticipants 
+            (fn p =>
+                (isConnected p andalso
+                case !(state p) of
+                    PLAYING _              => true
+                |   FINISHED _             => true
+                |   HALF_FINISHED _        => true
+                |   DEAD _                 => true
+                |   _                      => false)) 
+
+    val allSpectators = allParticipants
+            (fn p =>
+                case !(state p) of
+                    FINISHED    (_, ref (SOME _)) => true
+                |   DEAD        (_, ref (SOME _)) => true
+                |   WATCHING    (ref (SOME _))    => true
+                |   _                             => false)
+end

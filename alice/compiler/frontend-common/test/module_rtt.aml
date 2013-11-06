@@ -1,0 +1,82 @@
+import "x-alice:/lib/tools/Inspector"
+
+
+structure TestModuleRTT =
+struct
+    signature S0 = sig type t val x : t end
+    signature S1 = S0 where type t = int
+    signature S2 = sig type t = int val x : t end
+
+    structure X0 =
+    struct
+	type t = int
+        val  x = 0
+    end
+
+    structure X1 = X0 :  S0
+    structure X2 = X0 :> S0
+    structure X3 = X0 :  S1
+    structure X4 = X0 :> S1
+    structure X5 = X2 :  S0
+    structure X6 = X2 :> S0
+
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X0)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X1)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X2)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X3)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X4)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X5)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X6)
+
+    signature T0 =
+    sig
+	type t
+	structure X : S0
+	type u = t * X.t
+    end
+    signature T1 = T0 where type t = int
+    signature T2 = T0 where type X.t = int
+
+    signature U0 =
+    sig
+	signature S
+	structure X : S
+	functor F(_ : S) : T1
+	functor G(Y : T0) : T0 where type t = Y.t
+    end
+    signature U1 =
+    sig
+	signature S = S1
+	structure X : S
+	functor F(_ : S) : T1
+	functor G(Y : T0) : T0 where type t = Y.t
+    end
+    signature U2 = U0 where signature S = S1
+
+    functor F1(Y : U1) =
+    struct
+	type t = Y.X.t
+    end
+    functor F2(Y : U1) :> S1 =
+    struct
+	open Y.X
+    end
+    functor F3(Y : U1) :> S0 =
+    struct
+	open Y
+	open X
+    end
+
+    structure _ = Inspector.InspectSig(signature S = S0)
+    structure _ = Inspector.InspectSig(signature S = S1)
+    structure _ = Inspector.InspectSig(signature S = S2)
+    structure _ = Inspector.InspectSig(signature S = T0)
+    structure _ = Inspector.InspectSig(signature S = T1)
+    structure _ = Inspector.InspectSig(signature S = T2)
+    structure _ = Inspector.InspectSig(signature S = U0)
+    structure _ = Inspector.InspectSig(signature S = U1)
+    structure _ = Inspector.InspectSig(signature S = U2)
+
+    val _ = TextIO.inputLine(TextIO.stdIn)
+    val _ = OS.Process.exit(OS.Process.success)
+end

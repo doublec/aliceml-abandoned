@@ -1,0 +1,15 @@
+(*)val c = let structure C = Component.Create(signature S = () structure F = fct X : COMPONENT_MANAGER => ()) in C.component end
+(*)val c = comp import val it : unit from "" in with end
+(*)import "x-alice:/lib/system/Component"
+(*)import "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+(*)val c = comp import val it : int from "" in val it : int with val it = it end
+val date = Date.toString(Date.fromTimeLocal(Time.now()))
+val component =
+    comp
+        import structure TextIO : TEXT_IO from "x-alice:/lib/system/TextIO"
+    in
+        val hello : unit -> unit
+    with
+        fun hello() =
+            TextIO.print("Hello world! Created at " ^ date ^ "\n")
+    end

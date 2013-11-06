@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SOURCE        from "../infrastructure/SOURCE-sig"
+import structure Source        from "../infrastructure/Source"
+import signature CONTEXT       from "../infrastructure/CONTEXT-sig"
+import structure EmptyContext  from "../infrastructure/EmptyContext"
+import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
+import structure InputGrammar  from "InputGrammar"
+
+signature PARSING_PHASE =
+sig
+    structure C : CONTEXT       = EmptyContext
+    structure I : SOURCE        = Source
+    structure O : INPUT_GRAMMAR = InputGrammar
+
+    val translate : Source.desc * C.t * I.source -> C.t * InputGrammar.Component
+end

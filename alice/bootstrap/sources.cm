@@ -1,0 +1,32 @@
+Group
+#if defined(NEW_CM)
+	source(-)
+	group(-)
+	library($/basis.cm)
+	library($/smlnj-lib.cm)
+#endif
+is
+
+#if defined(NEW_CM)
+	$/basis.cm
+	$/smlnj-lib.cm
+#else
+	smlnj-lib.cm
+	ExtendedBasis0.sml
+#endif
+
+	ExtendedBasis.sml
+	DummyFuture.sml
+	DummyLock.sml
+	DummyPackage.sml
+	DummyStore.sml
+	Config.sml
+	Reflect.sml
+
+#if (!defined(structure Posix))
+	DummyPosix.sml
+#endif
+
+#if (!defined(structure Unix))
+	DummyUnix.sml
+#endif

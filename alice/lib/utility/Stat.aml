@@ -1,0 +1,41 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeValue  from "../system/UnsafeValue"
+import structure GlobalStamp  from "../data/GlobalStamp"
+import functor   MkHashImpMap from "../data/MkHashImpMap"
+import signature STAT         from "STAT-sig"
+
+structure Stat :> STAT =
+struct
+    type 'a stat = GlobalStamp.t
+    type value
+
+    exception Remote
+
+    structure Map = MkHashImpMap(GlobalStamp)
+
+    val map = Map.map() : value Map.t
+
+    fun stat x =
+	let
+	    val stamp = GlobalStamp.stamp()
+	in
+	    Map.insertDisjoint(map, stamp, UnsafeValue.cast x);
+	    stamp
+	end
+
+    fun !!stamp =
+	case Map.lookup(map, stamp)
+	  of NONE   => raise Remote
+	   | SOME x => UnsafeValue.cast x
+end

@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source       from "../infrastructure/Source"
+import signature CONTEXT      from "../infrastructure/CONTEXT-sig"
+import structure EmptyContext from "../infrastructure/EmptyContext"
+import signature FLAT_GRAMMAR from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar  from "FlatGrammar"
+
+signature LIVENESS_ANALYSIS_PHASE =
+    sig
+	structure C: CONTEXT = EmptyContext
+	structure I: FLAT_GRAMMAR = FlatGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
+
+	val translate: Source.desc * C.t * I.t -> C.t * O.t
+    end
+

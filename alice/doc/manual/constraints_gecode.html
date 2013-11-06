@@ -1,0 +1,177 @@
+<!--mozart-->
+<?php include("macros.php3"); ?>
+
+<?php heading("Constraints", "constraint\nprogramming") ?>
+
+
+<?php section("introduction", "introduction") ?>
+
+<P>Constraint-based problem solving is a technique for solving hard
+combinatorial problems that can be stated as variables ranging over a finite
+domain of non-negative integers, or sets thereof. Problems in this class range
+from puzzles to real world applications as diverse as scheduling, ware house
+allocation, configuration and placement.</P>
+
+<P>The two basic techniques of constraint programming are <EM>constraint
+propagation</EM> and <EM>constraint distribution</EM>. Constraint propagation
+is an efficient inference mechanism obtained with concurrent propagators
+accumulating information in a <EM>constraint store</EM>. Constraint
+distribution splits a problem into complementary cases once constraint
+propagation cannot advance further. By iterating propagation and distribution,
+propagation will eventually determine the solutions of a problem.</P>
+
+<P>Constraint distribution can easily lead to an exponential growth of the
+number of subproblems to be considered. Fortunately, this potential
+combinatorial explosion can often be contained by combining strong propagation
+mechanisms with problem specific heuristics for selecting distribution
+steps.</P>
+
+<P>The Alice constraint programming features build upon the <A
+href="http://www.gecode.org">Gecode</A> constraint library.
+
+<?php subsection("introduction-example", "Example") ?>
+
+<P>The following classic puzzle gives a first idea of the combinatorial
+problems constraint programming can solve.</P>
+
+<P>The <EM>Send More Money</EM> problem consists in finding distinct digits for
+the letters <TT>S</TT>, <TT>E</TT>, <TT>N</TT>, <TT>D</TT>, <TT>M</TT>,
+<TT>O</TT>, <TT>R</TT>, <TT>Y</TT> such that <TT>S</TT> and <TT>M</TT> are
+different from zero (no leading zeros) and the equation</P>
+
+<PRE class=code>
+SEND + MORE = MONEY</PRE>
+
+<P>is satisfied. The unique solution of the problem is 9567 + 1085 = 10652.</P>
+
+
+<?php section("overview", "overview") ?>
+
+<P>The constraint programming functionality of Alice is provided through a
+library interface, containing the following <A
+href="components.html">components</A>:</P>
+
+<UL>
+  <LI> <TT>structure <A href="library/fd.html">FD</A></TT> -
+	<A href="#fd">finite domain constraints</A> </LI>
+  <LI> <TT>structure <A href="library/modeling.html">Modeling</A></TT> -
+	<A href="#fd">Modeling tools for finite domain constraints</A> </LI>
+  <LI> <TT>structure <A href="library/fs.html">FS</A></TT> -
+	<A href="#fs">finite set constraints</A> </LI>
+  <LI> <TT>structure <A href="library/space.html">Space</A></TT> -
+	<A href="#spaces">spaces</A> </LI>
+  <LI> <TT>structure <A href="library/search.html">Search</A></TT> -
+	predefined search engines </LI>
+</UL>
+
+
+<?php section("fd", "finite domain constraints") ?>
+
+<P><EM>Finite domains constraints</EM> describe the set of values a
+non-negative integer variable may take.</P>
+
+<P>As a simple example of a complete program solving a finite domain problem,
+consider the <I>Send More Money</I> problem. It consists in finding distinct
+digits for the letters <TT>S</TT>, <TT>E</TT>, <TT>N</TT>, <TT>D</TT>,
+<TT>M</TT>, <TT>O</TT>, <TT>R</TT>, <TT>Y</TT> such that <TT>S</TT> and
+<TT>M</TT> are different from zero (no leading zeros) and the equation
+
+<PRE class=code>
+SEND + MORE = MONEY</PRE>
+
+<P>is satisfied. The unique solution of the problem is <TT>9567 + 1085 =
+10652</TT>.</P>
+
+<P>Using Alice, the problem can be solved as follows. First, we have to define
+a so-called <I>script</I> that encodes the problem:</P>
+
+<PRE class=code>
+fun money sp =
+let
+    val v as #[S,E,N,D,M,O,R,Y] = fdtermVec (sp, 8, [0`#9])
+in
+    distinct (sp, v, FD.BND); 
+    post (sp, S `&lt;&gt; `0, FD.BND); 
+    post (sp, M `&lt;&gt; `0, FD.BND); 
+    post (sp, `1000`*S `+ `100`*E `+ `10`*N `+ D `+
+              `1000`*M `+ `100`*O `+ `10`*R `+ E `=
+             `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y, FD.BND); 
+    branch (sp, v, FD.B_SIZE_MIN, FD.B_MIN); 
+    {S,E,N,D,M,O,R,Y}
+end
+<I><SMALL>val money :
+   Modeling.space ->
+      {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
+       Y : term} = _fn</SMALL></I></PRE>
+
+<P>Constraint problems have to be formulated as a script, a unary
+function taking a computation space and
+posting the necessary constraints to that space. The script makes use
+of the <TT>Modeling</TT> component to formulate the constraints
+conveniently. See 
+the description of the <A href="library/fd.html"><TT>FD</TT></A> and <A
+href="library/modeling.html"><TT>Modelin</TT></A> structures for a detailed
+description of the meaning of the above constraints.</P>
+
+<P>The Send More Money problem cannot be solved using constraint propagation
+alone. Search is required to reduce the problem space until constraint
+propagation is able to determine the solution. The <TT>distribute</TT> function
+in the script specifies the <I>distribution strategy</I> used when the problem
+space has to be split for search. See the Mozart <A
+href="http://www.mozart-oz.org/documentation/fdt/">Constraint Programming
+Tutorial</A> for a more detailed explanation of the basic concepts.</P>
+
+<P>To perform the actual search and obtain all solutions to the problem,
+predefined search engines can be used:</P>
+
+<PRE class=code>
+Search.searchAll money
+<I><SMALL>### loaded signature from x-alice:/lib/gecode/Search
+val it :
+   Space.space list *
+      {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
+       Y : term} =
+   ([_val],
+    {D = FD (_val), E = FD (_val), M = FD (_val), N = FD (_val), O = FD (_val),
+     R = FD (_val), S = FD (_val), Y = FD (_val)})</SMALL></I></PRE>
+
+<P>The actual solutions could now be extracted from the result record using the functions from the <A
+href="library/fd.html"><TT>FD.Reflect</TT></A> library structure. However, the easiest way to obtain the solutions is to interactively explore the
+search tree induced by the script using the <A
+href="library/explorer.html"><EM>Explorer</EM></A> instead of offline <TT>Search</TT>:</P>
+
+<PRE class=code>
+Explorer.exploreAll money
+<I><SMALL>val it : unit = ()</SMALL></I></PRE>
+
+<P align=center><IMG src="explorer.png" border=0 alt="Alice Explorer"></P>
+
+<P>Double-clicking on the only solution node in the search tree (the green
+diamond) will open an Inspector window displaying the variable assignments of
+the solution.
+</P>
+
+<P align=center><IMG src="inspector-search-1.png" border=0 alt="Alice Inspector"></P>
+
+<P>
+Chosing an inner node will display the information available at
+the respective point of the search tree.</P>
+
+<?php section("fs", "finite set constraints") ?>
+
+<P><EM>Finite set constraints</EM> describe the possible elements that can be
+contained in the set denoted by a set variable.</P>
+
+<P>Alice supports a wide range of <A href="library/fs.html">finite set
+constraints</A>, including finite set selection constraints and
+reified constraints.</P>
+
+<?php section("spaces", "spaces") ?>
+
+<P>Like Mozart, Alice supports the unique concept of first-class
+<EM>computation spaces</EM> that can be used to program inference engines for
+problem solving. See the <A href="library/space.html"><TT>Space</TT></A>
+component for details.</P>
+
+
+<?php footing() ?>

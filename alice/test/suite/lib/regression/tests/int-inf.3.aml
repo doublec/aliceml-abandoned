@@ -1,0 +1,25 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure IntInf3 : REGRESSION =
+struct
+
+val name = "int-inf.3"
+
+val ok = SOME "int-inf.3.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val f = IntInf.fromInt
+
+val _ = concatResult ((Bool.toString ((f 1) < (f 2))) ^ "\n")
+val _ = concatResult (IntInf.toString (IntInf.quot ((f 2) * 
+						    (f (valOf Int.maxInt)), 
+					     f 100000)))
+val _ = concatResult "\n"
+
+val result = !result
+
+end

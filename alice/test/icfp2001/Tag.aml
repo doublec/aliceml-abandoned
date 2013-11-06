@@ -1,0 +1,43 @@
+signature TAG =
+sig
+    datatype color = R | G | B' | C | M | Y | K | W | UNKNOWN
+    datatype tag   = B | EM | I | PL | S | TT | U | SIZE of int | COLOR of color
+
+    val cost :          tag -> int
+    val minCost :       int
+    val toString :      tag -> string
+    val toStringOpen :  tag -> string
+    val toStringClose : tag -> string
+end
+
+structure Tag : TAG =
+struct
+    datatype color = R | G | B' | C | M | Y | K | W | UNKNOWN
+    datatype tag   = B | EM | I | PL | S | TT | U | SIZE of int | COLOR of color
+
+    val minCost = 7
+
+    fun cost(B | I | S | U | SIZE _ | COLOR _) = 7
+      | cost(EM | PL | TT)                     = 9
+
+    fun toString B         = "B"
+      | toString EM        = "EM"
+      | toString I         = "I"
+      | toString PL        = "PL"
+      | toString S         = "S"
+      | toString TT        = "TT"
+      | toString U         = "U"
+      | toString(SIZE n)   = Int.toString n
+      | toString(COLOR R)  = "r"
+      | toString(COLOR G)  = "g"
+      | toString(COLOR B') = "b"
+      | toString(COLOR C)  = "c"
+      | toString(COLOR M)  = "m"
+      | toString(COLOR Y)  = "y"
+      | toString(COLOR K)  = "k"
+      | toString(COLOR W)  = "w"
+      | toString(COLOR UNKNOWN)	= raise Fail "Tag.toString"
+
+    fun toStringOpen t  = "<" ^ toString t ^ ">"
+    fun toStringClose t = "</" ^ toString t ^ ">"
+end

@@ -1,0 +1,22 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+
+
+signature PP_ABSTRACT_GRAMMAR =
+sig
+    type doc = PrettyPrint.doc
+    type com
+
+    val ppCom : com -> doc
+end

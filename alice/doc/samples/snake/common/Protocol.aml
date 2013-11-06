@@ -1,0 +1,194 @@
+(* Alice Snake 2.0 - Protocol
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import structure Color     from "Color"
+import structure Pos       from "Pos"
+import structure Highscore from "Highscore"
+
+(** Protocol Overview:
+
+ S.connect
+ S.play / S.watch / S.disconnect
+    C.playersJoined
+    C.playerDisconnected
+ S.startGame
+ C.tournamentStarted
+  C.levelStarted
+   C.update (* whole level *)
+   C.countdown
+   C.countdown 0
+    C.tick
+    S.turn / S.giveUp / S.changeView
+    C.playersDied / C.playersFinished / C.updatePoints
+  C.levelFinished
+  C.levelStarted
+    ...
+  C.levelFinished
+ C.tournamentFinished
+*)
+
+
+structure Protocol =
+struct
+
+    exception Protocol of string
+
+    type config = {
+        tick :         Time.time,
+        (* time between a tick signal *)
+
+        timeout :      Time.time,   
+        (* timeout after that a level is ended *)
+        
+        dimensions :   int * int, 
+	(* the dimensions of the arenas created in the tounament *)
+	 
+        goodie :       int, 
+        (* the average amount of appearing goodies *)
+	 
+        lives :        int option, 
+        (* the amount of lives a client has in the tournament *)
+	 
+        maxPlayers :    int, 
+	(* how many clients can actively participate in the tournament *)
+	 
+        goodieProb :    real, (* probabilty of a goodie *)
+        
+        gateTreshold :  int,
+        (* minimum length of a snake to enter a gate *)
+
+	levels :       int option
+    }
+
+    (* absolute (i.e screen not snake relativ) *)
+    datatype direction =
+        UP
+      | DOWN
+      | LEFT
+      | RIGHT
+    
+    datatype gate_state =
+        OPEN
+    |   CLOSED
+
+    datatype field =
+        EMPTY
+      | WALL
+      | GATE of Color.color * gate_state 
+        (* only snakes of this color can pass this gate *)
+      | GOODY of int       (* number of elements the snake will increase by *)
+      | SNAKE_HEAD of direction * Color.color
+      | SNAKE_BODY of Color.color
+
+    (** the server_interface will be transmitted to the
+        clients by connecting to the server.
+	'disconnect', a procedure with that a
+	client can disconnect himself from the game,
+        with 'play' a client can send his choosen name and
+	color, unless he wants to be in spectating mode,
+        in which case 'watch' has to be called,
+        in a running game the client can turn
+        by calling 'turn'
+    *)
+
+    datatype view_hint = 
+        PREV 
+      | NEXT
+
+    type server_interface = {
+        (* GENERIC *)
+        disconnect:     unit -> unit,
+
+        (* PRE GAME MODE *)
+        play:   string * Color.color -> bool,
+       
+        watch:  unit -> unit,
+        
+        (* PLAY MODE *)
+        turn:   direction -> unit,
+
+        changeView: view_hint -> unit,
+
+        giveUp: unit -> unit,
+        (* user turns in spectator mode *)
+
+        startGame: (unit -> unit) option
+    }
+
+    type level_info = {
+
+	dimensions : int * int
+		       }
+
+    type diff = Pos.pos * field
+
+    type client_interface = {
+        (* JOIN MODE *)
+        playersJoined :     (string * Color.color) list -> unit,
+        (** [playersJoined nameNcolorList] gets called to inform this
+            client that other players have joined the game. The client
+            should than update his display accordingly including the list
+            of available colors to choose from.
+          *)
+
+	tournamentStarted :  unit -> unit,
+
+        levelStarted :       level_info -> unit,
+	(** will be executed before each level, returns as soon as 
+	    the client is ready to process update signals,
+	    sends level information *)
+
+
+        (* GENERIC *)
+        playerDisconnected : string * Color.color -> unit,
+
+        (* PLAY MODE *)
+	countdown :         int -> unit,
+	(** [countdown n] is called before a level starts. [n] is the time
+	    till gamestart. n = 0 => levels starts *)
+
+        tick :            Highscore.points list option * diff list * Pos.pos option * Time.time -> unit,
+        (** [tick (diffs, pos, t)] is called to notify the client that a new tick has
+	    started and he has to update the gui. [t] is the time left
+	    until level ends *)
+        
+	playersDied :       (string * Color.color) list -> unit,
+	playersFinished :   (string * Color.color) list -> unit,
+
+	tournamentFinished : Highscore.highscore -> unit
+	(** [tournamentFinished h] is called when the tournament 
+	    is finished, it's called after levelFinished. 
+	    [h] will be displayed. *)
+    }
+
+    signature SERVER_CONNECTOR =
+    sig
+        val connect :       client_interface -> 
+	                     config * server_interface  (* Protocol *)
+    end
+
+        
+    fun equalFields (f1, f2) =
+        case (f1, f2) of
+            (GOODY n1, GOODY n2)                    => n1 = n2
+        |   (GATE (c1, s1), GATE (c2, s2))          => 
+            Color.equal (c1, c2) andalso s1 = s2
+        |   (WALL, WALL)                            => true
+        |   (EMPTY, EMPTY)                          => true
+        |   (SNAKE_HEAD (d1,c1), SNAKE_HEAD (d2, c2)) => 
+            Color.equal (c1, c2) andalso d1 = d2
+        |   (SNAKE_BODY c1, SNAKE_BODY c2)          => 
+            Color.equal (c1, c2)
+        |   _                                       => false
+
+end
+
+

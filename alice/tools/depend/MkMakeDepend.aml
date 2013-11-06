@@ -1,0 +1,86 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS          from "../../lib/system/OS"
+import structure IO          from "../../lib/system/IO"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure Parser      from "SMLParser"
+import structure Error       from "SMLError"
+import functor   MkAnalyzer  from "MkAnalyzer"
+import signature MAKE_DEPEND from "MAKE_DEPEND-sig"
+
+functor MkMakeDepend(val extension: string) :> MAKE_DEPEND =
+struct
+    structure Analyzer = MkAnalyzer(structure Parser = Parser
+				    val extension = extension)
+
+    exception FAIL
+
+    fun basename filename =
+	let
+	    val cs = List.rev (String.explode filename)
+	    fun cutExtension (#"."::rest) =
+		(case rest of
+		     (#"/" | #"\\")::_ => cs
+		   | _::_ => rest
+		   | nil => cs)
+	      | cutExtension ((#"/" | #"\\")::_) = cs
+	      | cutExtension (_::rest) = cutExtension rest
+	      | cutExtension nil = cs
+	in
+	    String.implode (List.rev (case cs of
+					  #"."::_ => cs
+					| _ => cutExtension cs))
+	end
+
+    val escape = String.translate (fn #" " => "\\ "
+				    | #"\\" => "/"
+				    | c => String.str c)
+
+    fun depend arguments =
+	(List.app (fn filename =>
+		   let
+		       val filenames = Analyzer.analyzeFile filename
+		   in
+		       TextIO.print (escape (basename filename) ^ "." ^
+				     extension ^ ":");
+		       List.app (fn filename =>
+				    TextIO.print (" \\\n\t" ^ escape filename))
+				filenames;
+		       TextIO.print "\n\n"
+		   end
+		   handle General.Assert _ =>
+			  (TextIO.output (TextIO.stdErr,
+					  "while processing " ^ filename ^
+					  ": assertion failure\n");
+			   raise FAIL)
+			| Error.Error _ =>
+			  (TextIO.output (TextIO.stdErr,
+					  "while processing " ^ filename ^
+					  ": internal failure\n");
+			   raise FAIL)
+			| IO.Io {cause, ...} =>
+			  (TextIO.output (TextIO.stdErr,
+					  "while processing " ^ filename ^
+					  ": I/O exception " ^ exnName cause ^
+					  "\n");
+			   raise FAIL)
+			| e =>
+			  (TextIO.output (TextIO.stdErr,
+					  "while processing " ^ filename ^
+					  ": uncaught exception " ^ exnName e ^
+					  "\n");
+			   raise FAIL)) arguments;
+	 OS.Process.success)
+	handle FAIL => OS.Process.failure
+end

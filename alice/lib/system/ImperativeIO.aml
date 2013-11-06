@@ -1,0 +1,176 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature STREAM_IO     from "STREAM_IO-sig"
+import signature IMPERATIVE_IO from "IMPERATIVE_IO-sig"
+
+functor ImperativeIO(structure StreamIO: STREAM_IO
+		     structure Vector: MONO_VECTOR
+			 where type vector = StreamIO.vector
+			   and type elem = StreamIO.elem) :>
+    IMPERATIVE_IO
+	where type StreamIO.instream = StreamIO.instream
+	  and type StreamIO.outstream = StreamIO.outstream
+	  and type StreamIO.reader = StreamIO.reader
+	  and type StreamIO.writer = StreamIO.writer
+	  and type StreamIO.vector = StreamIO.vector
+	  and type StreamIO.elem = StreamIO.elem
+	  and type StreamIO.pos = StreamIO.pos =
+    struct
+	structure StreamIO = StreamIO
+
+	type vector = StreamIO.vector
+	type elem = StreamIO.elem
+
+	type instream = StreamIO.instream ref
+	type outstream = StreamIO.outstream ref
+
+	fun input strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val (v, f') = StreamIO.input f
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f'); v
+	    end
+
+	fun input1 strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val (v, f') = StreamIO.inputN (f, 1)
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f');
+		if Vector.length v = 0 then NONE
+		else SOME (Vector.sub (v, 0))
+	    end
+
+	fun inputN (strm, n) =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val (v, f') = StreamIO.inputN (f, n)
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f'); v
+	    end
+
+	fun inputAll strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val (v, f') = StreamIO.inputAll f
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f'); v
+	    end
+
+	fun canInput (strm, n) =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val nOpt = StreamIO.canInput (f, n)
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f); nOpt
+	    end
+
+	fun lookahead strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val (v, f') = StreamIO.inputN (f, 1)
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f);
+		if Vector.length v = 0 then NONE
+		else SOME (Vector.sub (v, 0))
+	    end
+
+	fun closeIn strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val () = StreamIO.closeIn f
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f)
+	    end
+
+	fun endOfStream strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+		val b = StreamIO.endOfStream f
+		    handle e => (Promise.fulfill (p, f); raise e)
+	    in
+		Promise.fulfill (p, f); b
+	    end
+
+	fun mkInstream f = ref f
+
+	fun getInstream strm = !strm
+
+	fun setInstream (strm, f) = strm := f
+
+	fun output (strm, v) =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+	    in
+		StreamIO.output (f, v)
+		handle e => (Promise.fulfill (p, f); raise e);
+		Promise.fulfill (p, f)
+	    end
+
+	fun output1 (strm, x) =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+	    in
+		StreamIO.output1 (f, x)
+		handle e => (Promise.fulfill (p, f); raise e);
+		Promise.fulfill (p, f)
+	    end
+
+	fun flushOut strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+	    in
+		StreamIO.flushOut f
+		handle e => (Promise.fulfill (p, f); raise e);
+		Promise.fulfill (p, f)
+	    end
+
+	fun closeOut strm =
+	    let
+		val p = Promise.promise ()
+		val f = Ref.exchange (strm, Promise.future p)
+	    in
+		StreamIO.closeOut f
+		handle e => (Promise.fulfill (p, f); raise e);
+		Promise.fulfill (p, f)
+	    end
+
+	fun mkOutstream f = ref f
+
+	fun getOutstream strm = !strm
+
+	fun setOutstream (strm, f) = strm := f
+
+	fun getPosOut strm = StreamIO.getPosOut (!strm)
+
+	fun setPosOut (strm, pos) = strm := StreamIO.setPosOut pos
+    end

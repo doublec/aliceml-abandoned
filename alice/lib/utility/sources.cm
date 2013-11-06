@@ -1,0 +1,19 @@
+Group is
+	../../bootstrap/sources.cm
+	../data/sources.cm
+
+	SCOPED_IMP_MAP-sig.aml
+	SCOPED_IMP_SET-sig.aml
+	MkScopedImpMap.aml
+	MkScopedImpSet.aml
+
+	CELL-sig.aml
+	../../bootstrap/Cell.sml
+	../../bootstrap/DummyHole.sml
+	../../bootstrap/DummyAddr.sml
+
+	DEPTH_FIRST_SEARCH-sig.aml
+	MkDepthFirstSearch.aml
+
+	PRETTY_PRINT-sig.aml
+	PrettyPrint.aml

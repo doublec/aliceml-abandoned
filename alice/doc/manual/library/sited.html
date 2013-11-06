@@ -1,0 +1,71 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Sited structure", "The <TT>Sited</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature SITED
+    structure Sited : SITED
+  </PRE>
+
+  <P>
+    This structure provides an abstract data type that allows to create
+    values that are <EM>sited</EM>, i.e. cannot be
+    <A href="pickle.html">pickled</A> or transferred to other processes.
+  </P>
+
+  <P>See also:
+    <A href="pickle.html"><TT>Pickle</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature SITED from "x-alice:/lib/data/SITED-sig"
+    import structure Sited from "x-alice:/lib/data/Sited"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature SITED =
+    sig
+	eqtype 'a sited
+	type 'a t = 'a sited
+
+	val sited : 'a -> 'a sited
+	val value : 'a sited -> 'a
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>eqtype 'a sited</TT>
+      <TT>type 'a t = 'a sited</TT>
+    </DT>
+    <DD>
+      <P>A type of sited values of type <TT>'a</TT>. Equality is defined
+      structurally.</P>
+    </DD>
+
+    <DT>
+      <TT>sited <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Turns <TT><I>x</I></TT> into a sited value.</P>
+    </DD>
+
+    <DT>
+      <TT>value <I>sit</I></TT>
+    </DT>
+    <DD>
+      <P>Extracts the proper value from the sited <TT><I>sit</I></TT>. It holds
+      that</P>
+      <PRE>
+        value (sited <I>x</I>) = <I>x</I></PRE>
+      <P>for values that support equality.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,30 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature COMMAND_LINE    from "../../system/COMMAND_LINE-sig"
+import structure CommandLine     from "../../system/CommandLine"
+import signature POLICY          from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure CommandLine : COMMAND_LINE =
+struct
+    fun name () =
+        let
+            do Policy.Unit.check ("commandLineName", "CommandLine.name", ())
+        in
+            CommandLine.name ()
+        end
+
+    fun arguments () =
+        let
+            do Policy.Unit.check ("commandLineArgs", "CommandLine.arguments", ())
+        in
+            CommandLine.arguments ()
+        end
+
+end

@@ -1,0 +1,54 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type int and vector and list from "ToplevelTypes"
+import __primitive val op =                     from "ToplevelValues"
+import functor MkVectorSlice                    from "MkVectorSlice"
+import __primitive signature VECTOR_SLICE       from "VECTOR_SLICE-sig"
+
+local
+    structure VectorSlice : VECTOR_SLICE =
+    struct
+	type v = vector
+
+	structure VectorSlice = MkVectorSlice(
+	    type vector  = vector
+	    type 'a elem = 'a
+	    __primitive val vlength :   'a v -> int		= "Vector.length"
+	    __primitive val vsub :	'a v * int -> 'a	= "Vector.sub"
+	    __primitive val vextract :  'a v * int * int -> 'a v = "Vector.extract"
+	    __primitive val vtabulate : int * (int->'a) -> 'a v	= "Vector.tabulate"
+	    __primitive val vconcat :   'a v list -> 'a v	= "Vector.concat"
+	    __primitive val vfromList : 'a list -> 'a v		= "Vector.fromList"
+	)
+	open VectorSlice
+
+	(* TODO: should we use this? 
+	    __primitive val vsub : 'a t * int -> 'a	= "Unsafe.Vector.sub"
+	*)
+
+	fun contains sl	= VectorSlice.contains op= sl
+	fun notContains sl	= VectorSlice.notContains op= sl
+    end
+
+    __primitive type 'a slice = "'a VectorSlice.slice"
+    __primitive functor Cast (structure X : VECTOR_SLICE signature S) : S = "Cast"
+in
+    structure VectorSlice =
+	Cast (signature S = VECTOR_SLICE where type slice = slice
+	      structure X = VectorSlice)
+end

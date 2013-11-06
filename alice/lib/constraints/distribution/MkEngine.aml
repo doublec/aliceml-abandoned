@@ -1,0 +1,82 @@
+import structure FD     from "x-alice:/lib/gecode/FD"
+import structure FS     from "x-alice:/lib/gecode/FS"
+import structure Space  from "x-alice:/lib/gecode/Space"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+
+import structure Common  from "Common"
+import signature MANAGER from "MANAGER-sig"
+import signature PARCEL  from "PARCEL-sig"
+import structure Debug   from "Debug"
+
+(* Needed only in debug mode *)
+(* import "RemoteWorker" *)
+
+open Common  (* SCRIPT_GEN, BEST, Internalize, ExternalOrder, mkOrder *)
+
+functor MkEngine (Manager : MANAGER) =
+struct
+  
+  open Debug
+  val itos = Int.toString
+  val wtos = Word31.toString
+
+  structure ScriptGen  = Manager.ScriptGen
+  structure MyScript   = ScriptGen.MkScript Space FD FS
+  val       searchMode = MyScript.searchMode
+
+  (* Start the search on given hosts. 
+   * oxOrder if NONE or SOME f where f is a comparison function *)
+  fun start (verbosity, hostsAndIds) =
+    let
+      val verbosity = verbosity || dbExc (* Always print exceptions. *)
+      fun dbPrint (l, msg) = Debug.dbPrint (verbosity, l, msg)
+        
+      (* Create a manager. *)
+      val _ = dbPrint (dbManag, "Creating Manager\n")
+      val searchMode' =
+        case searchMode of
+          BEST (c, Internalize (f,localscript)) => 
+            BEST (c, ExternalOrder (mkOrder (c,f, MyScript.root, localscript)))
+        | x => x
+
+      val (managerInterface, shutdown, sols) =
+        Manager.new (verbosity, List.length hostsAndIds, searchMode',
+                     ScriptGen.print)
+
+      (* This structure will be downloaded by the hosts using a TICKET. *)
+      val _ = dbPrint (dbCom || dbManag, "Creating Parcel, ")
+      structure Parcel =
+        struct
+          structure ScriptGen = ScriptGen
+          val       interface = managerInterface
+        end
+      
+      val gift = pack Parcel :> (PARCEL)
+      (* ??? where type ScriptGen.sol = ScriptGen.sol) *)
+
+      val ticket = Remote.offer gift
+      val _ = dbPrint (dbCom || dbManag, "offered through ticket "^ticket^"\n")
+  
+      (* Connect to the given host and launch a client. *)
+      fun connect (id, (host, name, initScript)) =
+        (dbPrint (dbCom || dbManag,"Connecting " ^ host ^ "  id = " ^ (itos id)
+                  ^ " (aka " ^ name ^ ")\n") ;
+
+         OS.Process.system(String.concatWith " "
+                           ["ssh", "-f", host,
+                            "'source " ^ initScript,
+                            ";",
+                            "$ALICERUN $WORKERURI", ticket,
+                            itos id, name, wtos verbosity,
+                            "'"]) ;
+         dbPrint (dbManag, "Back from OS.System\n"))
+         (* RemoteWorker.entryPoint [ticket, itos id, name, wtos verbosity] ; *)
+         
+    in
+      (* Connect to all workers. *)
+      List.appi connect hostsAndIds ;
+      (shutdown, sols)
+    end
+end
+
+

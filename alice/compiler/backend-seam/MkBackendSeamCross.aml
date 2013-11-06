@@ -1,0 +1,71 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature COMPONENT_MANAGER
+    from "../../lib/system/COMPONENT_MANAGER-sig"
+import structure Crash               from "../infrastructure/Crash"
+import signature SWITCHES            from "../infrastructure/SWITCHES-sig"
+import structure EmptyContext        from "../infrastructure/EmptyContext"
+import structure Target              from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC
+    from "../infrastructure/BACKEND_SPECIFIC-sig"
+import structure MkTracingPhase      from "../infrastructure/MkTracingPhase"
+import structure PrimPickle          from "PrimPickle"
+import structure Value               from "ValueCross"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
+import structure OutputPickle        from "OutputPickle"
+import structure MkCodeGenPhase      from "MkCodeGenPhase"
+
+functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
+		      structure Switches: SWITCHES): BACKEND_SPECIFIC =
+    let
+	structure CodeGenPhase = 
+	    MkCodeGenPhase(structure AbstractCodeGrammar = AbstractCodeGrammar
+			   structure Switches = Switches)
+
+	fun inf (Value.TaggedValue
+		     (_, _, #[_, _, Value.Sign (SOME exportInf)])) = exportInf
+	  | inf _ = raise Crash.Crash "MkBackendSeam.inf"
+
+	fun save value filename =
+	    let
+		val outstream = PrimPickle.openOut filename
+	    in
+		OutputPickle.output (outstream, value);
+		PrimPickle.closeOut outstream
+	    end
+	structure TracingPhase =
+	    MkTracingPhase(structure Phase =
+			       struct
+				   structure C = CodeGenPhase.C
+				   structure I = CodeGenPhase.I
+				   structure O = Target
+
+				   fun translate x =
+				       let
+					   val (context, (value, _)) =
+					       CodeGenPhase.translate x
+				       in
+					   (context,
+					    Target.FOREIGN {save = save value,
+							    inf = inf value})
+				       end
+			       end
+			   structure Switches = Switches
+			   val name = "Emitting Pickle")
+    in
+	struct
+	    open TracingPhase
+	    structure O = Target
+	    val isCross = true
+	end
+    end

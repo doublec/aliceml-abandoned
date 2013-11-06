@@ -1,0 +1,60 @@
+(* Alice Snake 2.0 - Participant
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Protocol   from "../common/Protocol"
+import structure Color      from "../common/Color"
+import structure Pos        from "../common/Pos"
+import structure Highscore  from "../common/Highscore"
+import structure Snake      from "Snake"
+
+
+signature PSTATE =
+sig
+    type id = int
+    type pstate
+    
+    val pstate :            id -> pstate
+    val id :                pstate -> id
+    val play :              pstate * int * string * Color.color -> unit
+    val watch :             pstate -> unit
+    val enterGate :         pstate -> unit
+    val finish :            pstate * real -> unit
+    val adjustPoints :      pstate -> unit
+    val die :               pstate * int option -> unit
+    val startLevel :        pstate * int * Pos.pos * Protocol.direction -> unit
+    val snake :             pstate -> Snake.snake
+    val nameNColor :        pstate -> string * Color.color
+    val changeObserved :    pstate * id option -> unit
+    val observes :          pstate * id -> bool
+    val observed :          pstate -> id option
+
+    val giveUp :            pstate -> unit
+    
+    val position :          pstate -> (Pos.pos, id option) alt
+    val points :            pstate * int option -> Highscore.points
+    val gatePos  :          pstate -> Pos.pos
+
+    val canEnterGate :      pstate * int -> bool
+
+    val isConnected :       pstate -> bool
+    val isDisconnected :    pstate -> bool
+
+    val disconnect :        pstate -> unit
+
+    val played :            pstate -> bool
+    val hasEnteredGate :    pstate -> bool
+    val isPlayer :          pstate -> bool
+    (* player is not necessarily playing right now, but he can *)
+    val isPlaying :         pstate -> bool
+    val isObserver :        pstate -> bool
+end
+
+

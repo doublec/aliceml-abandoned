@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature RANDOM =
+sig
+    val randomize : unit -> unit
+    val int :	    int -> int
+    val real :	    real -> real
+    val largeInt :  LargeInt.int -> LargeInt.int
+    val largeReal : LargeReal.real -> LargeReal.real
+end

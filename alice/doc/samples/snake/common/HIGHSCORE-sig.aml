@@ -1,0 +1,57 @@
+(* Alice Snake 2.0 - Highscore
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import structure Color   from "Color"
+
+
+signature HIGHSCORE =
+sig
+
+    type entry = 
+	{
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,
+	 player:     int,
+	 level:      int
+	 }
+
+    type highscore = entry list
+    type t = highscore
+
+
+    type points = 
+	{ 
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,        (* total points (excluding gamePoints) *)
+	 gamePoints: int,        (* points made this game 
+				  but not yet taken home *)
+         lives :     int option
+	 }
+
+    val empty: highscore
+
+    val merge:  highscore * points list * int -> highscore
+    (** [merge (h,p,level)] merges the highscore [h] with 
+     the result of a tournament and played level [p] 
+     creating a new highscore. [p] does NOT need to be sorted.
+      *)
+
+    val foldl:  (entry * 'a -> 'a) -> 'a -> highscore -> 'a 
+    (** [foldl f init h]
+     
+        Sequentially applies f to the tuple of each highscore entry and the
+	result of the previous application, starting with initial value a. 
+	Folding is performed in decreasing points order.
+      *)
+end
+

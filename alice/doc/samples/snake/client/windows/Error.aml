@@ -1,0 +1,4 @@
+structure Error =
+struct
+    exception Error of string
+end

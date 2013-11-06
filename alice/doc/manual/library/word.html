@@ -1,0 +1,132 @@
+<?php include("macros.php3"); ?>
+<?php heading("The WORD signature", "The <TT>WORD</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature WORD
+    structure Word : WORD where type word = word
+    structure Word8 : WORD
+    structure Word31 : WORD
+    structure Word32 : WORD
+    structure LargeWord : WORD = Word32
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/word.html"><TT>WORD</TT></A> signature.
+  </P>
+
+  <P>See also:
+    <A href="integer.html"><TT>INTEGER</TT></A>,
+    <A href="hashable.html"><TT>HASHABLE</TT></A>,
+    <A href="ordered.html"><TT>ORDERED</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature WORD =
+    sig
+	eqtype word
+	type t = word
+
+	val wordSize :      int
+
+	val toLarge :       word -> LargeWord.word
+	val toLargeX :      word -> LargeWord.word
+	val fromLarge :     LargeWord.word -> word
+	val toLargeInt :    word -> LargeInt.int
+	val toLargeIntX :   word -> LargeInt.int
+	val fromLargeInt :  LargeInt.int -> word
+	val toInt :         word -> int
+	val toIntX :        word -> int
+	val fromInt :       int -> word
+
+	val notb :          word -> word
+	val orb :           word * word -> word
+	val xorb :          word * word -> word
+	val andb :          word * word -> word
+	val << :            word * Word.word -> word
+	val >> :            word * Word.word -> word
+	val ~>> :           word * Word.word -> word
+
+	val ~ :             word -> word
+	val + :             word * word -> word
+	val - :             word * word -> word
+	val * :             word * word -> word
+	val div :           word * word -> word
+	val mod :           word * word -> word
+
+	val op > :          word * word -> bool
+	val op &lt; :          word * word -> bool
+	val op >= :         word * word -> bool
+	val op &lt;= :         word * word -> bool
+	val equal :         word * word -> bool
+	val compare :       word * word -> order
+	val hash :          word -> int
+
+	val min :           word * word -> word
+	val max :           word * word -> word
+
+	val fmt :           StringCvt.radix -> word -> string
+	val toString :      word -> string
+	val scan :          StringCvt.radix -> (char,'a) StringCvt.reader -> (word,'a) StringCvt.reader
+	val fromString :    string -> word option
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/word.html"><TT>WORD</TT></A> signature.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = word</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>word</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>i1</I>, <I>i2</I>)</TT>
+    </DT>
+    <DD>
+      <P>An explicit equality function on integers. Equivalent to <TT>op=</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>hash <I>i</I></TT>
+    </DT>
+    <DD>
+      <P>A hash function for words.</P>
+    </DD>
+
+    <DT>
+      <TT>fromString <I>s</I></TT> <BR>
+      <TT>scan <I>getc</I> <I>strm</I></TT>
+    </DT>
+    <DD>
+      <P>Like specified in the <A href="http://www.standardml.org/Basis/word.html#SIG:WORD.fromString:VAL">Standard ML
+      Basis</A>, except that underscores are allowed to separate digits.
+      The <TT>scan</TT> function thus accepts the following formats:</P>
+      <PRE>
+        StringCvt.BIN   (0w)?[0-1_]*[0-1][0-1_]*
+	StringCvt.OCT   (0w)?[0-7_]*[0-7][0-7_]*
+	StringCvt.DEC   (0w)?[0-9_]*[0-9][0-9_]*
+	StringCvt.HEX   (0wx|0wX|0x|0X)?[0-9a-fA-F_]*[0-9a-fA-F][0-9a-fA-F_]*</PRE>
+      <P>The expression <TT>fromString <I>s</I></TT> is equivalent to
+      <TT>StringCvt.scanString (scan DEC) s</TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

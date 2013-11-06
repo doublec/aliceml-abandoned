@@ -1,0 +1,169 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stream        from "../data/Stream"
+import structure MkHashImpMap  from "../data/MkHashImpMap"
+import structure TextIO        from "TextIO"
+import structure Url           from "Url"
+import structure Socket        from "Socket"
+import structure Http          from "Http"
+import structure IO            from "IO"
+import signature HTTP_SERVER   from "HTTP_SERVER-sig"
+
+structure HttpServer :> HTTP_SERVER =
+    struct
+	type handler = Http.request -> Http.response
+
+	val logOut: TextIO.outstream option ref = ref NONE
+
+	fun trace s =
+	    case !logOut of
+		SOME q => (TextIO.output (q, s); TextIO.flushOut q)
+	      | NONE => ()
+
+	val idleTime = ref (Time.fromSeconds (Int.toLarge 30))
+
+	val myPort: int option ref = ref NONE
+
+	fun notFoundHandler (request: Http.request) =
+	    Http.makeResponse
+		{statusCode = 404,
+		 contentType = "text/html",
+		 body =
+		 "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"\n\
+		 \<HTML><HEAD>\n\
+		 \<TITLE>404 Not Found</TITLE>\n\
+		 \</HEAD><BODY>\n\
+		 \<H1>Not Found</H1>\n\
+		 \The requested URL " ^ Url.toString (#uri request) ^
+		 " was not found on this server.<P>\n\
+		 \<HR>\n\
+		 \<ADDRESS>Alice HTTP Server" ^
+		 (case !myPort of
+		      SOME port => " at port " ^ Int.toString port
+		    | NONE => "") ^ "</ADDRESS>\n\
+		 \</BODY></HTML>\n"}
+
+	structure UrlMap = MkHashImpMap(Url)
+
+	val handlerMap: handler UrlMap.t = UrlMap.map ()
+
+	fun findHandler uri = findHandler' (List.rev (Url.getPath uri))
+	and findHandler' ss =
+	    let
+		val uri = Url.setPath (Url.empty, List.rev ss)
+	    in
+		case UrlMap.lookup (handlerMap, uri) of
+		    SOME handler => handler
+		  | NONE =>
+			case ss of
+			    _::sr => findHandler' sr
+			  | nil => notFoundHandler
+	    end
+
+	fun parseConnectionHeader ({headers, ...}: Http.request) =
+	    case Http.StringMap.lookup (headers, "connection") of
+		SOME s =>
+		    List.map (fn Http.TOKEN s => s | _ => raise Http.Format)
+			     (Http.parseFieldValue s)
+	      | NONE => nil
+
+	(*--**  Currently have to pass token stream as reference
+		in order to work around infamous thread space leak
+		(particularly under Mozart). *)
+	fun closeIdle (tokens, socket) =
+	    case Future.awaitEither (Future.alarm (!idleTime), !tokens) of
+		SND (()::tokens') =>
+		    (tokens := tokens';
+		     closeIdle (tokens, socket))
+	      | SND nil =>
+		    (trace "explicitly closing connection\n";
+		     Socket.close socket)
+	      | FST _ =>
+		    (*--** This does not work, at least not under Mozart!
+		     * Sockets are synchronized, so the close will
+		     * be performed *after* the concurrent blocking read
+		     * stemming from readRequest in handleConnection
+		     * has returned - i.e. when the next request arrives.
+		     * This is not only useless but completely wrong,
+		     * because it causes that request to fail (the response
+		     * cannot be sent back).
+		     * There seems to be no way in the Mozart API to implement
+		     * the timeout properly, so for now, we simply keep
+		     * conncections live forever.
+		    (trace "closing idle connection";
+		     Socket.close socket)
+		    *)
+		    ()
+
+	fun handleConnection (socket, host, port) =
+	    let
+		val (stream, tokens) = Stream.stream ()
+	    in
+		trace ("connection from " ^ host ^ ":" ^
+		       Int.toString port ^ "\n");
+		spawn handleConnection' (socket, host, port, stream);
+		spawn closeIdle (ref tokens, socket)
+	    end
+	and handleConnection' (socket, host, port, stream) =
+	    let
+		val request = Http.readRequest socket
+		val _ = trace ("request from " ^ host ^ ":" ^
+			       Int.toString port ^ "\n")
+		val p = Promise.promise ()
+		val _ = Stream.send (stream, Promise.future p)
+		val handler = findHandler (#uri request)
+		val response = handler request
+		    handle _ =>
+			   Http.makeResponse
+			       {statusCode = 500, contentType = "text/plain",
+				body = "Internal server error"}
+		val connectionTokens = parseConnectionHeader request
+	    in
+		Http.writeResponse (socket, response);
+		Promise.fulfill (p, ());
+		if List.exists (fn s => s = "close") connectionTokens then
+		    Stream.close stream
+		else handleConnection' (socket, host, port, stream)
+	    end
+	    handle (Http.Format | IO.Io {cause = Http.Format, ...}) =>
+		       Stream.close stream
+		       before trace "protocol error\n"
+		 | IO.Io {cause = Http.Closed, ...} =>
+		       trace "connection closed"
+		 | IO.Io {...} =>
+		       trace "i/o error\n"
+
+	fun start portOpt =
+	    let
+		val p = Promise.promise ()
+
+		fun start' portOpt =
+		    let 
+			val (_, serverPort) =
+			    Socket.server (portOpt, handleConnection)
+		    in
+			Promise.fulfill (p, SOME serverPort);
+			serverPort
+		    end
+	    in
+		Future.await (Ref.exchange (myPort, Promise.future p));
+		start' portOpt
+	    end
+
+	fun register (uri, handler) =
+	    let
+		val uri' = Url.setPath (Url.empty, Url.getPath uri)
+	    in
+		UrlMap.insert (handlerMap, uri', handler)
+	    end
+    end

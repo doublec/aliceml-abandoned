@@ -1,0 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Compiler from "x-alice:/lib/system/Compiler"
+
+signature EVALUATOR =
+sig
+    datatype signal	= INTERRUPT | STOP
+
+    val init		: unit -> unit
+    val reset		: unit -> unit
+    val eval		: string * signal -> unit
+    val evalFile	: string * signal -> unit
+    val compileFile	: string -> unit
+
+    val setOutWidth	: int -> unit
+    val setOutStream	: TextIO.StreamIO.outstream -> unit
+    val setErrWidth	: int -> unit
+    val setErrStream	: TextIO.StreamIO.outstream -> unit
+    val setTraceStream	: TextIO.StreamIO.outstream -> unit
+    val setAnnotStream	: TextIO.StreamIO.outstream -> unit
+    val setAnnotActive	: bool -> unit
+    val setWarnings	: Compiler.warnings -> unit
+end

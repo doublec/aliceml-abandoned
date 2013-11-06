@@ -1,0 +1,274 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Compiler structure",
+	      "The <TT>Compiler</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature COMPILER
+    structure Compiler : COMPILER</PRE>
+
+  <P>
+    This structure provides runtime access to the compiler and allows
+    evaluating Alice ML programs in source form dynamically.
+  </P>
+
+  <P>
+    See also:
+    <A href="component.html"><TT>Component</TT></A>,
+    <A href="package.html"><TT>Package</TT></A>,
+    <A href="pickle.html"><TT>Pickle</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import structure Compiler from "x-alice:/lib/system/Compiler"
+    import signature COMPILER from "x-alice:/lib/system/COMPILER-sig"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature COMPILER =
+    sig
+	type env
+	type warnings = {conventions :         bool,
+	                 shadowing :           bool,
+	                 unusedImports :       bool,
+	                 addedImports :        bool,
+	                 inaccessibleExports : bool}
+
+	val warnings :        warnings
+
+	exception Error
+
+	val initialEnv :      env
+
+	val compile :         string -> Component.t
+	val compileWith :     env * string -> Component.t
+	val compileFile :     string * string option -> unit
+	val compileFileWith : env * string * string option -> unit
+
+	val eval :            string -> package
+	val evalWith :        env * string -> env * package
+	val evalFile :        string -> package
+	val evalFileWith :    env * string -> env * package
+
+	val withStreams :     {out : TextIO.outstream option,
+	                       err : TextIO.outstream option,
+	                       trace : TextIO.outstream option,
+	                       annot : TextIO.outstream option}
+	                       -> ('a -> 'b) -> 'a -> 'b
+	val withWidths :      {out : int, err : int, trace : int}
+	                       -> ('a -> 'b) -> 'a -> 'b
+	val withWarnings :    warnings -> ('a -> 'b) -> 'a -> 'b
+    end</PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type env</TT>
+    </DT>
+    <DD>
+      <P>The type of compilation environments.</P>
+    </DD>
+
+    <DT>
+      <TT>type warning</TT>
+    </DT>
+    <DD>
+      <P>A record type collecting all possible warning switches.</P>
+      <P><B>Note:</B> This type may change in future versions of Alice.
+      Use record update on the default record <TT>warnings</TT> if you
+      want your code to be robust against changes.</P>
+    </DD>
+
+    <DT>
+      <TT>warning</TT>
+    </DT>
+    <DD>
+      <P>A record withg the default settings warning switches.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Error</TT>
+    </DT>
+    <DD>
+      <P>Raised when a compile-time error occurs.</P>
+    </DD>
+
+    <DT>
+      <TT>initialEnv</TT>
+    </DT>
+    <DD>
+      <P>The initial compilation environment that contains all library
+      entries that are available by default.</P>
+    </DD>
+
+    <DT>
+      <TT>compileWith (<I>env</I>, <I>source</I>)</TT><BR>
+      <TT>compile <I>source</I></TT>
+    </DT>
+    <DD>
+      <P>Compiles the string <TT><I>source</I></TT> to a first-class component,
+      under environment <TT><I>env</I></TT>. Raises <TT>Error</TT> if
+      compilation was not successful. A respective error message
+      will be written to the <TT><A href="text-io.html">TextIO.stdErr</A></TT>
+      stream by default, but can be redirected using the <TT>withStreams</TT>
+      function below. The second variant uses <TT>initialEnv</TT> as the
+      default environment.</P>
+      <P>Note that incremental
+      compilation is likely to create a component that is sited and can hence
+      not be exported. With non-incremental compilation this problem does not
+      occur, because all external entities will be referenced indirectly through
+      imports in the created component.</P>
+    </DD>
+
+    <DT>
+      <TT>compileFileWith (<I>env</I>, <I>file</I>, <I>dest</I>)</TT><BR>
+      <TT>compileFile (<I>file</I>, <I>dest</I>)</TT>
+    </DT>
+    <DD>
+      <P>Compiles the content of <TT><I>file</I></TT> and saves the resulting
+      component to a second file. If <TT><I>dest</I></TT> is given, it is used as
+      the destination's file name. Otherwise, the file name is derived from
+      <TT><I>file</I></TT> by replacing its extension with
+      <TT><A href="component.html#extension">Component.extension</A></TT>.
+      Raises <TT>Error</TT> if compilation
+      was not successful. A respective error message
+      is written to the <TT><A href="text-io.html">TextIO.stdErr</A></TT>
+      stream by default, but can be redirected using the <TT>withStreams</TT>
+      function below.
+      The first variant compiles under the given environemnt, the second
+      uses <TT>initialEnv</TT> as the default environment.
+      <P>Note that incremental
+      compilation is likely to create a sited component and hence can easily
+      fail with an <TT><A href="io.html">IO.Io</A></TT>
+      exception. With non-incremental compilation this problem does not
+      occur, because all external entities will be referenced indirectly through
+      imports in the created component.</P>
+    </DD>
+
+    <DT>
+      <TT>evalWith (<I>env</I>, <I>source</I>)</TT><BR>
+      <TT>eval <I>source</I></TT>
+    </DT>
+    <DD>
+      <P>Compiles the string <TT><I>source</I></TT> to a first-class component,
+      under environment <TT><I>env</I></TT>, evaluates it, and returns a
+      package containing the component's export module.
+      Raises <TT>Error</TT> if compilation
+      was not successful. A respective error message
+      is written to the <TT><A href="text-io.html">TextIO.stdErr</A></TT>
+      stream by default, but can be redirected using the <TT>withStreams</TT>
+      function below. Any exception raised by evaluation of the component
+      will also be propagated to the caller.</P>
+      <P>The first variant allows for incremental evaluation, it takes a
+      given environment and returns an environment that is extended with all
+      entities declared by the program. The second variant uses
+      <TT>initialEnv</TT> as the default environment. (See <A href="#example">below</A> for examples.)</P>
+    </DD>
+
+    <DT>
+      <TT>evalFileWith (<I>env</I>, <I>file</I>)</TT><BR>
+      <TT>evalFile <I>file</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>evalWith</TT> and <TT>eval</TT>, respectively, but the
+      program is read from a source file instead of being given as a string.</P>
+    </DD>
+
+    <DT>
+      <TT>withStreams {<I>out</I>, <I>err</I>, <I>trace</I>, <I>annot</I>} <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>Redirects the output produced by compilation function <TT><I>f</I></TT>.
+      Error messages are written to <TT><I>err</I></TT>, logging output 
+      (such as access to components) is written to <TT><I>out</I></TT>,
+      special output tracing the phases of execution is written to
+      <TT><I>trace</I></TT>, and type annotations are written to
+      <TT><I>annot</I></TT>. By giving <TT>NONE</TT> for any of these values
+      the respective output will be suppressed. Default mode of operation
+      is <TT>{err = SOME TextIO.stdErr, out = NONE, trace = NONE, annot = NONE}</TT>.</P>
+      <P>Note that the I/O produced by <I>evaluation</I> of the compiled
+      component is not affected.</P>
+    </DD>
+
+    <DT>
+      <TT>withWidths {<I>out</I>, <I>err</I>, <T>trace</I>} <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>Sets widths for pretty-printing output on the respective message
+      streams. All values default to <TT>80</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>withWarnings <I>w</I> <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>Sets warning switches for compilation. For compatibily with future
+      versions of Alice ML, the argument <TT><I>w</I></TT> is best
+      given in terms of record update on the default switches represented
+      by the predefined record <TT>warnings</TT>, as in the following example:
+      </P>
+      <PRE>
+      withWarnings {warnings where conventions=false} eval source</PRE>
+    </DD>
+  </DL>
+
+<?php section("example", "examples") ?>
+
+<P>Here are some simple examples of using the compiler:</P>
+
+  <UL>
+    <LI>Evaluation for side effects:
+	<PRE>
+	eval "print \"Hello\\n\""</PRE>
+
+    <LI>Using the result of evaluation:
+	<PRE>
+	structure It = unpack eval "84 div 2" : (val it : int);
+	print (Int.toString It.it ^ "\n")</PRE>
+
+    <LI>Exception handling:
+	<PRE>
+	eval "raise Empty" handle Empty => ()</PRE>
+
+    <LI>Incremental evaluation:
+	<PRE>
+	val (env, _) = evalWith (initialEnv, "val x = 4");
+	evalWith (env, "print (Int.toString x)")</PRE>
+
+    <LI>Component import and nested evaluation (note the double quoting):
+	<PRE>
+	eval "import \"x-alice:/lib/system/Compiler\"; \
+	     \Compiler.eval \"print \\\"Hello\\\\n\\\"\""</PRE>
+
+    <LI>Runtime creation and manual insertion of imported components:
+	<PRE>
+	import val myval : int from "myscheme:/bla"
+	val c = compile "val myval = 7"
+	val _ = ComponentManager.enter (Url.fromString "myscheme:/bla", c)
+	val _ = Print.printVal (myval + 1)</PRE>
+
+    <LI>Error message redirection:
+	<PRE>
+	val f = TextIO.openOut "/tmp/log";
+	withStreams {err=SOME f, out=NONE, trace=NONE, annot=NONE} compile s</PRE>
+
+    <LI>Error message redirection to an incremental list of lines:
+	<PRE>
+	val (lines,wr) = TextPrimIO.openVectorListWr ()
+	val f = TextIO.mkOutstream (TextIO.StreamIO.mkOutstream (wr, IO.LINE_BUF));
+	withStreams {err=SOME f, out=NONE, trace=NONE, annot=NONE} compile s;
+	TextIO.closeOut f</PRE>
+
+    <LI>Combined message redirection and layout customization (note the
+      parenthesization):
+	<PRE>
+	withStreams {err=SOME TextIO.stdOut, out=SOME TextIO.stdOut, trace=NONE, annot=NONE}
+	    (withWidths {err=120, out=120, trace=80} compile) s</PRE>
+  </UL>
+
+<?php footing() ?>

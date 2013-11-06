@@ -1,0 +1,155 @@
+__prebound Prebound
+
+(*
+import
+val show: 'a -> {}
+from "../../vm-mozart/Debug.ozf"
+*)
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+type     int    = Prebound.int
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
+
+type unit = {}
+
+__primitive constructor Promise: exn = "Transient.Promise"
+__primitive constructor Future: exn = "Transient.Future"
+__primitive constructor Fulfill: exn = "Transient.Fulfill"
+__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
+
+__primitive val op+ : int * int -> int = "+"
+__primitive val op- : int * int -> int = "-"
+
+__primitive val exchange: 'a ref * 'a -> 'a = "General.exchange"
+
+__primitive val spawn: (unit -> 'a) -> unit = "Thread.spawn"
+__primitive val sleep: int -> unit = "Thread.sleep"
+
+__primitive val promise: unit -> 'a = "Transient.promise"
+__primitive val future: 'a -> 'a = "Transient.future"
+__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+__primitive val await: 'a -> 'a = "Transient.await"
+__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+
+__primitive val show: 'a -> unit = "show"
+
+fun concurrent f =
+    let
+	val p = promise ()
+    in
+	spawn (fn () => fulfill (p, f ())); future p
+    end
+
+fun next (x, p) =
+    let
+	val p' = promise ()
+    in
+	fulfill (p, x::p'); p'
+    end
+
+local
+    fun append' (nil, ys, p) = fulfill (p, ys)
+      | append' (x::xr, ys, p) = append' (xr, ys, next (x, p))
+in
+    fun append (xs, ys) =
+	let
+	    val p = promise ()
+	in
+	    append' (xs, ys, p); p
+	end
+end
+
+val _ = show (append ([1, 2, 3], [4, 5]))
+
+fun mailbox () =
+    let
+	val p = promise ()
+	val r = ref p
+	fun put x =
+	    let
+		val p' = promise ()
+	    in
+		fulfill (exchange (r, p'), x::future p')
+	    end
+    in
+	(put, future p)
+    end
+
+val (put, xs) = mailbox ()
+
+fun loop (x::xr) = (show x; loop xr)
+
+val _ = spawn (fn () => loop xs)
+val _ = show "sleeping"
+val _ = sleep 1000
+val _ = put 1
+val _ = sleep 1000
+val _ = put 2
+val _ = sleep 1000
+val _ = put 3
+val _ = sleep 1000
+val _ = show xs
+
+fun dispenser xs =
+    let
+	val r = ref xs
+    in
+	fn () =>
+	let
+	    val p = promise ()
+	    val x::xs = exchange (r, future p)
+	in
+	    fulfill (p, xs); x
+	end
+    end
+
+fun channel () =
+    let
+	val (put, stream) = mailbox ()
+    in
+	(put, dispenser stream)
+    end
+
+fun fib 0 = 1
+  | fib 1 = 1
+  | fib n = fib (n - 1) + fib (n - 2)
+
+val p1 = promise ()
+val p2 = promise ()
+val p3 = promise ()
+val p4 = promise ()
+val _ = spawn (fn () => (show (30, fib 30); fulfill (p1, ())))
+val _ = spawn (fn () => (show (29, fib 29); fulfill (p2, ())))
+val _ = spawn (fn () => (show (28, fib 28); fulfill (p3, ())))
+val _ = spawn (fn () => (show (27, fib 27); fulfill (p4, ())))
+
+fun lazyMap f xs =
+    byNeed (fn () =>
+	    case xs of
+		x::xr => f x::lazyMap f xr
+	      | nil => nil)
+
+fun nth (x::_, 0) = x
+  | nth (x::xr, i) = nth (xr, i - 1)
+
+val zs = lazyMap (fn x => x + 1) [1, 2, 3, 4]
+val _ = show zs
+val _ = show (nth (zs, 2))
+val _ = show zs
+
+fun app f (x::xr) = (f x; app f xr)
+  | app _ nil = ()
+
+val _ = show [p1, p2, p3, p4]
+val xs = [future p1, future p2, future p3, future p4]
+val _ = show ("waiting", xs)
+val _ = app await xs
+val _ = show ("done", xs)

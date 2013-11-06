@@ -1,0 +1,91 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Inspector structure", "The <TT>Inspector</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis") ?>
+  <PRE>
+    signature INSPECTOR
+    structure Inspector : INSPECTOR</PRE>
+
+  <P>
+    The <I>Inspector</I> is an graphical tool that allows to interactively
+    display and inspect data structures and modules.
+  </P>
+  <P>
+    For example, the expression
+  </P>
+    <PRE>inspect x</PRE>
+  <P>
+    tells the Inspector to show the value <TT>x</TT>.
+    The Inspector will popup a window and pretty-print the value.
+    Different elements are assigned different colors to
+    make output more readable. Most stateful entitities are updated
+    automatically in the display when their state changes.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import structure Inspector from "x-alice:/lib/tools/Inspector"</PRE>
+
+  <P>
+    In the <A href="../interactive.html">interactive toplevel</A> the
+    Inspector is available without further import announcements. The function
+    <TT>inspect</TT> is available unqualified.
+  </P>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+    signature INSPECTOR =
+    sig
+        val inspect : 'a -> unit
+        functor Inspect (signature S structure X : S) : any
+
+        val register : ('a -> string) -> unit
+    end
+  </PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>inspect <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>displays <I>x</I> in the Inspector window.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>Inspect (signature S = <I>S</I> structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>displays the module <TT><I>X</I></TT>, having signature
+        <TT><I>S</I></TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>register <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>
+        Adds function <TT><I>f</I></TT> as a layout function. The function must
+	have a concrete type <I>tyvarseq</I> <TT><I>t</I> -> string</TT>, where
+	<TT><I>t</I></TT>
+	has to be an abstract type. Further calls to <TT>inspect</TT> use
+	this function to transform values of any type <I>tyseq <TT>t</TT></I>
+	into a tree the inspector can display. Raises <TT>Type</TT> if
+	the type of <TT><I>f</I></TT> is not of the required form.
+	This includes the case that <TT><I>t</I></TT> is not an abstract type,
+	or that <TT><I>f</I></TT> is not fully polymorphic in the type
+	arguments <I>tyseq</I> to <TT><I>t</I></TT>.
+	Note that these rules also preclude <TT><I>f</I></TT> from being
+	<EM>too polymorphic</EM>, i.e. being of type <TT>'a -> string</TT>,
+	because in that case no type name could be derived.
+      </P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

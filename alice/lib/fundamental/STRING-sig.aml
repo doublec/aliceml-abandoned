@@ -1,0 +1,73 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and WideString from "Pervasive"
+import __primitive
+       type int and bool
+       type order and option and list       from "ToplevelTypes"
+import __primitive structure StringCvt      from "StringCvt"
+
+signature STRING =
+sig
+    eqtype char
+    eqtype string
+    type t = string							(**)
+
+    val maxSize :	int
+
+    val size :		string -> int
+    val str :		char -> string
+    val sub :		string * int -> char
+    val substring :	string * int * int -> string
+    val extract :	string * int * int option -> string
+
+    val op ^ :		string * string -> string
+    val concat :	string list -> string
+    val concatWith :	string -> string list -> string			(**)
+    val implode :	char list -> string
+    val explode :	string -> char list
+    val tabulate :	int * (int -> char) -> string			(**)
+
+    val map :		(char -> char) -> string -> string
+    val translate :	(char -> string) -> string -> string
+    val fields :	(char -> bool) -> string -> string list
+    val tokens :	(char -> bool) -> string -> string list
+
+    val op < :		string * string -> bool
+    val op > :		string * string -> bool
+    val op <= :		string * string -> bool
+    val op >= :		string * string -> bool
+    val equal :		string * string -> bool				(**)
+    val compare :	string * string -> order
+    val collate :	(char * char -> order) -> string * string -> order
+    val isPrefix :	string -> string -> bool
+    val isSuffix :	string -> string -> bool
+    val isSubstring :	string -> string -> bool
+    val hash :		string -> int					(**)
+
+    val toWide :	string -> WideString.string			(**)
+    val fromWide :	WideString.string -> string			(**)
+
+    val toString :	string -> string
+    val toCString :	string -> string
+    val fromString :	string -> string option
+    val fromCString :	string -> string option
+    val scan :		(char,'a) StringCvt.reader ->			(**)
+			(string,'a) StringCvt.reader
+    val scanC :		(char,'a) StringCvt.reader ->			(**)
+			(string,'a) StringCvt.reader
+end

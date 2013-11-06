@@ -1,0 +1,8 @@
+signature REGRESSION =
+sig
+    val name : string
+
+    val ok : string option
+
+    val result : string
+end

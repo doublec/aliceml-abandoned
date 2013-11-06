@@ -1,0 +1,23 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_UNIX_COMPONENT =
+    sig
+	structure UnsafeUnix:
+	    sig
+		val execute: string * string list -> 'proc
+		val wait' :  'proc_handle -> int option	
+	        val streamsOf : 'proc -> 'instream * 'outstream
+	        val pHandleOf : 'proc -> 'proc_handle
+	    end
+    end

@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature NAME from "NAME-sig"
+
+structure Name :> NAME =
+struct
+    datatype name			= ExId of string | InId
+    type     t				= name
+
+    fun compare(ExId s1, ExId s2)	= String.compare(s1,s2)
+      | compare(ExId _,  InId)		= GREATER
+      | compare(InId,    ExId _)	= LESS
+      | compare(InId,    InId)		= EQUAL
+
+    fun hash(ExId s)			= String.hash s
+      | hash InId			= 0
+
+    fun toString(ExId s)		= s
+      | toString InId			= "_"
+end

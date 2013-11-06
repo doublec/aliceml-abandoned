@@ -1,0 +1,7 @@
+import val i val t val os val c structure S (*val h*) from "test-trans"
+val os2 = os
+val c2 = c
+val t2 = t
+val i2 = i
+val sc2 = S.c
+(*val h2 = h*)

@@ -1,0 +1,190 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeIODesc from "UnsafeIODesc"
+import structure OS           from "OS"
+import signature IO_DESC      from "IO_DESC-sig"
+
+structure IODesc :> IO_DESC =
+    struct
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) reader =
+	    {name: string,
+	     chunkSize: int,
+	     readVec: (int -> 'vector) option,
+	     readArr: ('array_slice -> int) option,
+	     readVecNB: (int -> 'vector option) option,
+	     readArrNB: ('array_slice -> int option) option,
+	     block: (unit -> unit) option,
+	     canInput: (unit -> bool) option,
+	     avail: unit -> int option,
+	     getPos: (unit -> 'pos) option,
+	     setPos: ('pos -> unit) option,
+	     endPos: (unit -> 'pos) option,
+	     verifyPos: (unit -> 'pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) writer =
+	    {name: string,
+	     chunkSize: int,
+	     writeVec: ('vector_slice -> int) option,
+	     writeArr: ('array_slice -> int) option,
+	     writeVecNB: ('vector_slice -> int option) option,
+	     writeArrNB: ('array_slice -> int option) option,
+	     block: (unit -> unit) option,
+	     canOutput: (unit -> bool) option,
+	     getPos: (unit -> 'pos) option,
+	     setPos: ('pos -> unit) option,
+	     endPos: (unit -> 'pos) option,
+	     verifyPos: (unit -> 'pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	__primitive val cast : 'a -> 'b = "Unsafe.cast"
+	(*--** need to cast slices to their representation *)
+
+	fun mkReader iodesc =
+	    let
+		val cap = UnsafeIODesc.capabilities iodesc
+		val rcap = UnsafeIODesc.readerCapabilities iodesc
+	    in
+		{name = UnsafeIODesc.name iodesc,
+		 chunkSize = UnsafeIODesc.chunkSize iodesc,
+		 readVec =
+		     if #readVec rcap then
+			 SOME (fn n => UnsafeIODesc.readVec (iodesc, n))
+		     else NONE,
+		 readArr =
+		     if #readArr rcap then
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.readArr {iodesc, buf, i, sz}
+			       end)
+		     else NONE,
+		 readVecNB =
+		     if #readVecNB rcap then
+			 SOME (fn n => UnsafeIODesc.readVecNB (iodesc, n))
+		     else NONE,
+		 readArrNB =
+		     if #readArrNB rcap then
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.readArrNB {iodesc, buf, i, sz}
+			       end)
+		     else NONE,
+		 block =
+		     if #block cap then
+			 SOME (fn () => UnsafeIODesc.block iodesc)
+		     else NONE,
+		 canInput =
+		     if #canInput rcap then
+			 SOME (fn () => UnsafeIODesc.canInput iodesc)
+		     else NONE,
+		 avail = fn () => UnsafeIODesc.avail iodesc,
+		 getPos = NONE, (*--** *)
+		 setPos =
+		     if #setPos cap then
+			 SOME (fn pos => UnsafeIODesc.setPos (iodesc, pos))
+		     else NONE,
+		 endPos =
+		     if #endPos cap then
+			 SOME (fn () => UnsafeIODesc.endPos iodesc)
+		     else NONE,
+		 verifyPos =
+		     if #verifyPos cap then
+			 SOME (fn () => UnsafeIODesc.verifyPos iodesc)
+		     else NONE,
+		 close = fn () => UnsafeIODesc.close iodesc,
+		 ioDesc = SOME iodesc}
+	    end
+
+	fun mkWriter iodesc =
+	    let
+		val cap = UnsafeIODesc.capabilities iodesc
+		val wcap = UnsafeIODesc.writerCapabilities iodesc
+	    in
+		{name = UnsafeIODesc.name iodesc,
+		 chunkSize = UnsafeIODesc.chunkSize iodesc,
+		 writeVec =
+		     if #writeVec wcap then
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeVec {iodesc, buf, i, sz}
+			       end)
+		     else NONE,
+		 writeArr =
+		     if #writeArr wcap then
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeArr {iodesc, buf, i, sz}
+			       end)
+		     else NONE,
+		 writeVecNB =
+		     if #writeVecNB wcap then
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeVecNB {iodesc, buf, i, sz}
+			       end)
+		     else NONE,
+		 writeArrNB =
+		     if #writeArrNB wcap then
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeArrNB {iodesc, buf, i, sz}
+			       end)
+		     else NONE,
+		 block =
+		     if #block cap then
+			 SOME (fn () => UnsafeIODesc.block iodesc)
+		     else NONE,
+		 canOutput =
+		     if #canOutput wcap then
+			 SOME (fn () => UnsafeIODesc.canOutput iodesc)
+		     else NONE,
+		 getPos = NONE, (*--** *)
+		 setPos =
+		     if #setPos cap then
+			 SOME (fn pos => UnsafeIODesc.setPos (iodesc, pos))
+		     else NONE,
+		 endPos =
+		     if #endPos cap then
+			 SOME (fn () => UnsafeIODesc.endPos iodesc)
+		     else NONE,
+		 verifyPos =
+		     if #verifyPos cap then
+			 SOME (fn () => UnsafeIODesc.verifyPos iodesc)
+		     else NONE,
+		 close = fn () => UnsafeIODesc.close iodesc,
+		 ioDesc = SOME iodesc}
+	    end
+
+	val stdIn = mkReader (UnsafeIODesc.stdIn)
+	val stdOut = mkWriter (UnsafeIODesc.stdOut)
+	val stdErr = mkWriter (UnsafeIODesc.stdErr)
+
+	fun openIn name = mkReader (UnsafeIODesc.openIn name)
+	fun openOut name = mkWriter (UnsafeIODesc.openOut name)
+	fun openAppend name = mkWriter (UnsafeIODesc.openAppend name)
+	fun openOverwrite name = mkWriter (UnsafeIODesc.openOverwrite name)
+    end

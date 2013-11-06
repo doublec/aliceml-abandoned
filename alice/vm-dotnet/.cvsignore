@@ -1,0 +1,6 @@
+*.dll *.DLL
+*.exe *.EXE
+*.il *.pdb *.res
+*.x86-win32
+IO.asig OS_FileSys.asig OS_Process.asig TextIO.asig CommandLine.asig
+OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml OS-sig.aml OS.aml TEXT_IO-sig.aml

@@ -1,0 +1,678 @@
+Alice 1.4 (Kraftwerk 'Equaliser' Album) - 2007/05/03
+----------------------------------------------------
+
+Language & Compiler:
+
+* [NEW] Syntax for first-class components: "comp [import in] spec with dec end".
+* [NEW] Full support for signature "include".
+* [NEW] Proper treatment of equality types.
+* [NEW] Generalised syntax of open declarations: "open strexp".
+* [NEW] Else branch of conditionals may be omitted.
+* [NEW] Allow optional semicolon after sequence expressions.
+* [NEW] Parentheses around alternative patterns are no longer required.
+* [NEW] Open and plain renaming now retains overloading status, esp. of
+        intensionally polymorphic values like inspect, Print.printVal, etc.
+* [NEW] Compiler flag --recursive-compilation auto compiles missing imports.
+* [CHG] Less frequent "datatype of constructor is not accessible" problems;
+        OTOH, datatype replication now requires all constructors to be in scope.
+* [CHG] Paths in dependency files are now all interpreted relative to CWD.
+
+Runtime System:
+
+* [NEW] Stack overflow now raises Store.Stack instead of terminating (bug 182).
+* [NEW] Ability to signal excessive memory usage.
+* [CHG] Had to bump version of pickle format; old pickles are incompatible.
+
+Interactive Toplevel:
+
+* [NEW] Added toolbar.
+* [NEW] Added Tip of the Day help.
+* [NEW] Extended and improved type information display in status bar.
+* [NEW] Window size and position are now saved across sessions.
+* [NEW] Configurable heap limit to protect against runaway computations.
+* [NEW] Extended preferences: compiler warnings, ticket port number.
+* [CHG] Changed semantics of `use' function to better match other SML systems.
+* [FIX] Internal exception InvalidArc on certain inputs (bug 191).
+* [FIX] Minor additions and bug fixes.
+
+Basic Library:
+
+* [NEW] Sandbox, Policy: experimental sandboxing infrastructure.
+* [NEW] Fn: new structure with generic function combinators.
+* [NEW] Rand: interface to system's pseudo-random number generator (bug 185).
+* [NEW] Remote: new function setPort to choose fixed port number for
+        distributed operations (for firewall satisfaction and other purposes).
+* [NEW] Store: new exception `Stack' to signal stack overflows.
+* [NEW] Store: new function `signal' to handle heap growth.
+* [NEW] Compiler: new function `withWarnings' for setting warnings.
+* [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
+* [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
+* [CHG] Exn.dumpTrace: omit middle of very long traces (> 40 frames).
+* [FIX] Promise: pickling an unfulfilled promise now blocks (bug 162).
+* [FIX] HttpClient.{get,post}: raise Authority on invalid URL (bug 179).
+* [FIX] ComponentManager.MkManager: fixed a few bugs with load delegation.
+* [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.
+
+Constraint Library:
+
+* [NEW] Now incorporates Gecode 1.3.0.
+* [FIX] Resync'ed documentation.
+
+Other Libraries:
+
+* [NEW] Inspector: preferences can be saved now.
+* [FIX] Inspector: "Done" button did not close the window.
+* [FIX] Gtk: fixed a few badly generated structure names.
+
+Tools:
+
+* [FIX] alicedepend: recognize line comments; recognize first-class components.
+
+
+Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/08/28
+-------------------------------------------------------
+
+Language & Compiler:
+
+* [NEW] Integrated most "immediate" extensions proposed for Succesor ML
+        (www.successor-ml.org), the new ones being:
+* [NEW] Line comments, starting with "(*)".
+* [NEW] Extensible records and row capture: "{a=1, b=2, ...=r}", see manual
+        section on record sugar for details.
+* [NEW] Allow optional bar before first clause of fn, case, handle, fun, and
+        before first constructor in datatype definitions.
+* [NEW] Allow "do exp" as abbreviation for "val _ = exp".
+* [CHG] Pattern guards now use "if" keyword.
+* [FIX] Fixed compilation of general "as" patterns in function arguments
+        (bugs 54, 73, 77, 152, 176).
+
+Runtime System:
+
+* [NEW] Byte code jitter now default; smaller memory footprint, more aggressive
+        dynamic optimizations (e.g. inlining, specialization, "hotspot"-like
+        selective (re-)jitting).
+* [CHG] Had to bump version of pickle format; old pickles are incompatible.
+* [FIX] Nasty stack overflow bug that could cause VM to eat memory like hell.
+
+Interactive Toplevel:
+
+* [NEW] Pretty printing depth & width can now be set from preferences.
+* [FIX] Fixed Go-To-Error on Windows.
+* [FIX] Fixed Undo of delete events (bug 163).
+* [FIX] Use clipboard properly.
+* [FIX] Removed race conditions in syntax highlighting (including bug 134).
+* [FIX] Properly recover from unclosed comments fed to compiler.
+* [FIX] Several minor bug fixes.
+
+Basic Library:
+
+* [NEW] Sited: abstract type for creating sited values.
+* [NEW] Unix: added `reap' and `wait'.
+* [CHG] Remote.{run,eval}: improved error detection and indication; fixed
+        treatment of ALICE_REMOTE_LOG.
+* [FIX] OS.FileSys.readDir: filter out current and parent arc.
+* [FIX] OS.FileSys.{get*Dir,tmpName}: deliver paths in canon form on Windows.
+* [FIX] OS.FileSys.{getHomeDir,getApplicationConfigDir}: fixed buffer overruns.
+* [FIX] Url.toLocalFile: deliver paths in canonical form on Windows.
+* [FIX] Unix.streamsOf: prevent VM from blocking on obtained streams.
+* [FIX] Unix.execute: fixed resource leak on Windows.
+* [FIX] Promise: attempt to pickle unfulfilled promise now blocks on its future.
+
+Constraint Library:
+
+* [NEW] Documentation now includes an extensive tutorial on constraint
+        programming.
+* [NEW] Now incorporates official Gecode 1.2.2, including new functionality.
+* [NEW] Renamed Linear to Modeling: now supports non-linear equations.
+* [CHG] Interface adapted to Gecode changes.
+* [FIX] Adapted and fixed Gecode documentation (including bug 170).
+
+Gtk Library:
+
+* [CHG] Gtk.event: time fields changed to IntInf.int type to avoid overflow.
+* [FIX] Gtk.{List,Tree}Store: fixed type of constructor functions.
+* [FIX] Gtk.signalDisconnect: fix potential crash due to wrong arity.
+
+Other Libraries:
+
+* [FIX] XML: fix crash on nodes with empty names and null nodes (bug 171).
+
+Platforms:
+
+* [NEW] Mac OS: installation no longer requires Fink.
+* [NEW] Mac OS: Preliminary support for Intel Macs; no official packages yet,
+        due to problems with Gtk gnomecanvas (breaks Inspector, Explorer).
+* [FIX] Debian: fixed missing aliceremote.
+* [FIX] Debian: fixed SQLite package.
+* [FIX] Source: added/clarified missing library licenses.
+
+
+Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
+-------------------------------------------------------------
+
+Runtime System:
+
+* [NEW] New optimized internal byte code, produced by jitting; activate by
+        setting environment variable ALICE_JIT_MODE=2. This byte code is
+        a *lot* faster than non-jitted code, and is now the default on
+        PowerPC and AMD 64, where native code jitting is not supported yet.
+* [FIX] Custom component managers can no longer be bypassed by importing global
+        ComponentManager explicitly.
+* [FIX] Importing from HTTP was broken (bug 120).
+* [FIX] Native components (DLLs) are now loaded only once, even with multiple
+        component managers.
+* [FIX] VM no longer goes into busy loop when stdIn has been closed and no
+        thread is runnable.
+* [FIX] Fixed pathological bug in GC's treatment of intergenerational transients
+        (pointed out by Tobias Nurmiranta).
+
+Compiler:
+
+* [NEW] Implemented limited form of signature inclusion (bug 151).
+* [NEW] Option --annotations-file to output type information about compiled
+        program for use by external tools, e.g. smart editors.
+* [FIX] Make type-checking work properly in the presence of diamond import of
+        abstract types through components compiled against different versions
+        of the type. This requires indirectly imported component to be present.
+* [FIX] Fixed overly aggressive optimization that could break package unpacking.
+* [FIX] Fixed bug in type variable scope resolution (bug 140).
+* [FIX] Fixed bug allowing non-value expressions and unsound typing in val rec.
+* [FIX] Fixed bug in liveness analysis that broke exception handlers (bug 123).
+* [FIX] Under Windows, outputting error messages for files compiled on
+        drives other than the current didn't work; improved some messages.
+* [FIX] Fixed border case where lexer went into infinite loop for some inputs
+        only consisting of one token.
+
+Interactive Toplevel:
+
+* [NEW] GUI now displays type information about any identifier at cursor
+        position once a file has been feeded or compiled within the toplevel.
+* [NEW] Better handling of file loading and loading failure in GUI (including
+        bugs 138, 142, 157).
+* [NEW] Check file for external changes before saving.
+* [NEW] Session management can be deactivated in preferences; when toplevel is
+        invoked with argument "-", previous session is not reloaded either.
+* [NEW] Reset now also clears component manager thanks to whole session being
+        executed in a sandbox; global function `reset' for reset in text mode.
+* [NEW] GUI I/O pane can be cleared via menu.
+* [NEW] Nesting depth and width printing limits are now configurable.
+* [NEW] Array2.array and most library exceptions recognized by printer.
+* [NEW] Native look&feel on Windows (thanks to Gtk Wimp theme).
+* [FIX] Miscellaneous usability tweaks and fixes in GUI.
+* [FIX] Jump-to-error works with Windows paths containing volumes.
+* [FIX] Fixed pretty-printing of values of datatypes with more than 100
+        constructors.
+
+Basic Library:
+
+* [NEW] Lock: added Sync functor, which synchronises whole modules as monitors.
+* [NEW] Resolver, ComponentManager: added support for delegation.
+* [NEW] BinIO: added `openOverwrite', `seekIn', `seekOut'.
+* [NEW] Store: added polymorphic hash tables based on physical equality.
+* [NEW] Print: added `depth' and `width' to control printing bounds (also
+        control output of the toplevel); renamed `printWidth' to `layoutWidth'.
+* [NEW] Print: Array2.array and most library exceptions recognized by printer.
+* [NEW] Compiler: extended `withStreams' function for type annotations output.
+* [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
+* [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
+        type dependencies; log now contains manager's id for each message.
+* [FIX] IntInf: fixed `~>>'.
+* [FIX] Real: fixed `rem' & `hash'; fixed treatment of NaN in several functions.
+* [FIX] Math: fixed precision of `e' and `pi'; fixed treatment of NaN in `pow'.
+* [FIX] Substring: fixed `isSuffix'.
+* [FIX] Word8{Vector,Array}: result from `sub' was broken when >= 128 (bug 119).
+* [FIX] Array2: properly treat zero-size regions (bug 127).
+* [FIX] OS.Path: fixed handling of volumes in `mkRelative' and `concat'.
+* [FIX] TextIO: closing `stdIn' now works on Windows.
+* [FIX] BinIO: added missing type sharing with BinPrimIO.{reader,writer}.
+* [FIX] ComponentManager: loading components via HTTP was broken (bug 120).
+* [FIX] Store: fixed crash with `futures' function (bug 146).
+* [FIX] Print: fixed printing of lists with holes as tails.
+
+Constraint Library:
+
+* [CHG] General overhaul of interface, particularly for finite sets.
+* [NEW] Explorer: recomputation depth can now be configured.
+* [NEW] Explorer: option to stop search after tree has reached a certain size.
+* [NEW] Explorer: improved keyboard navigation.
+* [FIX] Lots and lots of fixes in Gecode implementation.
+* [FIX] FD: fixed `intvar' (bug 122).
+* [FIX] Space: fixed crash in `fail', and `clone' on a failed space.
+* [FIX] Explorer: status bar is now reset upon each new search.
+* [FIX] Explorer: branch-and-bound works properly for more than one search.
+* [FIX] Documentation is in sync with the library again (bugs 124, 125, 129,
+        131, 132, 143, 144).
+
+Gtk Library:
+
+* [CHG] Complete overhaul: binding now generated from PyGtk description files.
+* [CHG] Library now organised more conveniently in substructures.
+* [NEW] Upgrade to Gtk 2.6; bindings to GLib, Pango, and Atk added.
+* [NEW] GObject properties now usable; more consistent treatment of enum types.
+* [NEW] Performs dynamic type checking and throws suitable exceptions.
+* [NEW] Native look&feel on Windows (thanks to Gtk Wimp theme).
+* [FIX] Binding no longer contains dysfunctional functions.
+* [FIX] Fixed representation of GdkAtoms, which could cause assertion failures
+        on some platforms (bug 145).
+* [CHG] Aliceglade not yet updated and hence currently unsupported.
+
+Other Libraries:
+
+* [NEW] Regex: added binding to GNU regular expression library.
+* [NEW] XML: added `parseString'; proper error handling.
+* [NEW] Inspector: support for holes.
+* [NEW] Inspector: most library exceptions now recognized.
+* [FIX] Inspector: fixed handling of polymorphic types (bug 121).
+* [FIX] Inspector: fixed updating of futures as list tails (bug 149).
+* [FIX] SQLite: fixed exception generation; improved documentation.
+
+Platforms:
+
+* [NEW] Debian: port for AMD 64 available.
+* [NEW] Windows: Installer associates Alice with .aml files.
+* [FIX] Debian: fixed XML package.
+* [FIX] Windows: added missing entries to help file index.
+
+
+Alice 1.1 (Kraftwerk 'Eval Your Own' Album) - 2005/03/24
+--------------------------------------------------------
+
+Runtime System:
+
+* [FIX] Jitter now generates proper overflow checks for inlined integer
+        arithmetics.
+
+Compiler:
+
+* [NEW] Support for giving multiple source files on command line.
+* [NEW] Added option -z (--minimize) for minimizing output components.
+* [CHG] Import URLs are now resolved relative to the out-file location when
+        compiling, allowing proper separation of source and build directories.
+* [FIX] Fixed bogus compilation of word literals (could lead to segfaults).
+* [FIX] Produce proper error messages for out-of-range literals.
+
+Linker:
+
+* [NEW] Added option -z (--minimize) for minimizing output components.
+
+Interactive Toplevel:
+
+* [NEW] Graphical user interface, including a simple editor, activated
+        with option -g (--gui) (default when Alice is started from GUI).
+* [FIX] Fixed off-by-one line numbers, including use function.
+* [FIX] Eliminated race condition when bg'ing computation (eg. pressing Ctrl-Z).
+* [FIX] Improved signal handling on Windows.
+
+Basis Library:
+
+* [NEW] Compiler: new component that gives runtime access to the compiler,
+        including a Lisp-style eval function on strings containg Alice programs.
+* [NEW] Store: new low-level interface to runtime heap and garbage collector.
+* [NEW] Promise: added isFulfilled predicate.
+* [NEW] ListPair: added exists[i]Eq and filter[i]Eq.
+* [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
+* [NEW] PrimIO: added functions openVectorList{Rd,Wr}, useful for redirection.
+* [NEW] Config: added version record and codename string.
+* [NEW] OS.FileSys: new functions getHomeDir and getApplicationConfigDir for
+        enquiring canonical user data and configuration directories.
+* [CHG] Lock: sync is now re-entrant.
+* [CHG] Minimizer: removed, superseded by Store component.
+* [CHG] OS.Path: handle Windows style path syntax as well; allow mkRelative to
+        take two relative paths.
+* [CHG] Http: ignore multiple headers; replace empty reguest URIs with "/".
+* [CHG] Remote: replaced execute/Execute by two function/functors eval/Eval and
+        run/Run: the former terminates after evaluation of the mobile component,
+        the latter keeps the process alive; more error conditions distinguished;
+        uncaught exceptions on the remote site are now propagated back to the
+        caller; optional logging of remote invocation.
+* [FIX] Promise: equality now works properly.
+* [FIX] Int: fixed border case for div and quot (minInt/~1 overflows).
+* [FIX] IntInf: fixed handling of division by 0.
+* [FIX] Word[N]: fixed compare, mod by 0, shift with offsets > 32, and
+        conversion overflow checks.
+* [FIX] Real: fixed comparison, exception handling, string conversion of NaNs
+        and infinity on Windows.
+* [FIX] List[Pair]: fixed evaluation order of filter[i] and partition[i].
+* [FIX] Vector, {Char,Word8}Vector: update raises Subscript for bad indices.
+* [FIX] VectorPair: fixed foldri.
+* [FIX] ArraySlice, {Char,Word8}ArraySlice: fixed copying of overlapping slices.
+* [FIX] Char: fixed numeric escapes and gaps in scan, scanC, fromCString.
+* [FIX] String: fixed numeric escapes and gaps in scanC, fromCString.
+* [FIX] Substring: fixed tokens function.
+* [FIX] Date: fixed handling of small time values.
+* [FIX] TextIO, StreamIO: fixed buffering of TTY output, esp. on Windows.
+* [FIX] TextIO: implemented CR/NL translation properly.
+* [FIX] Pickle, Component: improved error handling, particularly for I/O.
+* [FIX] OS.Path: fixed border cases in toString, joinDirExt, mkAbsolute,
+        mkRelative.
+* [FIX] OS.FileSys: directory streams now operational on Windows.
+
+Constraint Library:
+
+* [NEW] MkSearch: a generic search factory for customizing search engines,
+        takes care of recomputation and branch & bound optimization.
+* [NEW] MkEngine: a distributed search engine that allows solving constraint
+        problems on the collected resources of multiple machines on a network.
+* [NEW] Explorer: now allows single-step exploration.
+* [FIX] Gecode: Miscellaneous bug fixes.
+
+Other Libraries:
+
+* [NEW] SQLite: a binding to a flat-file database engine. [www.sqlite.org]
+* [NEW] XML: a simple SML parser library based on libxml2. [www.xmlsoft.org]
+* [NEW] Gtk: new functions for Unicode UTF-8 encoding and decoding.
+* [NEW] Gtk: global lock that can be grabbed to synchronize with Gtk event loop.
+* [CHG] Gtk: interface change to support multiple modifiers for accellerators.
+* [FIX] Gtk: catch exceptions from signal handlers to prevent GUI hang-ups;
+        miscellaneous bug fixes.
+* [FIX] Gtk, Inspector: work around behaviour of Windows API refusing to display
+        a window under certain conditions (e.g. in Emacs).
+* [FIX] Inspector: fixed handling of unit type, and mono vectors and arrays.
+
+Tools:
+
+* [NEW] aliceglade: use the Glade Interface Builder to graphically design user
+	interfaces and the new aliceglade tool to generate Alice source code
+	that implements the interface. [glade.gnome.org]
+
+Platforms:
+
+* [NEW] Mac OS X: Alice is now available on PowerPC, though without support
+        for just-in-time compilation.
+* [NEW] Debian: added binary and source packages.
+* [NEW] Red Hat: added source packages.
+* [CHG] Red Hat: RPM now adds Alice to Applications menu.
+* [FIX] Windows: installer now sets paths for all users.
+
+
+Alice 1.0 (Kraftwerk Album 1) - 2004/12/22
+------------------------------------------
+
+Runtime system:
+
+* Completely new VM called SEAM (Simple Extensible Abstract Machine).
+  It uses just-in-time compilation and a 3-generation garbage collector,
+  rendering it up to 5 times faster than Alice on Mozart.
+* Completely new, extended constraint library based on GECODE
+  (Generic Constraint Development Environment). It provides advanced
+  global constraints (like global cardinality, sortedness, counting,
+  lexicographic ordering) not found in Mozart, set selection
+  constraints, and batch recomputation. The new library is more than
+  10 times faster than constraints in the Mozart-based versions of Alice.
+* Mozart is no longer required to run Alice (and no longer compatible with it).
+
+Language:
+
+* Syntactic sugar for finalization.
+* Nicer syntax (derived forms) for functors.
+* Lazy and spawn syntax for modules.
+* Pack can now use a transparent annotation, as this is usually more convenient.
+* Fully dynamic component typing: link-time type checking now is fully
+  parametric in abstract import types and takes into account the *dynamic*
+  types exported by respective components. This implies at least two things:
+  - Less need for recompilation. Recompilation of a component exporting
+    abstract types no longer forces recompilation of dependent components.
+  - Smooth interaction with pickles. Abstract types in compiled components are
+    no longer incompatible with abstract types in pickled components.
+
+Compiler:
+
+* Dynamic sealing has been implemented.
+* Warn about unused imports (switch --(no-)warn-unused-imports).
+* Warn about inaccessible type and signature names appearing in inferred
+  component signature (switch --(no-)warn-inaccessible-exports).
+* Inaccessible types occuring in inferred /import/ signatures are now an error.
+* To accommodate with the new dynamic import typing, the compiler now closes
+  over all implicit import signatures, by potentially inserting additional
+  imports for abstract types and signatures imported transitively. Optional
+  warnings for added imports (switch --warn-added-imports).
+* Support for smart recompilation, taking component signatures into account.
+
+Linker:
+
+* Rewritten to soundly support dynamic component typing.
+* Disallow cyclic linking.
+* Print free type names appearing in component signature with -d option.
+
+Interactive Toplevel:
+
+* Enable Ctrl-C for interrupting a computation.
+* Enable Ctrl-Z for putting a computation into background (new Alice thread).
+* Function exit() as an alternative for Ctrl-D in broken environments.
+* Value printer is customizable for abstract types.
+
+Library:
+
+* Constraint library now based on Gecode.
+  - State-of-the-art global constraints for finite domain integers
+    (all-distinct, global cardinality, sortedness, lexicographic ordering)
+  - Finite set selection constraints
+  - More reified constraints for finite sets
+  - Support for batch recomputation, improving the performance of search
+    engines considerably
+  - Significant interface changes; in particular, computation spaces are now
+    explicit
+* Component:
+  - Added fromPackage.
+  - Create now takes a functor as argument to support unevaluated components.
+  - Added exception Internal.
+* ComponentManager:
+  - Added load function.
+  - Functions eval and link return packages now.
+  - Link and link are no longer lazy.
+  - Removed start (equivalent to ignore o link).
+  - logStream reference to configure trace destinations. Preconfigurable
+    through value of ALICE_TRACE_COMPONENT.
+  - Trace messages are more informative, particularly wrt signature mismatches.
+* Toplevel: Future.await is now available unqualified.
+* Default int type is now 31 bit, infinite precision integers are
+  available through the IntInf structure.
+* FixedInt added.
+* Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
+* Time: now, fromString, toString, fmt, scan added.
+* Date added.
+* Timer added.
+* Exn: new structure for dealing with exceptions and backtraces.
+* OS.Process: atExn takes an Exn.packet now.
+* Hole: fixed semantics of synchronisation on holes.
+* Hole: future now simply returns argument if not a hole (no exception).
+* Promise: fulfilling with a cycle no longer fails the promise.
+* Alt: added mapBoth.
+* Pair: added mapBoth.
+* VectorSlice: fixed toVector.
+* String: fixed isSubstring.
+* Substring: fixed isSubstring.
+* StringCvt: fixed pad{Left,Right}.
+* ByNeed: moved to Future structure.
+* Future: added ByNeed and Concur functors.
+* Package: deleted separate val_package type.
+* Channel: new module for concurrent message channels.
+* RefMap: new module for stable polymorphic hash tables over references.
+* Print: added function register for hooking user-defined printing functions.
+* Config: added buildDate.
+* Remote:
+  - Added functor Proxy to conveniently wrap a whole module into proxies.
+  - Added function execute, made the Execute functor a trivial wrapper.
+* Minimizer: new structure for minimizing the heap representation of
+  Alice values.
+* Gtk binding updgraded to Gtk 2.2, with some interface changes.
+
+Tools:
+
+* Reimplemented inspector:
+  - Type tooltips.
+  - Inspection of modules.
+  - Indicates sharing between references, futures, etc.
+  - User-defined layout for abstract types.
+  - Many miscellaneous improvements to user interface.
+* Reimplemented explorer:
+  - Auto-zooming.
+  - Anti-aliasing.
+  - Support for visualizing distributed search.
+
+
+Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
+---------------------------------------------------------
+
+Language:
+
+* Implemented overloading (except for literals).
+* Implemented a simple form of intensional polymorphism that enables
+  generic library functions like printVal.
+* Syntactic support for assertions with multiple activation levels.
+
+Compiler:
+
+* Check exhaustiveness of patterns, giving samples of uncovered cases.
+* Flag unresolved record types as error.
+
+Library:
+
+* Sync'ed with recent updates to Basis spec
+  (see http://sml.sourceforge.net/Basis/history.html).
+* Added lib/system/Print and toplevel printVal, printType for generic
+  value and type printing.
+* OS.FileSys: implemented directory streams.
+* Socket: fixed handling of IO exceptions.
+* Http{,Client,Server}: more uniform exception treatment.
+* Remote: much more efficient proxy calls, protocol no longer based on HTTP.
+* Remote: fixed connection timeout bug for proxies.
+* Remote: more precise exception scheme wrt failure on proxy calls.
+* Pickle: Added exception Corrupt.
+* Added intersect and difference functions to map types.
+* Added disjoint function to set and map types.
+* Atom: moved to lib/data.
+* Real: added checkFloat.
+* Real: fixed isFinite.
+* Thread: fixed exception handling.
+* *VectorSlice,Substring: fixed splitr (also fixes OS.Path.split*).
+* CharArraySlice: fixed.
+* PrimIO: fixed augment{Reader,Writer}.
+* Gtk: fixed string list marshalling (e.g. for clist/ctree functions).
+* FD: added SPLIT_MIN/SPLIT_MAX distributor.
+
+Runtime system:
+
+* Adapted to Mozart 1.3.
+
+Documentation:
+
+* Man pages.
+* Clarified limitations of mapping in Linear module.
+* Updates.
+
+
+Alice 0.9.2 (Stockhausen Operette 3 Remix 2) - 2003/07/25
+---------------------------------------------------------
+
+Library:
+
+* Added data structure library under x-alice:/lib/data with functional and
+  imperative sets, maps, stacks, and stamps.
+* Added Array2.
+* Added OS.Path.
+* Defined and fixed behaviour of proxies in the presence of
+  sited values and failed futures.
+* Fixed race condition in Future.awaitEither.
+* Renamed UniqueString to Atom.
+* Added WideText and WideChar{Vector,Array}[Slice].
+* Added List.split.
+* Added Substring.{position,fields,tokens}.
+* Corrected treatment of exceptions in Lock.sync.
+* FD and FS set constructors now perform domain checking.
+* FD and FS now raise Tell exception on toplevel constraints.
+* Fixed broken GTK signal handling (disconnect/block/unblock/emit).
+* Fixed broken string type in GTK.
+* Renamed some GTK types to meet SML conventions.
+
+Compiler:
+
+* New naming convention warning.
+* Automatic .import file prepending for .sml sources.
+* Automatic import generation from dependency files (option --dependency-file).
+* Fixed translation of "fun spawn ..." derived form.
+
+
+Alice 0.9.1 (Stockhausen Operette 3 Remix 1) - 2003/02/13
+---------------------------------------------------------
+
+Interactive toplevel:
+
+* Don't barf on Oz exceptions (particularly generated by failed spaces).
+* Minor cosmetics in output of values (futures, some abstract types).
+
+
+Library:
+
+* Proxy calls are now performed concurrently instead of sequentially.
+* HTTPServer and HTTPClient implement persistent connections.
+* Added Url.toLocalFile.
+* Changed type of Config.homeDir.
+* Added tracingApply to RESOLVER_HANDLER.
+* Renamed constructor Linear.fd to Linear.FD.
+* Bug fixes.
+
+
+Inspector:
+
+* Display values more consistently with interactive toplevel.
+* References are now updated correctly.
+
+
+Runtime system:
+
+* Now runs with official Mozart 1.2.5 release.
+* Renamed environment variable STOCKHOME to ALICE_HOME.
+* Added support for ALICE_LOAD_PREFIX and ALICE_LOAD_SUFFIX variables.
+* Support file names containing spaces.
+
+
+Linker:
+
+* Perform true Url resolution instead of string prefix matching.
+* Support rewrite tracing via ALICE_TRACE_REWRITE variable.
+* Support file names containing spaces.
+
+
+Dependency Analyzer:
+
+* Perform true Url resolution instead of string prefix matching.
+* Support file names containing spaces.
+* Translate backslashes to slashes.
+
+
+Documentation:
+
+* Added Oz-to-Alice migration page.
+* Updates.
+
+
+Installer:
+
+* Debian packages available.
+* Windows installer now creates program group.
+* Windows installer sets necessary environment variables.
+
+
+Alice 0.9 (Stockhausen Operette 3) - 2002/12/20
+-----------------------------------------------
+
+First public release.
+
+
+Stockhausen Operette 3 Draft Scores - 2002/04/25
+------------------------------------------------
+
+Technology preview release.
+
+
+Stockhausen Operette 2 - 2001/04/19
+-----------------------------------
+
+Second internal prototype release.
+
+
+Stockhausen Operette 1 - 2000/06/16
+-----------------------------------
+
+First internal prototype release.

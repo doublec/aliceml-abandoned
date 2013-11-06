@@ -1,0 +1,208 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * Communication protocol between compiler and engine:
+ *
+ * link_command ::=
+ *     "Command:link\n"
+ *     "Code:" <string> "\n"
+ *     [ "DumpTarget:" <string> "\n" ]
+ *     ( "Id:" <stamp> "\n"
+ *       "Valref:" <int> "\n" )*
+ *     "\n"
+ * link_result ::=
+ *     ( "Debug:" <string> "\n" )*
+ *     ( ( "Error:" <string> "\n" )*
+ *     | "Valref:" <int> "\n" )
+ *     "\n"
+ *
+ * save_command ::=
+ *     "Command:save\n"
+ *     "Valref:" <int> "\n"
+ *     "String:" <string> "\n"
+ *     "\n"
+ * save_result ::=
+ *     ( "Debug:" <string> "\n" )*
+ *     ( "Error:" <string> "\n" )*
+ *     "\n"
+ *)
+
+import structure TextIO       from "../../lib/system/TextIO"
+import structure Stamp        from "../common/Stamp"
+import structure Label        from "../../lib/rtt/Label"
+import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
+import structure Source       from "../infrastructure/Source"
+import structure Error        from "../infrastructure/Error"
+import structure FlatGrammar  from "FlatGrammar"
+import signature CODE         from "CODE-sig"
+import signature ENGINE       from "ENGINE-sig"
+import signature CONTEXT      from "../infrastructure/CONTEXT-sig"
+
+structure IdMap =
+    MkHashImpMap(type t = FlatGrammar.id
+		 fun equal (FlatGrammar.Id (_, stamp1, _),
+			    FlatGrammar.Id (_, stamp2, _)) = stamp1 = stamp2
+		 fun hash (FlatGrammar.Id (_, stamp, _)) = Stamp.hash stamp)
+
+functor MkEngine(val cmd: unit -> string * string list
+		 structure Code: CODE) :> ENGINE where type code = Code.t =
+    struct
+	type valref = int
+
+	structure C: CONTEXT =
+	    struct
+		type t = Unix.proc option ref * valref IdMap.t
+		val empty = (ref NONE, IdMap.map ()) : t
+	    end
+
+	type code = Code.t
+	type component = valref
+
+	type exportDesc = (Label.t * FlatGrammar.id) vector
+
+	exception Format of string
+
+	fun error s = (TextIO.output (TextIO.stdErr, s ^ "\n"); raise Format s)
+
+	fun start (ref (SOME proc)) = proc
+	  | start (r as ref NONE) =
+	    let
+		val proc = Unix.execute (cmd ())
+	    in
+		r := SOME proc; proc
+	    end
+
+	fun instream proc = #1 (Unix.streamsOf proc)
+	fun outstream proc = #2 (Unix.streamsOf proc)
+
+	datatype arg =
+	    COMMAND of string
+	  | CODE of code
+	  | DUMPTARGET of string option
+	  | ID of FlatGrammar.id
+	  | VALREF of valref
+	  | STRING of string
+	  | LABEL of Label.t
+
+	local
+	    fun split (#":"::cs) = SOME (nil, cs)
+	      | split (c::cs) =
+		(case split cs of
+		     SOME (name, value) => SOME (c::name, value)
+		   | NONE => NONE)
+	      | split nil = NONE
+	in
+	    fun parseResult proc =
+		case TextIO.inputLine (instream proc) of
+		    NONE =>
+			Error.error'
+			(Source.nowhere, "Ouch!! Subprocess crashed!")
+		  | SOME "\n" => nil
+		  | SOME s =>
+			case String.sub (s, 0) of
+			    #"%" => (TextIO.print s; parseResult proc)
+			  | _ =>
+			case split (String.explode s) of
+			    SOME ([#"D", #"e", #"b", #"u", #"g"], s) =>
+				(TextIO.print (String.implode s);
+				 parseResult proc)
+			  | SOME (name, value) =>
+				(String.implode name, String.implode value)::
+				parseResult proc
+			  | NONE =>
+				(TextIO.print s; parseResult proc)
+	end
+
+	fun sendCommand (proc, args) =
+	    let
+		val q = outstream proc
+	    in
+		List.app (fn arg =>
+			  case arg of
+			      COMMAND command =>
+				  (TextIO.output (q, "Command:");
+				   TextIO.output (q, command);
+				   TextIO.output1 (q, #"\n"))
+			    | CODE code =>
+				  (TextIO.output (q, "Code:");
+				   TextIO.output (q, Code.toString code);
+				   TextIO.output1 (q, #"\n"))
+			    | DUMPTARGET NONE => ()
+			    | DUMPTARGET (SOME s) =>
+				  (TextIO.output (q, "DumpTarget:");
+				   TextIO.output (q, s);
+				   TextIO.output1 (q, #"\n"))
+			    | ID (FlatGrammar.Id (_, stamp, _)) =>
+				  (TextIO.output (q, "Id:");
+				   TextIO.output (q, Stamp.toString stamp);
+				   TextIO.output1 (q, #"\n"))
+			    | VALREF valref =>
+				  (TextIO.output (q, "Valref:");
+				   TextIO.output (q, Int.toString valref);
+				   TextIO.output1 (q, #"\n"))
+			    | STRING string =>
+				  (TextIO.output (q, "String:");
+				   TextIO.output (q, string);
+				   TextIO.output1 (q, #"\n"))
+			    | LABEL label =>
+				  (TextIO.output (q, "Label:");
+				   TextIO.output (q, Label.toString label);
+				   TextIO.output1 (q, #"\n"))) args;
+		TextIO.output1 (q, #"\n");
+		TextIO.flushOut q;
+		parseResult proc
+		before
+		List.app (fn arg =>
+			  case arg of
+			      CODE code => Code.cleanup code
+			    | _ => ()) args
+	    end
+
+	fun errorsToString (s, es) =
+	    String.concat (s::List.foldr (fn ((_, s), ss) => s::ss) nil es)
+
+	fun link (procOptRef, map) (code, stringOpt) =
+	    let
+		val proc = start procOptRef
+		val result =
+		    sendCommand (proc,
+				 COMMAND "link"::
+				 CODE code::
+				 DUMPTARGET stringOpt::
+				 IdMap.foldi (fn (id, valref, rest) =>
+					      ID id::VALREF valref::rest)
+				 nil map)
+	    in
+		case result of
+		    [("Valref", s)] => valOf (Int.fromString s)
+		  | ("Error", _)::_ =>
+			error (errorsToString ("link (engine):\n", result))
+		  | _ => error "link: could not parse result"
+	    end
+
+	fun save (procOptRef, _) (valref, filename) =
+	    let
+		val proc = start procOptRef
+		val result =
+		    sendCommand (proc,
+				 [COMMAND "save",
+				  VALREF valref,
+				  STRING filename])
+	    in
+		case result of
+		    nil => ()
+		  | ("Error", _)::_ =>
+			error (errorsToString ("save (engine):\n", result))
+		  | _ => error "save: could not parse result"
+	    end
+    end

@@ -1,0 +1,186 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Pickle structure", "The <TT>Pickle</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature PICKLE
+    structure Pickle : PICKLE
+  </PRE>
+
+  <P>
+    The <TT>Pickle</TT> structure provides functionality for <EM>pickling</EM>
+    and unpickling arbitrary values and modules. A <EM>pickle</EM> is a
+    serialized and closed representation of a (higher-order) value, stored
+    in a file. Pickles can be used to exchange arbitrary data structures or
+    even complete abstract type implementations between processes.
+  </P>
+
+  <P>
+    Pickles do not contain any futures.
+    Instead, pickling requests all futures contained in the closure of the
+    value.
+  </P>
+
+  <P>
+    Pickles may contain stateful values, like references or arrays. Pickling
+    a stateful data structure implies a copying semantics: each time the
+    value is unpickled, a fresh copy of all contained stateful values will be
+    created. Sharing between stateful object is maintained inside a pickle,
+    though.
+  </P>
+
+  <P>
+    A pickle may not contain local resources, so-called <EM>sited</EM> values
+    (e.g. streams associated with files, first-class threads, or functions or
+    modules containing creating such values).
+    Any attempt to pickle a value whose closure contains sited values will
+    result in an <TT>Io</TT> exception being raised, with the exception
+    <TT>Sited</TT> indicating the cause.
+  </P>
+
+  <P>
+    Pickling is performed concurrently. The order in which values included
+    in the pickle are visited is non-deterministic.
+  </P>
+
+  <P>
+    For more background, see the <a href="../pickling.html">overview of
+    pickling</A>.
+  </P>
+
+  <P>See also:
+    <A href="sited.html"><TT>Sited</TT></A>,
+    <A href="package.html"><TT>Package</TT></A>,
+    <A href="component.html"><TT>Component</TT></A>,
+    <A href="future.html"><TT>Future</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature PICKLE =
+    sig
+	exception Sited
+	exception Corrupt
+
+	val extension : string
+
+	val save : string * package -> unit
+	val load : string -> package
+
+	functor Save (val file : string signature S structure X : S) : any
+	functor Load (val file : string signature S) : S
+	functor SaveVal (val file : string type t val x : t) : any
+	functor LoadVal (val file : string type t) : (val x : t)
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>exception Sited</TT>
+    </DT>
+    <DD>
+      <P>used by the <TT>save</TT> operation to indicate
+	that the argument contains sited data structures.  This
+	exception is not raised directly; it only appears as the <TT
+	>cause</TT> of an <TT><A href="io.html">IO.Io</A></TT> exception.
+	Equal to <TT>Component.Sited</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Corrupt</TT>
+    </DT>
+    <DD>
+      <P>used by the <TT>load</TT> operation to indicate
+	that pickle file does have an invalid format.  This
+	exception is never raised directly; it only appears as the <TT
+	>cause</TT> of an <TT><A href="io.html">IO.Io</A></TT> exception.
+	Equal to <TT>Component.Corrupt</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>extension</TT>
+    </DT>
+    <DD>
+      <P>The default file name extension used for pickle files on the host
+      system. Equal to <TT>Component.extension</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>save (<I>name</I>, <I>package</I>)</TT>
+    </DT>
+    <DD>
+      <P>Saves <TT><I>package</I></TT> to the file named <TT><I>name</I></TT>.
+      Synchronizes on all futures contained in (the closure of) the package.
+      Raises <TT>IO.Io</TT> if writing the pickle fails. Particular causes
+      for failure may be that <TT><I>package</I></TT> refers to sited values.</P>
+      <P>Equivalent to:</P>
+	<PRE>
+	Component.save (<I>name</I>, Component.fromPackage <I>package</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>load <I>name</I></TT>
+    </DT>
+    <DD>
+      <P>Loads a package from the file denoted by the URI <TT><I>name</I></TT>.
+      The pickle is located and loaded as a component, via the function <A
+      href="component.html#load"><TT>Component.load</TT></A>.
+      Raises <TT>IO.Io</TT> if reading or evaluating the component fails.
+      Particular causes
+      for failure may be that file is corrupt, i.e. not a valid pickle file.
+      This is indicated by the exception
+      <TT><A href="component.html#Corrupt">Component.Corrupt</A></TT>.
+      Raises <TT><A href="component.html#Failure">Component.Failure</A></TT> if
+      the pickle is an unevaluated component whose evaluation fails.</P>
+      <P>Equivalent to:</P>
+	<PRE>
+	ComponentManager.eval (<I>url</I>, Component.load <I>url</I>)</PRE>
+      <P>where <TT><I>url</I> = Url.fromString <I>name</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>Save (val file = <I>name</I>  signature S = <I>S</I>  structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates a package of module <TT><I>X</I></TT> under signature
+      <TT><I>S</I></TT> and writes it to the file named <TT><I>name</I></TT>,
+      as with <TT>save</TT>. Equivalent to</P>
+      <PRE>
+	save (<I>name</I>, pack <I>X</I> : <I>S</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>Load (val file = <I>name</I>  signature S = <I>S</I>)</TT>
+    </DT>
+    <DD>
+      <P>Reads a package from the file named <TT><I>name</I></TT>, as with
+      <TT>load</TT> and tries to unpack it under signature <TT><I>S</I></TT>.
+      Raises <TT>Package.Mismatch</TT> if unpacking fails. Equivalent to</P>
+      <PRE>
+	unpack (load <I>file</I>) : <I>S</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>SaveVal (val file = <I>name</I>  type t = <I>t</I>  val x = <I>v</I>)</TT> <BR>
+      <TT>LoadVal (val file = <I>name</I>  type t = <I>t</I>)</TT>
+    </DT>
+    <DD>
+      <P>Similar to <TT>Save</TT> and <TT>Load</TT>, but operate on value
+      packages. Equivalent respectively to:</P>
+      <PRE>
+	save (<I>name</I>, pack (val x = <I>v</I>) : (val x : <I>t</I>))
+	unpack (load <I>name</I>) : (val x : <I>t</I>)</PRE>
+    </DD>
+  </DL>
+
+<?php footing() ?>

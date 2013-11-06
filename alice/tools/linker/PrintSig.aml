@@ -1,0 +1,120 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MyComponent   from "MyComponent"
+import structure Path          from "../../lib/rtt/Path"
+import structure PathSet       from "../../lib/rtt/PathSet"
+import structure PathMap       from "../../lib/rtt/PathMap"
+import structure Inf           from "../../lib/rtt/Inf"
+import structure PervasiveType from "../../lib/rtt/PervasiveType"
+import structure PPPath        from "../../lib/rtt/PPPath"
+import structure PPInf         from "../../lib/rtt/PPInf"
+import structure PrettyPrint   from "../../lib/utility/PrettyPrint"
+import structure Url           from "../../lib/system/Url"
+import structure IO            from "../../lib/system/IO"
+import structure TextIO        from "../../lib/system/TextIO"
+
+signature PRINT_SIG =
+sig
+    val printSig : string * MyComponent.t -> unit
+end
+
+structure PrintSig : PRINT_SIG =
+struct
+    nonfix mod
+
+    val pervasiveUrl = "x-alice:/lib/fundamental/Pervasive"
+
+(*obsolete
+    val preboundPaths =
+	let
+	    val core = MyComponent.load
+		       (Url.fromString "x-alice:/lib/fundamental/Core")
+	    val inf = Option.valOf (MyComponent.inf (Option.valOf core))
+	    val paths = Inf.paths inf
+	    val {typ,inf,mod} = Inf.boundPaths inf
+	in
+	    PathMap.appi (fn(p,_) => PathSet.insert(paths, p)) typ;
+	    PathMap.appi (fn(p,_) => PathSet.insert(paths, p)) inf;
+	    PathMap.appi (fn(p,_) => PathSet.insert(paths, p)) mod;
+	    PathSet.union (paths, PervasiveType.paths);
+	    paths
+	end
+	handle (IO.Io _ | Option.Option) =>
+	    (TextIO.output (TextIO.stdErr,
+			    "warning: could not load core library\n");
+	     PervasiveType.paths)
+*)
+
+    fun collectAbstractTypes bound (url, NONE) = (url, PathSet.set())
+      | collectAbstractTypes bound (url, SOME inf') =
+	let
+	    val {typ,inf,mod} = Inf.boundPaths inf'
+	    val free          = Inf.paths inf'
+	in
+	    PathMap.appi (fn(p,_) => PathSet.insert(bound, p)) typ;
+	    PathMap.appi (fn(p,_) => PathSet.insert(bound, p)) inf;
+	    PathMap.appi (fn(p,_) => PathSet.insert(bound, p)) mod;
+	    PathSet.app (fn p => PathSet.remove(free, p)) bound;
+	    PathSet.union(*Disjoint*)(bound, free); (* avoid duplicates *)
+	    PathSet.filter (not o Path.isPervasive) free;
+	    (url, free)
+	end
+
+    fun ppInfOpt NONE = PrettyPrint.text "[no signature]"
+      | ppInfOpt (SOME inf) =
+	if Inf.isSig inf
+	then PPInf.ppSig (Inf.asSig inf)
+	else PPInf.ppInf inf
+
+    fun pathToString p = PrettyPrint.toString(PPPath.ppPath p, 10000)
+
+    fun printSig(url, component) =
+	let
+	    val export  = MyComponent.inf component
+	    val imports = MyComponent.imports component
+	    val bound   = PathSet.set () (*PathSet.clone preboundPaths*)
+	    val freeImports = Vector.map (collectAbstractTypes bound) imports
+	    val freeExport  = collectAbstractTypes bound ("", export)
+	    val free        = Vector.concat [#[freeExport], freeImports]
+
+	    open PrettyPrint infixr ^^ ^/^
+	in
+	    Vector.app (fn (url, infOpt) =>
+			if url = pervasiveUrl then () else
+			let
+			    val doc = abox(
+					  nest 3 (
+					      text "import" ^/^
+					      ppInfOpt infOpt
+					  ) ^/^
+					  text ("from \"" ^ url ^ "\"")
+				      ) ^^ break
+			in
+			    PrettyPrint.output (TextIO.stdOut, doc, 80)
+			end) imports;
+	    PrettyPrint.output (TextIO.stdOut, ppInfOpt export^^break, 80);
+	    if Vector.all (fn(_,s) => PathSet.isEmpty s) free then () else
+	    (TextIO.print "(* Free names:\n";
+	     Vector.map (fn (url, free) =>
+			 if PathSet.isEmpty free then () else
+			 PathSet.app (fn p =>
+				      (TextIO.print(" * " ^pathToString p^ "#" ^
+						   Int.toString(Path.hash p));
+				       TextIO.print(if url = "" then "\n"
+						    else" from \"" ^url^ "\"\n")
+				      )
+				     ) free
+			) free;
+	     TextIO.print " *)\n")
+	end
+end

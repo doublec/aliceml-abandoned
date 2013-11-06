@@ -1,0 +1,63 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO                   from "../lib/system/TextIO"
+import structure Socket                   from "../lib/system/Socket"
+import structure IO                       from "../lib/system/IO"
+import structure OS                       from "../lib/system/OS"
+import structure CommandLine              from "../lib/system/CommandLine"
+import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
+import structure SMLToSeamBatchCompiler   from "top/SMLToSeamBatchCompiler"
+
+structure Main : sig end =
+struct
+    fun usage() = TextIO.output(TextIO.stdErr, "Usage:\n\taliceserv [<port>]\n")
+
+    fun loop compile (connection as (socket,_,_)) =
+	case Socket.inputLine socket
+	  of NONE      => ()
+	   | SOME line =>
+	case String.tokens Char.isSpace line
+	  of []         => loop compile connection
+	   | ["--exit"] => OS.Process.exit OS.Process.success
+	   | args       =>
+	     ( (*Socket.output(socket, if compile args = OS.Process.success
+				     then "success\n" else "failure\n")
+	     ; Socket.flushOut socket*)compile args
+	     ; loop compile connection
+	     )
+	handle IO.Io{name, function, ...} =>
+	    (TextIO.output(TextIO.stdErr, "aliceserv: I/O error (in " ^ 
+					  function ^ ")\n");
+	     loop compile connection)
+	     | _ => loop compile connection
+
+
+    fun main' compile [] =
+	let
+	    val (_, port) = Socket.server(NONE, loop compile)
+	in
+	    TextIO.print("aliceserv: using port " ^ Int.toString port ^ "\n")
+	end
+      | main' compile [port] =
+	(case Int.fromString port
+	   of SOME port' => ignore(Socket.server(SOME port', loop compile))
+	    | NONE => (usage(); OS.Process.exit OS.Process.failure)
+	)
+      | main' compile args = (usage(); OS.Process.exit OS.Process.failure)
+
+    fun main("--seamt"::args)  = main' SMLToSeamBatchCompiler.main args
+      | main("--mozart"::args) = main' SMLToMozartBatchCompiler.main args
+      | main             args  = main' SMLToMozartBatchCompiler.main args
+
+    val _ = main(CommandLine.arguments())
+end

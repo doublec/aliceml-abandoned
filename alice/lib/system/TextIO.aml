@@ -1,0 +1,176 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IODesc           from "IODesc"
+import structure IO               from "IO"
+import structure TextPrimIO       from "TextPrimIO"
+import structure StreamIO         from "StreamIO"
+import signature TEXT_STREAM_IO   from "TEXT_STREAM_IO-sig"
+import structure ImperativeIO     from "ImperativeIO"
+import structure MkTextTranslator from "MkTextTranslator"
+import signature TEXT_IO          from "TEXT_IO-sig"
+
+(*--** newline translation missing *)
+
+structure TextIO :> TEXT_IO =
+    struct
+	structure TextStreamIO =
+	    StreamIO(structure PrimIO = TextPrimIO
+		     structure Vector = CharVector
+		     structure Array = CharArray
+		     structure VectorSlice = CharVectorSlice
+		     structure ArraySlice = CharArraySlice
+		     val someElem = #"\n")
+
+	structure TextImperativeIO =
+	    ImperativeIO(structure StreamIO = TextStreamIO
+			 structure Vector = CharVector)
+	open TextImperativeIO
+
+	structure StreamIO: TEXT_STREAM_IO =
+	    struct
+		open StreamIO
+
+		fun inputLine f =
+		    let
+			val (s, f') = inputN (f, 1)
+		    in
+			if String.size s = 0 then NONE
+			else
+			    case String.sub (s, 0) of
+				#"\n" => SOME ("\n", f')
+			      | c =>
+				    let
+					val (cs, f'') = inputLine' f'
+				    in
+					SOME (String.implode (c::cs), f'')
+				    end
+		    end
+		and inputLine' f =
+		    let
+			val (s, f') = inputN (f, 1)
+		    in
+			if String.size s = 0 then ([#"\n"], f')
+			else
+			    case String.sub (s, 0) of
+				#"\n" => ([#"\n"], f')
+			      | c =>
+				    let
+					val (cs, f'') = inputLine' f'
+				    in
+					(c::cs, f'')
+				    end
+		    end
+
+		fun outputSubstr (f, s) = output (f, Substring.string s)
+	    end
+
+	structure TextTranslator =
+	    MkTextTranslator(structure PrimIO = TextPrimIO)
+
+	(*--** don't use augment, implement them properly *)
+	fun textReader obj = TextTranslator.translateReader (TextPrimIO.RD obj)
+	fun textWriter obj = TextTranslator.translateWriter
+				(TextPrimIO.augmentWriter (TextPrimIO.WR obj))
+
+	fun openIn name =
+	    let
+		val reader = textReader (IODesc.openIn name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openIn", name}
+		val v = CharVector.fromList nil
+	    in
+		TextImperativeIO.mkInstream
+		    (TextStreamIO.mkInstream (reader, v))
+	    end
+
+	fun inputLine f =
+	    case input1 f of
+		SOME c =>
+		    SOME (if c = #"\n" then "\n"
+			  else String.implode (c::inputLine' f))
+	      | NONE => NONE
+	and inputLine' f =
+	    case input1 f of
+		SOME c =>
+		    if c = #"\n" then [c]
+		    else c::inputLine' f
+	      | NONE => [#"\n"]
+
+	fun openString s =
+	    let
+		val reader =
+		    TextTranslator.translateReader (TextPrimIO.openVector s)
+		val v = CharVector.fromList nil
+	    in
+		TextImperativeIO.mkInstream
+		    (TextStreamIO.mkInstream (reader, v))
+	    end
+
+	fun openOut name =
+	    let
+		val writer = textWriter (IODesc.openOut name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openOut", name}
+	    in
+		TextImperativeIO.mkOutstream
+		    (TextStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
+	    end
+
+	fun openAppend name =
+	    let
+		val writer = textWriter (IODesc.openAppend name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openAppend", name}
+	    in
+		TextImperativeIO.mkOutstream
+		    (TextStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
+	    end
+
+	fun outputSubstr (f, s) = output (f, Substring.string s)
+
+	fun syncReader (os, TextPrimIO.RD ops) =
+	    let
+		fun sync f = fn x => (flushOut os; f x)
+	    in
+		TextPrimIO.RD {ops where
+			       readVec = Option.map sync (#readVec ops),
+			       readArr = Option.map sync (#readArr ops),
+			       readVecNB = Option.map sync (#readVecNB ops),
+			       readArrNB = Option.map sync (#readArrNB ops)}
+	    end
+
+	val stdOut =
+	    TextImperativeIO.mkOutstream
+		(TextStreamIO.mkOutstream (textWriter IODesc.stdOut,
+					   IO.LINE_BUF))
+
+	val stdErr =
+	    TextImperativeIO.mkOutstream
+		(TextStreamIO.mkOutstream (textWriter IODesc.stdErr,
+					   IO.NO_BUF))
+
+	val stdIn =
+	    TextImperativeIO.mkInstream
+		(TextStreamIO.mkInstream (syncReader (stdOut,
+						      textReader IODesc.stdIn),
+					  CharVector.fromList nil))
+
+	fun print s = (output (stdOut, s); flushOut stdOut)
+
+	fun scanStream scan f =
+	    case scan StreamIO.input1 (getInstream f) of
+		NONE => NONE
+	      | SOME (x, f') => (setInstream (f, f'); SOME x)
+    end
+
+val print = TextIO.print

@@ -1,0 +1,32 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_SCHEDULE_COMPONENT =
+    sig
+	structure UnsafeSchedule :
+	    sig
+		val cumulative : 'a
+		val cumulativeEF : 'a
+		val cumulativeTI : 'a
+		val cumulativeUp : 'a
+		val disjoint : 'a
+		val firstsDist : 'a
+		val lastsDist : 'a
+		val firstsLastsDist : 'a
+		val taskIntervalsDistP : 'a
+		val taskIntervalsDistO : 'a
+		val serializedDisj : 'a
+		val serialized : 'a
+		val taskIntervals : 'a
+	    end
+    end

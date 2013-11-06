@@ -1,0 +1,37 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Model  from "Model"
+import structure Type   from "../../lib/rtt/Type"
+
+signature DEBUGGER_CONTROLS = 
+    sig
+	type position = Model.position
+	type id = string
+	type typ = Type.t
+	type thread = Thread.thread
+	    
+	val step:             thread -> unit
+	val next:             thread -> unit
+	val continue:         thread -> unit
+	val suspend:          thread -> unit
+	val resume:           thread -> unit
+	val setBreakpoint:    thread * position -> unit
+	val removeBreakpoint: thread * position -> unit
+	val detach:           thread -> unit
+	val unleash:          thread * int -> unit
+	val setType:          thread * id * typ -> unit
+	val resetType:        thread * id -> unit
+	val getThreads:       unit -> thread list
+
+	val runUnderDebuggerControl: (unit -> 'a) -> thread
+    end

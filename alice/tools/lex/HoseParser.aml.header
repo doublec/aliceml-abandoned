@@ -1,0 +1,16 @@
+import
+    signature TOKEN
+    signature PARSER_DATA
+from "x-alice:/lib/ml-yacc/base-sig"
+
+import 
+    structure AbsSyn
+from "AbsSyn"
+
+import
+    signature Parser_TOKENS
+from "HOSE_PARSER-sig"
+
+import
+    structure BoolVector
+from "Container"

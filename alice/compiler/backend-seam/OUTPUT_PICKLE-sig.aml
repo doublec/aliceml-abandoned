@@ -1,0 +1,19 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrimPickle          from "PrimPickle"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
+
+signature OUTPUT_PICKLE =
+    sig
+	val output: PrimPickle.outstream * AbstractCodeGrammar.value -> unit
+    end

@@ -1,0 +1,23 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure Path        from "Path"
+
+signature PP_PATH =
+sig
+    type doc  = PrettyPrint.doc
+    type path = Path.t
+
+    val ppPath :  path -> doc
+    val ppPath' : path list -> path -> doc
+end

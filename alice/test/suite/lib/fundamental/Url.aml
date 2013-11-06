@@ -1,0 +1,71 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestUrl :> TESTSUITE = (* the url test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+        val empty : url
+        val setScheme : url * scheme -> url
+        val setAuthority : url * authority -> url
+        val setDevice : url * device -> url
+        val makeAbsolutePath : url -> url
+        val makeRelativePath : url -> url
+        val setPath : url * path -> url
+        val setQuery : url * query -> url
+        val setFragment : url * fragment -> url
+
+        val getScheme : url -> scheme
+        val getAuthority : url -> authority
+        val getDevice : url -> device
+        val isAbsolutePath : url -> bool
+        val getPath : url -> path
+        val getQuery : url -> query
+        val getFragment : url -> fragment
+
+        val fromString : string -> url
+        val toString : url -> string
+        val toStringRaw : url -> string
+        val toLocalFile : url -> string
+        val isAbsolute : url -> bool
+        val resolve : url -> url -> url
+        val equal : url * url -> bool
+        val compare : url * url -> order
+        val hash : url -> int
+    fun testPromise () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFuture () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFulfill () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFail () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsFulfilled () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("Promise", [("promise", testPromise), 
+                             ("future", testFuture),
+                             ("fulfill", testFulfill),
+                             ("fail", testFail),
+ 			     ("isFulfilled", testIsFulfilled)])
+end

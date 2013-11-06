@@ -1,0 +1,161 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestAlt :> TESTSUITE = (* the alt test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testIsFst () = 
+	(Test.test (fn x => Alt.isFst x =  true) (FST 0);
+	 Test.test (fn x => Alt.isFst x = false) (SND 0))
+
+    fun testIsSnd () = 
+	(Test.test (fn x => Alt.isSnd x =  true) (SND 0);
+	 Test.test (fn x => Alt.isSnd x = false) (FST 0))
+
+    fun testFst () =
+        (Test.test (fn x => Alt.fst x = 0) (FST 0);
+	 Test.test (fn x => (Alt.fst x handle Alt.Alt => 0) = 0) (SND 0))
+
+    fun testSnd () =
+        (Test.test (fn x => Alt.snd x = 0) (SND 0);
+	 Test.test (fn x => (Alt.snd x handle Alt.Alt => 0) = 0) (FST 0))
+
+    fun testGetFst () =
+        (Test.test (fn x => Alt.getFst x = 0) (FST 0, 1);
+	 Test.test (fn x => Alt.getFst x = 1) (SND 0, 1))
+
+    fun testGetSnd () =
+        (Test.test (fn x => Alt.getSnd x = 1) (FST 0, 1);
+	 Test.test (fn x => Alt.getSnd x = 0) (SND 0, 1))
+
+    fun testApp () = 
+	let
+	    val n = ref 0
+	    fun t1 i = n := i
+	    fun t2 i = n := i
+	in 
+	    (Test.test (fn x => (Alt.app (t1, t2) x; !n = Alt.fst x)) (FST 1);
+	     Test.test (fn x => (Alt.app (t1, t2) x; !n = Alt.snd x)) (SND 1))
+	end
+
+    fun testAppFst () =
+	let
+	    val n = ref 0
+	    fun t1 i = n := i
+	in
+	    (Test.test (fn x => (Alt.appFst t1 x; !n = 0)) (SND 1);
+	     Test.test (fn x => (Alt.appFst t1 x; !n = Alt.fst x)) (FST 1))
+	end
+
+    fun testAppSnd () =
+	let
+	    val n = ref 0
+	    fun t1 i = n := i
+	in
+	    (Test.test (fn x => (Alt.appSnd t1 x; !n = 0)) (FST 1);
+	     Test.test (fn x => (Alt.appSnd t1 x; !n = Alt.snd x)) (SND 1))
+	end
+
+    fun testMap () =
+	let
+	    val t1 = Real.fromInt
+	    val t2 = Real.round
+	in 
+	  (Test.test (fn x => Alt.map (t1, t2) x = 
+		              FST (t1 (Alt.fst x))) (FST 1);
+	   Test.test (fn x => Alt.map (t1, t2) x = 
+			      SND (t2 (Alt.snd x))) (SND 2.0))
+	end
+		
+    fun testMapFst () =
+	let
+	    val t = Real.fromInt
+	in
+	    (Test.test (fn x => Alt.mapFst t x = Alt.map (t, Fn.id) x) (FST 1);
+	     Test.test (fn x => Alt.mapFst t x = Alt.map (t, Fn.id) x) (SND 1))
+	end
+
+    fun testMapSnd () =
+	let
+	    val t = Real.fromInt
+	in
+	    (Test.test (fn x => Alt.mapSnd t x = Alt.map (Fn.id, t) x) (FST 1);
+	     Test.test (fn x => Alt.mapSnd t x = Alt.map (Fn.id, t) x) (SND 1))
+	end
+
+    fun testMapBoth () =
+	let
+	    val t = Real.fromInt
+
+	    fun test x = Alt.mapSnd t (Alt.mapFst t x)
+	in
+	    (Test.test (fn x => Alt.mapBoth t x = test x) (FST 1);
+	     Test.test (fn x => Alt.mapBoth t x = test x) (SND 1))
+	end
+		    
+    fun testEqual () =
+	let
+	    val equal1 = (Int.equal, Bool.equal)
+	    val equal2 = (Int.equal, Int.equal)
+	in 
+	  (Test.test (fn x => Alt.equal equal1 x = true)  (FST 1, FST 1);
+	   Test.test (fn x => Alt.equal equal1 x = true)  (SND true, SND true);
+	   Test.test (fn x => Alt.equal equal1 x = false) (FST 0, SND true);
+	   Test.test (fn x => Alt.equal equal1 x = false) (SND true, FST 0);
+	   Test.test (fn x => Alt.equal equal2 x = true)  (FST 0, FST 0);
+	   Test.test (fn x => Alt.equal equal2 x = false) (FST 1, FST 0);
+	   Test.test (fn x => Alt.equal equal2 x = false) (SND 1, SND 0);
+	   Test.test (fn x => Alt.equal equal2 x = true)  (SND 1, SND 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (FST 1, SND 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (SND 1, FST 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (SND 0, FST 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (FST 1, SND 1))
+	end
+
+    fun testCollate () =
+	let
+	    val coll1 = (Int.compare, Bool.compare)
+	in 
+      (Test.test (fn x => Alt.collate coll1 x = EQUAL)   (FST 1, FST 1);
+       Test.test (fn x => Alt.collate coll1 x = LESS)    (FST 0, FST 1);
+       Test.test (fn x => Alt.collate coll1 x = GREATER) (FST 1, FST 0);
+       Test.test (fn x => Alt.collate coll1 x = EQUAL)   (SND true, SND true);
+       Test.test (fn x => Alt.collate coll1 x = LESS)    (SND false, SND true);
+       Test.test (fn x => Alt.collate coll1 x = GREATER) (SND true, SND false);
+       Test.test (fn x => Alt.collate coll1 x = GREATER) (SND true, FST 0);
+       Test.test (fn x => Alt.collate coll1 x = LESS)    (FST 0, SND true))
+	end
+
+
+    val suite = ("Alt", [("isFst", testIsFst), 
+                         ("isSnd", testIsSnd),
+                         ("fst", testFst),
+                         ("snd", testSnd),
+ 			 ("getFst", testGetFst), 
+	                 ("getSnd", testSnd),
+			 ("app", testApp),
+			 ("appFst", testAppFst),
+			 ("appSnd", testAppSnd),
+			 ("map", testMap),
+			 ("mapFst", testMapFst),
+			 ("mapSnd", testMapSnd),
+			 ("mapBoth", testMapBoth),
+			 ("equal", testEqual),
+			 ("collate", testCollate)])
+end

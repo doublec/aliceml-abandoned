@@ -1,0 +1,27 @@
+
+import structure Gtk         from "Gtk"
+
+import signature GTK_BUILDER from "GTK_BUILDER-sig"
+import structure NativeLibs  from "NativeLibs"
+
+
+structure GtkBuilder :> GTK_BUILDER =
+struct 
+    open NativeLibs.NativeGtkBuilder
+    
+    fun newFromFile path =
+        let
+            val b = new ()
+        in
+            addFromFile (b, path);
+            b
+        end
+    
+    fun newFromString str =
+        let
+            val b = new ()
+        in
+            addFromString (b, str);
+            b
+        end
+end

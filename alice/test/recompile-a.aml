@@ -1,0 +1,15 @@
+local
+structure A :>
+sig
+    type t
+    val x  : t
+    val f  : t -> string
+end =
+struct
+    type t = int
+    val x  = 5
+    val f  = Int.toString
+end
+in
+structure A = (open A)
+end

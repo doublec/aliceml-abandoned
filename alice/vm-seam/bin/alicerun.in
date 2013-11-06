@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# Author:
+#   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+#   Guido Tack <tack@ps.uni-sb.de>
+#
+# Copyright:
+#   Marco Kuhlmann, 2003
+#   Guido Tack, 2005
+#
+# Last Change:
+#   $Date$
+#   $Revision$
+#
+
+set -e
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datadir=@datadir@
+libdir=@libdir@
+pkgdatadir=@datadir@/@PACKAGE@
+seamlibdir=@seamlibdir@
+
+set -e
+
+cmd="$0"
+
+abs_path () {
+    case "$1" in
+	/*|?:*)
+	    echo "$1"
+	    ;;
+	*)
+	    echo "$(pwd)/$1"
+	    ;;
+    esac
+}
+
+: ${ALICE_HOME:="$pkgdatadir"}
+
+ALICE_HOME=$(abs_path "$ALICE_HOME")
+
+case $(uname) in
+    CYGWIN*)
+	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
+	ALICE_DLL_PATH=`cygpath -m "${seamlibdir}"/`
+	;;
+    *)
+	ALICE_DLL_PATH="${seamlibdir}"/
+	;;
+esac
+
+add_to_alice_load () {
+    ALICE_LOAD="${ALICE_LOAD}${ALICE_LOAD:+@CACHESEP@}$1"
+}
+
+add_to_alice_load "cache=${HOME}/.@PACKAGE@/cache"
+add_to_alice_load "cache=${datadir}/@PACKAGE@/cache"
+add_to_alice_load "cache=${libdir}/@PACKAGE@/cache"
+
+add_to_alice_load "pattern=?{x}=?{x}.alc"
+add_to_alice_load "pattern=?{x}=?{x}.dll"
+
+if [ ! -z "$ALICE_LOAD_PREFIX" ]
+then
+    ALICE_LOAD="${ALICE_LOAD_PREFIX}${ALICE_LOAD:+@CACHESEP@}${ALICE_LOAD}"
+fi
+if [ ! -z "$ALICE_LOAD_SUFFIX" ]
+then
+    ALICE_LOAD="${ALICE_LOAD}${ALICE_LOAD:+@CACHESEP@}${ALICE_LOAD_SUFFIX}"
+fi
+
+
+export ALICE_HOME ALICE_LOAD
+
+case ${ALICE_C_DEBUGGER} in
+    gdb*)
+        ## To use the debugger on Unix:
+        : ${ALICE_C_DEBUG_TTY=$(tty)}
+        (echo "break Base.cc:22"; echo "tty $ALICE_C_DEBUG_TTY"; echo run "${ALICE_DLL_PATH}"alice "$@"; cat) |
+        exec gdb seam
+        ;;
+    ddd*)
+        ## Or to use DDD:
+        echo run "${ALICE_DLL_PATH}"alice "$@"
+        exec ddd seam
+        ;;
+    insight*)
+        ## To use the GUI debugger on Windows/Cygwin:
+        echo run alice "$@"
+        exec insight seam.exe
+        ;;
+    *)
+        exec seam "${ALICE_DLL_PATH}"alice "$@"
+        ;;
+esac

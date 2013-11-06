@@ -1,0 +1,82 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO              from "../../lib/system/TextIO"
+import structure Component           from "../../lib/system/Component"
+import structure ComponentManager    from "../../lib/system/ComponentManager"
+import structure MkSwitches          from "../infrastructure/MkSwitches"
+import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
+import structure MkFrontendSML       from "../frontend-sml/MkFrontendSML"
+import structure MkBackendCommon     from "../backend-common/MkBackendCommon"
+import structure MkBackendMozart     from "../backend-mozart/MkBackendMozart"
+import structure MkCompiler          from "MkCompiler"
+import structure MkRecursiveCompiler
+       structure InfLoader
+       structure ModLoader
+       structure ImportLoader        from "MkRecursiveCompiler"
+import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
+
+structure RecursiveCompiler =
+    let
+	structure Switches = MkSwitches()
+
+	val _ = General.Assert	(* dummy to force CM importing ExtendedBasis *)
+
+	val acquireSigRef: InfLoader.t ref = ref (fn _ => assert false)
+	val acquireModRef: ModLoader.t ref = ref (fn _ => assert false)
+	val acquireImportsRef: ImportLoader.t ref = ref (fn _ => assert false)
+
+	fun loadSig (desc, url) = !acquireSigRef (desc, url)
+	fun loadMod (desc, url) = !acquireModRef (desc, url)
+	fun loadImports (desc, url) = !acquireImportsRef (desc, url)
+
+	structure ComponentManager' =
+	    Component.MkManager(val resolver = Component.defaultResolver)
+
+	structure FrontendSML =
+	    MkFrontendSML(val loadSig = loadSig
+			  structure Switches = Switches)
+
+	structure FrontendCommon =
+	    MkFrontendCommon(val loadSig = loadSig
+			     val loadMod = loadMod
+			     val loadImports = loadImports
+			     structure Switches = Switches)
+
+	structure BackendMozart =
+	    MkBackendMozart(structure ComponentManager = ComponentManager
+			    structure Switches         = Switches)
+
+	structure BackendCommon =
+	    MkBackendCommon(val isCross = BackendMozart.isCross
+			    val loadMod = loadMod
+			    structure Switches = Switches)
+
+	structure Compiler =
+	    MkCompiler(structure Switches         = Switches
+		       structure FrontendSpecific = FrontendSML
+		       structure FrontendCommon   = FrontendCommon
+		       structure BackendCommon    = BackendCommon
+		       structure BackendSpecific  = BackendMozart)
+
+	structure RecursiveCompiler =
+	    MkRecursiveCompiler(structure ComponentManager = ComponentManager'
+				structure Compiler = Compiler
+				val extension = "ozf")
+
+	val _ = acquireSigRef := RecursiveCompiler.acquireSig
+	val _ = acquireModRef := RecursiveCompiler.acquireMod
+	val _ = acquireImportsRef := RecursiveCompiler.acquireImports
+    in
+	RecursiveCompiler : RECURSIVE_COMPILER'
+    end

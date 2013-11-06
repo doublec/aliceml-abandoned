@@ -1,0 +1,15 @@
+functor Take(signature S) :> S =
+struct
+    fun takeTicket ticket =
+        let
+            structure P = Package.Pack(structure X = Inspector
+                                       signature S = INSPECTOR)
+        in
+            P.package
+        end
+
+    structure FU = fct() => struct open Inspector end
+    structure F = FU()
+
+    open F
+end

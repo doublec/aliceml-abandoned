@@ -1,0 +1,12 @@
+(*
+ * Create an infinite lazy stream of integers
+ * and print them all out.
+ *
+ * Obviously, this will not terminate.
+ *)
+
+import val print from "x-alice:/TextIO"
+
+fun enumFrom n = byneed(fn() => n :: enumFrom(n+1))
+
+val _ = List.app (fn n => print(Int.toString n ^ "\n")) (enumFrom 0)

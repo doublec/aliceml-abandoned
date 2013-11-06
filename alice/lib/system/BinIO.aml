@@ -1,0 +1,107 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IODesc       from "IODesc"
+import structure IO           from "IO"
+import structure BinPrimIO    from "BinPrimIO"
+import structure StreamIO     from "StreamIO"
+import structure ImperativeIO from "ImperativeIO"
+import signature BIN_IO       from "BIN_IO-sig"
+
+structure BinIO :> BIN_IO =
+    struct
+	structure BinStreamIO =
+	    StreamIO(structure PrimIO = BinPrimIO
+		     structure Vector = Word8Vector
+		     structure Array = Word8Array
+		     structure VectorSlice = Word8VectorSlice
+		     structure ArraySlice = Word8ArraySlice
+		     val someElem = Word8.fromInt 0)
+	structure BinImperativeIO =
+	    ImperativeIO(structure StreamIO = BinStreamIO
+			 structure Vector = Word8Vector)
+	open BinImperativeIO
+
+	fun openIn name =
+	    let
+		val reader = BinPrimIO.RD (IODesc.openIn name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openIn", name}
+		val v = Word8Vector.fromList nil
+	    in
+		BinImperativeIO.mkInstream (BinStreamIO.mkInstream (reader, v))
+	    end
+
+	fun openOut name =
+	    let
+		val writer = BinPrimIO.WR (IODesc.openOut name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openOut", name}
+	    in
+		BinImperativeIO.mkOutstream
+		    (BinStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
+	    end
+
+	fun openAppend name =
+	    let
+		val writer = BinPrimIO.WR (IODesc.openAppend name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openAppend", name}
+	    in
+		BinImperativeIO.mkOutstream
+		    (BinStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
+	    end
+
+	fun openOverwrite name =
+	    let
+		val writer = BinPrimIO.WR (IODesc.openOverwrite name)
+		    handle cause =>
+			raise IO.Io {cause, function = "openOverwrite", name}
+	    in
+		BinImperativeIO.mkOutstream
+		    (BinStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
+	    end
+
+	fun seekIn (is, pos) =
+	    let
+		val (BinPrimIO.RD rd, buf) = StreamIO.getReader (getInstream is)
+	    in
+		case #setPos rd of
+		    NONE =>
+			(setInstream (is, StreamIO.mkInstream
+					  (BinPrimIO.RD rd, buf));
+			 raise IO.Io {cause = IO.RandomAccessNotSupported,
+				      function = "seekIn", name = #name rd})
+		  | SOME setPos =>
+			(setPos pos;
+			 setInstream (is, StreamIO.mkInstream
+					  (BinPrimIO.RD rd, Byte.stringToBytes "")))
+			handle e =>
+			    (setInstream (is, StreamIO.mkInstream
+					      (BinPrimIO.RD rd, buf));
+			     raise IO.Io {cause = e, function = "seekIn",
+					  name = #name rd})
+	    end
+
+	fun seekOut (os, pos) =
+	    let
+		val (BinPrimIO.WR wr, mode) =
+		    StreamIO.getWriter (getOutstream os)
+	    in
+		setOutstream (os, StreamIO.mkOutstream (BinPrimIO.WR wr, mode));
+		valOf (#setPos wr)  pos
+		handle e =>
+		    raise IO.Io {cause = case e of Option.Option =>
+					 IO.RandomAccessNotSupported | _ => e,
+				 function = "seekOut", name = #name wr}
+	    end
+    end

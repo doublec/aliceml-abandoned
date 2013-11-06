@@ -1,0 +1,8 @@
+CM
+*.lex.*
+*.grm.*
+~*
+*.x86-linux
+*.ppm *.jpg *.gif
+*.uo *.ui
+*.ozf *.so-linux-i486

@@ -1,0 +1,88 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Lexer          from "Lexer"
+
+signature SEXP_TOOLS =
+sig
+    type assoc = string * Lexer.token list 
+    type 'a converter = Lexer.token list -> 'a
+
+    val parseAssocs : Lexer.token list -> assoc list * Lexer.token list
+
+    val assoc' : 'a converter -> (string -> 'a) -> string * assoc list -> 'a
+
+    structure Conv :
+    sig
+        val string :    string converter
+        val symOrStr :  string converter
+        val strPairs :  (string * string) list converter
+    end
+end
+
+structure SexpTools : SEXP_TOOLS =
+struct
+    open Lexer 
+    
+    type assoc = string * Lexer.token list
+
+    type 'a converter = Lexer.token list -> 'a
+
+    fun parseAssocs assocs = parseAssocs' ([], assocs)
+
+    and parseAssocs' (res, ts) =
+        case ts of 
+            []          => raise Error "unclosed parenthesis at end of file"
+          | RPAR :: ts' => (rev res, ts')
+          | LPAR :: (SYM name | STR name) :: ts' => 
+            let val (value, ts'') = gatherValue (ts', 0, [])
+            in
+                parseAssocs' ( (name, value) :: res, ts'' )
+            end
+          | t :: ts'    => raise Error "syntax in assocs"
+
+
+    and gatherValue (ts, nest, res) =
+        case ts of
+            []           => raise Error "unclosed parenthesis at end of file"
+          | LPAR :: ts'  => gatherValue (ts', nest + 1, LPAR :: res)
+          | RPAR :: ts' => if nest = 0 then (List.rev res, ts')
+                           else gatherValue (ts', nest - 1, RPAR :: res)
+          | t :: ts'     => gatherValue (ts', nest, t :: res)
+        
+
+    fun assoc' conv def (name, assocs) =
+        case List.find (fn (x, _) => x = name) assocs of
+            SOME (_, v) => conv v
+          | NONE        => def name
+
+          
+    structure Conv =
+    struct
+            fun string [STR s]  = s
+              | string _        = raise Error "invalid field (string expected)"
+
+            fun symOrStr [STR s] = s
+              | symOrStr [SYM s] = s
+              | symOrStr _       = raise Error "invalid field (string or symbol expected)"
+    
+            fun strPairs ts = strPairs' ([], ts)
+
+            and strPairs' (res, ts) =
+                case ts of 
+                    []          => rev res
+                  | LPAR :: STR k :: STR v :: RPAR :: ts' => 
+                    strPairs' ( (k, v) :: res, ts')
+                  | _           => raise Error "syntax"
+    end
+
+end

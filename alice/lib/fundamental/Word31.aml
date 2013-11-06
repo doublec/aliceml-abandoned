@@ -1,0 +1,56 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive
+       structure Int and LargeInt and LargeWord and Word and Word31
+                                            from "Pervasive"
+import __primitive type bool                from "ToplevelTypes"
+import functor MkWord                       from "MkWord"
+
+structure Word31 = MkWord(
+    type word = Word31.word
+
+    val wordSize = 31
+
+    __primitive val fromInt : Int.int  -> word = "Word31.fromInt"
+    __primitive val toInt :   word -> Int.int  = "Word31.toInt"
+    __primitive val toIntX :  word -> Int.int  = "Word31.toIntX"
+
+    __primitive val fromLarge : LargeWord.word -> word = "Word31.fromLarge"
+    __primitive val toLarge :   word -> LargeWord.word = "Word31.toLarge"
+    __primitive val toLargeX :  word -> LargeWord.word = "Word31.toLargeX"
+
+    __primitive val fromLargeInt : LargeInt.int -> word = "Word31.fromLargeInt"
+    __primitive val toLargeInt :   word -> LargeInt.int = "Word31.toLargeInt"
+    __primitive val toLargeIntX :  word -> LargeInt.int = "Word31.toLargeIntX"
+
+    __primitive val op + :   word * word -> word = "Word31.+"
+    __primitive val op - :   word * word -> word = "Word31.-"
+    __primitive val op * :   word * word -> word = "Word31.*"
+    __primitive val op div : word * word -> word = "Word31.div"
+    __primitive val op mod : word * word -> word = "Word31.mod"
+
+    __primitive val notb :   word -> word        = "Word31.notb"
+    __primitive val orb :    word * word -> word = "Word31.orb"
+    __primitive val xorb :   word * word -> word = "Word31.xorb"
+    __primitive val andb :   word * word -> word = "Word31.andb"
+
+    __primitive val op << :  word * Word.word -> word = "Word31.<<"
+    __primitive val op >> :  word * Word.word -> word = "Word31.>>"
+    __primitive val op ~>> : word * Word.word -> word = "Word31.~>>"
+
+    __primitive val op < :   word * word -> bool = "Word31.<"
+    __primitive val op > :   word * word -> bool = "Word31.>"
+    __primitive val op <= :  word * word -> bool = "Word31.<="
+    __primitive val op >= :  word * word -> bool = "Word31.>="
+)

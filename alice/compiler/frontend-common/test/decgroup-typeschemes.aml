@@ -1,0 +1,12 @@
+signature STRING =
+sig
+    val scan :	'a -> {}
+    val scanC :	'a -> {}
+end
+
+structure String : STRING =
+struct
+    fun scan src	= scan'' src
+    and scan'' src	= {}
+    fun scanC src	= scan'' src
+end

@@ -1,0 +1,80 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature CHANNEL =
+    sig
+	type 'a channel
+        type t = channel
+
+	exception Empty
+
+	(* 'channel' returns a new channel. *)
+	val channel : unit -> 'a channel
+
+	(* Puts a value at the end of the channel. *)
+        val put     : 'a channel * 'a -> unit
+
+	(* Puts a value at the beginning of the channel. *)
+	val push    : 'a channel * 'a -> unit
+
+	(* 'get' and 'pop' are synonyms, they read and discard
+	 * the value at the beginning of the channel.
+	 * They may block until a value is put or pushed
+	 * raise Empty if the channel is closed and empty. *)
+        val get     : 'a channel -> 'a
+	val pop     : 'a channel -> 'a
+
+	(* Read the value at the beginning of the channel
+	 * but does not discard it.
+	 * Like 'get', it may block or raise Empty *)
+        val peek    : 'a channel -> 'a
+
+	(* Returns a new channel containing the same elements
+	 * than its argument.
+	 * The result is an open channel. *)
+	val clone   : 'a channel -> 'a channel
+
+	(* Say if the given channel is empty. *)
+        val isEmpty : 'a channel -> bool
+
+	(* Close the channel, all subsequent writes will be ignored.
+	 * Reads are still possible if the channel is not empty. *)
+	val close   : 'a channel -> unit
+
+	val isClosed : 'a channel -> bool
+
+	(* Wait until the channel is closed. *)
+	val waitClosed : 'a channel -> unit
+	  
+	(* Empty the channel. *)
+        val purge   : 'a channel -> unit
+
+	(* Takes iteratively one element out of the channel,
+	 * and apply the given function to it. Consumes elements. *)
+	val app     : ('a -> unit) -> 'a channel -> unit
+
+        (* Like app, but returns as soon as the channel is empty.
+         * Note that this does not imply that the channel is still empty
+         * when the function has returned. *)
+        val appNB   : ('a -> unit) -> 'a channel -> unit
+
+	(* Returns a lazy list with the element of the channel. 
+	 * Consumes elements of the channel. *)
+	val toList : 'a channel -> 'a list
+
+        (* Like toList, but closes the list as soon as the channel is empty.
+         * Note that this does not imply that the channel is still empty
+         * when the function has returned. *)
+        val toListNB : 'a channel -> 'a list
+
+    (* Note : channels contain implicit locks.
+     *   If you stop a thread while it is manipulating a channel,
+     *   it may cause all further access to the same channel to block,
+     *   until the thread is restarted. *)
+    end

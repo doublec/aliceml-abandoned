@@ -1,0 +1,17 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkToplevel from "MkToplevel"
+import structure RecursiveCompiler from "RecursiveCompiler"
+
+structure SMLToMozartToplevel = MkToplevel(RecursiveCompiler)

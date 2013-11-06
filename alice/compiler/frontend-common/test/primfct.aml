@@ -1,0 +1,228 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
+structure TestPrimitiveFunctors =
+struct
+    type val_package
+    type package
+
+    exception UnpackVal = General.Bind
+    exception Mismatch  = __pervasive.Inf.Mismatch
+
+    __primitive functor PackVal :   fct(type t val x : t) -> (val x : val_package) = "PackVal"
+    __primitive functor UnpackVal : fct(val x : val_package type t) -> (val x : t) = "UnpackVal"
+    __primitive functor Pack :      fct(signature S structure X : S) -> (val x : package) = "Pack"
+    __primitive functor Unpack :    fct(val x : package signature S) -> S = "Unpack"
+    __primitive functor ByNeed :    fct(signature S functor F : () -> S) -> S = "ByNeed"
+
+    (* Pack some core values *)
+
+    type t = int
+    type 'a u = string
+    type 'a v = 'a
+    type ('a,'b) w = {umpf:'a, bla:'b}
+
+    structure P1 = PackVal(type t = {bla:string, umpf:int}
+                	   val  x = {bla="hug me, please!\n", umpf=42})
+    structure P2 = PackVal(type t = {bla:string, umpf:LargeInt.int}
+                	   val  x = {bla="pikachu!\n", umpf=43})
+    structure P3 = PackVal(type t = (t v, (unit * t) u) w
+                	   val  x = {bla="gnill!\n", umpf=42})
+    structure P4 = PackVal(type t = {bla:string, umpf:int, oertel:real}
+                	   val  x = {bla="f***ing stiff!\n", umpf=0,
+				     oertel=Math.pi})
+    structure P5 = PackVal(struct type t = {bla:string, umpf:int}
+				  val  x = {bla="squirrel!\n", umpf=1}
+			   end : sig type t val x : t end)
+    structure P6 = PackVal(struct type t = {bla:string, umpf:int}
+				  val  x = {bla="hut ab, das geht ja gut ab!\n",
+					    umpf=1}
+			   end :> sig type t val x : t end)
+
+    fun unwrapVal p =
+	let
+	    structure Y = UnpackVal(type t = {umpf:Int.int, bla:string}
+				    val x = p)
+	in
+	    print(#bla Y.x)
+	end
+	handle UnpackVal => print "oooh...\n"
+
+    val _ = List.app unwrapVal [P1.x, P2.x, P3.x, P4.x, P5.x, P6.x]
+
+
+    (* Pack real modules *)
+
+    signature S0 = sig type t val x : t end
+    signature S1 = S0 where type t = int
+
+    structure X0 =
+    struct
+	type t = int
+        val  x = 0
+    end
+
+    structure X1 = X0 :  S0
+    structure X2 = X0 :> S0
+    structure X3 = X0 :  S1
+    structure X4 = X0 :> S1
+    structure X5 = X2 :  S0
+    structure X6 = X2 :> S0
+
+    signature S2 = S0 where type t = X2.t
+    signature S3 = S0 where type t = X6.t
+
+    structure P00 = Pack(structure X = X0 signature S = S0)
+    structure P01 = Pack(structure X = X0 signature S = S1)
+ (* structure P02 = Pack(structure X = X0 signature S = S2) illegal *)
+ (* structure P03 = Pack(structure X = X0 signature S = S3) illegal *)
+    structure P10 = Pack(structure X = X1 signature S = S0)
+    structure P11 = Pack(structure X = X1 signature S = S1)
+ (* structure P12 = Pack(structure X = X1 signature S = S2) illegal *)
+ (* structure P13 = Pack(structure X = X1 signature S = S3) illegal *)
+    structure P20 = Pack(structure X = X2 signature S = S0)
+ (* structure P21 = Pack(structure X = X2 signature S = S1) illegal *)
+    structure P22 = Pack(structure X = X2 signature S = S2)
+ (* structure P23 = Pack(structure X = X2 signature S = S3) illegal *)
+    structure P30 = Pack(structure X = X3 signature S = S0)
+    structure P31 = Pack(structure X = X3 signature S = S1)
+ (* structure P32 = Pack(structure X = X3 signature S = S2) illegal *)
+ (* structure P33 = Pack(structure X = X3 signature S = S3) illegal *)
+    structure P40 = Pack(structure X = X4 signature S = S0)
+    structure P41 = Pack(structure X = X4 signature S = S1)
+ (* structure P42 = Pack(structure X = X4 signature S = S2) illegal *)
+ (* structure P43 = Pack(structure X = X4 signature S = S3) illegal *)
+    structure P50 = Pack(structure X = X5 signature S = S0)
+ (* structure P51 = Pack(structure X = X5 signature S = S1) illegal *)
+    structure P52 = Pack(structure X = X5 signature S = S2)
+ (* structure P53 = Pack(structure X = X5 signature S = S3) illegal *)
+    structure P60 = Pack(structure X = X6 signature S = S0)
+ (* structure P61 = Pack(structure X = X6 signature S = S1) illegal *)
+ (* structure P62 = Pack(structure X = X6 signature S = S2) illegal *)
+    structure P63 = Pack(structure X = X6 signature S = S3)
+
+    functor TryUnpack(val b : bool val x : package signature S) =
+    struct
+	fun tryUnpack() =
+	    let structure _ = Unpack(val x = x signature S = S)
+	    in true end
+	    handle Mismatch _ => false
+
+	val b' = tryUnpack()
+	val _ = print(case (b, b')
+			of (true,  true)  => "OK, succeeded.\n"
+			 | (false, false) => "OK, failed.\n"
+			 | (true,  false) => "OOPS, failed erroneously!\n"
+			 | (false, true)  => "OOPS, succeeded erroneously!\n")
+	val _ = if b = b' then () else
+		let
+		    structure _ = Inspector.InspectValSig(type t = package
+							  val x = x
+							  signature S = S)
+		in
+		    Inspector.inspect{exn =
+			let structure _ = Unpack(val x = x signature S = S)
+			in raise Empty end
+			handle e as Mismatch _ => e}
+		end
+    end
+
+    structure Y000 = TryUnpack(val b = true  val x = P00.x signature S = S0)
+    structure Y001 = TryUnpack(val b = false val x = P00.x signature S = S1)
+    structure Y002 = TryUnpack(val b = false val x = P00.x signature S = S2)
+    structure Y003 = TryUnpack(val b = false val x = P00.x signature S = S3)
+    structure Y010 = TryUnpack(val b = true  val x = P01.x signature S = S0)
+    structure Y011 = TryUnpack(val b = true  val x = P01.x signature S = S1)
+    structure Y012 = TryUnpack(val b = false val x = P01.x signature S = S2)
+    structure Y013 = TryUnpack(val b = false val x = P01.x signature S = S3)
+
+    structure Y100 = TryUnpack(val b = true  val x = P10.x signature S = S0)
+    structure Y101 = TryUnpack(val b = false val x = P10.x signature S = S1)
+    structure Y102 = TryUnpack(val b = false val x = P10.x signature S = S2)
+    structure Y103 = TryUnpack(val b = false val x = P10.x signature S = S3)
+    structure Y110 = TryUnpack(val b = true  val x = P11.x signature S = S0)
+    structure Y111 = TryUnpack(val b = true  val x = P11.x signature S = S1)
+    structure Y112 = TryUnpack(val b = false val x = P11.x signature S = S2)
+    structure Y113 = TryUnpack(val b = false val x = P11.x signature S = S3)
+
+    structure Y200 = TryUnpack(val b = true  val x = P20.x signature S = S0)
+    structure Y201 = TryUnpack(val b = false val x = P20.x signature S = S1)
+    structure Y202 = TryUnpack(val b = false val x = P20.x signature S = S2)
+    structure Y203 = TryUnpack(val b = false val x = P20.x signature S = S3)
+    structure Y220 = TryUnpack(val b = true  val x = P22.x signature S = S0)
+    structure Y221 = TryUnpack(val b = false val x = P22.x signature S = S1)
+    structure Y222 = TryUnpack(val b = true  val x = P22.x signature S = S2)
+    structure Y223 = TryUnpack(val b = false val x = P22.x signature S = S3)
+
+    structure Y300 = TryUnpack(val b = true  val x = P30.x signature S = S0)
+    structure Y301 = TryUnpack(val b = false val x = P30.x signature S = S1)
+    structure Y302 = TryUnpack(val b = false val x = P30.x signature S = S2)
+    structure Y303 = TryUnpack(val b = false val x = P30.x signature S = S3)
+    structure Y310 = TryUnpack(val b = true  val x = P31.x signature S = S0)
+    structure Y311 = TryUnpack(val b = true  val x = P31.x signature S = S1)
+    structure Y312 = TryUnpack(val b = false val x = P31.x signature S = S2)
+    structure Y313 = TryUnpack(val b = false val x = P31.x signature S = S3)
+
+    structure Y400 = TryUnpack(val b = true  val x = P40.x signature S = S0)
+    structure Y401 = TryUnpack(val b = false val x = P40.x signature S = S1)
+    structure Y402 = TryUnpack(val b = false val x = P40.x signature S = S2)
+    structure Y403 = TryUnpack(val b = false val x = P40.x signature S = S3)
+    structure Y410 = TryUnpack(val b = true  val x = P41.x signature S = S0)
+    structure Y411 = TryUnpack(val b = true  val x = P41.x signature S = S1)
+    structure Y412 = TryUnpack(val b = false val x = P41.x signature S = S2)
+    structure Y413 = TryUnpack(val b = false val x = P41.x signature S = S3)
+
+    structure Y500 = TryUnpack(val b = true  val x = P50.x signature S = S0)
+    structure Y501 = TryUnpack(val b = false val x = P50.x signature S = S1)
+    structure Y502 = TryUnpack(val b = false val x = P50.x signature S = S2)
+    structure Y503 = TryUnpack(val b = false val x = P50.x signature S = S3)
+    structure Y520 = TryUnpack(val b = true  val x = P52.x signature S = S0)
+    structure Y521 = TryUnpack(val b = false val x = P52.x signature S = S1)
+    structure Y522 = TryUnpack(val b = true  val x = P52.x signature S = S2)
+    structure Y523 = TryUnpack(val b = false val x = P52.x signature S = S3)
+
+    structure Y600 = TryUnpack(val b = true  val x = P60.x signature S = S0)
+    structure Y601 = TryUnpack(val b = false val x = P60.x signature S = S1)
+    structure Y602 = TryUnpack(val b = false val x = P60.x signature S = S2)
+    structure Y603 = TryUnpack(val b = false val x = P60.x signature S = S3)
+    structure Y630 = TryUnpack(val b = true  val x = P63.x signature S = S0)
+    structure Y631 = TryUnpack(val b = false val x = P63.x signature S = S1)
+    structure Y632 = TryUnpack(val b = false val x = P63.x signature S = S2)
+    structure Y633 = TryUnpack(val b = true  val x = P63.x signature S = S3)
+
+    (* The following Yxxx should fail, but don't in Operette 2 *)
+
+    (* Does not work yet... *)
+
+    structure X000 = Unpack(val x = P00.x signature S = S0)
+    structure X200 = Unpack(val x = P20.x signature S = S0)
+    structure X600 = Unpack(val x = P60.x signature S = S0)
+    signature S4 = S0 where type t = X000.t (* should be <> X0.t = int *)
+    signature S5 = S0 where type t = X200.t (* should be <> X2.t *)
+    signature S6 = S0 where type t = X600.t (* should be <> X6.t *)
+(*
+    structure Y004 = TryUnpack(val b = true  val x = P00.x signature S = S4)
+    structure Y005 = TryUnpack(val b = false val x = P00.x signature S = S5)
+    structure Y006 = TryUnpack(val b = false val x = P00.x signature S = S6)
+    structure Y104 = TryUnpack(val b = true  val x = P10.x signature S = S4)(**)
+    structure Y105 = TryUnpack(val b = false val x = P10.x signature S = S5)
+    structure Y106 = TryUnpack(val b = false val x = P10.x signature S = S6)
+    structure Y204 = TryUnpack(val b = false val x = P20.x signature S = S4)
+    structure Y205 = TryUnpack(val b = true  val x = P20.x signature S = S5)
+    structure Y206 = TryUnpack(val b = false val x = P20.x signature S = S6)
+    structure Y304 = TryUnpack(val b = true  val x = P30.x signature S = S4)(**)
+    structure Y305 = TryUnpack(val b = false val x = P30.x signature S = S5)
+    structure Y306 = TryUnpack(val b = false val x = P30.x signature S = S6)
+    structure Y404 = TryUnpack(val b = true  val x = P40.x signature S = S4)(**)
+    structure Y405 = TryUnpack(val b = false val x = P40.x signature S = S5)
+    structure Y406 = TryUnpack(val b = false val x = P40.x signature S = S6)
+    structure Y504 = TryUnpack(val b = false val x = P50.x signature S = S4)
+    structure Y505 = TryUnpack(val b = true  val x = P50.x signature S = S5)(**)
+    structure Y506 = TryUnpack(val b = false val x = P50.x signature S = S6)
+    structure Y604 = TryUnpack(val b = false val x = P60.x signature S = S4)
+    structure Y605 = TryUnpack(val b = false val x = P60.x signature S = S5)
+    structure Y606 = TryUnpack(val b = true  val x = P60.x signature S = S6)
+*)
+    val _ = TextIO.print "Finished. (Press Return) "
+    val _ = TextIO.inputLine(TextIO.stdIn)
+    val _ = OS.Process.exit(OS.Process.success)
+end

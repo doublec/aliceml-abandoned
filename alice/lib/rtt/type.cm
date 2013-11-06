@@ -1,0 +1,29 @@
+Group
+	structure Name
+	structure Label
+	structure Path
+	structure PathSet
+	structure PathMap
+	signature TYPE
+	structure Type
+
+	structure PervasiveType
+
+	structure PPPath
+	structure PPType
+is
+	../utility/sources.cm
+	pp-misc.cm
+	name.cm
+	label.cm
+	path.cm
+
+	TYPE-sig.aml
+	Type.aml
+
+	PERVASIVE_TYPE-sig.aml
+	MkPervasiveType.aml
+	PervasiveType.aml
+
+	PP_TYPE-sig.aml
+	PPType.aml

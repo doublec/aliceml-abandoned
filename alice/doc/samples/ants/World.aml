@@ -1,0 +1,362 @@
+import structure Ant from "Ant"
+import structure Instructions from "Instructions"
+import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+
+structure World =
+  struct
+
+(*  structure AntMap = MkHashImpMap Int*)
+
+  exception Debug of int
+
+  type cell = {rocky : bool,
+               ant : Ant.ant option ref,
+               food : int ref,
+               redMarkers : bool array,
+               blackMarkers : bool array,
+               redHill : bool,
+               blackHill : bool}
+
+  fun emptyCell() = {rocky = false,
+                     ant = ref NONE,
+                     food = ref 0,
+                     redMarkers = Array.array(6, false),
+                     blackMarkers = Array.array(6, false),
+                     redHill = false,
+                     blackHill = false}
+
+  type pos = int * int
+
+  (* world = x_size * cell array * map of ants *)
+  type world = int * cell array * Ant.ant array
+
+  
+  val updateCellVR = ref (fn (w, x, y) => ())
+
+  fun updateCellV a = (!updateCellVR) a
+ 
+  fun setUpdateCellV f = updateCellVR := f
+
+
+  (* Managing the world *)
+
+  fun newWorld(x_size, y_size) = (x_size,
+                                  Array.array(x_size*y_size,emptyCell()),
+                                  Array.array(1000, Ant.emptyAnt))
+
+  fun sizeOfTheWorld(xs, cells,_) = (xs, Array.length cells div xs)
+
+  fun indexToCoords(xs, i) = (i mod xs, i div xs)
+
+  fun getNoOfAnts((_, cells,_):world) =
+      Array.foldl (fn (c:cell,n) =>
+                      case !(#ant c) of NONE => n
+                                      | SOME _ => n+1)
+                  0 cells
+
+  fun getCellAt((xs, cells,_):world, x,y) =
+      Array.sub(cells, xs*y+x)
+
+  fun initCellAt(w as (xs, cells,antMap):world, x,y, cell) =
+      (Array.update(cells, xs*y+x, cell);
+       Option.app (fn a => Array.update(antMap,#id a, a)) (!(#ant cell));
+       updateCellV (w, x, y))
+
+  (* Geometry *)
+  local open Instructions
+        open Ant
+        fun even x = x mod 2 = 0
+  in
+  fun turn(Left, d) =
+      (case d of E => NE | SE => E | SW => SE | W => SW | NW => W | NE => NW)
+    | turn(Right, d) =
+      (case d of E => SE | SE => SW | SW => W | W => NW | NW => NE | NE => E)
+  fun adjacentCell(x,y, E) = (x+1, y)
+    | adjacentCell(x, y, SE) =
+      if even y then (x,y+1) else (x+1,y+1)
+    | adjacentCell(x, y, SW) =
+      if even y then (x-1,y+1) else (x,y+1)
+    | adjacentCell(x, y, W) = (x-1,y)
+    | adjacentCell(x, y, NW) =
+      if even y then (x-1,y-1) else (x,y-1)
+    | adjacentCell(x, y, NE) =
+      if even y then (x,y-1) else (x+1,y-1)
+  end
+
+  fun sensedCell(x,y, dir, Instructions.Here) = (x,y)
+    | sensedCell(x,y, dir, Instructions.Ahead) = adjacentCell(x,y, dir)
+    | sensedCell(x,y, dir, Instructions.LeftAhead) =
+      adjacentCell(x,y, turn(Instructions.Left, dir))
+    | sensedCell(x,y, dir, Instructions.RightAhead) =
+      adjacentCell(x,y, turn(Instructions.Right, dir))
+
+  (* Biology *)
+  fun antAt(world, x,y) = valOf (!(#ant (getCellAt(world, x,y))))
+(*  fun setState(world, pos, s) = Ant.setState(antAt(world, pos), s)
+  fun setResting(world, pos, r) = Ant.setResting(antAt(world, pos), r)
+  fun setDirection(world, pos, d) = Ant.setDirection(antAt(world, pos), d)
+  fun setHasFood(world, pos, h) = Ant.setHasFood(antAt(world, pos), h)*)
+
+  (* Geography *)
+  fun rocky(world, x,y) = #rocky (getCellAt(world, x,y))
+
+  fun someAntIsAt(world, x,y) = !(#ant (getCellAt(world, x,y))) <> NONE
+
+  fun setAntAt(world as (_,_,antMap), x,y, a : Ant.ant) =
+      let
+          val cell = getCellAt(world, x,y)
+          val ant = #ant cell
+      in
+          Ant.setCoords(a, x,y);
+          ant := SOME a;
+          updateCellV (world, x, y)
+      end
+
+  fun clearAntAt(world, x, y) =
+      let
+          val cell = getCellAt(world, x,y)
+          val ant = #ant cell
+      in
+          ant := NONE;
+          updateCellV (world, x, y)
+      end
+
+  fun findAnt((_,_,antMap):world, id) = Array.sub(antMap,id)
+
+  fun killAntAt(world, x,y) =
+      let
+          val ant = antAt(world, x,y)
+      in
+          Ant.setCoords(ant, ~1,~1);
+          clearAntAt(world, x,y)
+      end
+
+  fun foodAt(world, x,y) = !(#food (getCellAt(world, x,y)))
+  fun setFoodAt(world, x, y, f) = 
+      (#food (getCellAt(world, x,y)) := f;
+       updateCellV (world, x, y))
+             
+  fun anthillAt(world, x,y, Ant.Red) =
+      #redHill (getCellAt(world, x,y))
+    | anthillAt(world, x,y, Ant.Black) =
+      #blackHill (getCellAt(world, x,y))
+    
+  (* Chemistry *)
+  fun changeMarkerAt(world, x, y, Ant.Red, marker, flag) =
+          (Array.update(#redMarkers (getCellAt(world, x,y)),
+                       marker, flag);
+           updateCellV (world, x, y))
+    | changeMarkerAt(world, x, y, Ant.Black, marker, flag) =
+          (Array.update(#blackMarkers (getCellAt(world, x,y)),
+                       marker, flag);
+           updateCellV (world, x, y))
+
+
+  fun setMarkerAt(w,x,y,c,m) = changeMarkerAt(w,x,y,c,m,true)
+  fun clearMarkerAt(w,x,y,c,m) = changeMarkerAt(w,x,y,c,m,false)
+
+  fun checkMarkerAt(world, x,y, Ant.Red, marker) =
+      Array.sub(#redMarkers (getCellAt(world,x,y)), marker)
+    | checkMarkerAt(world, x,y, Ant.Black, marker) =
+      Array.sub(#blackMarkers (getCellAt(world,x,y)), marker)
+  fun checkAnyMarkerAt(world, x,y, Ant.Red) =
+      Array.exists (fn x => x)
+                   (#redMarkers (getCellAt(world,x,y)))
+    | checkAnyMarkerAt(world, x,y, Ant.Black) =
+      Array.exists (fn x => x)
+                   (#blackMarkers (getCellAt(world,x,y)))
+
+  (* Phenomenology *)
+  local
+      open Instructions
+  in
+  fun cellMatches(world, x,y, Friend,         color) =
+      someAntIsAt(world,x,y) andalso Ant.getColor(antAt(world,x,y))=color
+    | cellMatches(world, x,y, Foe,            color) =
+      someAntIsAt(world,x,y) andalso Ant.getColor(antAt(world,x,y))<>color
+    | cellMatches(world, x,y, FriendWithFood, color) =
+      someAntIsAt(world,x,y)
+      andalso Ant.getColor(antAt(world,x,y))=color
+      andalso Ant.getHasFood(antAt(world,x,y))
+    | cellMatches(world, x,y, FoeWithFood,    color) =
+      someAntIsAt(world,x,y)
+      andalso Ant.getColor(antAt(world,x,y))<>color
+      andalso Ant.getHasFood(antAt(world,x,y))
+    | cellMatches(world, x,y, Food,           color) =
+      foodAt(world,x,y) > 0
+    | cellMatches(world, x,y, Rock,           _    ) = rocky(world,x,y)
+    | cellMatches(world, x,y, Marker m,       color) =
+      checkMarkerAt(world, x,y, color, m)
+    | cellMatches(world, x,y, FoeMarker,      color) =
+      checkAnyMarkerAt(world, x,y, Ant.otherColor color)
+    | cellMatches(world, x,y, Home,           color) =
+      anthillAt(world, x,y, color)
+    | cellMatches(world, x,y, FoeHome,        color) =
+      anthillAt(world, x,y, Ant.otherColor color)
+  end
+
+  (* Martial Arts *)
+  fun adjacentAnts(world, x,y, c) =
+      foldl (fn (d,n) => let val (x',y') = adjacentCell(x,y, d) in
+                             if someAntIsAt(world, x',y') andalso
+                                Ant.getColor(antAt(world, x',y')) = c
+                             then n+1 else n
+                         end) 0 Ant.directions
+  fun checkForSurroundedAntAt(world, (x,y)) =
+      if someAntIsAt(world, x,y) then
+          let val a = antAt(world, x,y) in
+              if adjacentAnts(world,x,y, Ant.otherColor(Ant.getColor a)) >= 5 then
+                  (killAntAt(world, x,y);
+                   setFoodAt(world, x,y,
+                             foodAt(world, x,y) + 3 +
+                             (if Ant.getHasFood a then 1 else 0)))
+              else ()
+          end
+      else ()
+  fun checkForSurroundedAnts(world, x,y) =
+      (checkForSurroundedAntAt(world, (x,y));
+       app (fn d => checkForSurroundedAntAt(world, adjacentCell(x,y, d)))
+       Ant.directions)
+
+
+	
+	fun dirToString Ant.E = "0"
+	| dirToString Ant.SE = "1"
+	| dirToString Ant.SW = "2"
+	| dirToString Ant.W = "3"
+	| dirToString Ant.NW = "4"
+	| dirToString Ant.NE = "5"
+	
+		
+	fun antToString (a:Ant.ant) = 
+		
+		(case Ant.getColor(a) of Ant.Red => "red ant of id "
+		 | Ant.Black => "black ant of id "
+		) ^ 
+		Int.toString (Ant.getId a) ^
+		", dir " ^ dirToString (Ant.getDirection a) ^
+		", food " ^ (if (Ant.getHasFood a) then "1" else "0") ^
+		", state " ^ Int.toString (Ant.getState a) ^
+		", resting " ^ Int.toString (Ant.getResting a)
+
+	
+	
+	val marksToString :(bool array -> string ) = Array.foldli ( fn (i,b,s) => if b then s^(Int.toString i) else s  ) ""
+	val orMarks = Array.foldl (fn (b,r) => if b then true else r ) false
+	
+	fun cellToString (c:cell) =
+	if #rocky(c) then "rock"
+	else 
+		(if !(#food c) >0 then (Int.toString (!(#food c)) )^ " food; "
+		else ""
+		)^
+		(if (#redHill c) then "red hill; "
+		else if (#blackHill c) then "black hill; "
+		else ""
+		)^
+		(if orMarks (#redMarkers c) then "red marks: " ^ (marksToString (#redMarkers c)) ^ "; "
+		else ""
+		)^
+		(if orMarks (#blackMarkers c) then "black marks: " ^ (marksToString (#blackMarkers c)) ^ "; "
+		else ""
+		)^
+		(case !(#ant c) of NONE => ""
+		| SOME(a) => antToString a
+		)
+		
+	fun printWorld((xs,cells,_):world) =
+            Array.appi (fn (i,c) =>
+                           let val (x,y) = indexToCoords(xs,i) in
+                               print ("cell ("^Int.toString x^", "^
+                                      Int.toString y^"): "^
+                                      cellToString c^"\n")
+                           end) cells
+
+	fun printOnlyAnts((xs,cells,_):world) =
+            Array.appi (fn (i,c) =>
+                           let val (x,y) = indexToCoords(xs,i) in
+                               case !(#ant c) of NONE => ()
+                                            | SOME _ =>
+                                   print ("cell ("^Int.toString x^", "^
+                                      Int.toString y^"): "^
+                                      cellToString c^"\n")
+                           end) cells
+	
+	fun cellToChar (c:cell) = 	
+	if #rocky(c) then "*"
+	else (case !(#ant c) of SOME(a) =>
+			(case (Ant.getColor a, Ant.getHasFood a, !(#food c) ) 
+			 of (Ant.Red, false, 0) => "r"
+			 | (Ant.Red, false, _) => "m"
+			 | (Ant.Red, true, _) => "R"
+			 | (Ant.Black, false, 0) => "b"
+			 | (Ant.Black, false, _) => "c"			 
+			 | (Ant.Black, true, _) => "B"		  
+			)
+		| _ =>
+			if !(#food c) >0 then (Int.toString (!(#food c)) )
+			else if (#redHill c) then "-"
+			else if (#blackHill c) then "+"
+			else if orMarks (#redMarkers c) then "."
+			else if orMarks (#blackMarkers c) then ","	
+			else " "
+		)
+
+	fun drawWorld((xs,cells,_):world) =
+            (Array.appi (fn (i,c) =>
+                            let val (x,y) = indexToCoords(xs,i) 
+                           	val _ = if (x=0) then
+                           	    	    if y mod 2 = 0 then print "\n" 
+                           	    	    else print "\n "
+                           	        else ()
+                            in
+                                print ((cellToChar c)^" ")
+                            end) cells;
+             print "\n")
+
+        fun statistics((xs,cells,antMap):world) =
+            Array.foldl (fn (c, stats) =>
+                            let
+                                val stats = if #redHill c then {stats where redScore=
+                                                                (#redScore stats)+
+                                                                (!(#food c))}
+                                            else stats
+                                val stats = if #blackHill c then {stats where blackScore=
+                                                                  (#blackScore stats)+
+                                                                  (!(#food c))}
+                                            else stats
+                                val stats = case !(#ant c) of
+                                                NONE => stats
+                                              | SOME {color=Ant.Red,...} =>
+                                                {stats where redSurvivors=
+                                                 (#redSurvivors stats)+1}
+                                              | SOME {color=Ant.Black,...} =>
+                                                {stats where blackSurvivors=
+                                                 (#blackSurvivors stats)+1}
+                            in
+                                stats
+                            end) {redScore=0, redSurvivors=0,
+                                  blackScore=0, blackSurvivors=0} cells
+
+        fun printStats world =
+            let
+                val {redScore,redSurvivors,
+                     blackScore, blackSurvivors} = statistics world
+            in
+                print "Statistics\n";
+                print "----------\n";
+                print ("Red survivors: \t"^Int.toString redSurvivors^"\n");
+                print ("Red score: \t"^Int.toString redScore^"\n");
+                print ("Black survivors: \t"^Int.toString blackSurvivors^"\n");
+                print ("Black score: \t"^Int.toString blackScore^"\n")
+            end
+
+
+	fun appWorld(w as (xs,cells,_):world, f) =
+            Array.appi (fn (i,c) =>
+                            let val (x,y) = indexToCoords(xs,i) 
+                            in
+                                f (w, x, y)
+                            end) cells
+
+  end

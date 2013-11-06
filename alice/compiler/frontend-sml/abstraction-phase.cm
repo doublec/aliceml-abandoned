@@ -1,0 +1,26 @@
+Group is
+
+	../../lib/utility/sources.cm
+	../../lib/rtt/name.cm
+	../../lib/rtt/type.cm
+	../../lib/rtt/interface.cm
+	../infrastructure/sources.cm
+
+	input-grammar.cm
+	../frontend-common/abstract-grammar.cm
+
+	BIND_ENV-sig.aml
+	BindEnv.aml
+	BIND_ENV_FROM_SIG-sig.aml
+	BindEnvFromSig.aml
+
+	ABSTRACTION_ERROR-sig.aml
+	AbstractionError.aml
+
+	INFIX-sig.aml
+	Infix.aml
+	SHARING-sig.aml
+	Sharing.aml
+
+	ABSTRACTION_PHASE-sig.aml
+	MkAbstractionPhase.aml

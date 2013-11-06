@@ -1,0 +1,52 @@
+structure Protocol =
+struct
+    type nick = string
+
+    datatype message_kind = 
+        M_BROADCAST
+    |   M_PRIVATE of nick list
+
+    type content    = string
+
+    type message = {
+        sender:     nick,
+        kind:       message_kind,
+        content:    content
+    }
+
+    type server_interface = {
+        send:       message -> unit,
+        
+        disconnect: unit -> unit
+    }
+
+    
+    type client_interface = {
+        nick:       nick,
+
+        accepted:   server_interface -> unit,
+        (** [accepted package] get's called by server iff the server accepts 
+            this client. (After a connect request via SERVER_CONNECTOR.connect)
+          *)
+          
+        receive:    message -> unit,
+        (** [recieve msg] called every time this client recieves a message.
+          *)
+
+        connected:      nick  -> unit,
+        (** [connected nick] is called when another client with nick [nick]
+            connects. *)
+
+        disconnected:   nick -> unit,
+        (** [disconnected nick] is called when another client with nick [nick]
+            disconnects. *)
+
+        error:          string -> unit
+        (** [error msg] ... *)
+    }
+
+    signature SERVER_CONNECTOR =
+    sig
+        val connect:    client_interface -> unit    
+    end
+end

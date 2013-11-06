@@ -1,0 +1,77 @@
+import signature GDK from "x-alice:/lib/gtk/GDK-sig"
+import signature GTK from "x-alice:/lib/gtk/GTK-sig"
+import signature COMPONENT_MANAGER
+   from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+
+structure Egg =
+   struct
+	val f = BinIO.openIn "egg.txt"
+
+	val str : string = Byte.bytesToString (BinIO.inputAll f)
+
+	signature TOPLEVEL_IT =
+	    sig
+		val it : unit -> unit
+	    end
+
+	(* hack to avoid loading Gtk when running egg.aml *)
+	signature GDK =
+	sig
+	    type object
+            structure Pixbuf :
+            sig
+	        val newFromInline : int * string * bool -> object 
+            end
+	end
+	signature GTK =
+	sig
+	    type object
+            structure WindowType :
+            sig
+                datatype t = POPUP | TOPLEVEL
+            end
+            structure Window :
+            sig
+	        val new : WindowType.t -> object
+	        val setTitle : object * string -> unit
+            end
+            structure Image :
+            sig
+	        val newFromPixbuf : object -> object
+            end
+            structure Container :
+            sig
+	        val add : object * object -> unit
+            end
+            structure Widget :
+            sig
+	        val showAll : object -> unit
+            end
+	end
+
+	functor MkToplevelIt (CM : COMPONENT_MANAGER) : TOPLEVEL_IT =
+	    struct
+		structure GtkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gtk"
+					 signature S = (structure Gtk : GTK))
+		structure GdkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gdk"
+					 signature S = (structure Gdk : GDK where type object = GtkComp.Gtk.object))
+		structure Gtk = GtkComp.Gtk
+		structure Gdk = GdkComp.Gdk
+		fun it () =
+		    let
+		     	val mw = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+		     	val _ = Gtk.Window.setTitle(mw,"Alice Herself")
+			val buf = Gdk.Pixbuf.newFromInline(~1, str, false)
+			val img = Gtk.Image.newFromPixbuf buf
+		    in
+			Gtk.Container.add (mw, img);
+			Gtk.Widget.showAll mw
+		    end
+	    end
+
+	structure ToplevelIt = Component.Create(signature S = TOPLEVEL_IT
+						structure F = MkToplevelIt)
+
+	val _ = Component.save("ToplevelIt."^Pickle.extension, ToplevelIt.component)
+	val _ = OS.Process.exit OS.Process.success
+   end

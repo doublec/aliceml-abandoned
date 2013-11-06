@@ -1,0 +1,142 @@
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
+ *
+ * $Log$
+ * Revision 1.8  2001-01-17 13:38:46  kornstae
+ * Fixed to work with --rtt-level=full (thanks to Andreas).
+ *
+ * Revision 1.7  2001/01/15 17:52:20  kornstae
+ * Imports do not need to mention the extension any more.
+ *
+ * Revision 1.6  2001/01/15 15:42:05  kornstae
+ * Converted to Alice sources as well.
+ *
+ * Revision 1.5  2000/03/30 13:37:26  rossberg
+ *
+ * Switched arguments in Join functors because sharing broke with our move to
+ * structural datatypes. :-(
+ *
+ * Revision 1.4  1999/11/15 12:21:54  rossberg
+ * Reverted to original state because we can deal with sharing now.
+ *
+ * Revision 1.3  1999/11/02 16:09:35  rossberg
+ * Ups.
+ *
+ * Revision 1.2  1999/11/02 15:52:03  rossberg
+ * Replaced sharing constraints by where constraints. I marked the original
+ * code with (*SHAR ...*).
+ *
+ * Revision 1.1  1999/10/04 09:44:08  kornstae
+ * Moved ML-YACC files here from distribution
+ *    to give them a unique location for bootstrapping.
+ *
+ * Revision 1.1.1.1  1997/01/14 01:38:04  george
+ *   Version 109.24
+ *
+ * Revision 1.1.1.1  1996/01/31  16:01:42  george
+ * Version 109
+ * 
+ *)
+
+import
+    signature PARSER_DATA
+    signature LEXER
+    signature LR_PARSER
+    signature PARSER
+    signature ARG_LEXER
+    signature ARG_PARSER
+from "base-sig"
+
+(* functor Join creates a user parser by putting together a Lexer structure,
+   an LrValues structure, and a polymorphic parser structure.  Note that
+   the Lexer and LrValues structure must share the type pos (i.e. the type
+   of line numbers), the type svalues for semantic values, and the type
+   of tokens.
+*)
+
+functor Join(structure ParserData: PARSER_DATA
+	     structure Lex : LEXER
+	     structure LrParser : LR_PARSER
+	     sharing type ParserData.LrTable.table = LrParser.LrTable.table
+	     sharing type ParserData.Token.LrTable.table = LrParser.Token.LrTable.table
+	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
+	     sharing type Lex.UserDeclarations.pos = ParserData.pos
+	     sharing type Lex.UserDeclarations.token = ParserData.Token.token
+)
+		 : PARSER =
+struct
+    structure Token = ParserData.Token
+    structure Stream = LrParser.Stream
+ 
+    exception ParseError = LrParser.ParseError
+
+    type arg = ParserData.arg
+    type pos = ParserData.pos
+    type result = ParserData.result
+    type svalue = ParserData.svalue
+    val makeLexer = LrParser.Stream.streamify o Lex.makeLexer
+    val parse = fn (lookahead,lexer,error,arg) =>
+	(fn (a,b) => (ParserData.Actions.extract a,b))
+     (LrParser.parse {table = ParserData.table,
+	        lexer=lexer,
+		lookahead=lookahead,
+		saction = ParserData.Actions.actions,
+		arg=arg,
+		void= ParserData.Actions.void,
+	        ec = {is_keyword = ParserData.EC.is_keyword,
+		      noShift = ParserData.EC.noShift,
+		      preferred_change = ParserData.EC.preferred_change,
+		      errtermvalue = ParserData.EC.errtermvalue,
+		      error=error,
+		      showTerminal = ParserData.EC.showTerminal,
+		      terms = ParserData.EC.terms}}
+      )
+     val sameToken = Token.sameToken
+end
+
+(* functor JoinWithArg creates a variant of the parser structure produced 
+   above.  In this case, the makeLexer take an additional argument before
+   yielding a value of type unit -> (svalue,pos) token
+ *)
+
+functor JoinWithArg(structure ParserData: PARSER_DATA
+	     structure Lex : ARG_LEXER
+	     structure LrParser : LR_PARSER
+	     sharing type ParserData.LrTable.table = LrParser.LrTable.table
+	     sharing type ParserData.Token.LrTable.table = LrParser.Token.LrTable.table
+	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
+	     sharing type Lex.UserDeclarations.pos = ParserData.pos
+	     sharing type Lex.UserDeclarations.token = ParserData.Token.token
+)
+		 : ARG_PARSER  =
+struct
+    structure Token = ParserData.Token
+    structure Stream = LrParser.Stream
+
+    exception ParseError = LrParser.ParseError
+
+    type arg = ParserData.arg
+    type lexarg = Lex.UserDeclarations.arg
+    type pos = ParserData.pos
+    type result = ParserData.result
+    type svalue = ParserData.svalue
+
+    val makeLexer = fn s => fn arg =>
+		 LrParser.Stream.streamify (Lex.makeLexer s arg)
+    val parse = fn (lookahead,lexer,error,arg) =>
+	(fn (a,b) => (ParserData.Actions.extract a,b))
+     (LrParser.parse {table = ParserData.table,
+	        lexer=lexer,
+		lookahead=lookahead,
+		saction = ParserData.Actions.actions,
+		arg=arg,
+		void= ParserData.Actions.void,
+	        ec = {is_keyword = ParserData.EC.is_keyword,
+		      noShift = ParserData.EC.noShift,
+		      preferred_change = ParserData.EC.preferred_change,
+		      errtermvalue = ParserData.EC.errtermvalue,
+		      error=error,
+		      showTerminal = ParserData.EC.showTerminal,
+		      terms = ParserData.EC.terms}}
+      )
+    val sameToken = Token.sameToken
+end;

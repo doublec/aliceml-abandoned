@@ -1,0 +1,24 @@
+Group
+
+    functor MkValuePropagationPhase
+
+is
+
+    ../../bootstrap/value.cm
+    ../../lib/utility/sources.cm
+    ../../lib/rtt/name.cm
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+
+    flat-grammar.cm
+    arity.cm
+    intermediate-aux.cm
+    output-flat-grammar.cm
+    specialize.cm
+
+    PRIM_OPS-sig.aml
+    PrimOps.aml
+    NAME_FUNS-sig.aml
+    NameFuns.aml
+    VALUE_PROPAGATION_PHASE-sig.aml
+    MkValuePropagationPhase.aml

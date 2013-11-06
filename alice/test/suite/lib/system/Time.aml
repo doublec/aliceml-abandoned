@@ -1,0 +1,186 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+import structure Time      from "x-alice:/lib/system/Time"
+
+structure TestTime :> TESTSUITE = (* the time test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    open Time
+
+    fun testToFromString () = 
+	let
+	    fun getTime () = 
+		(Thread.sleep (valOf (fromString "0.010"));
+		 now ())
+
+	    fun toFromString x = valOf (fromString (toString x))
+
+	    fun test' 0 = ()
+	      | test' i =
+		(Test.test (fn x => x = toFromString x) (getTime ());
+		 test' (Int.-(i,1)))
+		
+	in
+	    test' 100
+	end
+
+    fun testToString () =
+	let
+	    val t = Time.fromSeconds (Int.toLarge 1)
+	in
+	    Test.test (fn x => Time.toString x = "1.000") t
+	end
+
+    fun testFromString () = 
+	let 
+	     val t = Time.fromString "1.000"
+	     val t = valOf t
+	     val t = Time.toSeconds t
+	 in
+	     (Test.test (fn x => x = Int.toLarge 1 handle _ => false) t;
+	      Test.test (fn _ => (Time.fromString "1") = NONE) ())
+	 end
+
+    fun testCompare () =
+        let
+	    val t1 = now ()
+	    val _  = Thread.sleep (valOf (fromString "0.500"))
+	    val t2 = now ()
+	in
+	    (Test.test (fn x => compare (#1 x, #2 x) = #3 x) (t1, t2, LESS);
+	     Test.test (fn x => compare (#1 x, #2 x) = #3 x) (t1, t1, EQUAL);
+	     Test.test (fn x => compare (#1 x, #2 x) = #3 x) (t2, t1, GREATER))
+	end
+
+    fun testFmt () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScan () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testZeroTime () =
+	Test.test (fn _ => toString (zeroTime) = "0.000") ()
+
+    fun testToFromMilliseconds () = 
+	let
+	    val t = now ()
+	in 
+	    Test.test (fn x => x = fromMilliseconds (toMilliseconds x)) t
+	end
+
+    fun testToFromSeconds () = 
+	let
+	    val t = now ()
+	in
+	    Test.test (fn _ => 
+			  Time.fromMilliseconds ((Time.toMilliseconds t) 
+						 div (Int.toLarge 1000) * 
+						 (Int.toLarge 1000)) = 
+			  fromSeconds (toSeconds t)) t
+	end
+
+    fun testLess () =
+	let
+	    val t1 = now ()
+	    val _  = Thread.sleep (valOf (fromString "0.010"))
+	    val t2 = now ()
+	in
+	    (Test.test (fn (x, y) => x < y) (t1, t2);
+	     Test.test (fn t => zeroTime < t) t1)
+	end
+
+    fun testGreater () =
+	let
+	    val t1 = now ()
+	    val _  = Thread.sleep (valOf (fromString "0.010"))
+	    val t2 = now ()
+	in
+	    (Test.test (fn (x, y) => x > y) (t2, t1);
+	     Test.test (fn t => t > zeroTime) t1)
+	end
+
+    fun testArithmetic () =
+	let
+	    val t1 = Time.now ()
+	    val _  = Thread.sleep (valOf (fromString "0.500"))
+	    val t2 = Time.now ()
+	    fun testPlus (x, y) = 
+		Time.toMicroseconds (x + y) = IntInf.+(Time.toMicroseconds x, Time.toMicroseconds y)
+	    fun testMinus (x, y) =
+		Time.toMicroseconds (x - y) = IntInf.-(Time.toMicroseconds x, Time.toMicroseconds y)
+	in
+	    (Test.test (fn x => testPlus x) (t1, t2);
+	     Test.test (fn x => testMinus x) (t2, t1))
+	end
+
+    fun testToFromMicroseconds () = 
+	let
+	    val t = now ()
+	in 
+	    Test.test (fn x => x = fromMicroseconds (toMicroseconds x)) t
+	end
+
+    fun testEqual () = 
+	let
+	    val t = now ()
+	in 
+	    Test.test (fn x => equal(x, x)) t
+	end
+
+    fun testToFromReal () = 
+	let
+	    val t = now ()
+	in 
+	    Test.test (fn x =>x = fromReal (toReal x)) t
+	end
+
+    fun testToFromNanoseconds () = 
+	let
+	    val t = now ()
+	in 
+	    Test.test (fn x => x = fromNanoseconds (toNanoseconds x)) t
+	end
+
+    fun testHash () = 
+	let
+	    val t = now ()
+	in
+	    Test.test (fn x => Time.hash x = IntInf.hash (Time.toMilliseconds x) handle _ => false) t
+	end
+
+
+    val suite = ("Time", [("toFromString", testToFromString),
+			  ("toString", testToString),
+			  ("fromString", testFromString),
+                          ("compare", testCompare),
+			  ("less", testLess),
+			  ("greater", testGreater),
+                          ("equal", testEqual),
+			  ("hash", testHash),
+			  ("toFromNanoseconds", testToFromNanoseconds),
+			  ("toFromMicroseconds", testToFromMicroseconds),
+			  ("toFromMilliseconds", testToFromMilliseconds),
+			  ("toFromReal", testToFromReal),
+			  ("toFromSeconds", testToFromSeconds),
+			  ("fmt", testFmt),
+			  ("scan", testScan),
+			  ("arithmetic", testArithmetic),
+			  ("zeroTime", testZeroTime)])
+end

@@ -1,0 +1,9 @@
+import signature MY_COMPONENT from "MY_COMPONENT-sig"
+
+structure MyComponent :> MY_COMPONENT =
+    struct
+	val _ = TextIO.print "Evaluating MyComponent\n"
+
+	fun fak 0 = 1
+	  | fak i = i * fak (i - 1)
+    end

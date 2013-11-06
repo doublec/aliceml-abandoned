@@ -1,0 +1,33 @@
+(*
+ * Computation of hamming numbers using lazy streams.
+ *)
+
+import val print from "x-alice:/TextIO"
+
+open Hole
+
+fun map (f, xs) =
+    byneed (fn () =>
+	    case xs of
+		x::xr => f x::map (f, xr))
+
+fun merge (xs, ys) =
+    byneed (fn () =>
+	    case (xs, ys) of
+		(x::xr, y::yr) =>
+		    if x = y then x::merge (xr, yr)
+		    else if x < y then x::merge (xr, ys)
+		    else y::merge (xs, yr))
+
+fun makeStream () =
+    let
+	val rest = hole ()
+	val hamming = 1::rest
+    in
+	fill (rest, merge (map (fn i => 2 * i, hamming),
+			   merge (map (fn i => 3 * i, hamming),
+				  map (fn i => 5 * i, hamming))));
+	hamming
+    end
+
+val _ = print (Int.toString (List.nth (makeStream (), 100)) ^ "\n")

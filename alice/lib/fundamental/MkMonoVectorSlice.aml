@@ -1,0 +1,62 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                   from "Pervasive"
+import __primitive type int and list           from "ToplevelTypes"
+import functor MkVectorSlice                   from "MkVectorSlice"
+import __primitive signature MONO_VECTOR_SLICE from "MONO_VECTOR_SLICE-sig"
+
+functor MkMonoVectorSlice(type elem
+			  type vector
+			  type slice
+			  val vlength :   vector -> int
+			  val vsub :      vector * int -> elem
+			  val vextract :  vector * int * int -> vector
+			  val vtabulate : int * (int -> elem) -> vector
+			  val vfromList : elem list -> vector
+			  val vconcat :   vector list -> vector) =
+let
+    structure MonoVectorSlice =
+    struct
+	structure VectorSlice = MkVectorSlice(
+	    type 'a vector = vector
+	    type 'a elem   = elem
+	    val vlength    = vlength
+	    val vsub       = vsub
+	    val vextract   = vextract
+	    val vtabulate  = vtabulate
+	    val vconcat    = vconcat
+	    val vfromList  = vfromList
+	)
+	open VectorSlice
+
+	type elem   = elem
+	type vector = vector
+	type slice  = elem slice
+	type t      = slice
+    end
+
+    __primitive
+	functor Cast (structure X : MONO_VECTOR_SLICE signature S) : S = "Cast"
+in
+    Cast (
+	signature S = MONO_VECTOR_SLICE
+			where type elem         = elem
+			  and type vector       = vector
+			  and type slice        = slice
+	structure X = MonoVectorSlice
+    )
+end

@@ -1,0 +1,30 @@
+Group
+	structure Name
+	structure Label
+	structure Path
+	structure PathSet
+	structure PathMap
+	structure Type
+	signature INF
+	structure Inf
+
+	structure PPPath
+	structure PPType
+	structure PPInf
+	structure PPMismatch
+is
+	../utility/sources.cm
+	pp-misc.cm
+	fixity.cm
+	label.cm
+	path.cm
+	type.cm
+
+	INF-sig.aml
+	Inf.aml
+
+	PP_INF-sig.aml
+	PPInf.aml
+	PP_MISMATCH-sig.aml
+	PPMismatch.aml
+

@@ -1,0 +1,408 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestString :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun strGen0 _ = Gen.string 1
+    fun strGen1 _ = Gen.string (Random.int (String.maxSize div 25))
+    val allGenString = [strGen0, strGen1]
+    val allGenStrFreq = [(12,strGen0), (4,strGen1)]
+
+    fun testMaxSize () =
+	Test.test (fn x => x = (0xfffff0 - 1) * 4) String.maxSize
+
+    fun testSize () =
+	(Test.test (fn s => String.size s = 0) "";
+	 Test.test (fn s => String.size s = 3) "abc";
+	 Gen.try 100 (Gen.oneOfFreq allGenStrFreq)
+	       (Test.test (fn s => List.length (explode s) = String.size s )))
+
+    fun testCompare () =
+	let
+	    fun test' (nil, nil)     = EQUAL
+	      | test' (nil,  _ )     = LESS
+	      | test' ( _ , nil)     = GREATER
+	      | test' (c1::s1, c2::s2) = if c1 = c2 then test' (s1, s2)
+					 else Char.compare (c1, c2)
+	in
+	    Test.test (fn (s1, s2) => String.compare (s1, s2) = 
+				      test' (explode s1, explode s2)) 
+		      (strGen1 (), strGen1 ())
+	end
+
+    fun testExtract () =
+	let
+	    fun t' (s, i, NONE) = String.substring (s, i, String.size s - i)
+	      | t' (s, i, SOME x) = String.substring (s, i, x)
+
+	    fun t (a, b, c) = 
+		 String.extract (a, b, c) = t' (a, b, c)
+		        handle Subscript =>
+		            a = "" orelse b < 0 orelse
+			    (if Option.isSome c
+			     then ((valOf c) < 0 orelse 
+				   b + (valOf c) > String.size a)
+			     else b > String.size a)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.string, Gen.int, Gen.option Gen.int))
+	        (Test.test t)
+	end
+
+    fun testIsPrefix () =
+	let
+	    fun t (s1, s2) = String.isPrefix s1 (s1 ^ s2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.string)) (Test.test t)
+	end
+
+    fun testIsSuffix () =
+	let
+	    fun t (s1, s2) = String.isSuffix s2 (s1 ^ s2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.string)) (Test.test t)
+	end
+
+    fun testIsSubstring () =
+	Gen.try 100 (Gen.oneOfFreq allGenStrFreq)
+	(Test.test 
+	     (fn s => 
+		 let
+		     fun r () = Random.int (String.size s + 1)
+		     fun max (r1, r2) = if r1 > r2 then r1 else r2
+		     fun min (r1, r2) = if r1 < r2 then r1 else r2
+		     fun test' () = 
+			 let
+			     val r1 = r ()
+			     val r2 = r ()
+			     val m1 = min (r1, r2)
+			     val m2 = max (r1, r2)
+			 in
+			     (String.isSubstring 
+			            (String.substring (s, m1, m2 - m1)) s) 
+			     andalso (String.isSubstring "" s)
+			 end
+		 in
+		     test' ()
+		 end))
+
+    fun testImplodeExplode () =
+	Gen.try 100 (Gen.oneOfFreq allGenStrFreq)
+		(Test.test (fn s => String.implode (String.explode s) = s))
+
+    fun testImplode () =
+	let
+	    fun t s = String.concat (List.map String.str s) = String.implode s
+	in
+	    Gen.try 100 Gen.string (Test.test (fn s => t (explode s)))
+	end
+
+    fun testEqual () =
+	let
+	    fun t (nil    , nil     ) = true
+	      | t (nil    ,  _      ) = false
+	      | t (   _   , nil     ) = false
+	      | t (s1::sl1, s2::sl2 ) = if Char.equal(s1, s2)
+					    then t (sl1, sl2)
+					else false
+	in
+	    Gen.try 100 (Gen.pair (Gen.string, Gen.string)) 
+	      (Test.test (fn (s1, s2) => String.equal (s1, s2) = 
+			                 t (explode s1,  explode s2)))
+	end
+
+    fun testSubstring () =
+	let
+	    fun t (s, i, j) = if i > 0 then t (List.tl s, i - 1, j)
+			      else List.take (s, j)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.string, Gen.int, Gen.int))
+	    (Test.test (fn (s, i, j) => String.substring (s, i, j) =
+			             implode (t (explode s, i, j))
+				     handle Subscript => i < 0 orelse 
+					 j < 0 orelse 
+					 String.size (s) < (i + j)))
+	end
+
+    fun testTokens () =
+	let
+	    fun t' _   nil    s = (s, nil)
+	      | t' d (x::xs)  s = if d x
+				      then (s, x::xs)
+				  else t' d xs (s ^ (String.str x))
+
+	    fun t _ nil xs = if List.null xs then [] else xs
+	      | t d  s  xs = if d (List.hd s)
+				  then 
+				      let 
+					  val (a, b) = (t' d (List.tl s) "")
+				      in
+					  if a <> "" then t d b (a :: xs)
+					  else t d b xs
+				      end
+			     else
+				 let 
+				     val (a, b) = (t' d s "")
+				 in
+				     if a <> "" then t d b (a :: xs)
+					  else t d b xs
+				 end
+
+	    fun h c x = x = c
+	in
+	    Gen.try 100 (Gen.pair (Gen.char, Gen.string)) 
+	    (Test.test (fn (c, s) => String.tokens (h c) s = 
+			              List.rev (t (h c) (explode s) [])))
+	end
+
+    fun testTranslate () =
+	let
+	    fun t f s = String.concat (List.map f (String.explode s))
+
+	    fun f c = String.str (Char.chr ((Char.ord c + 5) mod Char.maxOrd))
+	in
+	    Gen.try 1000 Gen.string 
+	       (Test.test (fn s => String.translate f s = t f s))
+	end
+
+    fun testTabulate () =
+	let
+	    fun t (n, f) = String.tabulate (n, f) = 
+		String.implode (List.tabulate (n, f))
+		     handle Size => n < 0 orelse String.maxSize < n
+
+	    fun f i = Char.chr ((i + 5) mod Char.maxOrd)
+	in
+	    Gen.try 1000 Gen.int (Test.test (fn i => t (i, f)))
+	end
+
+    fun testStr () =
+	let
+	    fun t c = c = List.hd (String.explode (String.str c))
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testArithmetic () =
+	let
+	    fun tS'' nil = false
+	      | tS'' xs  = Char.< (List.hd xs)
+	    
+	    fun tS' (nil, nil) xs = tS'' (List.rev xs)
+	      | tS' (nil,  _ ) _  = true
+	      | tS' ( _ , nil) _  = false
+	      | tS' (chr1::c1, chr2::c2) xs = 
+		  if Char.equal (chr1, chr2) then tS' (c1, c2) xs
+		      else tS' (c1, c2) ((chr1, chr2)::xs)
+
+	    fun tS (s1, s2) = tS' (String.explode s1, String.explode s2) []
+
+	    fun tG    s     = Bool.not (tS s orelse String.equal s)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string , Gen.string))
+	      (Test.test (fn s => String.< s = tS s andalso 
+			          String.> s = tG s))
+	end
+
+    fun testToFromWide () =
+	let
+	    fun t s = s = String.fromWide (String.toWide s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testToString () =
+	let
+	    fun t s = String.toString s = String.translate Char.toString s
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testFromString () = 
+	let
+	    fun t s = String.fromString s = 
+		      StringCvt.scanString String.scan s 
+		        handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+    fun testScan () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScanC () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToCString () =
+	let
+	    fun t s = String.toCString s = String.translate Char.toCString s
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testFromCString () = 
+	let
+	    fun t s = String.fromCString s = 
+		      StringCvt.scanString String.scanC s
+		        handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testCollate () =
+	let
+	    fun t (c1, c2) = if Char.>(c1, c2)
+				 then GREATER
+			     else if Char.equal(c1, c2) then EQUAL
+				  else LESS
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.string)) 
+	      (Test.test (fn x => String.compare x = String.collate t x))
+	end
+
+    fun testFields () =
+	let
+	    fun t' _   nil    s = (s, nil)
+	      | t' d (x::xs)  s = if d x
+				      then (s, x::xs)
+				  else t' d xs (s ^ (String.str x))
+
+	    fun t _ nil xs = if List.null xs then [""] else xs
+	      | t d  s  xs = if d (List.hd s)
+				  then 
+				      let 
+					  val (a, b) = (t' d (List.tl s) "")
+				      in
+					  t d b (a :: xs)
+				      end
+			     else
+				 let 
+				     val (a, b) = (t' d s "")
+				 in
+				     t d b (a :: xs)
+				 end
+
+	    fun h c x = x = c
+	in
+	    Gen.try 100 (Gen.pair (Gen.char, Gen.string)) 
+	    (Test.test (fn (c, s) => String.fields (h c) s = 
+			              (if explode s = nil then [""]
+				       else if List.hd (explode s) = c 
+				      then List.rev (t (h c) (explode s) [""])
+				      else List.rev (t (h c) (explode s) []))))
+	end
+
+    fun testSub () =
+	let
+	    fun t (s, i) = if i < 0 orelse String.size s <= i
+			       then NONE
+			   else SOME (List.nth (explode s, i))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.int)) 
+	       (Test.test 
+		 (fn x => String.sub x = valOf (t x) 
+		                handle Subscript => Option.isNone (t x)))
+	end
+
+    fun testConcat () =
+	let
+	    fun t1 (s1, s2, s) = 
+		let
+		    val a = Random.int (String.size s)
+		    val b = Random.int a
+		in
+		    String.substring (s, 0, String.size s1) = s1 andalso
+		    String.substring (s, String.size s1, String.size s2) = s2
+		end
+	    fun t2 (s1, s2) = 
+		if String.size s1 + String.size s2 < String.maxSize
+		    then SOME (implode (List.concat [explode s1, explode s2]))
+		else NONE
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.string))
+	      (Test.test (fn (s1, s2) => 
+			     (t1 (s1, s2, s1 ^ s2) andalso
+			      s1 ^ s2 = (valOf (t2 (s1, s2)))
+			          handle Size => Option.isNone (t2 (s1, s2)))))
+	end
+
+    fun testConcat2 () =
+	let
+	    fun t nil     x = SOME x
+	      | t (s::sl) x = if String.size x + String.size s > String.maxSize
+				  then NONE
+			      else t sl (x ^ s)
+	in
+	    Gen.try 10 (Gen.list Gen.string) 
+	        (Test.test (fn sl => String.concat sl = valOf (t sl "")
+		        	handle Size => Option.isNone (t sl "")))
+	end
+
+    fun testConcatWith () =
+	let
+	    fun t (s, nil)      x = x
+	      | t (s, [s2])     x = x ^ s2
+	      | t (s, (s2::xs)) x = t (s, xs) (x ^ s2 ^ s)
+	in
+	Gen.try 100 (Gen.pair (Gen.string, Gen.list Gen.string)) 
+		 (Test.test (fn x => Fn.uncurry String.concatWith x = t x ""))
+	end
+
+    fun testMap () =
+	let
+	    fun t f s = String.implode (List.map f (String.explode s))
+	    fun test c = Char.chr ((Char.ord c + 5) mod Char.maxOrd)
+	in
+	    Gen.try 1000 Gen.string 
+	        (Test.test (fn s => (String.map Fn.id s = t Fn.id s andalso
+			             String.map test s = t test s)))
+	end
+
+
+    val suite = ("String", [("size", testSize),
+			    ("arithmetic", testArithmetic),
+			    ("compare", testCompare),
+			    ("isPrefix", testIsPrefix),
+			    ("substring", testSubstring),
+			    ("extract", testExtract),
+			    ("concatWith", testConcatWith),
+			    ("scanC", testScanC),
+			    ("tokens", testTokens),
+			    ("toCString", testToCString),
+			    ("fromCString", testFromCString),
+			    ("tabulate", testTabulate),
+			    ("scan", testScan),
+			    ("equal", testEqual),
+			    ("translate", testTranslate),
+			    ("isSuffix", testIsSuffix),
+			    ("collate", testCollate),
+			    ("isSubstring", testIsSubstring),
+			    ("concat2", testConcat2),
+			    ("str", testStr),
+			    ("sub", testSub),
+			    ("implodeExplode", testImplodeExplode),
+			    ("implode", testImplode),
+			    ("toString", testToString),
+			    ("fromString", testFromString),
+			    ("concat", testConcat),
+			    ("maxSize", testMaxSize),
+			    ("toFromWide", testToFromWide),
+			    ("map", testMap),
+			    ("fields", testFields)])
+end

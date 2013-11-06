@@ -1,0 +1,205 @@
+VALUE
+=====
+
+The basic building block of the pickling and component implementation is an
+internal structure encapsulating the runtime value representation:
+
+signature VALUE =
+  sig
+    type t
+    exception TypeError
+    val apply:	t * t -> t	(* TypeError *)
+  end
+
+The only operation available is application, needed by the Komponist to evaluate
+components. Otherwise, values are only created by the compiler backend, or the
+runtime, respectively.
+
+
+PICKLING
+========
+
+The lowest layer of pickling/components is a structure with the following
+signature, providing an untyped, unsafe view on pickling:
+
+signature RAW_PICKLING =
+  sig
+    exception Corrupt
+
+    val pickle :	outstream * 'a -> unit		(* Io *)
+    val unpickle :	instream -> 'a			(* Corrupt, Io *)
+  end
+
+We can build typed pickles as an abstraction on top of it:
+
+signature TYPED_PICKLING(type sign) =
+  sig
+    exception Corrupt = RawPickling.Corrupt (* includes type inconsistencies *)
+
+    val pickle :	outstream * sign * Value.t -> unit	(* Io *)
+    val unpickle :	instream -> sign * Value.t	(* Corrupt, Io *)
+  end
+
+Conceptually, a pickle always is a structure value. Basic values have to be
+wrapped into a structure to be pickled (of course, some convenient interface is
+possible to automate this - as well as an optimized representation for such
+cases).
+
+Consistency of typed pickles is ensured by applying some checksum or
+cryptographic signature to the value/signature pair. This garuantees that
+unpickling only succeeds for pickles written by the pickle method.
+
+The typed pickling module is parmeterized over the representation of signature
+values itself, since they are of no further interest.
+
+
+COMPONENTS
+==========
+
+Components are a straightforward generalization of typed pickles. Instead of
+typed pickles we have:
+
+signature COMPONENT(type sign) =
+  sig
+    type t = (sign * Url.t) list * sign * Value.t
+
+    exception Corrupt
+
+    val write :	outstream * t -> unit	(* Io *)
+    val read :	instream -> t		(* Corrupt, Io *)
+  end
+
+The object itself has to be a functor with arguments corresponding to the import
+list. An ordinary pickle now is just the special case of a functor with an empty
+import list and no computational effect (just returning the constant structure).
+
+Everything else remains as for typed pickles. There is no need to separate both
+concepts.
+
+Components are represented as curried functions over all import components.
+Components with no import are unary functions ignoring their argument. Any value
+is suitable to execute the component, in particular the function itself.
+
+Note: One could imagine building components at higher level on top of typed
+pickles. A component would be a structure with the following signature scheme:
+
+  sig
+    val url_1 : Url.t
+    val ...
+    val url_n : Url.t
+
+    signature IMPORT_1
+    signature ...
+    signature IMPORT_n
+    signature RESULT
+
+    structure Body : fct(_:IMPORT_1) -> ... -> fct(_:IMPORT_n) -> RESULT
+  end
+
+Unfortunately, the general signature is not expressible within the language.
+
+
+REPRESENTATION OF SIGNATURES
+============================
+
+Since every external value is lifted to the module level, we do not need to deal
+with runtime types, but only with runtime signatures. The representation of
+signatures is kept as abstract as possible:
+
+signature SIGNATURE =
+  sig
+    type sign
+    type t = sign
+    val matches: t * t -> bool
+  end
+
+The only operation required in the context of the Komponist is matching. Of
+course, the actual implementation of signatures used in the compiler's
+elaborator will be reused, but this is transparent to the rest of the compiler.
+
+
+THE KOMPONIST
+=============
+
+The Komponist is responsible for loading and linking components. It can be seen
+as a module as follows:
+
+signature COMPOSER(type sign) =
+  sig
+    val loadStat :	Url.t -> sign
+    val loadDyn :	Url.t * sign -> Value.t
+    ...
+  end
+
+The first function is used by the compiler frontend to access the signature
+information of a component. It resolves the URL and reads the static part of a
+component.
+
+The second function is more involved. It lazily loads the requested component,
+and matches its signature against the expected one. Moreover it performs (lazy)
+import chasing, transitively loading all imported components and also checking
+the consistency of signatures.
+
+The Komponist is parameterised over the concrete representation of signatures.
+To perform signature matching it is further functorised to be supplied with an
+appropriate functionality:
+
+functor Composer(type sign  val matches: sign * sign -> bool) :
+        COMPOSER(type sign = sign)
+
+
+ELABORATION
+===========
+
+The abstraction and elaboration phase of the compiler frontend are
+parameterised by a COMPOSER module:
+
+  functor AbstractionPhase(Composer: COMPOSER(type sign = StatEnv.sign)) : ...
+
+  functor ElaborationPhase(Composer: COMPOSER(type sign = Sig.t)) : ...
+
+Through this module they access the static information of the components
+appearing in import declarations. The auxiliary module StatEnv calculates a
+suitable binding environment from a signature (Note: currently this means
+that fixity specifications will not pass component boundaries - have to fix
+that later).
+
+
+DYNAMIC
+=======
+
+Because they are unsafe, the value and pickling modules will be unavailable to
+the general programmer. She has to rely on dynamic types:
+
+signature DYNAMIC =
+  sig
+    type dynamic
+    type t = dynamic
+
+    exception Cast
+
+    functor Create(signature S  structure S : S) : sig val x : dynamic end
+    functor Cast(val x : dynamic  signature S) : S	(* Cast *)
+  end
+
+To reify signatures into first-class signature description values and
+backwards, the compiler will internally use the following two primitive
+functors:
+
+  functor DynamicSig(signature S) : sig val s : Sig.t end
+  functor StaticSig(val s : Sig.t) : sig signature S end
+
+
+PICKLING LIBRARY
+================
+
+For type safe pickling the library will provide something along the lines of
+
+signature PICKLE =
+  sig
+    functor Load(val url : Url.t  signature S) : S
+    functor Save(val url : Url.t  signature S  structure S : S) : UNIT
+  end
+
+This reads and writes components. Many more convenient functions can be build on
+top of it.

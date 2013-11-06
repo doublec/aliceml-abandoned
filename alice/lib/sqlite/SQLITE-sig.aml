@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Type from "x-alice:/lib/rtt/Type"
+
+signature SQLITE = sig
+    type db
+    exception SQLError of string
+    exception TypeError of string
+
+    val opendb : string -> db
+    val closedb : db -> unit
+    val query' : Type.t -> db * string -> 'a list
+
+end

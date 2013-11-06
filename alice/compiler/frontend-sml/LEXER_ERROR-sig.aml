@@ -1,0 +1,22 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature LEXER_ERROR =
+sig
+    type token
+    type error
+
+    exception Error of (int * int) * error
+    exception EOF   of (int * int) -> token
+
+    val error :	(int * int) * error -> 'a
+end

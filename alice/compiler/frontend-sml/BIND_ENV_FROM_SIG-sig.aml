@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source  from "../infrastructure/Source"
+import structure Inf     from "../../lib/rtt/Inf"
+import structure BindEnv from "BindEnv"
+
+signature BIND_ENV_FROM_SIG =
+sig
+    type sign = Inf.sign
+    val envFromSig :	Source.region * sign -> BindEnv.t
+end

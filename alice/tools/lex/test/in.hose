@@ -1,0 +1,174 @@
+import structure Lexer      from "x-alice:/lib/lex/Lexer"
+
+fun e () = OS.Process.exit OS.Process.success
+
+val out = ref TextIO.stdOut 
+
+fun print s = TextIO.output (!out, s)
+
+
+
+regexp
+    formatting = [" \t\n\011\012\013"]+
+and letter     = ["A-Za-z"]
+and symbol     = ["-!%&$#+/:<=>?@\\~`|*^"]
+and digit      = ["0-9"]
+and hexdigit   = ["0-9a-fA-F"]
+and posdecint  =  digit +
+and poshexint  = "0x" hexdigit +
+and negdecint  = "~" posdecint
+and neghexint  = "~" poshexint
+and decint     =  posdecint  |  negdecint
+and hexint     =  poshexint  |  neghexint
+and decword    = "0w" digit +
+and hexword    = "0wx" hexdigit +
+
+and exp        = "E" | "e"
+and real       = ( decint "." digit + ( exp  decint )?) |
+               ( decint  exp  decint )
+and numericlab = ["1-9"] digit *
+and alphanumid =  letter ( letter  |  digit  | ["_'"])*
+and symbolicid =  symbol +
+and id         =  alphanumid  |  symbolicid
+and tyvar      = "'"( letter  |  digit  | ["_'"])*
+and longid     = ( alphanumid ".")+ ( id |"="|"*")
+
+and printable  = [^"\000-\032\"\127\\"]
+and escape     = "\\a" | "\\b" | "\\t" | "\\n" | "\\v" | "\\f" | "\\r" |
+	       ("\\^"["@-_"])  | ("\\" digit {3} )  | ("\\u" hexdigit {4}) |
+	       "\\\"" | "\\\\"
+and gap        = ("\\" formatting "\\")
+and stringchar =  printable  | " " |  escape
+and string     = "\""( stringchar  |  gap )*"\""
+and char       = "#\"" gap * stringchar  gap *"\""
+
+
+
+val EOF = ref false
+
+val nesting = ref 0
+
+lexer lex =
+    formatting 	=> (print yytext )
+  | "#"		=> (print yytext )
+  | "("		=> (print yytext )
+  | ")"		=> (print yytext )
+  | "*"		=> (print yytext )
+  | ","		=> (print yytext )
+  | "->"	=> (print yytext )
+  | "..."       => (print yytext )
+  | ":"		=> (print yytext )
+  | ":>"	=> (print yytext )
+  | ";"		=> (print yytext )
+  | "="		=> (print (yytext ^ "(* line " ^ Int.toString yyline
+                                  ^ ", column " ^ Int.toString yycol ^ "*)") )
+  | "=>"	=> (print yytext )
+  | "["		=> (print yytext )
+  | "]"		=> (print yytext )
+  | "_"		=> (print yytext )
+  | "{"		=> (print yytext )
+  | "|"		=> (print yytext )
+  | "}"		=> (print yytext )
+  | "abstype"	=> (print yytext)
+  | "and"       => (print yytext)
+  | "andalso"	=> (print yytext)
+  | "as"	=> (print yytext)
+  | "case"	=> (print yytext)
+  | "datatype"	=> (print yytext)
+  | "do"	=> (print yytext)
+  | "else"	=> (print yytext)
+  | "end" 	=> (print (yytext ^ "(* line " ^ Int.toString yyline
+                                  ^ ", column " ^ Int.toString yycol ^ "*)") )
+  | "eqtype"	=> (print yytext)
+  | "exception"	=> (print yytext)
+  | "fn"	=> (print yytext)
+  | "fun" 	=> (print yytext)
+  | "functor"	=> (print yytext)
+  | "handle"	=> (print yytext)
+  | "if"	=> (print yytext)
+  | "in"	=> (print yytext)
+  | "include"	=> (print yytext)
+  | "infix"	=> (print yytext)
+  | "infixr"	=> (print yytext)
+  | "let" 	=> (print yytext)
+  | "local"	=> (print yytext)
+  | "nonfix"	=> (print yytext)
+  | "of"	=> (print yytext)
+  | "op"	=> (print yytext)
+  | "open"	=> (print yytext)
+  | "orelse"	=> (print yytext)
+  | "raise"	=> (print yytext)
+  | "rec" 	=> (print yytext)
+  | "sharing"	=> (print yytext)
+  | "sig" 	=> (print yytext)
+  | "signature"	=> (print yytext)
+  | "struct"	=> (print yytext)
+  | "structure"	=> (print yytext)
+  | "then"	=> (print yytext)
+  | "type"	=> (print yytext)
+  | "val" 	=> (print yytext)
+  | "where"	=> (print yytext)
+  | "while"	=> (print yytext)
+  | "with"	=> (print yytext)
+  | "withtype"	=> (print yytext)
+  | "0"		=> (print yytext)
+  | ["1-9"]	=> (print yytext)
+  | numericlab 	=> (print yytext)
+  | decint 	=> (print yytext)
+  | hexint 	=> (print yytext)
+  | decword 	=> (print yytext)
+  | hexword 	=> (print yytext)
+  | real 	=> (print yytext)
+  | string 	=> (print yytext)
+  | char 	=> (print yytext)
+  | tyvar 	=> (print yytext)
+  | alphanumid 	=> (print yytext)
+  | symbolicid 	=> (print yytext)
+  | longid 	=> (print yytext)
+  | "(*"        => (nesting := 1 ; comment())
+  | eof         => (EOF:= true;
+	            print ("(*\nEOF\n" ^ " line " ^ Int.toString yyline
+		         ^ ", column " ^ Int.toString yycol ^ "*)\n") ) 
+
+
+and comment =
+    "(*" => (nesting := !nesting + 1; comment() )
+  | "*)" => (nesting := !nesting - 1;
+	    if !nesting = 0 then lex() else comment() )
+  | _    => (comment() )
+
+
+fun go s =
+    let
+	val l = (EOF := false; lex s)
+    in
+	while not (!EOF) do
+	    l ()
+    end
+
+
+fun openF () = out := (TextIO.openOut "out.hose.sml")
+
+fun closeF () = (TextIO.closeOut (!out); out := TextIO.stdOut)
+
+fun make () = 
+    (openF ();
+     go (Lexer.fromStream (TextIO.openIn "in.hose.sml"));
+     closeF ()) 
+
+fun getList instream xs =
+    case TextIO.input instream of
+	"" => rev xs
+      | s  => getList instream (s :: xs)
+
+fun get () = getList (TextIO.openIn "in.hose.sml") []
+
+
+(* regcase test *)
+
+fun what () =
+    regcase (valOf ( TextIO.inputLine TextIO.stdIn) ) of
+     "b" _ *       => ( print "\nDa war ein 'b' am Anfang!\n" )
+     | _ {1,5} "\n" => ( print "\nDas '\\n' der Zeile wird mit uebergeben!\n" )
+
+

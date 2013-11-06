@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_RAND_COMPONENT =
+sig
+    structure UnsafeRand :
+    sig
+	val rand :       unit -> int
+	val srand :      int -> unit
+	val randLimits : unit -> int * int
+    end
+end

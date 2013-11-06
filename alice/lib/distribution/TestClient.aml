@@ -1,0 +1,52 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure CommandLine from "x-alice:/lib/system/CommandLine"
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import signature URL         from "x-alice:/lib/system/URL-sig"
+import structure Remote      from "Remote"
+
+signature TEST_CLIENT =
+    sig
+	val main: string list -> OS.Process.status
+    end
+
+structure TestClient :> TEST_CLIENT =
+    struct
+	fun usage () =
+	    (TextIO.output
+	     (TextIO.stdErr,
+	      "Usage: " ^ CommandLine.name () ^ " <str-url> <proxy-url>\n");
+	     OS.Process.failure)
+
+	fun main [strUrl, proxyUrl] =
+	    let
+		val _ = TextIO.print "Taking Url\n"
+		structure Url =
+		    Remote.Take(val ticket = strUrl
+				signature S = URL)
+		val _ = TextIO.print "Taking Print\n"
+		structure Print =
+		    Remote.Take(val ticket = proxyUrl
+				signature S = (val print: string -> unit))
+		val url = Url.fromString proxyUrl
+	    in
+		TextIO.print ("Proxy URL = " ^ Url.toString url ^ "\n");
+		Print.print ("Proxy URL = " ^ Url.toString url ^
+			     " (remote)\n");
+		OS.Process.success
+	    end
+	  | main _ = usage ()
+    end
+
+val _ = OS.Process.exit (TestClient.main (CommandLine.arguments ()))

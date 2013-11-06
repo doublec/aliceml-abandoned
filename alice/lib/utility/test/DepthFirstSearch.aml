@@ -1,0 +1,34 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "../../system/TextIO"
+import structure StringHashKey from "../StringHashKey"
+import structure MkHashImpMap from "../MkHashImpMap"
+import structure MkDepthFirstSearch from "../MkDepthFirstSearch"
+
+structure StringMap = MkHashImpMap(StringHashKey)
+structure DepthFirstSearch =
+    MkDepthFirstSearch(structure Key = StringHashKey
+		       structure Map = StringMap)
+
+val map: string list StringMap.t = StringMap.new ()
+
+val _ = StringMap.insert (map, "a", ["b", "d"])
+val _ = StringMap.insert (map, "b", ["c"])
+val _ = StringMap.insert (map, "c", ["g"])
+val _ = StringMap.insert (map, "d", ["e", "c"])
+val _ = StringMap.insert (map, "e", ["f", "g"])
+val _ = StringMap.insert (map, "f", ["d"])
+val _ = StringMap.insert (map, "g", [])
+
+val sss = DepthFirstSearch.search map
+val _ = List.app (fn ss => TextIO.print (List.foldl op^ "\n" ss)) sss

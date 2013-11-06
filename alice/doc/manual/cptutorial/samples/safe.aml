@@ -1,0 +1,24 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Modeling
+
+fun safe space = 
+   let
+      val letters as #[c1,c2,c3,c4,c5,c6,c7,c8,c9]= 
+          FD.intvarVec(space,9,#[(1,9)])
+      fun not_equalv vec space = Vector.appi(fn (i,x) => 
+                     post(space,FD(x) `<> `i `+ `1,FD.DOM)) vec
+   in
+      FD.distinct(space,letters,FD.DOM);
+      post(space,FD(c4)`- FD(c6) `= FD(c7),FD.DOM);
+      post(space,FD(c1)`* FD(c2)`* FD(c3)`= FD(c8)`+ FD(c9),FD.DOM);        
+      post(space,FD(c2)`+ FD(c3)`+ FD(c6)`< FD(c8),FD.DOM);
+      post(space,FD(c9)`< FD(c8),FD.DOM);
+      not_equalv letters space;
+      FD.branch(space,letters,FD.B_SIZE_MIN,FD.B_MIN);
+      {c1,c2,c3,c4,c5,c6,c7,c8,c9}
+    end 
+(* Explorer.exploreAll safe *)

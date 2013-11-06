@@ -1,0 +1,158 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Model       from "Model"
+import signature VIEW        from "VIEW-sig"
+import structure Debug       from "../../lib/system/Debug"
+import structure Socket      from "../../lib/system/Socket"
+import structure PPValue     from "../../lib/system/PPValue"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+
+structure TextView :> VIEW =
+    struct
+
+	(* Thread ID Counter *)
+	val counter = ref (~1)
+	fun getNewThreadId () = 
+	    (counter := !counter +1;
+	     !counter)
+
+	(* Structure *)
+	type view = Model.model ref * (Thread.thread * int )list ref * Socket.socket
+
+	val new = fn () => 
+	    let 
+		val promise = Promise.promise()
+	    in
+		(ref(Model.new()), ref nil, Promise.future(promise))
+	    end
+
+
+
+
+
+	val header = "****************************************************************\n" ^
+	             "****************************************************************\n"
+	val footer = header
+
+	fun stateToString state =  
+	    case state of
+		Model.BLOCKED          => "BLOCKED"
+	      | Model.RUNNABLE         => "RUNNABLE"
+	      | Model.STOPPED_RUNNABLE => "STOPPED_RUNNABLE"
+	      | Model.STOPPED_BLOCKED  => "STOPPED_BLOCKED"
+	      | Model.TERMINATED       => "TERMINATED"
+
+	fun valueListToArgumentTuple nil acc           = acc ^ ")"
+	  | valueListToArgumentTuple ((x,typ)::xs) acc = 
+	    if acc <> "("
+		then valueListToArgumentTuple xs 
+		    (acc ^ ", " ^ PrettyPrint.toString(PPValue.ppVal typ x, 80))
+	    else valueListToArgumentTuple xs (acc^PrettyPrint.toString(PPValue.ppVal typ x, 80))
+
+	fun stepPointToString step_point =
+	    case step_point of
+		Model.APP(f,typ,args) => 
+		    let val _ = ()(*Debug.print args*)
+		    in
+			"Applikation: " 
+			^PrettyPrint.toString(PPValue.ppVal typ f, 80)
+			^(valueListToArgumentTuple args "(")
+		    end
+	      | Model.COND        (b, typ) => "Konditional => " 
+		    ^PrettyPrint.toString(PPValue.ppVal typ b, 80)
+	      | Model.RAISE       (exc, typ) => "Raise => "
+		    ^PrettyPrint.toString(PPValue.ppVal typ exc, 80)
+	      | Model.HANDLER     (exc, typ) => "Handler => "
+		    ^PrettyPrint.toString(PPValue.ppVal typ exc, 80)
+	      | Model.SPAWN                  => "Spawn"
+	      | Model.UNKNOWN                => "Unknown"
+	    
+	fun stackToString acc nil = acc
+	  | stackToString acc (Model.EXIT (_,_,result,typ) :: Model.ENTRY(_,_,stp) :: xs) = 
+	    stackToString (acc ^ "\t"
+			  ^ PrettyPrint.toString(PPValue.ppVal typ result, 80)
+			  ^ "\t<- " 
+			  ^ (stepPointToString stp)
+			  ^ "\n") xs
+	  | stackToString acc (Model.EXIT (_,_,result, typ) :: Model.BREAK(_,_,stp) :: xs) =
+	    stackToString (acc ^ "\t"
+			  ^ PrettyPrint.toString(PPValue.ppVal typ result, 80)
+			  ^ "\t<- " 
+			  ^ (stepPointToString stp)
+			  ^ "\n") xs
+	  | stackToString acc (Model.ENTRY(_,_,stp) :: xs ) =
+	    stackToString (acc ^ "\t\t-> " 
+			  ^ (stepPointToString stp) 
+			  ^ "\n") xs
+	  | stackToString acc (Model.BREAK(_,_,stp) :: xs) =
+	    stackToString (acc ^ "\t\t-> " 
+			  ^ (stepPointToString stp) 
+			  ^ "\n") xs
+	  | stackToString acc ((Model.UNCAUGHT e) :: xs) =
+	    stackToString (acc ^ "\t\t-> Uncaught Exception\n") xs
+	  | stackToString acc (_::xs) = 
+	    stackToString (acc ^ "\t\t-> Unknown Event\n") xs
+	    
+
+	fun threadToString model (thread, thread_id) =
+	    let 
+		val s1 = "\n" ^ "\tThread ID: " ^ (Int.toString thread_id) ^ "\n"^
+		    "\tAktuelle Position:\n"^
+		    "\t\tZeile : "^ 
+		    Int.toString (#2(Model.getCurrentposition(model, thread))) ^
+		    "\n\t\tSpalte: "^ 
+		    Int.toString (#3(Model.getCurrentposition(model, thread))) ^
+		    "\n\t\tDatei : " ^ 
+		    #1(Model.getCurrentposition(model, thread)) ^ 
+		    "\n\tStep Punkt: " ^ 
+		    stepPointToString(Model.getCurrentStepPoint(model, thread)) ^
+		    "\n\tStatus des Threads: " ^ 
+		    stateToString(Model.getThreadState(model, thread)) ^ "\n" ^
+		    "\tAufruf Stack:\n"
+		val s2 = stackToString "" (Model.getEventStack(model, thread))
+	    in 
+		 s1 ^ s2 handle Unknown_Thread => 
+			"\tThread ist nicht unter Kontrolle des Debuggers\n"
+	    end
+
+	fun show (model, threads, socket) =
+	    let 
+		val thread_list = map (threadToString (!model)) (!threads)
+	    in
+		(TextIO.print header;
+		 map TextIO.print thread_list;
+		 TextIO.print footer)
+	    end
+
+	fun update (view as (model_ref, thread_list, socket)) thread =
+	    let
+		fun registerThread thread = 
+		    if List.exists (fn (thr, _) => thr = thread) (!thread_list)
+			then ()
+		    else thread_list := (thread, getNewThreadId()) :: (!thread_list)
+
+		val _ = 
+		    (Model.getThreadState(!model_ref, thread);
+		     registerThread thread)
+		    handle Unknown_Thread =>
+			thread_list := List.filter (fn (thr, _) => thr <> thread) (!thread_list)
+	    in 
+		show view
+	    end
+	    
+	fun initialize(view as (model_ref, thread_list, socket), model) =
+	    (Model.addView(model, update view);
+	     model_ref := model)
+
+    end

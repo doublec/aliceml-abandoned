@@ -1,0 +1,8 @@
+signature ALICE_TIMER =
+    sig
+	structure AliceTimer:
+	    sig
+		val start: unit -> unit
+		val check: unit -> int
+	    end
+    end

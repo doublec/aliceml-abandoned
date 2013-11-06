@@ -1,0 +1,98 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Explorer structure", "The <TT>Explorer</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis") ?>
+  <PRE>
+    signature EXPLORER
+    structure Explorer : Explorer</PRE>
+
+  <P>
+    The <I>Alice Explorer</I> is a graphical tool of the Alice programming
+    environment. It can run scripts and display the explored search trees.
+    It can also display the information in the computation spaces
+    associated with the nodes of the search tree.
+  <P>
+    For example, the expression
+    <PRE>Explorer.exploreAll money</PRE>
+  </P>
+  <P>
+    tells the Explorer to run the script <TT>money</TT> and explore the
+    entire search tree. The Explorer will pop up a window
+    and display the explored nodes of the search tree.
+    Choice nodes appear as blue circles, failure nodes as red boxes,
+    and solution nodes as green diamonds.
+    Fully explored subtrees not containing solution nodes are collapsed
+    into a single red triangle. 
+  </P>
+  <P>See also:
+    <A href="search.html"><TT>Search</TT></A>,
+    <A href="space.html"><TT>Space</TT></A>,
+    <A href="fd.html"><TT>FD</TT></A>,
+    <A href="modeling.html"><TT>Modeling</TT></A>,
+    <A href="fs.html"><TT>FS</TT></A>
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature EXPLORER from "x-alice:/lib/tools/EXPLORER-sig"
+    import structure Explorer from "x-alice:/lib/tools/Explorer"</PRE>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+  signature EXPLORER =
+    sig
+        type explorer
+        val init : (Space.space -> 'a) -> explorer
+        val exploreOne : (Space.space -> 'a) -> explorer
+        val exploreAll : (Space.space -> 'a) -> explorer
+        val exploreBest :
+	  (Space.space -> 'a * (Space.space * Space.space -> unit))
+	  -> explorer
+    end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>init <I>p</I><TT>
+    </DT>
+    <DD>
+      <P>Opens an explorer window, initialized with the constraint
+      problem specified in <I>p</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreOne <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Opens an explorer window, initialized with the constraint
+      problem specified in <I>p</I>, and search for the first solution.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreAll <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Opens an explorer window, initialized with the constraint
+      problem specified in <I>p</I>, and search for all solutions.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreBest (<I>p, b</I>)</TT>
+    </DT>
+    <DD>
+      <P>Opens an explorer window, initialized with the constraint
+      problem specified in <I>p</I>, and search for the best solution
+      according to the measure <I>b</I>.
+      </P>
+    </DD>
+
+  </DL>
+
+<?php footing(); ?>

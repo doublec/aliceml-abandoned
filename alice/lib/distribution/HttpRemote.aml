@@ -1,0 +1,162 @@
+    (*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url               from "x-alice:/lib/system/Url"
+import structure Http              from "x-alice:/lib/system/Http"
+import structure HttpServer        from "x-alice:/lib/system/HttpServer"
+import structure HttpClient        from "x-alice:/lib/system/HttpClient"
+import structure UnsafeRemote      from "UnsafeRemote"
+import signature REMOTE_PORT
+       structure MkRemote          from "MkRemote"
+
+local
+
+structure HttpRemotePort :> REMOTE_PORT =
+    struct
+	type ticket = Url.t
+
+	exception Port = UnsafeRemote.Port
+	exception Ticket = UnsafeRemote.Ticket
+	exception Proxy = UnsafeRemote.Proxy
+	exception SitedArgument = UnsafeRemote.SitedArgument
+	exception SitedResult = UnsafeRemote.SitedResult
+	exception Protocol = UnsafeRemote.Protocol
+	exception Remote = UnsafeRemote.Remote
+	exception Connection = UnsafeRemote.Connection
+	exception Exit = UnsafeRemote.Exit
+
+	val pickleContentType = "application/x-alice-pickle"
+
+	val portState = ref NONE
+
+	val rootUrl = lazy
+	    let
+		val p = Promise.promise ()
+		val portOpt = Ref.exchange (portState, Promise.future p)
+		val port = HttpServer.start portOpt handle e =>
+			    (Promise.fail (p, e); raise e)
+	    in
+		Promise.fulfill (p, SOME port);
+		Url.fromString ("http://" ^ UnsafeRemote.getLocalIP () ^ ":" ^
+				Int.toString port ^ "/")
+	    end
+
+	fun port () = await (!portState)
+
+	fun setPort port =
+	    let
+		val p = Promise.promise ()
+	    in
+		case Ref.exchange (portState, Promise.future p) of
+	            NONE => Promise.fulfill (p, SOME port)
+		  | some => (Promise.fulfill (p, some); raise Port)
+	    end
+
+	val counter = ref 0
+
+	fun register handler =
+	    let
+		val p = Promise.promise ()
+		val n = Ref.exchange (counter, Promise.future p)
+		val uri = Url.setPath (Url.empty, ["export", Int.toString n])
+	    in
+		Promise.fulfill (p, n + 1);
+		HttpServer.register (uri, handler);
+		Url.resolve rootUrl uri
+	    end
+
+	(* Error Handling *)
+
+	exception Response of Http.response
+
+	val ok                   = 200
+	val badRequest           = 400
+	val methodNotAllowed     = 405
+	val unsupportedMediaType = 415
+
+	fun errorResponse statusCode =
+	    Http.makeResponse
+		{statusCode,
+		 contentType = "text/plain",
+		 body = Http.reasonPhrase statusCode}
+
+	fun checkMethod (request: Http.request, method) =
+	    if #method request <> method then
+		let
+		    val response = errorResponse methodNotAllowed
+		in
+		    Http.StringMap.insert (#headers response, "Allow", method);
+		    raise Response response
+		end
+	    else ()
+
+	fun checkContentType (request: Http.request, contentType) =
+	    case Http.StringMap.lookup (#headers request, "content-type") of
+		SOME s if (s = contentType) => ()
+	      | SOME _ => raise Response (errorResponse unsupportedMediaType)
+	      | NONE => raise Response (errorResponse badRequest)
+
+	(* Provided Functionality *)
+
+	fun export packedValue =
+	    let
+		fun handler request =
+		    (checkMethod (request, "GET");
+		     Http.makeResponse
+			 {statusCode = ok,
+			  contentType = pickleContentType,
+			  body = packedValue})
+		    handle Response response => response
+	    in
+		register handler
+	    end
+
+	fun download url =
+	    let
+		val response =
+		    HttpClient.get url
+		    handle HttpClient.Authority => raise Ticket
+	    in
+		#body response
+	    end
+
+	fun exportFn f =
+	    let
+		fun handler request =
+		    (checkMethod (request, "POST");
+		     checkContentType (request, pickleContentType);
+		     Http.makeResponse
+			 {statusCode = ok,
+			  contentType = pickleContentType,
+			  body = f (#body request)})
+		    handle Response response => response
+	    in
+		register handler
+	    end
+
+	fun call (url, packedValue) =
+	    let
+		val response =
+		    HttpClient.post (url, {contentType = pickleContentType,
+					   body = packedValue})
+		    handle HttpClient.Authority => raise Ticket
+	    in
+		(*--** check "content-type" header *)
+		case #statusCode response of
+		    200 => #body response
+		  | statusCode => raise Protocol (#reasonPhrase response)
+	    end
+    end
+
+in
+    structure Remote = MkRemote(HttpRemotePort)
+end

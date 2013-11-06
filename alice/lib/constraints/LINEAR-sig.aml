@@ -1,0 +1,59 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Christian Schulte <schulte@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *   Christian Schulte, 2001
+ *   Andreas Rossberg, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD from "FD"
+
+signature LINEAR =
+    sig
+	infix  7  `*
+	infix  6  `+ `-
+	infix  5  `#
+	infix  4  `= `<> `> `>= `< `<=
+	infix  3  `<->
+
+	exception Transform of string
+
+	datatype domain_element =
+	    `` of int
+	  | `# of int * int
+
+	type domain = domain_element list
+
+	datatype term =
+	    FD of FD.fd
+	  | `  of int
+	  | `+ of term * term
+	  | `- of term * term
+	  | `* of term * term
+
+	datatype rel =
+	    `<   of term * term
+	  | `<=  of term * term
+	  | `=   of term * term
+	  | `<>  of term * term
+	  | `>=  of term * term
+	  | `>   of term * term
+	  | `<-> of rel * term
+
+	val var : domain option -> term
+	val bin : unit -> term
+	val vec : int * domain -> term vector
+
+	val distribute : FD.dist_mode * term vector -> unit
+	val distinct : term vector -> unit
+	val post : rel -> unit
+    end

@@ -1,0 +1,128 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Stack structure", "The <TT>Stack</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature STACK
+    structure Stack : STACK
+  </PRE>
+
+  <P>
+    An imperative stack abstraction.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature STACK from "x-alice:/lib/data/STACK-sig"
+    import structure Stack from "x-alice:/lib/data/Stack"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature STACK =
+    sig
+	eqtype 'a stack
+	type t = stack
+
+	exception Empty
+
+	val stack :    unit -> 'a stack
+	val clone :    'a stack -> 'a stack
+	val push :     'a stack * 'a -> unit
+	val pop :      'a stack -> 'a
+	val peek :     'a stack -> 'a option
+	val purge :    'a stack -> unit
+	val isEmpty :  'a stack -> bool
+	val size :     'a stack -> int
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>eqtype 'a stack</TT> <BR>
+      <TT>type 'a t = 'a stack</TT>
+    </DT>
+    <DD>
+      <P>The type of polymorphic stacks. Like <TT>ref</TT> and <TT>array</TT>,
+      the stack type always admits equality, independently from its
+      argument.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Empty</TT>
+    </DT>
+    <DD>
+      <P>Used to indicate invalid accesses to an empty stack. Equal to
+      <TT>List.Empty</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>stack ()</TT>
+    </DT>
+    <DD>
+      <P>Creates a new stack that is initially empty.</P>
+    </DD>
+
+    <DT>
+      <TT>clone <I>st</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a copy of the stack <TT><I>st</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>push (<I>st</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>Pushes the value <TT><I>x</I></TT> onto the stack
+      <TT><I>st</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>pop <I>st</I></TT>
+    </DT>
+    <DD>
+      <P>Removes and returns the value last pushed onto <TT><I>st</I></TT>.
+      Raises <TT>Empty</TT> if <TT><I>st</I></TT> is empty.</P>
+    </DD>
+
+    <DT>
+      <TT>peek <I>st</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>NONE</TT> if <TT><I>st</I></TT> is empty, otherwise
+      <TT>SOME <I>x</I></TT>, where <TT><I>x</I></TT> is the value last
+      pushed onto <TT><I>st</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>purge <I>st</I></TT>
+    </DT>
+    <DD>
+      <P>Removes all elements from the stack <TT><I>st</I></TT>, leaving
+      it empty.</P>
+    </DD>
+
+    <DT>
+      <TT>isEmpty <I>st</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the stack <TT><I>st</I></TT> is empty,
+      <TT>false</TT> otherwise. Equivalent to <TT>(size <I>st</I> = 0)</TT> and
+      <TT>Option.isNone (peek <I>st</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>size <I>st</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the number of values that have been pushed but not yet popped
+      from the stack <TT><I>st</I></TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

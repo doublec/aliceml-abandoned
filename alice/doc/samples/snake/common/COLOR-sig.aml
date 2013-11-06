@@ -1,0 +1,50 @@
+(* Alice Snake 2.0 - Operations on colors
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+signature COLOR = 
+sig
+
+    exception Unknown
+
+    type color 
+
+    type t = color
+
+    val equal :     t * t -> bool
+
+    val compare :   t * t -> order
+
+    val all :       color list
+    (** [all] is a list of all available colors *)
+    
+    val toString :  color -> string
+    (** [toString c] returns the [english] name of [c]. *)
+    
+    val fromString :  string -> color     (* Unknown *)
+    (** [fromString name] is the inverse operation of toString.
+        In case you apply ofString to a invalid/unknown color name
+        [Unknown] is raised.
+      *)
+
+    val rgb :   color -> real * real * real
+    (** [rgb color] returns a triple [(red, green, blue)], with
+        the usual meaning and range [0.0 - 1.0]
+      *)
+
+    val toHexStr : color -> string
+    (** [toHexStr color] returns a string value containing the
+	 hexadecimal coded rgb value with leading # 
+      *)
+
+end
+
+
+

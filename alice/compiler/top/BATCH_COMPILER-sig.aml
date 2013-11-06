@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure OS
+from "../../lib/system/OS"
+
+signature BATCH_COMPILER =
+    sig
+	val main : string list -> OS.Process.status
+    end

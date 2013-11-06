@@ -1,0 +1,276 @@
+(*
+ * Author:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+
+
+import structure Type                  from "../../lib/rtt/Type"
+import structure StampMap              from "../common/StampMap"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+import signature MINIMIZE              from "MINIMIZE-sig"
+
+
+functor MkMinimize (AbstractCodeGrammar : ABSTRACT_CODE_GRAMMAR) : MINIMIZE =
+struct
+
+    structure AbstractCodeGrammar = AbstractCodeGrammar
+
+    open AbstractCodeGrammar
+
+    type local_names = (string * Type.t) option vector
+
+
+    fun skipDebugInstrs (Coord (_, i) | Entry (_, _, i) | Exit (_, _, _, i)) = skipDebugInstrs i
+      | skipDebugInstrs instr = instr
+
+
+    (* combine adjacent LazyPolySel's that are selecting from the same idRef *)
+    fun mergeLazyPolySel instr =
+        case instr
+          of LazyPolySel (ids, idRef, labs, LazyPolySel (ids', idRef', labs', instr'))
+             => (case mergeIdRefs (idRef, idRef')
+                   of SOME idRef
+                      => LazyPolySel (Vector.concat [ids, ids'],
+                                      idRef,
+                                      Vector.concat [labs, labs'],
+                                      instr')
+                    | NONE
+                      => instr)
+           | instr
+             => instr
+
+
+    fun minimize (args, instr, localNames) =
+    let
+        (* maps old-id (array index) to new-id option *)
+        val idRenames = Array.array (Vector.length localNames, NONE)
+        val numNewIds = ref 0
+        val shared    = StampMap.map()
+
+
+        fun renameId id =
+            case Array.sub (idRenames, id)
+              of SOME id' => id'
+               | NONE => let
+                             val id' = !numNewIds
+                         in
+                             Array.update (idRenames, id, SOME id');
+                             numNewIds := id' + 1;
+                             id'
+                         end
+
+
+        val renameIds = Vector.map renameId
+
+
+        fun renameIdDef Wildcard   = Wildcard
+          | renameIdDef (IdDef id) = IdDef (renameId id)
+
+
+        val renameIdDefs = Vector.map renameIdDef
+
+
+        fun renameIdRef (r as (Immediate _ | Global _)) = r
+          | renameIdRef (Local id)                      = Local (renameId id)
+          | renameIdRef (LastUseLocal id)               = LastUseLocal (renameId id)
+
+
+        val renameIdRefs = Vector.map renameIdRef
+
+
+        fun renameEntryPoint ep =
+            case ep
+              of ConEntry (t, idRef, idRefs)
+                 => ConEntry (t, renameIdRef idRef, renameIdRefs idRefs)
+    
+               | SelEntry (i, t, idRef)
+                 => SelEntry (i, t, renameIdRef idRef)
+
+               | StrictEntry (t, idRef)
+                 => StrictEntry (t, renameIdRef idRef)
+
+               | AppEntry (t, idRef, idRefs)
+                 => AppEntry (t, renameIdRef idRef, renameIdRefs idRefs)
+
+               | CondEntry (t, idRef)
+                 => CondEntry (t, renameIdRef idRef)
+
+               | RaiseEntry idRef
+                 => RaiseEntry (renameIdRef idRef)
+
+               | HandleEntry idRef
+                 => HandleEntry (renameIdRef idRef)
+
+               | SpawnEntry
+                 => SpawnEntry
+
+
+        fun minimizeInstr (prevCoord, instr) =
+        let
+
+            (* keep the same prevCoord for the next instr *)
+            fun keep instr =
+                minimizeInstr (prevCoord, instr)
+
+            (* introduce a new prevCoord for the next instr *)
+            fun new (coord, instr) =
+                minimizeInstr (SOME coord, instr)
+
+            (* dont use any prevCoord for the next instr *)
+            fun none instr =
+                minimizeInstr (NONE, instr)
+
+        in
+           case instr
+
+                (* remove adjacent coords, or coords that are equal to prevCoord *)
+             of Coord (coord, instr)
+                => if SOME coord = prevCoord
+                   then keep instr
+                   else (case new (coord, instr)
+                           of ins as Coord _ => ins
+                            | ins            => Coord (coord, ins))
+
+              | Entry (coord', ep, instr)
+                => Entry (coord', renameEntryPoint ep, new (coord', instr))
+
+              | Exit (coord', ep, idRef, instr)
+                => Exit (coord', ep, renameIdRef idRef, new (coord', instr))
+ 
+              | Kill (ids, instr)
+                => Kill (renameIds ids, keep instr)
+
+              | PutVar (id, idRef, instr)
+                => PutVar (renameId id, renameIdRef idRef, keep instr)
+
+              | PutNew (id, name, instr)
+                => PutNew (renameId id, name, keep instr)
+
+              | PutTag (id, nLabels, tag, idRefs, instr)
+                => PutTag (renameId id, nLabels, tag, renameIdRefs idRefs, keep instr)
+
+              | PutCon (id, idRef, args, instr)
+                => PutCon (renameId id, renameIdRef idRef, renameIdRefs args, keep instr)
+
+              | PutRef (id, idRef, instr)
+                => PutRef (renameId id, renameIdRef idRef, keep instr)
+
+              | PutTup (id, idRefs, instr)
+                => PutTup (renameId id, renameIdRefs idRefs, keep instr)
+
+              | PutPolyRec (id, labs, idRefs, instr)
+                => PutPolyRec (renameId id, labs, renameIdRefs idRefs, keep instr)
+
+              | PutVec (id, idRefs, instr)
+                => PutVec (renameId id, renameIdRefs idRefs, keep instr)
+
+              | Close (id, idRefs, tpl, instr)
+                => Close (renameId id, renameIdRefs idRefs, tpl, keep instr)
+
+              | Specialize (id, idRefs, tpl, instr)
+                => Specialize (renameId id, renameIdRefs idRefs, tpl, keep instr)
+
+              | AppPrim (name, idRefs, cont)
+                => AppPrim (name, renameIdRefs idRefs, Option.map (Pair.map (renameIdDef, keep)) cont)
+
+              | AppVar (idRef, idRefs, direct, cont)
+                => AppVar (renameIdRef idRef, renameIdRefs idRefs, direct, Option.map (Pair.map (renameIdDefs, keep)) cont)
+
+              | GetRef (id, idRef, instr)
+                => GetRef (renameId id, renameIdRef idRef, keep instr)
+
+              | GetTup (idDefs, idRef, instr)
+                => GetTup (renameIdDefs idDefs, renameIdRef idRef, keep instr)
+
+              | Sel (id, idRef, i, instr)
+                => Sel (renameId id, renameIdRef idRef, i, keep instr)
+
+              | LazyPolySel (ids, idRef, labs, instr)
+                => mergeLazyPolySel (LazyPolySel (renameIds ids, renameIdRef idRef, labs, keep instr))
+
+              | Raise idRef
+                => Raise (renameIdRef idRef)
+
+              | Reraise idRef
+                => Reraise (renameIdRef idRef)
+
+              | Try (body, a, b, hand)
+                => Try (keep body, renameIdDef a, renameIdDef b, none hand)
+
+              | EndTry instr
+                => EndTry (keep instr)
+
+              | EndHandle instr
+                => EndHandle (keep instr)
+
+              | IntTest (idRef, tests, els)
+                => IntTest (renameIdRef idRef, Vector.map (Pair.mapSnd keep) tests, keep els)
+
+              | CompactIntTest (idRef, offset, tests, els)
+                => CompactIntTest (renameIdRef idRef, offset, Vector.map keep tests, keep els)
+
+              | RealTest (idRef, tests, els)
+                => RealTest (renameIdRef idRef, Vector.map (Pair.mapSnd keep) tests, keep els)
+
+              | StringTest (idRef, tests, els)
+                => StringTest (renameIdRef idRef, Vector.map (Pair.mapSnd keep) tests, keep els)
+
+              | TagTest (idRef, nLabels, tests0, testsN, els)
+                => TagTest (renameIdRef idRef,
+                            nLabels,
+                            Vector.map (Pair.mapSnd keep) tests0,
+                            Vector.map (fn (n, d, ins) => (n, renameIdDefs d, keep ins)) testsN,
+                            keep els)
+
+              | CompactTagTest (idRef, nLabels, tests, els)
+                => CompactTagTest (renameIdRef idRef,
+                                   nLabels,
+                                   Vector.map (Pair.map (Option.map renameIdDefs, keep)) tests,
+                                   Option.map keep els)
+
+              | ConTest (idRef, tests0, testsN, els)
+                => ConTest (renameIdRef idRef,
+                            Vector.map (Pair.map (renameIdRef, keep)) tests0,
+                            Vector.map (fn (r, d, ins) => (renameIdRef r, renameIdDefs d, keep ins)) testsN,
+                            keep els)
+
+              | VecTest (idRef, tests, els)
+                => VecTest (renameIdRef idRef, Vector.map (Pair.map (renameIdDefs, keep)) tests, keep els)
+
+              | Shared (stamp, instr)
+                   (* combine adjacent Shared nodes *)
+                => StampMap.lookupOrInsert
+                    (fn s => let
+                                 val instr' = none instr
+                             in
+                                 case skipDebugInstrs instr'
+                                   of (next as Shared _) => next
+                                    | _ => Shared (s, instr')
+                             end)
+                    (shared, stamp)
+
+              | Return idRefs
+                => Return (renameIdRefs idRefs)
+        end
+
+
+       fun mkLocalNames () =
+           let
+               val localNames' = Array.array(!numNewIds, NONE)
+           in
+               Vector.appi
+                 (fn (id, v) => case Array.sub (idRenames, id)
+                                  of NONE => ()
+                                   | SOME id' => Array.update(localNames', id', v))
+                 localNames;
+               Array.vector localNames'
+           end
+
+    in
+        (renameIdDefs args,
+         minimizeInstr (NONE, instr),
+         mkLocalNames())
+    end
+
+end
+

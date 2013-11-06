@@ -1,0 +1,28 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Unix    from "x-alice:/lib/system/Unix"
+import structure Remote  from "x-alice:/lib/distribution/Remote"
+import signature PROCESS from "PROCESS-sig"
+
+structure Process :> PROCESS =
+    struct
+	fun workerSite (host, parcel) =
+	    let
+		val prog = if host = "godzilla" then "aliceprof" else "alicefast"
+		val args = [host, prog,
+			    "x-alice:/lib/distribution/search/RemoteWorker.ozf", parcel]
+	    in
+		(Unix.execute("ssh", args); ())
+	    end
+    end

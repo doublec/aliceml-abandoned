@@ -1,0 +1,203 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure AliceName      from "AliceName"
+import structure Rename         from "Rename"
+
+
+signature ALICE_TYPE =
+sig
+    datatype alice_type =
+        AT       of AliceName.alice_name
+      | AT_APPLY of alice_type list * AliceName.alice_name
+      | AT_ARROW of alice_type * alice_type
+      | AT_PROD  of alice_type list 
+      | AT_REC   of (string * alice_type) list
+
+    val toString : alice_type * AliceName.path -> string
+
+    structure Types :
+    sig
+        val word   : alice_type
+        val unit   : alice_type
+        val string : alice_type
+        val int    : alice_type
+        val char   : alice_type
+        val listOf : alice_type -> alice_type
+        val vectorOf : alice_type -> alice_type
+        val word8vector : alice_type
+        val word32 :    alice_type
+        val bool   : alice_type
+        val real   : alice_type
+        val object : alice_type
+        val gtype  : alice_type
+    end
+    
+    val fromString : string -> alice_type
+
+    val toNativeType : alice_type -> alice_type
+end
+
+structure AliceType : ALICE_TYPE =
+struct
+    datatype alice_type =
+        AT       of AliceName.alice_name
+      | AT_APPLY of alice_type list * AliceName.alice_name
+      | AT_ARROW of alice_type * alice_type
+      | AT_PROD  of alice_type list 
+      | AT_REC   of (string * alice_type) list
+
+    fun toString (at, path) =
+        case at of
+            AT name             => AliceName.toString (name, path)
+          | AT_APPLY ([arg], t) => toString'' (arg, path) ^ " " ^ 
+                                    AliceName.toString (t, path)
+          | AT_APPLY (args, t)  =>
+            assert not (null args) do
+            "(" ^ String.concatWith ", " (map (Fn.curry (Fn.flip toString) path) args) 
+          ^ ") " ^ AliceName.toString (t, path)
+          | AT_ARROW (a, b)     =>
+            toString' (a, path) ^ " -> " ^ toString (b, path)
+          | AT_PROD []          => "unit"
+          | AT_PROD tys         => 
+            String.concatWith " * " (map (Fn.curry (Fn.flip toString'') path) tys)
+          | AT_REC fields       =>
+            "{ " ^ String.concatWith ", " 
+                (map (fn (n, t) => Rename.renameField n ^ " : " ^ toString (t, path)) fields) ^
+            " }"
+
+    and toString' (at, path) =
+        case at of
+            (AT _ | AT_PROD _ | AT_REC _)  => toString (at, path)
+          | _                   => "(" ^ toString (at, path) ^ ")"
+          
+    and toString'' (at, path) =
+        case at of
+            (AT _ | AT_PROD [] | AT_REC _) => toString (at, path)
+          | _                   => "(" ^ toString (at, path) ^ ")"
+
+    
+    datatype token = STAR | ARROW | LPAR | RPAR | ID of string list * string
+
+    fun lex s = lex' (explode s, [])
+
+    and lex' (#"*" :: xs,         res) = lex' (xs, STAR :: res)
+      | lex' (#"-" :: #">" :: xs, res) = lex' (xs, ARROW :: res)
+      | lex' (#"(" :: xs,         res) = lex' (xs, LPAR :: res)
+      | lex' (#")" :: xs,         res) = lex' (xs, RPAR :: res)
+      | lex' (x :: xs,            res) =
+        if Char.isSpace x then lex' (xs, res)
+        else if Char.isAlpha x then 
+            let val (id, xs') = parseId (xs, [], [x])
+            in
+                lex' (xs', id :: res)
+            end
+        else raise Fail "lex"
+      | lex' ([],                 res) = rev res
+
+
+    and parseId ([],         path, id) = (ID (rev path, implode (rev id)), [])
+      | parseId (#"." :: xs, path, id) = parseId (xs, implode (rev id) :: path, [])
+      | parseId (x :: xs,    path, id) =
+        if Char.isAlpha x orelse Char.isDigit x then parseId (xs, path, x :: id)
+        else (ID (rev path, implode (rev id)), x :: xs)
+
+
+    fun fromString s =
+        case parseArrow (lex s) of
+            (t, [])     => t
+          | res         => (raise Fail "syntax")
+
+    and parseArrow tokens =
+        let val (ty, ts) =  parseProd tokens
+        in
+            case ts of
+                ARROW :: ts' => 
+                let val (ty2, ts'') = parseArrow ts'
+                in
+                   (AT_ARROW (ty, ty2), ts'') 
+                end
+              | _            => (ty, ts)
+        end
+        
+    and parseProd tokens =
+        let val (ty, ts)   = parseApply tokens
+            val (tys, ts') = parseProd' (ts, [])
+        in
+            case tys of
+                []      => (ty, ts)
+              | _       => (AT_PROD (ty :: tys), ts')
+        end
+        
+    and parseProd' (STAR :: ts, tys) = 
+        let val (ty, ts') = parseApply ts
+        in
+            parseProd' (ts', ty :: tys)
+        end
+      | parseProd' (ts, tys) = (tys, ts)
+
+    and parseApply ts =
+        let val (ty, ts') = parseAtom ts
+        in
+            case ts' of 
+                ID id :: ts'' => (AT_APPLY ([ty], AliceName.aliceName id), ts'')
+              | _             => (ty, ts')
+        end
+                
+    and parseAtom (LPAR :: ts) =
+        let val (ty, ts') = parseArrow ts
+        in
+            case ts' of
+                RPAR :: ts'' => (ty, ts'')
+              | _            => (raise Fail "unmatched parenthesis")
+        end
+      | parseAtom (ID id :: ts) = (AT (AliceName.aliceName id), ts)
+      | parseAtom res           = (raise Fail "syntax")
+
+
+    structure Types =
+    struct
+        val unit        = AT_PROD []
+        val word        = AT (AliceName.aliceName ([], "word"))
+        val string      = AT (AliceName.aliceName ([], "string"))
+        val int         = AT (AliceName.aliceName ([], "int"))
+        val char        = AT (AliceName.aliceName ([], "char"))
+        val bool        = AT (AliceName.aliceName ([], "bool"))
+        val real        = AT (AliceName.aliceName ([], "real"))
+        val word8vector = AT (AliceName.aliceName (["Word8Vector"], "vector"))
+        val word32      = AT (AliceName.aliceName (["Word32"], "word"))
+        val object      = AT (AliceName.aliceName ([], "object"))
+        val gtype       = AT (AliceName.aliceName ([], "gtype"))
+        fun listOf t    = AT_APPLY ([t], AliceName.aliceName ([], "list"))
+        fun vectorOf t  = AT_APPLY ([t], AliceName.aliceName ([], "vector"))
+    end
+
+    fun toNativeType (AT_PROD tys)      = AT_PROD (map toNativeType tys)
+      | toNativeType (AT_REC r)         = AT_REC (map (fn (n, t) => (n, toNativeType t)) r)
+      | toNativeType (AT_APPLY (ts, n)) = 
+        if n = AliceName.aliceName ([], "list") then AT_APPLY (map toNativeType ts, n)
+        else if n = AliceName.aliceName ([], "vector") then AT_APPLY (map toNativeType ts, n)
+        else AT (AliceName.aliceName ([], "'" ^ AliceName.name n))
+      | toNativeType (AT_ARROW (a, b)) =
+        AT_ARROW (toNativeType a, toNativeType b)
+      | toNativeType (at as AT n) =
+        if List.exists (Fn.curry op= at) [
+                Types.string, Types.unit, Types.word, Types.int,
+                Types.real, Types.char, Types.bool
+            ] then at
+            else AT (
+                AliceName.aliceName ([], "'" ^ 
+                String.concatWith "_" (map (String.map Char.toLower) 
+                        (AliceName.absolutePath n)) ^ "_" ^
+                AliceName.name n))
+end
+

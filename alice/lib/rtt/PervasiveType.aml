@@ -1,0 +1,42 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import functor MkPervasiveType from "MkPervasiveType"
+
+
+structure PervasiveType = MkPervasiveType(val labid_false	= "false"
+					  val labid_true	= "true"
+					  val typid_bool	= "bool"
+					  val typid_int		= "int"
+					  val typid_word	= "word"
+					  val typid_real	= "real"
+					  val typid_char	= "char"
+					  val typid_string	= "string"
+					  val typid_exn		= "exn"
+					  val typid_ref		= "ref"
+					  val typid_vec		= "vector"
+					  val typid_array	= "array"
+					  val typid_strict	= "strict"
+					  val typid_conarrow	= "conarrow"
+					  val typid_package	= "package"
+					  val valid_match	= "Match"
+					  val valid_bind	= "Bind"
+					  val modid_pervasive	= "__pervasive"
+
+					  val prefix_eq		= "''"
+					  val prefix_arrow	= "'a "
+					  val prefix_arrowEq	= "'a ''"
+					  val prefix_eqArrow	= "''a ''"
+					  val prefix_arrow2	= "('a,'b) "
+					  val prefix_arrow2Eq	= "('a,'b) ''"
+					  val prefix_eqArrow2	= "(''a,''b) ''"
+					 )

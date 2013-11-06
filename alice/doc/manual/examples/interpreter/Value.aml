@@ -1,0 +1,45 @@
+(*
+ * Interpreter for F+rec - Values
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Env    from "Env"
+import signature VALUE  from "VALUE-sig"
+
+structure Value :> VALUE =
+struct
+    datatype oper  = Add | Sub | Mul | Equal | Less
+		   | Add' of int | Sub' of int | Mul' of int
+		   | Equal' of int | Less' of int
+
+    datatype value =
+	  Num     of int
+	| Op      of oper
+	| Proc    of Syntax.id * Syntax.exp * value Env.env
+	| RecProc of Syntax.id * Syntax.id * Syntax.exp * value Env.env
+
+    fun constant n = Num n
+
+    exception Error
+
+    fun applyOp (Add,      Num n) = Op (Add' n)
+      | applyOp (Sub,      Num n) = Op (Sub' n)
+      | applyOp (Mul,      Num n) = Op (Mul' n)
+      | applyOp (Equal,    Num n) = Op (Equal' n)
+      | applyOp (Less,     Num n) = Op (Less' n)
+      | applyOp (Add' m,   Num n) = Num (m+n)
+      | applyOp (Sub' m,   Num n) = Num (m-n)
+      | applyOp (Mul' m,   Num n) = Num (m*n)
+      | applyOp (Equal' m, Num n) = Num (if m = n then 1 else 0)
+      | applyOp (Less'  m, Num n) = Num (if m < n then 1 else 0)
+      | applyOp _                = raise Error
+
+    val base = List.foldl (fn ((x,v),V) => Env.insert (x,v,V)) Env.empty
+		[("add",   Op Add),
+		 ("sub",   Op Sub),
+		 ("mul",   Op Mul),
+		 ("equal", Op Equal),
+		 ("less",  Op Less)]
+end

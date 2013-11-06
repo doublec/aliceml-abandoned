@@ -1,0 +1,24 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Model from "Model"
+import structure Type  from "../../lib/rtt/Type"
+
+signature VIEW =
+    sig
+	type view
+	
+	val new        : unit  -> view
+	val initialize : view * Model.model -> unit
+	val update     : view -> Thread.thread -> unit
+
+    end

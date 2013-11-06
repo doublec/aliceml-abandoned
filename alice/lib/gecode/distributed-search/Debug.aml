@@ -1,0 +1,29 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Debug from "x-alice:/lib/gecode/search-factory/Debug"
+
+structure Debug =
+struct
+
+    open Debug
+
+    val dbCom    = newDB () (* Communication. *)
+    val dbSearch = newDB () (* Search. *)
+    val dbManag  = newDB () (* Management. *)
+    val dbSlow   = newDB () (* Slow search. *)
+
+end

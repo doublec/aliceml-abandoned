@@ -1,0 +1,32 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Contributor:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *   Leif Kornstaedt, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_INSPECTOR_COMPONENT =
+    sig
+	structure UnsafeInspector :
+	    sig
+		exception ConfigurationError
+
+		val inspect: 'a 
+		val inspectN: 'a
+		val configure: 'a
+
+		functor Inspect(signature S structure X: S): any
+		functor InspectType(type t): any
+		functor InspectSig(signature S): any
+	    end
+    end

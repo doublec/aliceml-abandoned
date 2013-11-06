@@ -1,0 +1,31 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature HASHABLE =
+sig
+    type t
+    val equal :  t * t -> bool
+    val hash :   t -> int
+end
+
+signature EQ_HASHABLE =
+sig
+    eqtype t
+    val hash :    t -> int
+end
+
+functor FromEqHashable(EqHashable : EQ_HASHABLE) : HASHABLE =
+struct
+    type t	= EqHashable.t
+    val equal	= op=
+    val hash	= EqHashable.hash
+end

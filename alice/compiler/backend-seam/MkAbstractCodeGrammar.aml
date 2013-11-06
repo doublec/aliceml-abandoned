@@ -1,0 +1,238 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Atom                  from "../../lib/data/Atom"
+import structure Type                  from "../../lib/rtt/Type"
+import structure Label                 from "../../lib/rtt/Label"
+import structure Stamp                 from "../common/Stamp"
+import structure StampMap              from "../common/StampMap"
+import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import signature VALUE                 from "VALUE-sig"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+
+functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
+    struct
+	structure Value = Value
+
+	type sign = FlatGrammar.sign
+
+	type id = int
+
+	datatype idDef =
+	    IdDef of id
+	  | Wildcard
+
+	datatype annotation =
+	    Debug of (string * Type.t) option vector * Type.t
+	  | Simple of int
+
+	type coord = int * int
+
+	type function_coord = string * string * int * int
+	
+	type liveness = int vector
+
+	type label = Atom.t
+
+	type outArity = int
+
+	datatype instr =
+	    Coord of coord * instr
+	  | Entry of coord * entry_point * instr
+	  | Exit of coord * exit_point * idRef * instr
+	  | Kill of id vector * instr
+	  | PutVar of id * idRef * instr
+	  | PutNew of id * string * instr
+	  | PutTag of id * int * int * idRef vector * instr
+	  | PutCon of id * idRef * idRef vector * instr
+	  | PutRef of id * idRef * instr
+	  | PutTup of id * idRef vector * instr
+	  | PutPolyRec of id * label vector * idRef vector * instr
+	  | PutVec of id * idRef vector * instr
+	  | Close of id * idRef vector * template * instr
+	  | Specialize of id * idRef vector * template * instr
+	  | AppPrim of value * idRef vector * (idDef * instr) option
+	  | AppVar of idRef * idRef vector * bool *
+		      (idDef vector * instr) option
+	  | GetRef of id * idRef * instr
+	  | GetTup of idDef vector * idRef * instr
+	  | Sel of id * idRef * int * instr
+	  | LazyPolySel of id vector * idRef * label vector * instr
+	  | Raise of idRef
+	  | Reraise of idRef
+	  | Try of instr * idDef * idDef * instr
+	  | EndTry of instr
+	  | EndHandle of instr
+	  | IntTest of idRef * (FixedInt.t * instr) vector * instr
+	  | CompactIntTest of idRef * FixedInt.t * instr vector * instr
+	  | RealTest of idRef * (LargeReal.t * instr) vector * instr
+	  | StringTest of idRef * (string * instr) vector * instr
+	  | TagTest of idRef * int * (int * instr) vector *
+		       (int * idDef vector * instr) vector * instr
+	  | CompactTagTest of idRef * int *
+		       (idDef vector option * instr) vector * instr option
+	  | ConTest of idRef * (idRef * instr) vector *
+		       (idRef * idDef vector * instr) vector * instr
+	  | VecTest of idRef * (idDef vector * instr) vector * instr
+	  | Shared of Stamp.t * instr
+	  | Return of idRef vector
+	and idRef =
+	    Immediate of value
+	  | Local of id
+	  | LastUseLocal of id
+	  | Global of int
+	and template =
+	    Template of function_coord * int * annotation *
+			idDef vector * outArity option * instr * liveness
+	and abstractCode =
+	    Function of function_coord * idRef vector * annotation *
+			idDef vector * outArity option * instr * liveness
+	and entry_point =
+	    ConEntry of Type.t * idRef * idRef vector
+	  | SelEntry of int * Type.t * idRef
+	  | StrictEntry of Type.t * idRef
+	  | AppEntry of Type.t * idRef * idRef vector
+	  | CondEntry of Type.t * idRef
+	  | RaiseEntry of idRef
+	  | HandleEntry of idRef
+	  | SpawnEntry
+	and exit_point =
+	    ConExit
+	  | SelExit of Type.t
+	  | StrictExit
+	  | AppExit
+	  | CondExit of Type.t
+	  | RaiseExit of Type.t
+	  | HandleExit of Type.t
+	  | SpawnExit of Type.t
+	withtype value = abstractCode Value.t
+
+
+	type t = value * (Stamp.t * Label.t) vector
+
+
+	fun sharedInArity body =
+	let
+	    val shared = StampMap.map ()
+
+            fun lmap f xs =
+                map f (Vector.toList xs)
+
+	    fun walk ins = case ins
+             of ( Raise _
+                | Reraise _
+                | Return _
+                | AppPrim (_, _, NONE)
+                | AppVar (_, _, _, NONE) )
+                => ()
+
+              | ( Coord (_, ins)
+                | Entry (_, _, ins)
+                | Exit (_, _, _, ins)
+                | Kill (_, ins)
+                | PutVar (_, _, ins)
+                | PutNew (_, _, ins)
+                | PutTag (_, _, _, _, ins)
+                | PutCon (_, _, _, ins)
+                | PutRef (_, _, ins)
+                | PutTup (_, _, ins)
+                | PutPolyRec (_, _, _, ins)
+                | PutVec (_, _, ins)
+                | Close (_, _, _, ins)
+                | Specialize (_, _, _, ins)
+                | AppPrim (_, _, SOME (_, ins))
+                | AppVar (_, _, _, SOME (_, ins))
+                | GetRef (_, _, ins)
+                | GetTup (_, _, ins)
+                | Sel (_, _, _, ins)
+                | LazyPolySel (_, _, _, ins)
+                | EndTry ins
+                | EndHandle ins )
+                => walk ins
+
+              | Try (body, _, _, hand)
+                => branch [body, hand]
+
+              | IntTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | CompactIntTest (_, _, tests, els)
+                => branch (els::Vector.toList tests)
+
+              | RealTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | StringTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | TagTest (_, _, tests0, testsN, els)
+                => branch (els::(lmap #2 tests0 @ lmap #3 testsN))
+
+              | CompactTagTest (_, _, tests, SOME els)
+                => branch (els::lmap #2 tests)
+
+              | CompactTagTest (_, _, tests, NONE)
+                => branch (lmap #2 tests)
+
+              | ConTest (_, tests0, testsN, els)
+                => branch (els::(lmap #2 tests0 @ lmap #3 testsN))
+
+              | VecTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | Shared (stamp, ins)
+                => case StampMap.lookup (shared, stamp)
+                     of SOME (n, _) => StampMap.insert (shared, stamp, (n+1, ins))
+                      | NONE => (StampMap.insert (shared, stamp, (1, ins)); walk ins)
+
+	    and branch ins =
+                app walk ins
+
+	in
+	    walk body;
+	    shared
+	end
+
+
+	fun isId (Immediate _, _)       = false
+	  | isId (Local        id', id) = id' = id
+	  | isId (LastUseLocal id', id) = id' = id
+	  | isId (Global _, _)          = false
+
+
+	fun isLocal (Local id', id) = id' = id
+          | isLocal _               = false
+
+
+	fun isLastUseLocal (LastUseLocal id', id) = id' = id
+          | isLastUseLocal _                      = false
+
+
+	fun getLocal (Immediate _)     = NONE
+	  | getLocal (Local        id) = SOME id
+	  | getLocal (LastUseLocal id) = SOME id
+	  | getLocal (Global _)        = NONE
+
+
+	fun mergeIdRefs (idRef as Local id, Local id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as LastUseLocal id,
+			 (Local id' | LastUseLocal id')) =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (Local id, idRef as LastUseLocal id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as Global id, Global id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (_, _) = NONE
+
+    end
+

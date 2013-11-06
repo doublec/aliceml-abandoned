@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+
+structure DialogUtils =
+struct
+    fun moveToMouse dialog =
+        let 
+            val display    = Gdk.Display.getDefault ()
+            val screen     = Gdk.Display.getDefaultScreen display
+            val root       = Gdk.Screen.getRootWindow screen
+            val (_, x, y, _)  = Gdk.Window.getPointer (root, 0, 0, [])
+        in
+            Gtk.Window.move (dialog, x, y)
+        end
+end
+        
+

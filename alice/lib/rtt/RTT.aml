@@ -1,0 +1,260 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label		from "../rtt/Label"
+import structure Path		from "../rtt/Path"
+import structure Fixity		from "../rtt/Fixity"
+import structure Type		from "../rtt/Type"
+import structure Inf		from "../rtt/Inf"
+import structure PervasiveType	from "../rtt/PervasiveType"
+import structure DynMatch	from "../system/DynMatch"
+
+(*DEBUG
+import structure TextIO         from "../system/TextIO"
+import structure PrettyPrint    from "../utility/PrettyPrint"
+import structure PPPath         from "PPPath"
+import structure PPType         from "PPType"
+import structure PPInf          from "PPInf"
+*)
+
+local
+    (*DEBUG
+    structure Inf =
+    struct
+	open Inf
+
+	local
+	    fun prPath name p =
+		(TextIO.print name; TextIO.print " = ";
+		 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p,
+				    76 - size name);
+		 TextIO.print "\n")
+
+	    fun prTKind name k =
+		(TextIO.print name; TextIO.print " = ";
+		 PrettyPrint.output(TextIO.stdOut, PPType.ppKind k,
+				    76 - size name);
+		 TextIO.print "\n")
+
+	    fun prInf name j =
+		(TextIO.print name; TextIO.print " = ";
+		 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j,
+				    76 - size name);
+		 TextIO.print "\n")
+	in
+	    fun extendTyp(s,p,k) =
+		let
+		    val _ = TextIO.print "### Runtime signature extension:\n"
+		    val _ = prPath "p" p
+		    val _ = prTKind "k" k
+		in
+		    Inf.extendTyp(s,p,k)
+		end
+(*
+	    fun sign s =
+		let
+		    val _ = TextIO.print "### Runtime signature injection:\n"
+		    val j = Inf.sign s
+		    val _ = prInf "j" j
+		in
+		    j
+		end
+*)
+	    fun instance(p,j) =
+		let
+		    val _ = TextIO.print "### Runtime interface instantiation:\n"
+		    val _ = prPath "p" p
+		    val _ = prInf "j" j
+		    val (j',rea) = Inf.instance(p,j)
+		    val _ = prInf "j'" j'
+		in
+		    (j',rea)
+		end
+
+	    fun match(j1,j2) =
+		let
+		    val _ = TextIO.print "### Runtime interface matching:\n"
+		    val _ = prInf "j1" j1
+		    val _ = prInf "j2" j2
+		in
+		   (Inf.match(j1,j2) before TextIO.print "-> OK\n") handle e =>
+		       (TextIO.print("-> " ^ General.exnName e ^ "\n"; raise e)
+		end
+
+	    fun narrow(j1,j2) =
+		let
+		    val _ = TextIO.print "### Runtime interface narrowing:\n"
+		    val _ = prInf "j1" j1
+		    val _ = prInf "j2" j2
+		    val j = Inf.narrow(j1,j2)
+		    val _ = prInf "j" j
+		in
+		    j
+		end
+	end
+    end
+    *)
+
+	signature RTT =
+	sig
+	    structure Label :
+	    sig
+		type lab
+
+		val fromString :	string -> lab
+	    end
+
+	    structure Path :
+	    sig
+		type path
+
+		val invent :		unit    -> path
+		val pervasive :		string  -> path
+		val fromLab :		Label.lab -> path
+		val fromString :	string  -> path
+	    end
+
+	    structure Type :
+	    sig
+		type var
+		type typ
+		type row
+		type kind
+		type constraint
+
+		val Unconstrained :	constraint
+		val Intensional :	constraint
+		val Extensional :	Path.path * Path.path list -> constraint
+
+		val starKind :		unit -> kind
+		val extKind :		unit -> kind
+		val singKind :		typ -> kind
+		val eqKind :		kind -> kind
+		val arrowKind :		kind * kind -> kind
+
+		val unknown :		kind -> typ
+		val var :		var -> typ
+		val con :		Path.path * kind -> typ
+		val arrow :		typ * typ -> typ
+		val tuple :		typ vector -> typ
+		val prod :		row -> typ
+		val sum :		row -> typ
+		val all :		var * typ -> typ
+		val exist :		var * typ -> typ
+		val lambda :		var * typ -> typ
+		val apply :		typ * typ -> typ
+		val abbrev :		typ * typ -> typ
+
+		val newVar :		kind * constraint -> var
+		val kind :		typ -> kind
+
+		val unknownRow :	unit -> row
+		val emptyRow :		unit -> row
+		val extendRow :		Label.lab * typ * row -> row
+
+		val fix :		(typ * typ) vector -> unit
+
+		val asProd :		typ -> row
+	    end
+
+	    structure Fixity :
+	    sig
+		type fix
+		type assoc
+
+		val LEFT :		assoc
+		val RIGHT :		assoc
+		val NEITHER :		assoc
+		val NONFIX :		fix
+		val PREFIX :		int -> fix
+		val POSTFIX :		int -> fix
+		val INFIX :		int * assoc -> fix
+	    end
+
+	    structure Inf :
+	    sig
+		type mod
+		type inf
+		type sign
+		type kind
+		type rea
+
+		val emptySig :		unit -> sign
+		val extendFix :		sign * Label.lab * Fixity.fix -> unit
+		val extendVal :		sign * Label.lab * Type.typ -> unit
+		val extendTyp :		sign * Path.path * Type.kind -> unit
+		val extendMod :		sign * Path.path * inf -> unit
+		val extendInf :		sign * Path.path * kind -> unit
+
+		val lookupMod :		sign * Label.lab -> inf
+		val lookupTyp' :	sign * Label.lab -> Type.typ
+		val lookupInf' :	sign * Label.lab -> inf
+
+		val mod :		Path.path * inf -> mod
+		val top :		unit -> inf
+		val con :		Path.path * kind -> inf
+		val sign :		sign -> inf
+		val arrow :		Path.path * inf * inf -> inf
+		val sing :		mod -> inf
+		val lambda :		Path.path * inf * inf -> inf
+		val apply :		inf * mod -> inf
+
+		val asSig :		inf -> sign
+		val asArrow :		inf -> Path.path * inf * inf
+
+		val groundKind :	unit -> kind
+		val depKind :		Path.path * inf * kind -> kind
+		val singKind :		inf -> kind
+
+		val kind :		inf -> kind
+		val instance :		Path.path * inf -> inf * rea
+		val match :		inf * inf -> rea
+		val infimum :		inf * inf -> inf
+
+		type mismatch
+		exception Mismatch of mismatch
+	    end
+
+	    structure PervasiveType :
+	    sig
+		val lookup :		string -> Type.typ
+	    end
+
+	    structure DynMatch :
+	    sig
+		type module
+		val match :		module * Inf.inf -> Inf.rea
+		val matchWith :		Inf.rea * module * Inf.inf -> unit
+		val strengthen :	module * Inf.inf -> Inf.inf
+		val strengthenWith :	Inf.rea * module * Inf.inf -> Inf.inf
+		val thin :		module * Inf.inf -> module
+		val seal :		module * Inf.inf -> module
+		val unpackMatch :	module * Inf.inf * Inf.inf -> module
+	    end
+	end
+in
+    (* structure is named __pervasive to avoid spurious warnings during
+     * bootstrapping (about unavailable RTTs). *)
+    structure __pervasive =
+    struct
+	structure RTT : RTT =
+	struct
+	    structure Label         = Label
+	    structure Path          = Path
+	    structure Fixity        = Fixity
+	    structure Type          = Type
+	    structure Inf           = Inf
+	    structure PervasiveType = PervasiveType
+	    structure DynMatch      = DynMatch
+	end
+    end
+end

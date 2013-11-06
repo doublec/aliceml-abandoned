@@ -1,0 +1,134 @@
+(*
+ * Interpreter for F+rec - Parser
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+(*
+ * Concrete Syntax is as follows:
+ *
+ * atexp  ::= id
+ *         |  con
+ *         |  ( exp )
+ * appexp ::= atexp
+ *         |  appexp atexp
+ * exp    ::= appexp
+ *         |  if exp1 then exp2 else exp3
+ *         |  fn x : typ => exp
+ *         |  rec x1 ( x2 : typ2 ) : typ1 => exp
+ *
+ * attyp  ::= bool
+ *         |  int
+ *         |  ( typ )
+ * typ    ::= attyp
+ *         |  attyp -> typ
+ *)
+
+import structure Token  from "Token"
+import structure Syntax from "Syntax"
+import signature PARSER from "PARSER-sig"
+
+structure Parser :> PARSER =
+struct
+    open Token
+    open Syntax
+
+    exception Error
+
+    fun match(t', t::ts)		= if t' = t then ts else raise Error
+      | match(t', [])			= raise Error
+
+    fun id(ID x :: ts)			= (x,ts)
+      | id _				= raise Error
+
+
+    fun attyp(BOOL :: ts)		= (Bool,ts)
+      | attyp(INT :: ts)		= (Int,ts)
+      | attyp(LPAR :: ts)		= let
+					      val (t,ts) = typ ts
+					      val    ts  = match(RPAR,ts)
+					  in
+					      (t,ts)
+					  end
+      | attyp _				= raise Error
+
+    and typ ts				= let
+					      val (t,ts) = attyp ts
+					  in
+					      typ' t ts
+					  end
+
+    and typ' t1 (ARROW :: ts)		= let
+					      val (t2,ts) = typ ts
+					  in
+					      (Arrow(t1,t2), ts)
+					  end
+      | typ' t1 ts			= (t1,ts)
+
+
+    fun atexp(CON c :: ts)		= (Con c, ts)
+      | atexp(ID x :: ts)		= (Id x, ts)
+      | atexp(LPAR :: ts)		= let
+					      val (e,ts) = exp ts
+					      val    ts  = match(RPAR,ts)
+					  in
+					      (e,ts)
+					  end
+      | atexp _				= raise Error
+
+    and appexp ts			= let
+					      val (e,ts) = atexp ts
+					  in
+					      appexp' e ts
+					  end
+
+    and appexp' e1 (ts as CON _:: _)	= appexp'' e1 ts
+      | appexp' e1 (ts as ID _ :: _)	= appexp'' e1 ts
+      | appexp' e1 (ts as LPAR :: _)	= appexp'' e1 ts
+      | appexp' e1  ts			= (e1,ts)
+
+    and appexp'' e1 ts			= let
+					      val (e2,ts) = atexp ts
+					  in
+					      appexp' (App(e1,e2)) ts
+					  end
+
+    and exp(IF :: ts)			= let
+					      val (e1,ts) = exp ts
+					      val     ts  = match(THEN,ts)
+					      val (e2,ts) = exp ts
+					      val     ts  = match(ELSE,ts)
+					      val (e3,ts) = exp ts
+					  in
+					      (If(e1,e2,e3), ts)
+					  end
+     | exp(FN :: ts)			= let
+					      val (x,ts) = id ts
+					      val    ts  = match(COLON,ts)
+					      val (t,ts) = typ ts
+					      val    ts  = match(DARROW,ts)
+					      val (e,ts) = exp ts
+					  in
+					      (Abs(x,t,e), ts)
+					  end
+    | exp(REC :: ts)			= let
+					      val (x1,ts) = id ts
+					      val     ts  = match(LPAR,ts)
+					      val (x2,ts) = id ts
+					      val     ts  = match(COLON,ts)
+					      val (t2,ts) = typ ts
+					      val     ts  = match(RPAR,ts)
+					      val     ts  = match(COLON,ts)
+					      val (t1,ts) = typ ts
+					      val     ts  = match(DARROW,ts)
+					      val  (e,ts) = exp ts
+					  in
+					      (Rec(x1,x2,t2,t1,e), ts)
+					  end
+     | exp ts				= appexp ts
+
+
+    fun parse ts			= case exp ts
+					    of (e,[]) => e
+					     | (e,_)  => raise Error
+end

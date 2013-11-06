@@ -1,0 +1,153 @@
+import structure Gdk            from "x-alice:/lib/gtk/Gdk"
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Prefs          from "Prefs"
+import structure Common         from "Common"
+import signature MAIN_WINDOW    from "gui/MAIN_WINDOW-sig"
+import structure MkBoard        from "gui/MkBoard"
+import signature HANDLERS       from "HANDLERS-sig"
+import structure TypeMappers    from "TypeMappers"
+import structure AbsTree        from "AbsTree"
+import structure MyPrint        from "Print"
+import structure MkTooltip      from "gui/MkTooltip"
+
+import "x-alice:/lib/system/Print"
+
+functor MkHandlers
+  (structure MainWindow : MAIN_WINDOW
+   val       queue      : Common.Queue.t
+   val       queueRef   : Common.Queue.t option ref) :> HANDLERS =
+struct
+
+  val queuePut = Common.queuePut queue
+  structure QueuePut = (val put = queuePut)
+
+  structure MainWindow    = MainWindow
+  structure Board         = MkBoard MainWindow QueuePut
+  structure Driver        = Board.Driver
+  structure GrTree        = Board.GrTree
+  structure Selection     = Board.Selection
+  structure Update        = Board.Update
+  structure Monitors      = GrTree.Monitors
+  structure Tooltip       = MkTooltip QueuePut MainWindow Selection
+
+  datatype instruction = datatype Common.instruction
+
+  fun clear _       = queuePut Clear
+  fun expand _      = queuePut (Expand false)
+  fun expandf _     = queuePut (Expand true)
+  fun fold _        = queuePut FoldTree
+  fun reinspect _   = queuePut Reinspect
+  fun forceEval _   = queuePut ForceEval
+  fun removeEntry _ = queuePut RemoveEntry
+  fun pprintT _     = MyPrint.pprintTrees (Selection.getSelection ())
+
+  (* The limits have been changed. *)
+  fun newLimits () = ()
+    
+  (* Display a new value. *)
+  fun displayNewItem item =
+    let
+      val (group, id) = Board.newGroup ()
+      val _       = MainWindow.setStatus "Creating abstract representation"
+      val abstree = TypeMappers.map (!Prefs.depthLimit, item)
+      (* Top-level values are encapsulated in a container. *)
+      val abstree = AbsTree.makeBox {prefix = [], suffix = [], 
+                                     tree = abstree, item = AbsTree.TopLevel}
+      val _       = MainWindow.setStatus "Creating concrete representation"
+      val (tree, height, width) =
+	  GrTree.fromAbsTree {group, abstree,
+			      delta    = 0,
+			      parent   = GrTree.root, 
+			      index    = ~id,
+			      depth    = 0,
+			      suffixes = [],
+                              id       = NONE}
+    in
+      Board.add (group, id, tree, width, height) ;
+      MainWindow.setStatus Prefs.ready ;
+      ()
+    end
+
+  fun processInstruction instr =
+    (case instr of
+       NewFont             => (Selection.reselect () ;
+                               Driver.initFonts () ;
+                               Board.refont ())
+     | Identifiers         => (Selection.reselect () ; Board.identifiers ())
+     | NewLimits           => newLimits ()
+     | Inspect item        => displayNewItem item
+     | RemoveEntry         => Selection.toEntries Board.remove
+     | Clear               => Board.removeAll ()
+     | Expand full         => Selection.mapSelection (Update.expand full)
+     | FoldTree            => Selection.mapSelection Update.fold
+     | Reinspect           => Selection.mapSelection Update.reinspect
+     | ForceEval           => Selection.mapSelection Update.forceEval
+     | Layout e            => (Selection.reselect () ; Board.layout e)
+     | Future id           => (Selection.reselect () ; Board.updateFuture id)
+     | Monitor             => Board.monitor ()
+     | DoSelect paths      => Selection.doSelect paths
+     | ClicAt (x,y,m)      => Board.clic (x,y,m)
+     | InfoAt (x,y,m)      => Board.info (x,y,m)
+     | Tooltip (x,y)       => Tooltip.tooltip (x,y)
+     | HideTooltip         => Tooltip.hideTipWindow ()
+     | PopupAt (x,y,m,b,t) =>
+         (MainWindow.setStatus "" ;
+          (* If the selection is empty, we try to select at the current pos. *)
+          if Selection.isEmpty () then Board.clic (x,y,m) else () ;
+          if Selection.isEmpty () then () else MainWindow.popup (b, t)))
+    handle e =>
+       (print "Inspector.exception: "; Print.printVal e; print "\n";
+        Exn.dumpTrace(Exn.currentPacket()))
+
+
+  fun applyPreferences (newPrefs:Prefs.prefs) =
+    let
+      val oldPrefs = Prefs.getCurrentPrefs ()
+      (* Record the new preferences. *)
+      val styleChanged = Prefs.setCurrentPrefs newPrefs
+    in
+      (* Changes in the font name or for identifiers. *)      
+      if #fontname oldPrefs <> #fontname newPrefs orelse styleChanged
+        then queuePut NewFont else () ;
+        
+      (* Identifiers are shown / hidden. *)
+      if #identifiers oldPrefs <> #identifiers newPrefs
+	 then queuePut Identifiers else () ;
+
+      (* Changes in width or depth limits. *)
+      if #widthLimit oldPrefs <> #widthLimit newPrefs orelse
+         #depthLimit oldPrefs <> #depthLimit newPrefs
+         then queuePut NewLimits else () ;
+
+      if #tooltips newPrefs then () else Tooltip.leaving () ;
+              
+      ()
+    end
+
+  fun canvasEvent (_, [Gdk.EVENT event]) =
+       (case event of
+	Gdk.EVENT_BUTTON_PRESS {x, y, button, state, time, ...} =>
+          let val (cx,cy) = Driver.convertFromMouse (x,y) 
+          in
+            Tooltip.move (x, y) ;
+            case button of
+              1 => queuePut (ClicAt (cx, cy, state))
+            | 2 => queuePut (InfoAt (cx, cy, state))
+            | 3 => queuePut (PopupAt (cx, cy, state, button, time))
+            | _ => ()
+          end
+      | Gdk.EVENT_LEAVE_NOTIFY _ => Tooltip.leaving ()
+      | Gdk.EVENT_MOTION_NOTIFY {x, y, ...} => Tooltip.move (x, y)
+      | _ => ())
+    | canvasEvent _ = Common.warning "MkHandlers.canvasEvent: GTK is crazy.\n"
+
+  fun close _ =
+    (queueRef := NONE ;
+     Common.Queue.close queue ;
+     Common.Queue.purge queue ;
+     Tooltip.quit () ;
+     Gtk.Widget.destroy (MainWindow.window) ; (* Close the main window. *)
+     Monitors.purge () ;
+     ())         
+
+end

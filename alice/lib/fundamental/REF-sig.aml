@@ -1,0 +1,37 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                       from "Pervasive"
+import __primitive type unit and bool datatype ref from "ToplevelTypes"
+
+signature REF =								(**)
+sig
+(*TODO: does not work with current RTT implementation.
+    datatype ref = datatype ref
+*)  type ref = ref val ref : 'a -> 'a ref
+    type  'a t   = 'a ref
+
+    val ! :		'a ref -> 'a
+    val := :		'a ref * 'a -> unit
+    val :=: :		'a ref * 'a ref -> unit
+    val exchange :	'a ref * 'a -> 'a
+
+    val equal :		'a ref * 'a ref -> bool
+
+    val app :		('a -> unit) -> 'a ref -> unit
+    val map :		('a -> 'b) -> 'a ref -> 'b ref
+    val modify :	('a -> 'a) -> 'a ref -> unit
+end

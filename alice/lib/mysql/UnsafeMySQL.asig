@@ -1,0 +1,42 @@
+(*
+ * Author:
+ *   Simon Pinkel <pinkel@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Simon Pinkel, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_MYSQL =
+    sig
+	structure UnsafeMySQL:
+	    sig
+		exception MySQLError of string
+		datatype res = 
+		    DONE
+		  | ROW of string option vector
+
+		val mysql_connect : 
+		    string * string * string * string
+		    (* host, user, password, database *)
+		    -> 'mysql (* MySQLError *)
+		(* the bool flag states wether the client should download
+		   the result from the server *)
+		val mysql_query        : 
+		    'mysql * string * bool -> 'mysqlres option
+		(* the 'mysql is needed in the event of a failure
+		 to fetch the appropriate mysql error message *)
+		val mysql_fetch_row    : 'mysql * 'mysqlres -> res
+		val mysql_fetch_fields : 'mysqlres -> string vector
+		val mysql_free_result  : 'mysqlres -> unit
+
+		val mysql_close        : 'mysql -> unit
+
+		(* auxiliary stuff *)
+		val mysql_character_set_name : 'mysql -> string
+		val mysql_ping               : 'mysql -> unit
+	    end
+    end

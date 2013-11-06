@@ -1,0 +1,95 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *   Andreas Rossberg, 2005-2007
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature STORE =
+sig
+    exception Stack
+
+    val equiv     : 'a * 'a -> bool
+    val same      : 'a * 'a -> bool
+    val collect   : int -> unit
+    val minimize  : 'a -> 'a
+    val size      : 'a -> {nodes : int, words : int}
+    val sizeQuiet : 'a -> {nodes : int, words : int}
+    val futures   : 'a -> {total : int, concurrent : int, byneed : int}
+    val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
+    val signal    : (IntInf.int * (IntInf.int -> unit)) option -> unit
+
+    structure Map :
+    sig
+	type ('a,'b) map
+	type t = map
+
+	exception Unknown
+	exception Collision
+
+	val map            : unit -> ('a,'b) map
+	val clone          : ('a,'b) map -> ('a,'b) map
+	val fromList       : ('a * 'b) list -> ('a,'b) map	(* Collision *)
+	val fromVector     : ('a * 'b) vector -> ('a,'b) map	(* Collision *)
+	val toList         : ('a,'b) map -> ('a * 'b) list
+	val toVector       : ('a,'b) map -> ('a * 'b) vector
+
+	val insert         : ('a,'b) map * 'a * 'b -> unit
+	val insertDisjoint : ('a,'b) map * 'a * 'b -> unit	(* Collision *)
+	val insertWith     : ('b * 'b -> 'b) -> ('a,'b) map * 'a * 'b -> unit
+	val insertWithi    : ('a * 'b * 'b -> 'b) -> ('a,'b) map * 'a * 'b -> unit
+
+	val remove         : ('a,'b) map * 'a -> unit
+	val removeExistent : ('a,'b) map * 'a -> unit		(* Unknown *)
+	val removeWith     : ('a -> unit) -> ('a,'b) map * 'a -> unit
+	val removeAll      : ('a,'b) map -> unit
+
+	val union          : ('a,'b) map * ('a,'b) map -> unit
+	val unionDisjoint  : ('a,'b) map * ('a,'b) map -> unit	(* Collision *)
+	val unionWith      : ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+	val unionWithi     : ('a * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+	val intersect      : ('a,'b) map * ('a,'b) map -> unit
+	val intersectWith  : ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+	val intersectWithi : ('a * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+	val difference     : ('a,'b) map * ('a,'b) map -> unit
+
+	val size           : ('a,'b) map -> int
+	val isEmpty        : ('a,'b) map -> bool
+
+	val member         : ('a,'b) map * 'a -> bool
+	val lookup         : ('a,'b) map * 'a -> 'b option
+	val lookupExistent : ('a,'b) map * 'a -> 'b		(* Unknown *)
+	val choose         : ('a,'b) map -> 'b option
+	val choosei        : ('a,'b) map -> ('a * 'b) option
+
+	val equal          : ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+	val submap         : ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+	val disjoint       : ('a,'b) map * ('a,'b) map -> bool
+
+	val app            : ('b -> unit) -> ('a,'b) map -> unit
+	val modify         : ('b -> 'b) -> ('a,'b) map -> unit
+	val fold           : ('b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+	val all            : ('b -> bool) -> ('a,'b) map -> bool
+	val exists         : ('b -> bool) -> ('a,'b) map -> bool
+	val find           : ('b -> bool) -> ('a,'b) map -> 'b option
+	val filter         : ('b -> bool) -> ('a,'b) map -> unit
+
+	val appi           : ('a * 'b -> unit) -> ('a,'b) map -> unit
+	val modifyi        : ('a * 'b -> 'b) -> ('a,'b) map -> unit
+	val foldi          : ('a * 'b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+	val alli           : ('a * 'b -> bool) -> ('a,'b) map -> bool
+	val existsi        : ('a * 'b -> bool) -> ('a,'b) map -> bool
+	val findi          : ('a * 'b -> bool) -> ('a,'b) map -> ('a * 'b) option
+	val filteri        : ('a * 'b -> bool) -> ('a,'b) map -> unit
+    end
+end

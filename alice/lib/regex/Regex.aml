@@ -1,0 +1,84 @@
+(*
+ * Author:
+ *   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Marco Kuhlmann, 2003
+ * 
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+(*
+ * This component provides an interface to a (subset of) POSIX-
+ * compatible regular expressions.  The 'matchptr' array that
+ * results from the application of the C 'regexec' function is
+ * represented as a new type 'match'.  An explicit representation
+ * of the C 'regex_t' type that holds a compiled pattern is
+ * avoided by allowing the partial application of the 'match' and
+ * the 'search' functions. (Note, however, that the functions
+ * resulting from this partial application cannot be pickled.)
+ *
+ *)
+
+import structure NativeRegex from "NativeRegex"
+import signature REGEX from "REGEX-sig"
+
+structure Regex :> REGEX =
+  struct
+
+    type match = {goal : string, match : (int * int) vector}
+
+    infix 2 =~
+
+    exception Malformed
+    exception NoSuchGroup
+
+    fun compile pattern =
+	case NativeRegex.regcomp (pattern)
+	  of SOME(r) => r
+	   | NONE    => raise Malformed
+
+    fun matchAux (compiledPattern, matchAgainst) =
+	case NativeRegex.regexec (compiledPattern, matchAgainst)
+	  of SOME(m) => SOME({goal = matchAgainst, match = m})
+	   | NONE    => NONE
+
+    fun match pattern =
+	let
+	  val compiledPattern = compile pattern
+	in
+	  fn matchAgainst =>
+	     matchAux (compiledPattern, matchAgainst)
+	end
+
+    fun p =~ s = Option.isSome (match p s)
+
+    fun substring s =
+	fn (i, j) => String.substring (s, i, j-i)
+
+    fun groupAccess ({goal = _, match = m} : match, i) =
+	if 0 <= i andalso i < Vector.length m then
+	  Vector.sub (m, i)
+	else
+	  raise NoSuchGroup
+
+    fun group (match as {goal = s, match = m}, i) =
+	substring s (groupAccess (match, i))
+	  
+    fun groups ({goal = s, match = m} : match) =
+	Vector.map (substring s) m
+
+    fun groupStart (match, i) = #1(groupAccess (match, i))
+
+    fun groupEnd (match, i) = #2(groupAccess (match, i))
+
+    fun groupSpan (match, i) = groupAccess (match, i)
+
+  end

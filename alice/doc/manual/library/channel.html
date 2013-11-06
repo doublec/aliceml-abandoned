@@ -1,0 +1,239 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Channel structure", "The <TT>Channel</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature CHANNEL
+    structure Channel : CHANNEL
+  </PRE>
+
+  <P>
+    A fully concurrent imperative channel abstraction.
+  </P>
+
+  <P>
+    A <I>consumer</I> takes elements available at the beginning of the channel.</BR>
+    A <I>producer</I> inserts elements in the channel, either at the beginning (LIFO) or at the end (FIFO).</BR>
+    Channels are thread-safe: many consumers and producers can operate concurrently on the same channel.
+  <P>
+
+    <P class=note><EM>Note:</EM> Channels contain implicit locks.
+    If you stop a thread while it is manipulating a channel,
+    it may cause all further access to the same channel to block,
+    until the thread is restarted.</P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature CHANNEL from "x-alice:/lib/data/CHANNEL-sig"
+    import structure Channel from "x-alice:/lib/data/Channel"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature CHANNEL =
+    sig
+	type 'a channel
+        type 'a t = 'a channel
+
+	exception Empty
+
+	val channel :    unit -> 'a channel
+        val put :        'a channel * 'a -> unit
+	val push :       'a channel * 'a -> unit
+        val get :        'a channel -> 'a
+	val pop :        'a channel -> 'a
+        val peek :       'a channel -> 'a
+	val clone :      'a channel -> 'a channel
+        val isEmpty :    'a channel -> bool
+	val close :      'a channel -> unit
+	val isClosed :   'a channel -> bool
+	val waitClosed : 'a channel -> unit
+        val purge :      'a channel -> unit
+	val app :        ('a -> unit) -> 'a channel -> unit
+	val appNB :      ('a -> unit) -> 'a channel -> unit
+	val toList :     'a channel -> 'a list
+	val toListNB :   'a channel -> 'a list
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+  <DL>
+    <DT>
+	<TT>type 'a channel</TT></BR>
+        <TT>type t = channel</TT>
+    </DT>
+    <DD>
+      <P>The type of polymorphic channels.</P>
+    </DD>
+
+
+    <DT>
+	<TT>exception Empty</TT>
+    </DT>
+    <DD>
+      <P>Used to indicate invalid accesses to an empty channel. Equal to
+      <TT>List.Empty</TT>.</P>
+    </DD>
+
+    <DT>
+	<TT>channel ()</TT>
+    </DT>
+    <DD>
+      <P>Creates a new channel that is initially empty.</P>
+    </DD>
+
+    <DT>
+        <TT>put (<I>ch</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>Producer</I>: Adds the value <I>x</I> at the end of the channel <I>ch</I>.</P>
+    </DD>
+
+    <DT>
+	<TT>push (<I>ch</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P><I>Producer</I>: The value <I>x</I> is inserted at the beginning of the channel <I>ch</I>.
+         That is, next read (<TT>peek</TT> or <TT>get</TT>) will return <I>x</I>.</P>
+    </DD>
+
+    <DT>
+        <TT>get <I>ch</I></TT></BR>
+	<TT>pop <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P><I>Consumer</I>: Remove and returns the first element of channel <I>ch</I> if available.
+         Raise <TT>Empty</TT> if the channel is closed and empty.
+         Otherwise, blocks until an element is inserted (put or pushed).</P>
+    </DD>
+
+    <DT>
+        <TT>peek <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the first element of channel <I>ch</I> if available,
+         but does not remove it from the channel (it is not a consumer).
+         Like <TT>get</TT>, it may block or raise <TT>Empty</TT>.</P>
+    </DD>
+
+    <DT>
+	<TT>clone <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a new channel initialized with the elements of channel <I>ch</I>.</P>
+    </DD>
+
+    <DT>
+        <TT>isEmpty <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> iff the channel is empty, that is, if reading an element would block.</P>
+    </DD>
+
+    <DT>
+	<TT>close <I>ch</I>.</TT>
+    </DT>
+    <DD>
+      <P>Closes channel <I>ch</I>: all subsequent writes (<TT>push</TT> and <TT>put</TT>)
+         will have no effect.</P>
+    </DD>
+
+    <DT>
+	<TT>isClosed <I>ch</I></TT>
+    </DT>
+    <DD>
+        <P>Returns <TT>true</TT> iff the channel has been closed with <TT>close</TT>.</P>
+    </DD>
+
+    <DT>
+	<TT>waitClosed <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>unit</TT> if the channel is closed, or blocks until it is closed.</P>
+    </DD>
+
+    <DT>
+        <TT>purge <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P><I>Consumer</I>: Remove all elements of the channel <I>ch</I>.</P>
+    </DD>
+
+    <DT>
+	<TT>app <I>f</I> <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P><I>Consumer</I>: Takes elements out of the channel and applies function <I>f</I> to each of them.
+         Does not return until the channel is closed.</P>
+    </DD>
+
+    <DT>
+	<TT>appNB <I>f</I> <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P><I>Consumer</I>: Takes elements out of the channel and applies function <I>f</I> to each of them.
+         Returns as soon as the channel is empty.</P>
+    </DD>
+
+
+    <DT>
+	<TT>toList <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P><I>Consumer</I>: Returns a lazy list with the elements of the channel.
+         Elements of the list are removed from the channel when they are evaluated.
+         Reading the list blocks if the channel is empty.</P>
+    </DD>
+
+    <DT>
+	<TT>toListNB <I>ch</I></TT>
+    </DT>
+    <DD>
+      <P><I>Consumer</I>: Returns a lazy list with the elements of the channel.
+         Elements of the list are removed from the channel when they are evaluated.
+         Reading the list returns an empty list if the channel is empty.</P>
+    </DD>
+
+
+  </DL>
+
+
+
+<?php section("example", "example") ?>
+
+    <P>The following functor creates a module which evaluates tasks sequentially.</P>
+
+    <PRE>
+    functor NewSequence () =
+    struct
+	(* A new channel for jobs that must be run sequentially. *)
+	val jobs = Channel.channel ()
+	    
+	(* f () will be evaluated sequentially *)
+	fun add f = Channel.put (jobs, f)
+	fun app f arg = add (fn () => f arg)
+
+	(* Run jobs. *)
+	val _ = spawn (Channel.app (fn job => job()) jobs)
+	    
+	(* Nicely stop all jobs. *)
+	fun stop () =
+	    (Channel.close jobs ; 
+	     Channel.purge jobs)
+	    
+    end
+    </PRE>
+
+    <P>Usage: </P>
+    <PRE>
+    structure Log = NewSequence ()
+    val printInt = print o Int.toString
+
+    val _ = Log.app print "First Message"
+    val _ = Log.app printInt 32
+    
+    </PRE>
+
+<?php footing() ?>

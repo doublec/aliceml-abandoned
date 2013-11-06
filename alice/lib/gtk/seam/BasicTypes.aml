@@ -1,0 +1,22 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+structure BasicTypes =
+struct
+    datatype c_name      = CN of string   
+        (* name of enum, flags, boxed, object in C *)
+
+    datatype def_type    = DT of string
+
+    datatype c_type      = CT of string
+end

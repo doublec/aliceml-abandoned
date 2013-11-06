@@ -1,0 +1,73 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein and Andreas Rossberg, 2006-2007
+ *)
+ 
+import structure OS                from "OS"
+import structure Url               from "Url"
+import structure Resolver          from "Resolver"
+import structure Component         from "Component"
+import signature POLICY            from "POLICY-sig"
+import signature SANDBOX           from "SANDBOX-sig"
+import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
+import structure ComponentManager  from "ComponentManager"
+
+structure Sandbox :> SANDBOX =
+struct
+    (* Raised when a policy rule is violated. Has to be caught by the
+     * application hosting the sandbox. The string is the name of the
+     * function that triggered the rule violation. *)
+    exception Security of string
+    
+    functor MkManager (Policy : POLICY) : COMPONENT_MANAGER =
+    struct
+        val coreUrl = "x-alice:/lib/system/MkSandboxCore"
+
+        val primalHandlers =
+            case OS.Process.getEnv "ALICE_LOAD" of
+	    |SOME s => Resolver.Handler.parse s
+            | NONE => [Resolver.Handler.default]
+    
+        fun internalHandler url =
+	    if Url.getScheme url <> SOME "x-alice" then NONE else
+	    case Url.getPath url of
+            | "lib"::"sandbox"::_ => NONE
+            | "lib"::"system"::"Component"::nil => NONE
+            | "lib"::"system"::"MkSandboxCore"::nil => NONE
+	    | _ => SOME (Url.setScheme (url, SOME "delegate-x-alice"))
+
+        (* Special handling for component wrapping. *)
+        val handlers =
+            Resolver.Handler.custom ("sandbox", internalHandler) ::
+            primalHandlers
+	val internalResolver =
+	    Resolver.resolver {name = "load", handlers, memoize = true}
+    
+        structure PolicyManager =
+	    Component.MkManager (val resolver = internalResolver)
+        structure PolicyComp =
+	    Component.Create (signature S = (structure Policy : POLICY)
+                              functor F () = (structure Policy = Policy))
+        do PolicyManager.enter (Url.fromString "x-alice:/lib/sandbox/Policy",
+                                PolicyComp.component)
+        
+        fun redirectUrl url =
+	    SOME (Policy.Url.check ("componentLoad", "Component.load", url))
+
+        open unpack PolicyManager.link (Url.fromString coreUrl)
+	     : (functor MkSandboxCore (val redirectUrl : Url.t -> Url.t option)
+			: COMPONENT_MANAGER)
+        open MkSandboxCore (val redirectUrl = redirectUrl)
+        
+        fun link url =
+            let
+                val component = ComponentManager.load url
+            in
+                eval (url, component)
+            end
+    end
+end

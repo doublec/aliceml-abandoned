@@ -1,0 +1,90 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+signature LEXER =
+sig
+    datatype token =
+        LPAR
+      | RPAR
+      | SYM  of string
+      | STR  of string
+
+    exception Error of string
+
+    val lex : string -> token list
+end
+
+
+structure Lexer : LEXER =
+struct
+    datatype token =
+        LPAR
+      | RPAR
+      | SYM  of string
+      | STR  of string
+
+    exception Error of string
+
+    fun lex filename =
+        let
+            val f   = TextIO.openIn filename
+            val con = TextIO.inputAll f
+            val _   = TextIO.closeIn f
+            val s   = explode con
+        
+            val idChars    = explode ("abcdefghijklmnopqrstuvwxyz" ^
+                                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ^
+                                      "0123456789" ^ 
+                                      "#-_")
+
+            fun isIdChar c = List.exists (Fn.curry op= c) idChars 
+            
+            fun lex' s =
+                case s of 
+                    #";" :: s'  => skipComment s'
+                  | #"(" :: s'  => LPAR :: (lazy lex' s')
+                  | #")" :: s'  => RPAR :: (lazy lex' s')
+                  | #"'" :: s'  => lex' s'
+                  | #" " :: s'  => lex' s'
+                  | #"\t" :: s' => lex' s'
+                  | #"\n" :: s' => lex' s'
+                  | #"\r" :: s' => lex' s'
+                  | #"\"" :: s' => pStr (s', [])
+                  | c :: s'     => 
+                    if isIdChar c then pId (s', [c])
+                    else raise Error ("invalid character '" ^ String.str c ^ "'")
+                  | []          => []
+
+            and skipComment s = 
+                case s of
+                    #"\n" :: s' => lex' s'
+                  | _     :: s' => skipComment s'
+                  | []          => []
+
+            and pStr (s, str) = 
+                case s of
+                    #"\"" :: s' => STR (implode (rev str)) :: (lazy lex' s')
+                  | #"\\" :: #"\"" :: s' => pStr (s', #"\"" :: str)
+                  | #"\\" :: #"\\" :: s' => pStr (s', #"\\" :: str)
+                  | c     :: s' => pStr (s', c :: str) 
+                  | []          => raise Error "unclosed string literal at end of input"
+
+            and pId (s, id) =
+                case s of 
+                    []      => [SYM (implode (rev id))]
+                  | c :: s' => if isIdChar c then pId (s', c :: id)
+                               else SYM (implode (rev id)) :: (lazy lex' (c :: s'))
+        in
+            lex' s 
+        end
+end

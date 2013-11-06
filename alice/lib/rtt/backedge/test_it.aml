@@ -1,0 +1,165 @@
+(*
+ * Authors:
+ *   Niko Paltzer <nikopp@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Type from "Type"
+import structure PPType from "PPType"
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure TypeConst from "TypeConst"
+import structure Store from "x-alice:/lib/system/Store"
+
+
+(******************************************************************************)
+(* using TypeConst *)
+
+open TypeConst
+open Store
+
+fun pretty t = print("\n" ^ PrettyPrint.toString((PPType.ppTyp t), 80) ^ "\n\n")
+
+(* type ('a, 'b) table = 'a array * 'b array
+ * table = \'a . \'b . {c_array 'a X c_array 'b}
+ *)
+
+val c_arr = C "array"  (T ==> T)
+
+val a_1 = nV T
+val b_1 = nV T
+val table = L a_1 (L b_1 (|| #[c_arr @ V a_1, c_arr @ V b_1]))
+
+(* datatype 'a list = nil | :: of 'a * 'a list
+ *
+ * list = /'b . \'a . [{} + {'a X 'b 'a}]
+ *)
+
+val a_2 = nV T
+val list = nU ()
+val _ = Type.fix #[(list, L a_2 (S("nil" ? S ##
+				 :# "::" ? list @ V a_2
+				 :# ##)))]
+
+(* t1 = V 'a . V 'b . 'a -> 'b
+ * t2 = V 'a . int -> 'a
+ *)
+
+val a_3 = nV T
+val b_3 = nV T
+val c_3 = nV T
+val t1 = A a_3 (A b_3 (V a_3 --> V b_3))
+val t2 = A c_3 (C "int" T --> V c_3)
+
+(*
+
+Type.match (t1, t2)
+
+*)
+
+
+(* datatype v = A | B of v | C of w
+ * and      w = D of int | E of v
+ *
+ * v = /'a . [{} + 'a + /'b . [c_int + 'a]]
+ * w = /'b . [c_int + /'a . [{} + 'a + 'b]]
+ *)
+
+val c_int = C "int" T
+
+val v = nU()
+val w = nU()
+val _ = Type.fix #[(v, S("A" ? S ##
+		      :# "B" ? v
+		      :# "C" ? w
+		      :# ##)),
+		   (w, S("E" ? v
+		      :# "D" ? c_int
+		      :# ##))]
+
+
+(* datatype x = A of int | B of y
+ * and      y = A of int | B of x
+ *
+ * x = /'a . [c_int + /'b . [c_int + 'a]]
+ * y = /'b . [c_int + /'a . [c_int + 'b]]
+ *)
+
+val x = nU()
+val y = nU()
+val _ = Type.fix #[(x, S("A" ? c_int
+		      :# "B" ? y
+		      :# ##)),
+		   (y, S("A" ? c_int
+		      :# "B" ? x
+		      :# ##))]
+
+
+(*
+ * test substitution with partial beta reduction
+ * t'  = \ c . TT c
+ * t   = \ b . \ a . (\ c . TT c) (b a)
+ * t'' = t t' = (\ b . \ a . (\ c . TT c) (b a)) (\ c . TT c)
+ *            = \ a . (\ c . TT c) ((\c . TT c) a)
+ *            = \ a . (\ c . TT c) (TT a)
+ *            = \ a . TT (TT a)
+ *)
+
+val a_4 = nV(T ==> T)
+val b_4 = nV T
+val c_4 = nV T
+val d_4 = nV T
+val e_4 = nV T
+val f_4 = nV(T ==> T)
+val g_4 = nV T
+val h_4 = nV(T ==> T)
+val i_4 = nV T
+val j_4 = nV(T ==> T)
+val k_4 = nV T
+val l_4 = nV(T ==> T)
+
+val c_T  = C "T"  (T ==> T)
+val c_TT = C "TT" (T ==> T)
+val c_S  = C "S"   T
+
+val t' = L c_4 (c_T @ V c_4)
+
+val t = L a_4 (L b_4 (t' @ (V a_4 @ V b_4)))
+
+val t_u = L f_4 (L e_4 ((L d_4 (c_TT @ V d_4)) @ (V f_4 @ V e_4)))
+
+val t_1 = L g_4 (c_T @ (c_TT @ V g_4))
+
+val t_2 = L h_4 (L i_4 (V h_4 @ (V h_4 @ V i_4)))
+
+val v_j = V j_4
+val t_3 = L j_4 (L k_4 (v_j @ (v_j @ c_S)))
+
+val t_4 = V l_4
+
+(*
+ * V 'a . 'a
+ * V 'b . 'b
+ *)
+
+val a_5 = nV T
+val b_5 = nV T
+
+val alpha = A a_5 (V a_5)
+val beta = A b_5 (V b_5)
+
+(*
+ * V 'a . V 'b . 'a -> 'b
+ * V 'a . int -> 'a
+ *)
+
+val a_6 = nV T
+val b_6 = nV T
+val c_6 = nV T
+
+val l_6 = A a_6 (A b_6 (V a_6 --> V b_6))
+val m_6 = A c_6 (c_int --> V c_6)
+
+

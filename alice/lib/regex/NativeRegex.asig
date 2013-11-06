@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Marco Kuhlmann, 2003
+ * 
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature REGEX =
+  sig
+    structure NativeRegex:
+      sig
+        val regcomp : string -> 'regex_t option
+        val regexec : 'regex_t * string -> (int * int) vector option
+      end
+  end

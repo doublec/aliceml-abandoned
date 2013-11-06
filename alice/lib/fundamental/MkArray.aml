@@ -1,0 +1,133 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive
+       type unit and int
+       datatype order                         from "ToplevelTypes"
+import __primitive
+       infix 4 = <> < > <= >=
+       infix 6 + - infix 7 div
+       val op = and op <>
+       val op < and op > and op <= and op >=
+       val op + and op - and op div           from "ToplevelValues"
+import __primitive structure General          from "General"
+import __primitive functor MkRow              from "MkRow"
+
+(** u{Sub, Update, Vsub} are like the un-prefixed functions but needn't do bounds checking*)
+functor MkArray(__eqeqtype 'a array
+		__eqeqtype 'a dst_array
+		type 'a vector
+		type 'a dst_vector
+		type 'a elem
+		val maxLen :   int
+		val length :   'a array -> int
+		val sub :      'a array * int -> 'a elem
+		val uSub :     'a array * int -> 'a elem
+		val update :   'a array * int * 'a elem -> unit
+		val uUpdate :  'a array * int * 'a elem -> unit
+		val dlength :  'a dst_array -> int
+		val dupdate :  'a dst_array * int * 'a elem -> unit
+		val dextract : 'a dst_array * int * int -> 'a dst_vector
+		val vlength :  'a vector -> int
+		val vsub :     'a vector * int -> 'a elem
+		val uVsub :    'a vector * int -> 'a elem) =
+struct
+    structure Row = MkRow(type row   = array
+			  type elem  = elem
+			  val length = length
+			  val sub    = sub
+			  val uSub   = uSub)
+    open Row
+
+    val maxLen		= maxLen
+    val update		= update
+
+    fun toVector a	= dextract(a, 0, dlength a)
+    val vector		= toVector
+
+    fun uSwap(a, i, j)  = let
+                              val x = uSub(a, i)
+                              val y = uSub(a, j)
+                          in
+                              uUpdate(a, i, y);
+                              uUpdate(a, j, x);
+                          end
+
+    fun swap(a, i, j)	= let
+                              val n = length a
+                          in
+                              if i < 0 orelse i >= n orelse j < 0 orelse j >= n then
+                                  raise General.Subscript;
+                              uSwap(a, i, j);
+			  end
+
+    fun rev a			= rev'(a, 0, length a - 1)
+    and rev'(a, i, j)		= if i >= j then () else (uSwap(a, i, j); rev'(a, i+1, j-1))
+
+    fun modify  f a		= modify'(f, a, 0, length a)
+    and modify'(f, a, i, n) if (i = n) = ()
+      | modify'(f, a, i, n)	= (uUpdate(a, i, f(uSub(a, i))); modify'(f, a, i+1, n))
+
+    fun modifyi f a		= modifyi'(f, a, 0, length a)
+    and modifyi'(f, a, i, n) if (i = n) = ()
+      | modifyi'(f, a, i, n)	= (uUpdate(a, i, f(i, uSub(a, i))); modifyi'(f, a, i+1, n))
+
+    fun sort cmp a =
+    let
+	fun partition(i,j,p) if (i = j) = j
+	  | partition(i,j,p) if (cmp(uSub(a,i),p) <> GREATER) =
+		partition(i+1,j,p)
+	  | partition(i,j,p) if (cmp(p, uSub(a,j-1)) = LESS) =
+		partition(i,j-1,p)
+	  | partition(i,j,p) =
+		(swap(a,i,j-1); partition(i+1,j-1,p))
+
+	fun sort(i,j) if (j-i <= 1) = ()
+	  | sort(i,j) if (j-i = 2)  =
+		if cmp(uSub(a,i), uSub(a,j-1)) <> GREATER then ()
+		else uSwap(a,i,j-1)
+	  | sort(i,j) =
+	    let
+		val mid = (i+j) div 2
+		val _ = if cmp(uSub(a,i), uSub(a,mid)) <> GREATER then ()
+			else uSwap(a,i,mid)
+		val _ = if cmp(uSub(a,mid), uSub(a,j-1)) <> GREATER then ()
+			else (uSwap(a,mid,j-1);
+			      if cmp(uSub(a,i),uSub(a,mid)) <> GREATER then ()
+			      else uSwap(a,i,mid))
+	  	val k = partition(i+1,j-1, uSub(a,mid))
+	    in
+		sort(i,k); sort(k,j)
+	    end
+    in
+	sort(0, length a)
+    end
+
+    fun copy{src, dst, di}      = if di < 0 orelse di + length src > dlength dst
+				  then raise General.Subscript
+				  else copy'(src,dst,di,length(src)-1)
+    and copy'(src,dst,di,~1)	= ()
+      | copy'(src,dst,di,i)	= (dupdate(dst, di+i, uSub(src, i));
+				   copy'(src, dst, di, i-1))
+
+    fun copyVec{src, dst, di}   = if di< 0 orelse di + vlength src > dlength dst
+				  then raise General.Subscript
+				  else copyVec'(src,dst,di,vlength(src)-1)
+    and copyVec'(src,dst,di,~1)	= ()
+      | copyVec'(src,dst,di,i)	= (dupdate(dst, di+i, uVsub(src,i));
+                                   copyVec'(src, dst, di, i-1))
+end

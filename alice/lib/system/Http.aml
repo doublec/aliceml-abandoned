@@ -1,0 +1,297 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkHashImpMap from "../data/MkHashImpMap"
+import structure Url          from "Url"
+import structure Socket       from "Socket"
+import structure IO           from "IO"
+import signature HTTP         from "HTTP-sig"
+
+structure Http :> HTTP =
+    struct
+	structure StringMap = MkHashImpMap(String)
+
+	type document = {contentType: string, body: string}
+	type request =
+	     {method: string, uri: Url.t, protocol: string,
+	      headers: string StringMap.t, body: string}
+	type response =
+	     {protocol: string, statusCode: int, reasonPhrase: string,
+	      headers: string StringMap.t, body: string}
+	type simple_response =
+	     {statusCode: int, contentType: string, body: string}
+
+	datatype word =
+	    TOKEN of string
+	  | SEPARATOR of char
+	  | COMMENT of string
+	  | QUOTED_STRING of string
+
+	exception Closed
+	exception Format
+
+	fun readLine socket =
+	    let
+		val s = case Socket.inputLine socket of
+			    SOME s => s
+			  | NONE => raise IO.Io {name = "Http",
+						 function = "readLine",
+						 cause = Closed}
+		val n = String.size s
+	    in
+		if n < 2
+		   orelse String.sub (s, n - 2) <> #"\r"
+		   orelse String.sub (s, n - 1) <> #"\n"
+		then raise Format
+		else String.substring (s, 0, n - 2)
+	    end
+
+	fun splitAt (s, c) = splitAt' (s, c, 0)
+	and splitAt' (s, c, i) =
+	    if i = String.size s then raise Format
+	    else if String.sub (s, i) = c then
+		(String.substring (s, 0, i),
+		 String.extract (s, i + 1, NONE))
+	    else splitAt' (s, c, i + 1)
+
+	fun trim s = String.extract (s, dropSpaces (s, 0), NONE)
+	and dropSpaces (s, i) =
+	    if i = String.size s then i
+	    else
+		case String.sub (s, i) of
+		    (#" " | #"\t") => dropSpaces (s, i + 1)
+		  | _ => i
+
+	fun readHeaders socket =
+	    let
+		val headers = StringMap.map ()
+	    in
+		readHeaders' (readLine socket, socket, headers);
+		headers
+	    end
+	and readHeaders' ("", _, _) = ()
+	  | readHeaders' (s, socket, headers) =
+	    let
+		val (name, value) = splitAt (s, #":")
+		val name = String.map Char.toLower name
+		val (values, s) = readFoldedValue ([value], socket)
+		val value = trim (String.concat (List.rev values))
+	    in
+		(*--** non-standard headers may occur multiple times *)
+		StringMap.insert (headers, name, value);
+		readHeaders' (s, socket, headers)
+	    end
+	and readFoldedValue (values, socket) =
+	    case readLine socket of
+		"" => (values, "")
+	      | s =>
+		    case String.sub (s, 0) of
+			(#" " | #"\t") =>
+			    readFoldedValue (" "::trim s::values, socket)
+		      | _ => (values, s)
+
+	fun readBody (socket, headers) =
+	    case StringMap.lookup (headers, "content-length") of
+		SOME s =>
+		    ((case Int.fromString s of
+			  SOME n =>
+			      let
+				  val body = Socket.inputN (socket, n)
+			      in
+				  if String.size body <> n then raise Format
+				  else body
+			      end
+			| NONE => raise Format)
+		     handle Overflow => raise Format)
+	      | NONE => "" (*--** this is wrong *)
+
+	fun readRequest socket =
+	    let
+		val requestLine = readLine socket
+		val {method, uri, protocol} =
+		    case String.tokens (fn c => c = #" ") requestLine of
+			[method, requestURI, protocol] =>
+			    {method, uri = requestURI, protocol}
+		      | [method, requestURI] =>
+			    {method, uri = requestURI, protocol = "HTTP/1.0"}
+		      | _ => raise Format
+		val headers = readHeaders socket
+		val body = readBody (socket, headers)
+	    in
+		{method,
+		 uri = Url.fromString uri
+		       handle Url.Malformed => raise Format,
+		 protocol, headers, body}
+	    end
+	    handle Format => raise IO.Io {name = "Http",
+					  function = "readRequest",
+					  cause = Format}
+
+	fun parseResponseLine s =
+	    let
+		val (protocol, rest) = splitAt (s, #" ")
+		val (statusCode, reasonPhrase) = splitAt (rest, #" ")
+		val statusCode =
+		    if String.size statusCode = 3 then
+			case Int.fromString statusCode of
+			    SOME statusCode => statusCode
+			  | NONE => raise Format
+		    else raise Format
+	    in
+		{protocol, statusCode, reasonPhrase}
+	    end
+
+	fun readResponse socket =
+	    let
+		val {protocol, statusCode, reasonPhrase} =
+		    parseResponseLine (readLine socket)
+		val headers = readHeaders socket
+		val body = readBody (socket, headers)
+	    in
+		{protocol, statusCode, reasonPhrase, headers, body}
+	    end
+	    handle Format => raise IO.Io {name = "Http",
+					  function = "readResponse",
+					  cause = Format}
+
+	fun writeRequest (socket, {method, uri, protocol, headers, body}) =
+	    let
+		val uriString = case Url.toString uri of "" => "/" | s => s
+	    in
+		Socket.output
+		    (socket,
+		     method ^ " " ^ uriString ^ " " ^ protocol ^ "\r\n" ^
+		     StringMap.foldi
+			 (fn (name, value, rest) =>
+			     name ^ ": " ^ value ^ "\r\n" ^ rest)
+			 ("\r\n" ^ body) headers)
+	    end
+
+	fun writeResponse (socket, {protocol, statusCode, reasonPhrase,
+				    headers, body}) =
+	    Socket.output
+		(socket,
+		 protocol ^ " " ^ Int.toString statusCode ^ " " ^
+		 reasonPhrase ^ "\r\n" ^
+		 StringMap.foldi
+		     (fn (name, value, rest) =>
+			 name ^ ": " ^ value ^ "\r\n" ^ rest)
+		     ("\r\n" ^ body) headers)
+
+	fun reasonPhrase statusCode =
+	    case statusCode of
+		100 => "Continue"
+	      | 101 => "Switching Protocols"
+	      | 200 => "OK"
+	      | 201 => "Created"
+	      | 202 => "Accepted"
+	      | 203 => "Non-Authoritative Information"
+	      | 204 => "No Content"
+	      | 205 => "Reset Content"
+	      | 206 => "Partial Content"
+	      | 300 => "Multiple Choices"
+	      | 301 => "Moved Permanently"
+	      | 302 => "Found"
+	      | 303 => "See Other"
+	      | 304 => "Not Modified"
+	      | 305 => "Use Proxy"
+	      | 307 => "Temporary Redirect"
+	      | 400 => "Bad Request"
+	      | 401 => "Unauthorized"
+	      | 402 => "Payment Required"
+	      | 403 => "Forbidden"
+	      | 404 => "Not Found"
+	      | 405 => "Method Not Allowed"
+	      | 406 => "Not Acceptable"
+	      | 407 => "Proxy Authentication Required"
+	      | 408 => "Request Timeout"
+	      | 409 => "Conflict"
+	      | 410 => "Gone"
+	      | 411 => "Length Required"
+	      | 412 => "Precondition Failed"
+	      | 413 => "Request Entity Too Large"
+	      | 414 => "Request-URI Too Long"
+	      | 415 => "Unsupported Media Type"
+	      | 416 => "Requested Range Not Satisfiable"
+	      | 417 => "Expectation Failed"
+	      | 500 => "Internal Server Error"
+	      | 501 => "Not Implemented"
+	      | 502 => "Bad Gateway"
+	      | 503 => "Service Unavailable"
+	      | 504 => "Gateway Timeout"
+	      | 505 => "HTTP Version Not Supported"
+	      | _ => "Unknown"
+
+	fun makeResponse {statusCode, contentType, body} =
+	    let
+		val headers = StringMap.map ()
+	    in
+		StringMap.insert (headers, "Content-Type", contentType);
+		StringMap.insert (headers, "Content-Length",
+				  Int.toString (String.size body));
+		(*--** Date, Server *)
+		{protocol = "HTTP/1.1", statusCode,
+		 reasonPhrase = reasonPhrase statusCode, headers, body}
+	    end
+
+	fun isSeparator (#"(" | #")" | #"<" | #">" | #"@" |
+			 #"," | #";" | #":" | #"\\" | #"\"" |
+			 #"/" | #"[" | #"]" | #"?" | #"=" |
+			 #"{" | #"}") = true
+	  | isSeparator _ = false
+
+	fun isTokenChar c =
+	    if isSeparator c then false
+	    else Char.>= (c, #" ") andalso Char.< (c, #"\127")
+
+	fun parseFieldValue s = parseFieldValue' (String.explode s)
+	and parseFieldValue' (#" "::cs) = parseFieldValue' cs
+	  | parseFieldValue' (#"\t"::cs) = parseFieldValue' cs
+	  | parseFieldValue' (cs as c::rest) =
+	    if c = #"(" then parseComment (rest, 1, [c])
+	    else if c = #"\"" then parseQuotedString (rest, nil)
+	    else if isSeparator c then SEPARATOR c::parseFieldValue' rest
+	    else if isTokenChar c then parseToken (rest, [c])
+	    else raise Format
+	  | parseFieldValue' nil = nil
+	and parseToken (cs as c::rest, cs') =
+	    if isTokenChar c then parseToken (rest, c::cs')
+	    else parseToken' (cs', cs)
+	  | parseToken (nil, cs') = parseToken' (cs', nil)
+	and parseToken' (cs, rest) =
+	    TOKEN (String.implode (List.rev cs))::parseFieldValue' rest
+	and parseComment ((c as #"(")::rest, depth, cs) =
+	    parseComment (rest, depth + 1, c::cs)
+	  | parseComment ((c as #")")::rest, 1, cs) =
+	    COMMENT (String.implode (List.rev (c::cs)))::parseFieldValue' rest
+	  | parseComment ((c as #")")::rest, depth, cs) =
+	    parseComment (rest, depth - 1, c::cs)
+	  | parseComment (#"\\"::c::rest, depth, cs) =
+	    if Char.> (c, #"\127") then raise Format
+	    else if depth = 1 then parseComment (rest, depth, c::cs)
+	    else parseComment (rest, depth, c:: #"\\"::cs)
+	  | parseComment (c::rest, depth, cs) =
+	    if c <> #"\t" andalso (Char.< (c, #" ") orelse c = #"\127") then
+		raise Format
+	    else parseComment (rest, depth, c::cs)
+	  | parseComment (nil, _, _) = raise Format
+	and parseQuotedString (#"\""::rest, cs) =
+	    QUOTED_STRING (String.implode (List.rev cs))::parseFieldValue' rest
+	  | parseQuotedString (#"\\"::c::rest, cs) =
+	    if Char.> (c, #"\127") then raise Format
+	    else parseQuotedString (rest, c::cs)
+	  | parseQuotedString (c::rest, cs) =
+	    if c <> #"\t" andalso (Char.< (c, #" ") orelse c = #"\127") then
+		raise Format
+	    else parseQuotedString (rest, c::cs)
+	  | parseQuotedString (nil, _) = raise Format
+    end

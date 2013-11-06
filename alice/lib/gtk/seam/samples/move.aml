@@ -1,0 +1,104 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gdk        from "../Gdk"
+import structure Gtk        from "../Gtk"
+import structure Canvas  from "../Canvas"
+import structure GtkBuilder from "../GtkBuilder"
+
+local
+    open GtkBuilder
+
+    (* Create Canvas and obtain the Root Group *)
+    val canvas = MakeWidget (Canvas {pic=0, width=600, height=360})
+    val root   = Canvas.root canvas
+
+    (* Set up the Colors
+     * 1. Obtain the system colormap
+     * 2. Allocate the Colorstructure with R, G, B preset
+     * 3. Try to alloc appropriate system colors,
+     *    non-writeable and with best-match
+     * 4. Use color black and white
+     *)
+    val colormap = Gdk.colormapGetSystem ()
+    val black    = Gdk.colorNew(0,0,0)
+    val white    = Gdk.colorNew(65535,65535,65535)
+    val _        = Gdk.colormapAllocColor(colormap, black, false, true)
+    val _        = Gdk.colormapAllocColor(colormap, white, false, true)
+
+    (* Create Text Item *)
+    val textItem = MakeCanvasItem
+	(CText
+	 {parent=root, x=10.0, y=10.0,
+	  text="Press Button to move Canvas Item below",
+	  font="Sans 10", (*"-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"*)
+	  fill_color=black, anchor=Gtk.ANCHOR_NORTH_WEST})
+
+    (* Create Rectangle Item *)
+    val rectItem = MakeCanvasItem
+	(Rectangle {parent=root, x1=200.0, y1=60.0, x2=400.0, y2=180.0,
+		    fill_color=black, outline_color=white})
+
+    (* Create Rectangle Handler *)
+    local
+	fun toggleColor(item, fill, outline) =
+	    (Canvas.itemSet(item, "fill_color_gdk", Gtk.OBJECT fill);
+	     Canvas.itemSet(item, "outline_color_gdk",Gtk.OBJECT outline);
+	     Canvas.updateNow canvas)
+
+	val pressed = ref false
+	val buttonx = ref (0.0)
+	val buttony = ref (0.0) 
+    in
+	fun rectangleHandler(item, event) =
+	    (case event of
+		 Gdk.EVENT_BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
+		     (case button of
+			  1 => (toggleColor(item, white, black);
+				pressed := true; buttonx := x; buttony := y)
+			| _ => ())
+	       | Gdk.EVENT_BUTTON_RELEASE _                             =>
+		     (toggleColor(item, black, white); pressed := false)
+	       | Gdk.EVENT_MOTION_NOTIFY {x=x, y=y, ...} =>
+		     (case !pressed of
+		      true  =>
+			  let
+			      val newx = Real.- (x, !buttonx)
+			      val newy = Real.- (y, !buttony)
+			  in
+			      (Canvas.itemMove(item, newx, newy);
+			       Canvas.updateNow canvas;
+			       buttonx := x;
+			       buttony := y)
+			  end
+		    | false => ())
+	       | _                                 => ())
+    end
+
+    (* Connect Event Handler to Rectangle Item;
+     * items only have the "event" Event;
+     * All Events are passed via the Event Field of the event.
+     *)
+    val _ = Gtk.signalConnect(rectItem, "event",
+			      fn (_,[Gdk.EVENT event]) =>
+			      rectangleHandler(rectItem, event))
+
+    fun deleteHandler _ = OS.Process.exit OS.Process.success
+
+    val widget = Toplevel {title="Canvas Item Demo",
+			   border=10,
+			   handler=[Handler("delete-event", deleteHandler)],
+			   inner=Window canvas}
+in
+    val _ = MakeWidget widget
+end

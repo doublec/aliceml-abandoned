@@ -1,0 +1,17 @@
+We are happy to announce the availability of the Alice Programming System.
+
+Alice ML is a concurrent programming language conservatively extending Standard ML. It is designed to support typeful programming of open systems. It incorporates a variation of dynamics ("packages") that encapsulate modules. Entire modules (including code) can be serialised ("pickled") using that mechanism, while maintaining type and abstraction safety.
+
+Based on packages and pickling, Alice ML defines a flexible component system. Components are linked dynamically and lazily. Import and export interfaces are described by inferred ML signatures and are fully checked at link time. Custom component managers enable sandboxing in the spirit of Java.
+
+The system also provides high-level support for distributed programming. Connections between processes are established by exchanging a package. Further communication is statically type-safe and fully higher-order.
+
+The Alice library makes use of higher-order modules. Alice ML supports nested and abstract signatures, which are used in the library to provide "polymorphic" functors.
+
+For more information, please visit the Alice web site:
+
+  http://www.ps.uni-sb.de/alice/
+
+Enjoy,
+
+  - The Alice Team

@@ -1,0 +1,33 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Export interface of a remote worker. *)
+
+import structure Path from "x-alice:/lib/gecode/search-factory/Path"
+
+signature INTERFACE =
+sig
+    type solution
+
+    val interface : {id       : int,
+                     name     : string,
+		     share    : unit -> (solution Path.t) option ,
+		     explore  : solution Path.t -> unit,
+		     bestMsg  : solution -> unit,
+		     start    : unit -> unit,
+		     stop     : unit -> unit,
+		     shutdown : unit -> unit}
+end

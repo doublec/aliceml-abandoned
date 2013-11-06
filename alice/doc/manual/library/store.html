@@ -1,0 +1,255 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Store structure", "The <TT>Store</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature STORE
+    structure Store : STORE
+  </PRE>
+
+  <P>
+    The <TT>Store</TT> structure provides an interface to the Alice
+    store that holds all data at runtime. 
+  </P>
+
+  <P>
+    <B>Note:</B>
+    This is a low-level module that should be used with care. Some of its
+    functionality can compromise abstractions to a certain extent. For
+    example, it is not encouraged to apply <TT>deepWait</TT> to values
+    that contain instances of abstract types.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature STORE from "x-alice:/lib/data/STORE-sig"
+    import structure Store from "x-alice:/lib/data/Store"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+signature STORE =
+sig
+    exception Stack
+
+    val same      : 'a * 'a -> bool
+    val equiv     : 'a * 'a -> bool
+    val minimize  : 'a -> 'a
+
+    val futures   : 'a -> {total : int, concurrent : int, byneed : int}
+    val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
+
+    val size      : 'a -> {nodes : int, words : int}
+    val sizeQuiet : 'a -> {nodes : int, words : int}
+
+    val collect   : int -> unit
+    val signal    : (IntInf.int * (IntInf.int -> unit)) option -> unit
+
+    structure Map :
+    sig
+        type ('a,'b) map
+        type ('a,'b) t = ('a,'b) map
+
+        exception Unknown
+        exception Collision
+
+        val map            : unit -> ('a,'b) map
+        val clone          : ('a,'b) map -> ('a,'b) map
+        val fromList       : ('a * 'b) list -> ('a,'b) map
+        val fromVector     : ('a * 'b) vector -> ('a,'b) map
+        val toList         : ('a,'b) map -> ('a * 'b) list
+        val toVector       : ('a,'b) map -> ('a * 'b) vector
+
+        val insert         : ('a,'b) map * 'a * 'b -> unit
+        val insertDisjoint : ('a,'b) map * 'a * 'b -> unit
+        val insertWith     : ('b * 'b -> 'b) -> ('a,'b) map * 'a * 'b -> unit
+        val insertWithi    : ('a * 'b * 'b -> 'b) -> ('a,'b) map * 'a * 'b -> unit
+
+        val remove         : ('a,'b) map * 'a -> unit
+        val removeExistent : ('a,'b) map * 'a -> unit
+        val removeWith     : ('a -> unit) -> ('a,'b) map * 'a -> unit
+        val removeAll      : ('a,'b) map -> unit
+
+        val union          : ('a,'b) map * ('a,'b) map -> unit
+        val unionDisjoint  : ('a,'b) map * ('a,'b) map -> unit
+        val unionWith      : ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+        val unionWithi     : ('a * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+        val intersect      : ('a,'b) map * ('a,'b) map -> unit
+        val intersectWith  : ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+        val intersectWithi : ('a * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+        val difference     : ('a,'b) map * ('a,'b) map -> unit
+
+        val size           : ('a,'b) map -> int
+        val isEmpty        : ('a,'b) map -> bool
+
+        val member         : ('a,'b) map * 'a -> bool
+        val lookup         : ('a,'b) map * 'a -> 'b option
+        val lookupExistent : ('a,'b) map * 'a -> 'b
+        val choose         : ('a,'b) map -> 'b option
+        val choosei        : ('a,'b) map -> ('a * 'b) option
+
+        val equal          : ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+        val submap         : ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+        val disjoint       : ('a,'b) map * ('a,'b) map -> bool
+
+        val app            : ('b -> unit) -> ('a,'b) map -> unit
+        val modify         : ('b -> 'b) -> ('a,'b) map -> unit
+        val fold           : ('b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+        val all            : ('b -> bool) -> ('a,'b) map -> bool
+        val exists         : ('b -> bool) -> ('a,'b) map -> bool
+        val find           : ('b -> bool) -> ('a,'b) map -> 'b option
+        val filter         : ('b -> bool) -> ('a,'b) map -> unit
+
+        val appi           : ('a * 'b -> unit) -> ('a,'b) map -> unit
+        val modifyi        : ('a * 'b -> 'b) -> ('a,'b) map -> unit
+        val foldi          : ('a * 'b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+        val alli           : ('a * 'b -> bool) -> ('a,'b) map -> bool
+        val existsi        : ('a * 'b -> bool) -> ('a,'b) map -> bool
+        val findi          : ('a * 'b -> bool) -> ('a,'b) map -> ('a * 'b) option
+        val filteri        : ('a * 'b -> bool) -> ('a,'b) map -> unit
+    end
+end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+
+  <DL>
+
+    <DT>
+      <TT><B>exception</B> Stack</TT>
+    </DT>
+    <DD>
+      <P>Raised when a thread outgrows the maximum supported stack size
+      (64 MB per thread in the current system). Usually, this indicates a
+      diverging function.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>same (<I>x</I>, <I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P>Tests whether <TT><I>x</I></TT> and <TT><I>y</I></TT> are physically
+      equal, i.e. represented by the same object in the store.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>equiv (<I>x</I>, <I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P>Tests whether <TT><I>x</I></TT> and <TT><I>y</I></TT> represent equal
+      infinite trees, i.e. whether their respective graphs in the
+      store are semantically equivalent. For example,
+      </P>
+      <PRE>
+      equiv (rec x => 1::x, rec x => 1::1::x)          = true
+      equiv (rec x => 1::x, 1::(rec x => 1::x))        = true
+      equiv (rec x => (ref 1)::x, rec x => (ref 1)::x) = false
+      let val r = ref 1 in equiv (rec x => r::x, rec x => r::x) end = true</PRE>
+      <P><I>Note:</I> This function may internally apply <TT>minimize</TT>
+      to its arguments to detect equivalence.</P>
+    </DD>
+
+    <DT>
+      <TT>minimize <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Minimizes the store representation of <TT><I>x</I></TT> by computing
+      the minimal representation for <TT><I>x</I></TT> that is structurally
+      equivalent to the original.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>futures <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Computes the number of futures appearing in the representation
+      of <TT><I>x</I></TT>. For function values, this includes futures appearing
+      in the respective closure, as well as any internal futures used in
+      code representations (to represent not-yet-compiled code fragments,
+      for example).
+      </P>
+    </DD>
+
+    <DT>
+      <TT>deepWait <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Requests all futures in the representation of <TT><I>x</I></TT> until
+      none remain. Returns the number of futures requested.
+      Note that for function values, this may force compilation of all
+      not-yet-compiled code fragments.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>size <I>x</I></TT> <BR>
+      <TT>sizeQuiet <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Computes the number and total size of store nodes used to
+      represent <TT><I>x</I></TT>. While <TT>size</TT> is hyper-strict, i.e. it
+      requests all futures in <TT><I>x</I></TT>, <TT>sizeQuiet</TT> does not
+      request any futures but
+      includes the sizes of closures associated with lazy futures. Note that
+      the size of function values includes their respective closure and code
+      representation. Due to just-in-time compilation, the size of the latter
+      can vary over time. Ignoring concurrent interference, the following
+      equivalence holds:
+      </P>
+      <PRE>
+      size <I>x</I> = (deepWait <I>x</I>; sizeQuiet <I>x</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>collect <I>gen</I></TT>
+    </DT>
+    <DD>
+      <P>Triggers a garbage collection up to generation <I>gen</I> (if
+      the system features a generational garbage collector).
+      </P>
+    </DD>
+
+    <DT>
+      <TT>signal <I>arg</I> </TT>
+    </DT>
+    <DD>
+      <P>When called with <TT>SOME(<I>limit</I>, <I>f</I>)</TT>,
+      installs <TT><I>f</I></TT> as a handler that is invoked once memory
+      consumption of the virtual machine exceeds <TT><I>limit</I></TT>
+      bytes. Any previously
+      installed handler will be removed. Calling <TT>signal NONE</TT>
+      deinstalls the handler.
+      When the handler is called the chosen limit (probably rounded) is passed
+      as argument.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>structure Map</TT>
+    </DT>
+    <DD>
+      <P>A polymorphic hash table based on physical equality. The interface to
+      this structure is similar to <A href="imp-map.html">imperative maps</A>,
+      except that the <TT>map</TT> type is also polymorphic in its key.
+      </P>
+      <P>Note that, since the map is based on physical equality, its
+      behaviour is implementation dependent to a certain degree. In particular,
+      there is no guarantee that seperately constructed, but structurally
+      equivalent values have separate physical representation. Also note that
+      use of the <TT>minimize</TT> function may induce additional sharing.
+      Validity of the hash table is <I>not</I> compromised by garbage
+      collection, though. Store maps are considered resources and cannot be
+      pickled.</P>
+    </DD>
+
+  </DL>
+
+<?php footing() ?>

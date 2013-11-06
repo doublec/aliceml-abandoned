@@ -1,0 +1,37 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2006-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive          from "Pervasive"
+import __primitive type unit and int  from "ToplevelTypes"
+import __primitive infix 6 - val op - from "ToplevelValues"
+import __primitive signature FN       from "FN-sig"
+
+structure Fn : FN =						(**)
+struct
+    infix 3 o
+
+    fun id a		= a
+    fun const a b	= a
+    fun apply(f,a)	= f a
+    fun (f o g) a	= f(g a)
+    fun curry f a b	= f(a,b)
+    fun uncurry f (a,b)	= f a b
+    fun flip f (a,b)	= f(b,a)
+    fun repeat 0 f	= id
+      | repeat n f	= f o repeat (n-1) f
+    fun forever f a	= forever f (f a)
+    fun iter n f	= repeat n f ()
+end;

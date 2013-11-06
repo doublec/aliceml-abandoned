@@ -1,0 +1,220 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 2002-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Inf                from "../../lib/rtt/Inf"
+import structure PathMap            from "../../lib/rtt/PathMap"
+import structure TextIO             from "../../lib/system/TextIO"
+import structure OS                 from "../../lib/system/OS"
+import structure IO                 from "../../lib/system/IO"
+import structure Url                from "../../lib/system/Url"
+import structure Resolver           from "../../lib/system/Resolver"
+import structure FromEqHashable     from "../../lib/data/HASHABLE-sig"
+import structure MkHashImpMap       from "../../lib/data/MkHashImpMap"
+import signature LINK               from "LINK-sig"
+import structure MyComponent        from "MyComponent"
+
+structure Link :> LINK =
+struct
+    datatype boundary =
+	INCLUDE of string
+      | EXCLUDE of string
+
+    exception ExcludedRoot of Url.t
+    exception Mismatch of Url.t * Url.t * Inf.mismatch
+    exception Rewrite of Url.t * Url.t * Url.t
+    exception Cycle of Url.t list
+    exception Io of Url.t * exn
+
+    structure UrlMap = MkHashImpMap (FromEqHashable Url)
+
+    val trace =
+	if Option.isSome (OS.Process.getEnv "ALICE_TRACE_REWRITE") then
+	    (fn s => TextIO.output (TextIO.stdErr, "[rewrite] " ^ s))
+	else ignore
+
+    fun rewrite handlers url =
+	(trace ("rewrite request: " ^ Url.toStringRaw url ^ "\n");
+	 #1 (Option.valOf (Resolver.Handler.tracingApply trace url handlers)))
+
+    fun isExcluded (url, boundary) = isExcluded' (Url.toString url, boundary)
+    and isExcluded' (s, []) = true
+      | isExcluded' (s, INCLUDE s'::boundary') =
+	    not (String.isPrefix s' s) andalso isExcluded' (s, boundary')
+      | isExcluded' (s, EXCLUDE s'::boundary') =
+	    String.isPrefix s' s orelse isExcluded' (s, boundary')
+
+    fun allocateIndex r = !r before r := !r+1
+
+    nonfix mod
+    fun emptyBoundPaths () = Inf.boundPaths (Inf.top ())
+
+    fun unionBoundPaths ({typ, mod, inf}, {typ=typ', mod=mod', inf=inf'}) =
+	(PathMap.union (typ, typ');
+	 PathMap.union (mod, mod');
+	 PathMap.union (inf, inf'))
+
+    fun boundPaths (SOME j) = Inf.boundPaths j
+      | boundPaths NONE = emptyBoundPaths ()
+
+    fun avoid (bound, SOME j) = SOME (Option.getOpt (Inf.avoid (bound, j), j))
+      | avoid (bound, NONE) = NONE
+
+    fun realise (rea, SOME j) = SOME (Inf.realise (rea, j))
+      | realise (rea, NONE) = NONE
+
+    fun match (SOME j1, SOME j2) = Inf.match (j1, j2)
+      | match (_, _) = Inf.rea ()
+
+    fun findMatch (expectedInf, []) = NONE
+      | findMatch (expectedInf, (index, _, inf)::rest) =
+	SOME (index, match (inf, expectedInf))
+	handle Inf.Mismatch _ => findMatch (expectedInf, rest)
+
+    fun link {root, boundary, rewrite = handlers, verbose} =
+	let
+	    val boundary = EXCLUDE "x-alice:" :: INCLUDE (Url.toString root)
+			   :: boundary
+	    val rewrite = rewrite handlers
+	    val includes = UrlMap.map ()
+	    val excludes = UrlMap.map ()
+	    val rewrites = UrlMap.map ()
+	    val importIndex = ref 0
+	    val moduleIndex = ref 0
+	    val bound = emptyBoundPaths ()
+
+	    fun excludeNew (url, rea, expectedInf) =
+		if url = root then raise ExcludedRoot root else
+		let
+		    val index = allocateIndex importIndex
+		    val url'  = rewrite url
+		    val entry = (index, url', expectedInf)
+		in
+		    UrlMap.insertWith (fn (url1, url2) =>
+					  if url1 = url2 then url1 else
+					  raise Rewrite (url', url1, url2)
+				      ) (rewrites, url', url);
+		    UrlMap.insertWith (Fn.flip op@) (excludes, url, [entry]);
+		    (false, index)
+		end
+
+	    fun exclude' (url, rea, expectedInf) =
+		case UrlMap.lookup (excludes, url)
+		 of NONE => excludeNew (url, rea, expectedInf)
+		  | SOME entries =>
+		case findMatch (expectedInf, entries)
+		 of NONE => excludeNew (url, rea, expectedInf)
+		  | SOME (index, matchRea) =>
+			(Inf.unionRea (rea, matchRea);
+			 (false, index))
+
+	    fun includeNew (url, path, rea, expectedInf) =
+		(case MyComponent.load url
+		 of NONE => exclude' (url, rea, expectedInf) (* native *)
+		  | SOME component =>
+		    let
+			val index = allocateIndex moduleIndex
+			val rea' = Inf.rea ()
+			val imports =
+			    Vector.map
+			    (fn (s, inf) =>
+				traverse (Url.resolve url (Url.fromString s),
+					  path, rea, inf)
+			    ) (MyComponent.imports component)
+			val actualInf = MyComponent.inf component
+			val actualInf' = realise (rea', actualInf)
+			val matchRea = match (actualInf', expectedInf)
+			val body = MyComponent.body component
+			val entry = (index, imports, body, actualInf')
+		    in
+			Inf.unionRea (rea, matchRea);
+			unionBoundPaths (bound, boundPaths actualInf');
+			UrlMap.insert (includes, url, entry);
+			(true, index)
+		    end
+		) handle exn as IO.Io _ => raise Io (url, exn)
+		       | Inf.Mismatch m => raise Mismatch (url, hd (tl path), m)
+
+	    and include' (url, path, rea, expectedInf) =
+		case UrlMap.lookup (includes, url)
+		 of NONE => includeNew (url, path, rea, expectedInf)
+		  | SOME (index, _, _, actualInf) =>
+		    let
+			val matchRea = match (actualInf, expectedInf)
+		    in
+			Inf.unionRea (rea, matchRea);
+			(true, index)
+		    end
+		    handle Inf.Mismatch m => raise Mismatch (url, hd path, m)
+
+	    and traverse (url, path, rea, expectedInf) =
+		case List.findi (fn (_, url') => url = url') path
+		 of SOME (i, _) =>
+			raise Cycle (List.rev (url :: List.take (path, i+1)))
+		  | NONE =>
+		if isExcluded (url, boundary)
+		then exclude' (url, rea, expectedInf)
+		else include' (url, url::path, rea, expectedInf)
+
+	    val _ = traverse (root, [], Inf.rea (), NONE)
+
+	    val imports =
+		Vector.fromList
+		    (List.map (fn (_, url, inf) => (Url.toString url, inf))
+			(List.sort (Int.compare o Pair.mapBoth #1)
+				   (List.concat
+				    (List.map #2 (UrlMap.toList excludes)))))
+	    val modules =
+		Vector.fromList
+		    (List.map (fn (_, imports, body, _) => (imports, body))
+			(List.sort (Int.compare o Pair.mapBoth #1)
+				   (List.map #2 (UrlMap.toList includes))))
+	    fun body imports =
+		let
+		    val p = Promise.promise ()
+		    val mods = Promise.future p
+		    val mods =
+			Vector.map (fn (params, body) =>
+			    lazy let
+				val args =
+				    Vector.map (fn (included, index) =>
+					Vector.sub (if included then mods
+						    else imports, index)
+				    ) params
+			    in
+				body args
+			    end
+			) modules
+		in
+		    Promise.fulfill (p, mods);
+		    Future.await (Vector.sub (mods, 0))
+		end
+	    val inf = avoid (bound, #4 (UrlMap.lookupExistent (includes, root)))
+	in
+	    if not verbose then () else
+	    let
+		fun list sel = List.sort String.compare o
+			       List.map (Url.toString o sel) o UrlMap.toList
+		val inner = list #1 includes
+		val outer = list (#2 o List.hd o #2) excludes
+	    in
+		TextIO.print ("Included components:\n");
+		List.app (fn url => TextIO.print ("   " ^ url ^ "\n")) inner;
+		if List.null outer then TextIO.print "No imports\n"
+		else TextIO.print ("Imports (after rewrite):\n");
+		List.app (fn url => TextIO.print ("   " ^ url ^ "\n")) outer
+	    end;
+	    if UrlMap.size includes = 1 andalso List.length handlers = 1
+	    then Option.valOf (MyComponent.load root)
+	    else MyComponent.component {imports, body, inf}
+	end
+end

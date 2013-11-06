@@ -1,0 +1,29 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source               from "../infrastructure/Source"
+import signature CONTEXT              from "../infrastructure/CONTEXT-sig"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
+import signature ABSTRACT_GRAMMAR     from "ABSTRACT_GRAMMAR-sig"
+import structure TypedGrammar         from "TypedGrammar"
+import structure TranslationEnv       from "TranslationEnv"
+
+
+signature TRANSLATION_PHASE =
+sig
+    structure C : CONTEXT              = TranslationEnv
+    structure I : ABSTRACT_GRAMMAR     = TypedGrammar
+    structure O : INTERMEDIATE_GRAMMAR = IntermediateGrammar
+
+    val translate : Source.desc * C.t * I.com -> C.t * O.com
+end

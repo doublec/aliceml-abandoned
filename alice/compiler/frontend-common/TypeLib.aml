@@ -1,0 +1,107 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label    from "../../lib/rtt/Label"
+import structure Path     from "../../lib/rtt/Path"
+import structure Type     from "../../lib/rtt/Type"
+import signature TYPE_LIB from "TYPE_LIB-sig"
+
+structure TypeLib : TYPE_LIB =
+struct
+    fun vallab s	= Label.fromString s
+    fun typlab s	= Label.fromString s
+    fun modlab s	= Label.fromString s
+
+  (* Module and types *)
+
+    val modlab_type	= modlab "Type"
+    structure Type	= Type				(* verify *)
+
+    val typlab_kind	= typlab "kind"
+    type kind		= Type.kind			(* verify *)
+    val typlab_typ	= typlab "typ"
+    type typ		= Type.typ			(* verify *)
+    val typlab_var	= typlab "var"
+    type var		= Type.var			(* verify *)
+    val typlab_row	= typlab "row"
+    type row		= Type.row			(* verify *)
+    val typlab_constraint = typlab "contraint"
+    type constraint	= Type.constraint		(* verify *)
+
+
+  (* Operations *)
+
+    type lab		= Label.t
+    type path		= Path.t
+
+    val lab_unconstrained = vallab "Unconstrained"
+    val _		= Type.Unconstrained : constraint	(* verify *)
+    val lab_intensional	= vallab "Intensional"
+    val _		= Type.Intensional : constraint		(* verify *)
+    val lab_extensional	= vallab "Extensional"
+    val _		= Type.Extensional : path * path list -> constraint
+								(* verify *)
+
+    val lab_starKind	= vallab "starKind"
+    val _		= Type.starKind : unit -> kind		(* verify *)
+    val lab_extKind	= vallab "extKind"
+    val _		= Type.extKind : unit -> kind		(* verify *)
+    val lab_eqKind	= vallab "eqKind"
+    val _		= Type.eqKind : kind -> kind		(* verify *)
+    val lab_arrowKind	= vallab "arrowKind"
+    val _		= Type.arrowKind : kind * kind -> kind	(* verify *)
+    val lab_singKind	= vallab "singKind"
+    val _		= Type.singKind : typ -> kind		(* verify *)
+
+    val lab_unknown	= vallab "unknown"
+    val _		= Type.unknown : kind -> typ		(* verify *)
+    val lab_var		= vallab "var"
+    val _		= Type.var : var -> typ			(* verify *)
+    val lab_con		= vallab "con"
+    val _		= Type.con : path * kind -> typ		(* verify *)
+    val lab_arrow	= vallab "arrow"
+    val _		= Type.arrow : typ * typ -> typ		(* verify *)
+    val lab_tuple	= vallab "tuple"
+    val _		= Type.tuple : typ vector -> typ	(* verify *)
+    val lab_prod	= vallab "prod"
+    val _		= Type.prod : row -> typ		(* verify *)
+    val lab_sum		= vallab "sum"
+    val _		= Type.sum : row -> typ			(* verify *)
+    val lab_all		= vallab "all"
+    val _		= Type.all : var * typ -> typ		(* verify *)
+    val lab_exist	= vallab "exist"
+    val _		= Type.exist : var * typ -> typ		(* verify *)
+    val lab_lambda	= vallab "lambda"
+    val _		= Type.lambda : var * typ -> typ	(* verify *)
+    val lab_apply	= vallab "apply"
+    val _		= Type.apply : typ * typ -> typ		(* verify *)
+    val lab_abbrev	= vallab "abbrev"
+    val _		= Type.abbrev : typ * typ -> typ	(* verify *)
+
+    val lab_newVar	= vallab "newVar"
+    val _		= Type.newVar : kind * constraint -> var (* verify *)
+    val lab_kind	= vallab "kind"
+    val _		= Type.kind : typ -> kind		(* verify *)
+
+    val lab_unknownRow	= vallab "unknownRow"
+    val _		= Type.unknownRow : unit -> row		(* verify *)
+    val lab_emptyRow	= vallab "emptyRow"
+    val _		= Type.emptyRow : unit -> row		(* verify *)
+    val lab_extendRow	= vallab "extendRow"
+    val _		= Type.extendRow : lab * typ * row -> row (* verify *)
+
+    val lab_fix		= vallab "fix"
+    val _		= Type.fix : (typ * typ) vector -> unit	(* verify *)
+
+    val lab_asProd	= vallab "asProd"
+    val _		= Type.asProd : typ -> row		(* verify *)
+end

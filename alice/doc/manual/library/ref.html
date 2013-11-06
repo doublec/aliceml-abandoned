@@ -1,0 +1,139 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Ref structure", "The <TT>Ref</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature REF
+    structure Ref : REF
+  </PRE>
+
+  <P>
+    Common operations on references.
+  </P>
+
+  <P>
+    The type <TT>ref</TT> and its constructor, as well as the
+    functions <TT>!</TT>, <TT>:=</TT> and <TT>:=:</TT> are available in the
+    <A href="toplevel.html">top-level environment</A>.
+  </P>
+
+  <P>See also:
+    <A href="general.html"><TT>General</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature REF =
+    sig
+	datatype ref = datatype ref
+	type  'a t   = 'a ref
+
+	val ! :        'a ref -> 'a
+	val := :       'a ref * 'a -> unit
+	val :=: :      'a ref * 'a ref -> unit
+	val exchange : 'a ref * 'a -> 'a
+
+	val app :      ('a -> unit) -> 'a ref -> unit
+	val map :      ('a -> 'b) -> 'a ref -> 'b ref
+	val modify :   ('a -> 'a) -> 'a ref -> unit
+
+	val equal :    'a ref * 'a ref -> bool
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>datatype 'a ref = ref of 'a</TT> <BR>
+      <TT>type t = ref</TT>
+    </DT>
+    <DD>
+      <P>The type of mutable references.</P>
+    </DD>
+
+    <DT>
+      <TT>! <I>re</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the value referred to by <TT><I>re</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><I>re</I> := <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Makes the reference <TT><I>re</I></TT> refer to value
+      <TT><I>a</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><I>re1</I> :=: <I>re2</I></TT>
+    </DT>
+    <DD>
+      <P>Swaps the values referred to by the references <TT><I>re1</I></TT> and
+      <TT><I>re2</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>exchange (<I>re</I>, <I>a</I>)</TT>
+    </DT>
+    <DD>
+      <P>Makes the reference <TT><I>re</I></TT> refer to value
+      <TT><I>a</I></TT> and returns the previously referred to value
+      in a single atomic operation. This function can be used to program
+      mutexes and similar locking mechanisms.</P>
+    </DD>
+
+    <DT>
+      <TT>app <I>f</I> <I>re</I></TT>
+    </DT>
+    <DD>
+      <P>Applies the function <TT>f</TT> to the value referred to by the
+      reference <TT><I>re</I></TT>. Equivalent to <TT><I>f</I>
+      (!<I>re</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>map <I>f</I> <I>re</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a new reference that refers to the value
+      <TT><I>f a</I></TT>, where <TT><I>a</I></TT> is the value referred to
+      to by <TT><I>re</I></TT>. Equivalent to
+      <TT>ref (<I>f</I> (!<I>re</I>))</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>modify <I>f</I> <I>re</I></TT>
+    </DT>
+    <DD>
+      <P>Makes the reference <TT><I>re</I></TT> refer to the value
+      <TT><I>f a</I></TT>, where <TT><I>a</I></TT> is the value previously
+      referred to. Note that this is <EM>not</EM> an atomic operation, since
+      <TT><I>f</I></TT> might perform arbitrary computations.
+      As long as no unconditional assignments are performed in between,
+      it is guaranteed that no thread can access the value referred to before
+      the operation completes, however. The reference refers to a future of
+      <TT><I>f a</I></TT> until that point. Ignoring concurrency issues, the
+      above expression is equivalent to <TT><I>re</I> := <I>f</I>
+      (!<I>re</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>re1</I>, <I>re2</I>)</TT>
+    </DT>
+    <DD>
+      <P>An explicit equality function on references. Equivalent to <TT>op=</TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

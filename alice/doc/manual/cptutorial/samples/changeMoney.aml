@@ -1,0 +1,37 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Modeling
+
+(* billsandcoins is a vector of pairs where the first component
+   specifies the value of a coin in cents and the second the
+   the amount of available coins *)
+   val billsandcoins = #[{incents=100,avail=6},
+  			 {incents=25,avail=8},
+  			 {incents=10,avail=10},
+  		 	 {incents=5,avail=1},
+   			 {incents=1,avail=5}];
+                         
+(* amount specifies the amount of money you have to pay*)
+   val amount = 142;
+
+
+fun changeMoney(bac:{avail:int,incents:int}vector) amount space =
+    let
+       val denoms = Vector.map(fn x => 
+                     FD.range(space,(0,#avail(x))))(bac)      
+    in
+       FD.linear(space,VectorPair.zip(Vector.map
+                              (fn x =>(#incents(x)))bac,denoms),
+                       FD.EQ,amount,FD.DOM);
+       FD.branch(space,denoms,FD.B_NONE,FD.B_MAX);
+      {dollars=Vector.sub(denoms,0),quarters=Vector.sub(denoms,1),
+       dimes=Vector.sub(denoms,2),nickels=Vector.sub(denoms,3),
+       pennies=Vector.sub(denoms,4)}
+    end    	
+ 
+(* Explorer.exploreAll(changeMoney billsandcoins amount) *);   	
+    	
+    	

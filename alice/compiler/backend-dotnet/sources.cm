@@ -1,0 +1,26 @@
+Group
+
+    functor MkBackendDotNet
+
+is
+
+    ../../lib/utility/sources.cm
+    ../../lib/rtt/name.cm
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+    ../backend-common/flat-grammar.cm
+    ../backend-common/intermediate-aux.cm
+
+    SKELETON-sig.aml
+    Skeleton.aml
+    IL-sig.aml
+    IL.aml
+    System.aml
+    Alice.aml
+    BUILTINS-sig.aml
+    Builtins.aml
+    CODE_STORE-sig.aml
+    CodeStore.aml
+    CODE_GEN_PHASE-sig.aml
+    CodeGenPhase.aml
+    MkBackendDotNet.aml

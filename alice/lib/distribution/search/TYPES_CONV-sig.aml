@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature TYPES_CONV =
+    sig
+	type sol
+	type internal_sol
+
+	val internalize : sol -> internal_sol
+	val externalize : internal_sol -> sol
+    end

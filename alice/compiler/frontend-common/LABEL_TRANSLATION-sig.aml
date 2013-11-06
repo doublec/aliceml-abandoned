@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label from "../../lib/rtt/Label"
+
+signature LABEL_TRANSLATION =
+sig
+    val trValLabel : Label.t -> Label.t
+    val trTypLabel : Label.t -> Label.t
+    val trModLabel : Label.t -> Label.t
+    val trInfLabel : Label.t -> Label.t
+end

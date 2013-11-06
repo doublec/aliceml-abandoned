@@ -1,0 +1,29 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Reflect from "Reflect"
+import structure Inf     from "../rtt/Inf"
+
+signature DYN_MATCH =
+sig
+    type module = Reflect.module
+
+    exception Hidden
+
+    val match :          Reflect.module * Inf.t -> Inf.rea
+    val matchWith :      Inf.rea * Reflect.module * Inf.t -> unit
+    val strengthen :     Reflect.module * Inf.t -> Inf.t
+    val strengthenWith : Inf.rea * Reflect.module * Inf.t -> Inf.t
+    val thin :           Reflect.module * Inf.t -> Reflect.module
+    val seal :           Reflect.module * Inf.t -> Reflect.module
+    val unpackMatch :    Reflect.module * Inf.t * Inf.t -> Reflect.module
+end

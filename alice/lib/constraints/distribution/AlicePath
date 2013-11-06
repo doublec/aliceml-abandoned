@@ -1,0 +1,21 @@
+echo -n "Setting ALICE_LOAD..."
+
+ALICE_LOAD=""
+
+# Channel (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/lib/data/Channel=/local/botlan/alice/lib/data/Channel.alc:$ALICE_LOAD"
+
+# Gecode (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/lib/gecode/?{x}=/local/botlan/gecode/interfaces/alice/?{x}.dll:$ALICE_LOAD"
+ALICE_LOAD="pattern=x-alice:/lib/gecode/?{x}=/local/botlan/gecode/interfaces/alice/?{x}.alc:$ALICE_LOAD"
+
+# Explorer (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/tools/Explorer=/local/botlan/alice/tools/explorer/LinkedExplorer.alc:$ALICE_LOAD"
+ALICE_LOAD="pattern=x-alice:/tools/explorer/?{x}=/local/botlan/alice/tools/explorer/?{x}.alc:$ALICE_LOAD"
+
+# Distributed search engine (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/lib/constraints/distribution/?{x}=/local/botlan/alice/lib/constraints/distribution/?{x}.alc:$ALICE_LOAD"
+
+echo "Done."
+export ALICE_LOAD
+

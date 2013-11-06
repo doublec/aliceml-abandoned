@@ -1,0 +1,120 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url                   from "../../lib/system/Url"
+import structure Source                from "../infrastructure/Source"
+
+import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
+import signature PHASE                 from "../infrastructure/PHASE-sig"
+import structure EmptyContext          from "../infrastructure/EmptyContext"
+import functor   ComposePhases
+       functor   ComposePhases'        from "../infrastructure/ComposePhases"
+import functor   MkTracingPhase        from "../infrastructure/MkTracingPhase"
+import functor   MkResultDumpingPhase  from
+					"../infrastructure/MkResultDumpingPhase"
+
+import structure TypedGrammar          from "TypedGrammar"
+import structure Inf                   from "../../lib/rtt/Inf"
+import structure PPInf                 from "../../lib/rtt/PPInf"
+import structure PPIntermediateGrammar from "../common/IntermediateGrammar"
+import structure PrettyPrint           from "../../lib/utility/PrettyPrint"
+
+import structure Reflect               from "../../lib/system/Reflect"
+
+import functor   MkElaborationPhase    from "MkElaborationPhase"
+import functor   MkTranslationPhase    from "MkTranslationPhase"
+import structure CheckIntermediate     from "../common/CheckIntermediate"
+
+
+functor MkFrontendCommon (
+    val loadSig: Source.desc * Url.t -> Inf.sign
+    val loadMod: Source.desc * Url.t -> Reflect.module
+    val loadImports: Source.desc * Url.t -> (Url.t * Inf.sign) vector
+    structure Switches: SWITCHES
+) : PHASE =
+let
+    fun ppCom(TypedGrammar.Com(i, anns, _)) =
+	let
+	    open PrettyPrint
+	    infixr ^^ ^/^
+	in
+	    Vector.foldr (fn(TypedGrammar.ImpAnn(i, _, url, b), doc) =>
+			     abox(
+				  nest 3 (
+				      text(if not b then "import"
+					   else "import __primitive") ^/^
+				      PPInf.ppSig(#sign i)
+				  ) ^/^
+				  text ("from \"" ^ Url.toString url ^ "\"")
+			      ) ^/^ doc
+			  ) (PPInf.ppSig(#sign i)) anns
+	end
+
+    structure Phase1 =
+	      MkTracingPhase(
+		    structure Phase =
+			MkElaborationPhase(val       loadSig     = loadSig
+					   val       loadMod     = loadMod
+					   val       loadImports = loadImports
+					   structure Switches    = Switches)
+		    structure Switches = Switches
+		    val name = "Elaboration"
+	      )
+    structure Phase2 =
+	      MkTracingPhase(
+		    structure Phase    = MkTranslationPhase(Switches)
+		    structure Switches = Switches
+		    val name = "Translation"
+	      )
+    structure Phase1' =
+	      MkResultDumpingPhase(
+		    structure Phase    = Phase1
+		    structure Switches = Switches
+		    val header = "Component Signature"
+		    val pp     = ppCom
+		    val switch = Switches.Debug.dumpElaborationSig
+	      )
+    structure Phase2' =
+	      MkResultDumpingPhase(
+		    structure Phase    = Phase2
+		    structure Switches = Switches
+		    val header = "Intermediate Syntax"
+		    val pp     = PPIntermediateGrammar.ppCom
+		    val switch = Switches.Debug.dumpIntermediate
+	      )
+    structure Phase3 =
+	      MkTracingPhase(
+		    structure Phase =
+		    struct
+			structure C = EmptyContext
+			structure I = Phase2'.O
+			structure O = I
+
+			fun translate(_, _, com) =
+			    (if !Switches.Debug.checkIntermediate
+			     then CheckIntermediate.check com else ();
+			     ((), com))
+		    end
+		    structure Switches = Switches
+		    val name = "Verification (optional)"
+	      )
+in
+    ComposePhases' (
+	structure Phase1  = ComposePhases(structure Phase1 = Phase1'
+					  structure Phase2 = Phase2')
+	structure Phase2  = Phase3
+	structure Context = Phase1.C
+	val context       = Pair.fst
+	val context1      = Fn.id
+	val context2      = ignore
+    )
+end

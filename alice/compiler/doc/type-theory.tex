@@ -1,0 +1,227 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[twoside]{article}
+\usepackage{times,alltt,url,a4}
+
+\setlength{\parskip}{1.5ex}
+\setlength{\parindent}{0mm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\conarrow}{\hookrightarrow}
+
+\newcommand{\x}[1]{\mathit{#1}}
+\newcommand{\f}[1]{\mbox{#1}}
+\renewcommand{\c}[1]{c_{\f{\scriptsize #1}}}
+
+\newcommand{\lab}{\x{lab}}
+\newcommand{\id}{\x{id}}
+\newcommand{\longid}{\x{longid}}
+\newcommand{\lit}{\x{lit}}
+\renewcommand{\exp}{\x{exp}}
+\newcommand{\exps}{\x{exps}}
+\newcommand{\fld}{\x{fld}}
+\newcommand{\flds}{\x{flds}}
+\newcommand{\mat}{\x{mat}}
+\newcommand{\mats}{\x{mats}}
+\newcommand{\pat}{\x{pat}}
+\newcommand{\pats}{\x{pats}}
+\newcommand{\dec}{\x{dec}}
+\newcommand{\decs}{\x{decs}}
+\newcommand{\imp}{\x{imp}}
+\newcommand{\imps}{\x{imps}}
+\newcommand{\com}{\x{com}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{The Stockhausen Type Structure}
+\author{Andreas Rossberg \\
+Universit\"at des Saarlandes \\
+\url{rossberg@ps.uni-sb.de}}
+\date{\today}
+
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+\label{intro}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This document describes the core type structure used in the implementation of the Alice system. We omit some detail in order to simplify the presentation:
+
+\begin{itemize}
+\setlength{\parskip}{0ex}
+\item Products and sums are unlabelled.
+\item Abbreviations used to remember type synonyms for printing are omitted.
+\item Holes (meta variables) and alias types needed for unification are omitted.
+\item Singleton and extension kinds are omitted. Consequently, there is no subkinding.
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Syntax}
+\label{coresyntax}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following grammar defines the set $\f{T}$ of {\em type} terms and the set $\f{K}$ of {\em kind} terms.
+
+\begin{center}
+\begin{tabular}{lcll}
+$\alpha$&$\in$&	\f{V}				& variables \\
+$c$	&$\in$&	\f{C}				& type names \\
+\ \\
+
+$t$	&$:=$&	$\alpha^k$			& type variable \\
+	&&	$c^k$				& type constant \\
+	&&	$t_1 \to t_2$			& arrow \\
+%	&&	$t_1 \conarrow t_2$		& constructor arrow \\
+%	&&	$\{r\}$				& product \\
+%	&&	$[\,r\,]$			& sum \\
+	&&	$\{t_1 \times \cdots \times t_n\}$ & product ($n\geq0$) \\
+	&&	$[\,t_1 + \cdots + t_n\,]$	& sum  ($n\geq0$) \\
+	&&	$\mu \alpha^k . t$		& recursion \\
+	&&	$\forall \alpha^k . t$		& universal quantification \\
+	&&	$\exists \alpha^k . t$		& existential quantification \\
+	&&	$\lambda \alpha^k . t$		& function \\
+	&&	$t_1 t_2$			& application \\
+\ \\
+
+%$r$	&$:=$&	$\epsilon$			& empty row \\
+%	&&	$l:t,r$				& field \\
+%\ \\
+%
+$k$	&$:=$&	$*$				& ground type \\
+%	&&	$+$				& extensible type \\
+	&&	$k_1 \to k_2$			& constructor \\
+\end{tabular}
+\end{center}
+
+Although not directly supported by the SML frontend yet, we have a higher-order type system. Thus all type variables and constants are decorated with a kind annotation $k$. Kinding rules are the standard rules for an impredicative type system (i.e.\ quantified types have kind $*$). We take the freedom to assume well-kindedness and omit obvious kind annotations in most of the remainder of this document.
+
+Products and sums are polyadic. The 0-ary product $\{\}$ encodes the trivial
+type $\x{unit}$ and the 0-ary sum $[\,]$ encodes the absurd type $\x{void}$.\footnote{We chose to retain polyadic products and sums in our presentation in order to avoid a separate encoding of $\x{unit}$ and to keep datatype encodings and the restriction on recursive types consistent with the actual implementation.}
+
+Recursive types are restricted to the form:
+\begin{eqnarray*}
+\mu\alpha_0 . \lambda\alpha_1 . \cdots . \lambda\alpha_n . t 
+\end{eqnarray*}
+where $n\geq0$ and $t$ is either a product or a sum and contains no free type variables except $\alpha_0,\cdots,\alpha_n$. This allows more efficient substitution and occur check, since they can ignore $\mu$ types --- these operations occur quite frequently and recursive types often get large in SML.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Examples}
+\label{coreexamples}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Here are some example encodings of SML \cite{definition} type declarations:
+
+\begin{tabular}{ll}
+{\small\tt type intref = int ref} &
+$\x{intref} = \c{ref} \c{int}$
+\\
+{\small\tt type 'a t = 'a u} &
+$t = \lambda\alpha . u \alpha = u$
+\\
+{\small\tt type ('a,'b) table = 'a array * 'b array} &
+$\x{table} = \lambda\alpha . \lambda\beta . \{\c{array}\alpha \times \c{array}\beta\}$
+\\
+{\small\tt datatype bool = false | true} &
+$\x{bool} = \mu\alpha . [\,\{\} + \{\}\,]$
+\\
+{\small\tt datatype s = S of int} &
+$s = \mu\alpha . [\,\c{int}\,]$
+\\
+{\small\tt datatype 'a list = nil |\ :: of 'a * 'a list} &
+$\x{list} = \mu\beta . \lambda\alpha . [\,\{\} + \{\alpha \times \beta \alpha\}\,]$
+\\
+{\small\tt datatype v = A | B of v | C of w} &
+$v = \mu\alpha . [\,\{\} + \alpha + \mu\beta . [\,\c{int} + \alpha\,]\,]$ \\
+{\small\tt and\ \ \ \ \ \ w = D of int | E of v} &
+$w = \mu\beta . [\,\c{int} + \mu\alpha . [\,\{\} + \alpha + \beta\,]\,]$
+\end{tabular}
+
+Note that, for uniformity, all datatypes are encoded as recursive sums, even if they are in fact non-recursive (like {\tt bool}), or only have one constructor (like {\tt s}).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Equivalence}
+\label{coreequiv}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Equivalence is defined as the greatest (co-inductive) fixpoint w.r.t.~the following rules:\footnote{As is standard, we use square brackets for both, substitutions and sum types, but the notations are distinguishable from context.}
+\begin{eqnarray}
+\label{mualpha} \mu \alpha_1.t &=& \mu \alpha_2.t[\alpha_2/\alpha_1] \\
+\label{mushao}  \mu \alpha.t &=& \mu \alpha.t[\mu \alpha.t/\alpha] \\
+\nonumber\\
+\label{forallalpha}\forall \alpha_1.t &=& \forall \alpha_2.t[\alpha_2/\alpha_1] \\
+%\label{forallorder} \forall \alpha_1.\forall \alpha_2.t &=& \forall \alpha_2.\forall \alpha_1.t \\
+%\nonumber\\
+\label{existsalpha} \exists \alpha_1.t &=& \exists \alpha_2.t[\alpha_2/\alpha_1] \\
+%\label{existsorder} \exists \alpha_1.\exists \alpha_2.t &=& \exists \alpha_2.\exists \alpha_1.t \\
+\nonumber\\
+\label{lambdaalpha} \lambda \alpha_1.t &=& \lambda \alpha_2.t[\alpha_2/\alpha_1] \\
+\label{lambdabeta}  (\lambda \alpha.t_1) t_2 &=& t_1[t_2/\alpha] \\
+\label{lambdaeta}   \lambda \alpha.t \alpha &=& t \qquad\qquad (\alpha\notin\f{FV}(t))
+%\nonumber\\
+%l_1:t_1,l_2:t_2,r &=& l_2:t_2,l_1:t_1,r
+\end{eqnarray}
+
+Equations (\ref{mualpha}) and (\ref{forallalpha}-\ref{lambdaalpha}) are standard $\alpha$ conversion rules. Equations (\ref{lambdabeta}) and (\ref{lambdaeta}) are $\beta$ and $\eta$ equivalence. The remaining rule (\ref{mushao}) is known as ``Shao's equation'' and is essential to make SML's signature subtyping semantics compatible with a structural interpretation of datatypes \cite{datatypes}. It essentially allows mutual recursion being expressed without resorting to polyadic fixpoints (see $v$ and $w$ in section \ref{coreexamples}). Note that, although (\ref{mushao}) provides a limited form of implicit unrolling, there is no equational rule to eliminate $\mu$ types. Thus an application to a recursive type function always is in normal form, no reduction is taking place. For example, the normalised representation of the SML type {\tt int} {\tt list} is
+\begin{eqnarray*}
+(\mu\beta . \lambda\alpha . [\,\{\} + \{\alpha \times \beta\alpha\}\,])\x{int}
+\end{eqnarray*}
+This ensures that type equivalence is decidable. In particular, we can safely allow non-uniform recursive types (which are allowed in SML) without having to deal with non-regular terms:
+\begin{eqnarray*}
+\mu\beta . \lambda\alpha . [\,\alpha + \beta\{\alpha \times \alpha\}\,]
+\end{eqnarray*}
+is the normal form for
+\begin{alltt}
+datatype 'a t = A of 'a | B of ('a * 'a) t
+\end{alltt}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Operations}
+\label{coreoperations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The type representation must allow a set of operations being supported efficiently:\footnote{For now we ignore additional operations needed during type inference, e.g.\ unification.}
+
+\begin{itemize}
+\item construction (build type terms incrementally)
+\item inspection (find out what the head of a type term in normal form is)
+\item projection (for constructed types, deliver the constituent types)
+\item equality (check whether two types are equivalent)
+\item substitution/realisation (replace type variables/constant by arbitrary terms of compatible kind)
+\end{itemize}
+
+The need for construction and equivalence checks is obvious. Inspection and projection are needed for various particular checks and for pretty printing. Note that this includes the ability to inspect binders, so a higher-order representation of the type syntax is not suitable. Substitution and realisation are essential for performing subtyping checks on module signatures \cite{modules}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{thebibliography}{CHCPS98}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibitem[CHCPS98]{datatypes}
+Karl Crary, Robert Harper, Perry Cheng, Leaf Petersen, Chris Stone \\
+{\it Transparent and Opaque Interpretations of Datatypes} \\
+Technical Report CMU-CS-98-177, \\
+School of Computer Science, Carnegie Mellon University, Pittsburgh, 1998
+
+\bibitem[L00]{modules}
+Xavier Leroy \\
+{\it A modular module system} \\
+Journal of Functional Programming 10(3), 2000
+
+\bibitem[MTHM97]{definition}
+Robin Milner, Mads Tofte, Robert Harper, David MacQueen \\
+{\it The Definition of Standard ML} (Revised) \\
+The MIT Press, 1997
+
+\end{thebibliography}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

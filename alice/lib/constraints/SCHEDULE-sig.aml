@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD from "FD"
+
+signature SCHEDULE =
+    sig
+	type tasks  = (string * string list) vector
+	type starts = (string * FD.fd) vector 
+	type specs  = (string * int) vector
+	    
+	val cumulative : tasks * starts * specs * specs * specs -> unit
+	val cumulativeEF : tasks * starts * specs * specs * specs -> unit
+	val cumulativeTI : tasks * starts * specs * specs * specs -> unit
+	val cumulativeUp : tasks * starts * specs * specs * specs -> unit
+	val disjoint : FD.fd * int * FD.fd * int -> unit
+	val firstsDist : tasks * starts * specs -> unit
+	val lastsDist : tasks * starts * specs -> unit
+	val firstsLastsDist : tasks * starts * specs -> unit
+	val taskIntervalsDistP : tasks * starts * specs -> unit
+	val taskIntervalsDistO : tasks * starts * specs -> unit
+	val serializedDisj : tasks * starts * specs -> unit
+	val serialized : tasks * starts * specs -> unit
+	val taskIntervals : tasks * starts * specs -> unit
+    end

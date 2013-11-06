@@ -1,0 +1,53 @@
+import structure Print from "x-alice:/lib/system/Print"
+
+open Promise
+
+fun pause () = TextIO.inputLine TextIO.stdIn
+
+fun nl () = print "\n"
+
+fun alice s = (TextIO.print ("\n\nAlice: " ^ s ^ "\n"); pause ())
+fun oz x = (TextIO.print "Oz: "; Print.printVal x; nl (); pause ())
+
+val _ = alice "1"
+val _ = oz 1
+
+val _ = alice "#\"a\""
+val _ = oz #"a"
+
+val _ = alice "1.0"
+val _ = oz 1.0
+
+val _ = alice "(true, false, ())"
+val _ = oz (true, false, ())
+
+val _ = alice "{firstname = \"Karl-Heinz\", surname = \"Stockhausen\"}"
+val _ = oz {firstname = "Karl-Heinz", surname = "Stockhausen"}
+
+local
+    datatype t = C of int * int
+in
+    val _ = alice "datatype t = C of int * int\n       C (17, 7)"
+    val _ = oz (C (17, 7))
+end
+
+local
+    datatype 'a t = C of 'a
+in
+    val _ = alice "datatype 'a t = C of 'a\n       C (17, 7)"
+    val _ = oz (C (17, 7))
+end
+
+val _ = alice "ref 1"
+val _ = oz (ref 1)
+
+val _ = alice "1::2::3::nil"
+val _ = oz (1::2::3::nil)
+
+val _ = alice "1::2::3::future (promise ())"
+val _ = oz (1::2::3::future (promise ()))
+
+val _ = alice "fn (_, _) => ()"
+val _ = oz (fn (_, _) => ())
+
+val _ = OS.Process.exit OS.Process.success

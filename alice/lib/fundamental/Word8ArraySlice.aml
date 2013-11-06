@@ -1,0 +1,32 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive type unit and int          from "ToplevelTypes"
+import __primitive structure Word8Array       from "Word8Array"
+import __primitive structure Word8VectorSlice from "Word8VectorSlice"
+import functor MkMonoArraySlice               from "MkMonoArraySlice"
+
+structure Word8ArraySlice = MkMonoArraySlice(
+    type elem         = Word8Array.elem
+    type vector       = Word8Array.vector
+    type array        = Word8Array.array
+    type vector_slice = Word8VectorSlice.t
+    __primitive type slice = "Word8ArraySlice.slice"
+    __primitive val alength :   array -> int = "Word8Array.length"
+    __primitive val asub :      array * int -> elem = "Word8Array.sub"
+    __primitive val aupdate :   array * int * elem -> unit = "Word8Array.update"
+    __primitive val aextract :  array * int * int -> vector = "Word8Array.extract"
+    __primitive val vtabulate : int * (int -> elem) -> vector = "Word8Vector.tabulate"
+    val vsllength = Word8VectorSlice.length
+    val vslsub    = Word8VectorSlice.sub
+)

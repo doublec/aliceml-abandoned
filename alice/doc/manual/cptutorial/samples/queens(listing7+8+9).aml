@@ -1,0 +1,45 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+
+open Modeling
+
+fun loop i n f = if i >= n then nil else f i :: loop (i + 1) n f
+
+fun upperTriangle n =
+   List.concat (loop 0 n 
+               (fn i => loop (i + 1) n (fn j => (i, j))))
+
+fun queens n space =
+   let
+      val row = Modeling.fdtermVec(space, n, [0`#(n - 1)])
+   in
+      distinct (space, row, FD.BND);
+      List.app (fn (i, j) =>
+         let
+            val rowi = Vector.sub (row, i)
+            val rowj = Vector.sub (row, j)
+         in
+            post (space, rowi `+ (`j `- `i) `<> rowj, FD.BND);
+            post (space, rowi `- (`j `- `i) `<> rowj, FD.BND)
+         end) (upperTriangle n);
+      branch (space, row, FD.B_SIZE_MIN, FD.B_MED);
+      row
+   end
+
+
+fun betterqueens n space =
+  let
+    val row = FD.rangeVec (space, n, (0, n - 1))
+    val add = Vector.tabulate (n, fn i => 0 + i)
+    val sub = Vector.tabulate (n, fn i => 0 - i)
+  in
+    FD.distinct (space, row, FD.BND);
+    FD.distinctOffset (space, VectorPair.zip (add, row), FD.BND);
+    FD.distinctOffset (space, VectorPair.zip (sub, row), FD.BND);
+    FD.branch (space, row, FD.B_SIZE_MIN, FD.B_MED);
+    row
+  end
+
+(* Explorer.exploreAll (queens 9) *);
+(* Explorer.exploreAll (betterqueens 9) *);

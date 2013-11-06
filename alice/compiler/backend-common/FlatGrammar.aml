@@ -1,0 +1,205 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Reflect             from "../../lib/system/Reflect"
+import structure Url                 from "../../lib/system/Url"
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
+import structure Type                from "../../lib/rtt/Type"
+import structure PervasiveType       from "../../lib/rtt/PervasiveType"
+import structure Crash               from "../infrastructure/Crash"
+import structure Source              from "../infrastructure/Source"
+import structure Stamp               from "../common/Stamp"
+import structure IntermediateGrammar from "../common/IntermediateGrammar"
+import structure Arity               from "Arity"
+import signature FLAT_GRAMMAR        from "FLAT_GRAMMAR-sig"
+
+structure FlatGrammar :> FLAT_GRAMMAR =
+    struct
+	(* Annotations *)
+
+	type lit_info = Source.region
+	type id_info = {region: Source.region, typ: Type.t}
+	type stm_info = Source.region
+	type exp_info = Source.region
+
+	(* Statements and Expressions *)
+
+	datatype lit = (*--** need to annotate widths *)
+	    IntLit of lit_info * LargeInt.int
+	  | WordLit of lit_info * LargeWord.word
+	  | CharLit of lit_info * WideChar.char
+	  | StringLit of lit_info * WideString.string
+	  | RealLit of lit_info * LargeReal.real
+
+	type stamp = Stamp.t
+	type name = Name.t
+	type label = Label.t
+
+	datatype id = Id of id_info * Stamp.t * Name.t
+
+	datatype idDef =
+	    IdDef of id
+	  | Wildcard
+
+	datatype idRef =
+	    IdRef of id
+	  | LastIdRef of id
+	  | Lit of lit
+	  | Prim of string
+	  | Value of Reflect.value * bool
+
+	datatype funFlag =
+	    PrintName of string
+	  | AuxiliaryOf of stamp
+	  | IsToplevel
+
+	datatype 'a args =
+	    OneArg of 'a
+	  | TupArgs of 'a vector
+	    (* may be unary only for Tag and Con *)
+	  | ProdArgs of (label * 'a) vector
+	    (* sorted, all labels distinct, no tuple *)
+
+	datatype prod =
+	    Tuple of int
+	  | Product of label vector
+
+	datatype entry_point =
+	    ConEntry of Type.t * idRef * idRef args
+	  | SelEntry of prod * label * int * Type.t * idRef
+	  | StrictEntry of Type.t * idRef
+	  | AppEntry of Type.t * idRef * idRef args
+	  | CondEntry of Type.t * idRef
+	  | RaiseEntry of idRef
+	  | HandleEntry of idRef
+	  | SpawnEntry
+
+	datatype exit_point =
+	    ConExit
+	  | SelExit of Type.t
+	  | StrictExit
+	  | AppExit
+	  | CondExit of Type.t
+	  | RaiseExit of Type.t
+	  | HandleExit of Type.t
+	  | SpawnExit of Type.t
+
+	datatype stm =
+	  (* the following may never be last *)
+	    Entry of stm_info * entry_point
+	  | Exit of stm_info * exit_point * idRef
+	  | LastUse of stm_info * id vector
+	  | ValDec of stm_info * idDef * exp
+	  | RecDec of stm_info * (idDef * exp) vector
+	  | RefDec of stm_info * idDef * idRef
+	  | TupDec of stm_info * idDef vector * idRef
+	  | ProdDec of stm_info * (label * idDef) vector * idRef
+	    (* sorted, all labels distinct, no tuple *)
+	  (* the following must always be last *)
+	  | RaiseStm of stm_info * idRef
+	  | ReraiseStm of stm_info * idRef
+	  | TryStm of stm_info * body * idDef * idDef * body
+	  | EndTryStm of stm_info * body
+	  | EndHandleStm of stm_info * body
+	    (* all bodies of EndTryStm/EndHandleStm corresponding to an
+	     * exception handler are identical (and - if necessary - are
+	     * marked by a SharedStm node) *)
+	  | TestStm of stm_info * idRef * tests * body
+	  | SharedStm of stm_info * body * stamp
+	  | ReturnStm of stm_info * exp
+	  | IndirectStm of stm_info * body option ref
+	  | ExportStm of stm_info * exp
+	and tests =
+	    LitTests of (lit * body) vector
+	  | TagTests of label vector * (int * idDef args * body) vector
+	  | ConTests of (idRef * idDef args * body) vector
+	  | VecTests of (idDef vector * body) vector
+	and exp =
+	    NewExp of exp_info * Name.t
+	  | VarExp of exp_info * idRef
+	  | TagExp of exp_info * label vector * int * idRef args
+	  | ConExp of exp_info * idRef * idRef args
+	  | RefExp of exp_info * idRef
+	  | TupExp of exp_info * idRef vector
+	  | ProdExp of exp_info * (label * idRef) vector
+	    (* sorted, all labels distinct, no tuple *)
+	  | PolyProdExp of exp_info * (label * idRef) vector
+	    (* sorted, all labels distinct *)
+	  | VecExp of exp_info * idRef vector
+	  | FunExp of exp_info * stamp * funFlag list *
+		      Type.t * idDef args * Arity.t option * body
+ 	  | PrimAppExp of exp_info * string * idRef vector
+ 	    (* no calling convention required conversion for in-arguments *)
+	  | VarAppExp of exp_info * idRef * idRef args
+	  | DirectAppExp of exp_info * idRef * idRef args
+	    (* no calling convention required conversion for in-arguments *)
+	  | SelExp of exp_info * prod * label * int * idRef
+	  | LazyPolySelExp of exp_info * label * idRef
+	  | FunAppExp of exp_info * idRef * stamp * idRef args
+	    (* no calling convention required conversion for in-arguments *)
+	  | FailExp of exp_info
+	withtype body = stm list
+
+	type sign = IntermediateGrammar.sign
+	type component =
+	     {imports: (id * sign * Url.t * bool) vector,
+	      body: body,
+	      exports: (label * id) vector,
+	      sign: sign}
+	type t = component
+
+	fun freshTypedId (region, typ) =
+	    Id ({region=region, typ=typ}, Stamp.stamp (), Name.InId)
+
+	val unknownTyp = Type.unknown (Type.starKind ())
+
+ 	fun freshId region =
+	    freshTypedId (region, unknownTyp)
+
+        fun idType (Id ({typ = t, ...}, _, _)) = t
+
+	fun infoStm (Entry (info, _)) = info
+	  | infoStm (Exit (info, _, _)) = info
+	  | infoStm (LastUse (info, _)) = info
+	  | infoStm (ValDec (info, _, _)) = info
+	  | infoStm (RecDec (info, _)) = info
+	  | infoStm (RefDec (info, _, _)) = info
+	  | infoStm (TupDec (info, _, _)) = info
+	  | infoStm (ProdDec (info, _, _)) = info
+	  | infoStm (RaiseStm (info, _)) = info
+	  | infoStm (ReraiseStm (info, _)) = info
+	  | infoStm (TryStm (info, _, _, _, _)) = info
+	  | infoStm (EndTryStm (info, _)) = info
+	  | infoStm (EndHandleStm (info, _)) = info
+	  | infoStm (TestStm (info, _, _, _)) = info
+	  | infoStm (SharedStm (info, _, _)) = info
+	  | infoStm (ReturnStm (info, _)) = info
+	  | infoStm (IndirectStm (info, _)) = info
+	  | infoStm (ExportStm (info, _)) = info
+
+	fun litEq (IntLit (_, i1), IntLit (_, i2)) = i1 = i2
+	  | litEq (WordLit (_, w1), WordLit (_, w2)) = w1 = w2
+	  | litEq (CharLit (_, c1), CharLit (_, c2)) = c1 = c2
+	  | litEq (StringLit (_, s1), StringLit (_, s2)) = s1 = s2
+	  | litEq (RealLit (_, r1), RealLit (_, r2)) = Real.== (r1, r2)
+	  | litEq (_, _) = raise Crash.Crash "IntermediateAux.litEq"
+
+        fun litType t =
+            case t
+              of IntLit _    => PervasiveType.typ_int
+               | WordLit _   => PervasiveType.typ_word
+               | CharLit _   => PervasiveType.typ_char
+               | StringLit _ => PervasiveType.typ_string
+               | RealLit _   => PervasiveType.typ_real
+
+    end

@@ -1,0 +1,225 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure StrMap        from "StrMap"
+import structure Naming        from "Naming"
+(*import structure Types         from "Types" *)
+import structure Print'        from "x-alice:/lib/system/Print"
+import structure AliceName     from "AliceName"
+import structure Rename        from "Rename"
+import structure Lexer         from "Lexer"
+import structure BasicTypes    from "BasicTypes"
+import structure Ignore        from "Ignore"
+import structure SexpTools     from "SexpTools"
+import structure AliceType     from "AliceType"
+
+signature DEFS = 
+sig
+    type alice_name      = AliceName.alice_name
+
+    datatype ty = 
+        TY_BOXED of {
+            cName :         BasicTypes.c_name,
+            aliceName :     alice_name,
+            copyFunc :      BasicTypes.c_name option,
+            releaseFunc :   BasicTypes.c_name option,
+            fields :        (BasicTypes.def_type * BasicTypes.c_name * (string * string)) list,
+            methods :       function list ref,  (* parameters explicitely include 'self' *)
+            constructors :  function list ref,
+            gType :         string option
+        }
+      | TY_OBJECT of object
+      | TY_ENUM of {
+            cName :     BasicTypes.c_name,
+            aliceName : alice_name,
+            values :    (string * BasicTypes.c_name) list,
+            isFlag :    bool,
+            gType  :    string option
+        }
+
+    and object = OBJECT of {
+        alicePath :           string list,
+        gType :               string,
+        cName :               BasicTypes.c_name,
+        parent :              BasicTypes.c_name,
+        fields :              (BasicTypes.def_type * BasicTypes.c_name * (string * string)) list,
+        methods :             function list ref,   (* parameters explicitely include 'self' *)
+        constructors :        function list ref,
+        properties :          property list ref,
+        isInterface :         bool
+    }
+
+    and function = FUNCTION of {
+        aliceName :  alice_name,
+        cName :      BasicTypes.c_name,
+        returnType : BasicTypes.def_type option,
+        parameters : parameter list,
+        varArgs :    bool,
+        code :       string option,
+        useRecord :  bool
+    }
+
+    and property = PROP of {
+        name :          string,
+        aliceType :     AliceType.alice_type,
+        toValue :   string,
+        fromValue : string
+    }
+        
+    and parameter = PARAM of { 
+        name :          string,
+        defType :       BasicTypes.def_type,
+        default :       string option,
+        nullOk :        bool,
+        array :         { sizeType : BasicTypes.def_type, 
+                          sizeBefore : bool,
+                          elemType : BasicTypes.def_type
+                        } option
+    }
+
+    datatype module = MODULE of {
+        name :          string,
+        types :         ty list ref,
+        functions :     function list ref
+    }
+        
+    type info = module list * ty StrMap.t
+
+    val cNameOfTy : ty -> BasicTypes.c_name
+
+    val cNameOfFun : function -> BasicTypes.c_name
+
+    val cNameToS : BasicTypes.c_name -> string
+    val dTypeToS : BasicTypes.def_type -> string
+
+(*
+    (* if this defType is used as an argument
+       is it an input, output or input and
+       output argument?
+     *)
+    datatype kind = 
+        IN
+      | IN_OUT
+
+    val kind : t -> kind
+
+    val ctypeIn : t -> defType
+    val ctypeOut : t -> defType
+    
+    (* [inArgCode (desc, xi, unwrappedVarName)] *)
+    val inArgCode : t * varname * varname -> ccode 
+
+    (* [returnCode (desc, cVarName)] *)
+    val returnCode : t * varname -> ccode
+
+    (* [outArgCode (desc, unwrappedVarName, resTuplePos)] *)
+    val outArgCode : t * varname * int -> ccode
+
+    (* [argument (desc, unwrappedVarName)] *)
+    val argument : t -> varname -> string
+
+    (* [aliceType desc] *)
+    val  aliceType t -> string
+*)
+end
+
+
+
+
+structure Defs (* : DEFS *) =
+struct
+    open BasicTypes
+    open SexpTools
+
+    type alice_name      = AliceName.alice_name
+
+    datatype ty = 
+        TY_BOXED of {
+            cName :         c_name,
+            aliceName :     alice_name,
+            copyFunc :      c_name option,
+            releaseFunc :   c_name option,
+            fields :        (def_type * c_name * (string * string)) list,
+            methods :       function list ref,
+            constructors :  function list ref,
+            gType :         string option
+        }
+      | TY_OBJECT of object
+      | TY_ENUM of {
+            cName :     c_name,
+            aliceName : alice_name,
+            values :    (string * c_name) list,
+            isFlag :    bool,
+            gType :     string option
+        }
+
+    and object = OBJECT of {
+        alicePath :           string list,
+        cName :               c_name,
+        parent :              c_name,
+        fields :              (def_type * c_name * (string * string)) list,
+        methods :             function list ref,
+        properties :          property list ref,
+        constructors :        function list ref,
+        gType :               string,
+        isInterface :         bool
+    }
+
+    and property = PROP of {
+        name :          string,
+        aliceType :     AliceType.alice_type,
+        toValue :   string,
+        fromValue : string
+    }
+    and function = FUNCTION of {
+        aliceName :  alice_name,
+        cName :      c_name,
+        returnType : def_type option,
+        parameters : parameter list,
+        varArgs :    bool,
+        code :       string option,
+        useRecord :  bool
+    }
+
+    and parameter = PARAM of { 
+        name :          string,
+        defType :       def_type,
+        default :       string option,
+        nullOk :        bool,
+        array :         { sizeType : BasicTypes.def_type, 
+                          sizeBefore : bool,
+                          elemType : BasicTypes.def_type
+                        } option
+        
+    }
+
+    datatype module = MODULE of {
+        name :          string,
+        types :         ty list ref,
+        functions :     function list ref
+    }
+    
+    fun cNameToS (CN s) = s
+    fun dTypeToS (DT s) = s
+
+    fun cNameOfFun (FUNCTION { cName, ... }) = cName
+    
+    fun cNameOfTy (TY_BOXED { cName, ... })           = cName
+      | cNameOfTy (TY_ENUM { cName, ... })            = cName
+      | cNameOfTy (TY_OBJECT (OBJECT { cName, ... })) = cName
+    
+
+    
+    type info = module list * ty StrMap.t
+
+end
+   

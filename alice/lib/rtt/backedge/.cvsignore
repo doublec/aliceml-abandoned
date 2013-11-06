@@ -1,0 +1,4 @@
+*.alc
+
+*.aml?*
+Makefile.depend

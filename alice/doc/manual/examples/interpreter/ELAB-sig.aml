@@ -1,0 +1,15 @@
+(*
+ * Interpreter for F+rec - Elaboration
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Type   from "Type"
+import structure Env    from "Env"
+
+signature ELAB =
+sig
+    exception Error
+    val elab : Type.typ Env.env -> Syntax.exp -> Type.typ	(* [Error] *)
+end

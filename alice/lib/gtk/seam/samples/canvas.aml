@@ -1,0 +1,120 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gdk       from "../Gdk"
+import structure Gtk       from "../Gtk"
+import structure Canvas    from "../Canvas"
+
+
+local
+    fun Delete _ = OS.Process.exit OS.Process.success
+    val Window   = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+    val _        = Gtk.signalConnect (Window, "delete-event", Delete)
+    val _        = Gtk.windowSetTitle(Window,"Canvas")
+
+    val map      = Gdk.colormapGetSystem ()
+    val black    = Gdk.colorNew (0,0,0)
+    val white    = Gdk.colorNew (65535,65535,65535)
+    val _        = Gdk.colormapAllocColor (map, black, false, true)
+    val _        = Gdk.colormapAllocColor (map, white, false, true)
+    val MyCanvas = Canvas.new()
+    val root     = Canvas.root MyCanvas
+
+    val rargs = 
+	[("x1", Gtk.REAL 10.0),
+	 ("y1", Gtk.REAL 20.0),
+	 ("x2", Gtk.REAL 380.0),
+         ("y2", Gtk.REAL 380.0),
+	 ("fill_color_gdk", Gtk.OBJECT white),
+	 ("outline_color_gdk", Gtk.OBJECT black)]
+    val ritem = Canvas.itemCreate (root, Canvas.rectGetType(), rargs)
+
+    val cargs =
+       [("fill_color", Gtk.STRING "yellow"),
+	("outline_color", Gtk.STRING "blue"),
+	("x1", Gtk.REAL 90.0),
+	("y1", Gtk.REAL 120.0),
+	("x2", Gtk.REAL 170.0),
+	("y2", Gtk.REAL 200.0)]
+    val citem = Canvas.itemCreate(root,Canvas.ellipseGetType(),cargs)
+
+
+    fun show s = print (s^"\n")
+    fun showDelta (x,y) = 
+	print ("(x: "^(Real.toString x)^
+	      ", y: "^(Real.toString y)^")\n")
+
+    fun canvasEvent (_, [Gdk.EVENT event]) =
+	(case event of
+	     Gdk.EVENT_EXPOSE          _ => show "Got Expose Event"
+	   | Gdk.EVENT_MOTION_NOTIFY {x,y,...} =>
+		 (showDelta (x,y) ; show "Got Motion Event")
+	   | Gdk.EVENT_BUTTON_PRESS    _ => show "Got ButtonPress Event"
+	   | Gdk.EVENT_2BUTTON_PRESS   _ => show "Got Button2Press Event"
+	   | Gdk.EVENT_3BUTTON_PRESS   _ => show "Got Button3Press Event"
+	   | Gdk.EVENT_BUTTON_RELEASE  _ => show "Got ButtonRelease Event"
+	   | Gdk.EVENT_KEY_PRESS       _ => show "Got KeyPress Event"
+	   | Gdk.EVENT_KEY_RELEASE     _ => show "Got KeyRelease Event"
+	   | Gdk.EVENT_ENTER_NOTIFY    _ => show "Got Enter Event"
+	   | Gdk.EVENT_LEAVE_NOTIFY    _ => show "Got Leave Event"
+	   | Gdk.EVENT_FOCUS_CHANGE    _ => show "Got Focus Event"
+	   | Gdk.EVENT_CONFIGURE       _ => show "Got Configure Event"
+	   | Gdk.EVENT_NO_EXPOSE       _ => show "Got NoExpose Event"
+	   | Gdk.EVENT_NOTHING           => show "Got Nothing Event"
+	   | Gdk.EVENT_DELETE            => show "Got Delete Event"
+	   | Gdk.EVENT_DESTROY           => show "Got Destroy Event"
+	   | Gdk.EVENT_MAP               => show "Got Map Event"
+	   | Gdk.EVENT_UNMAP             => show "Got Unmap Event"
+	   | Gdk.EVENT_PROPERTY_NOTIFY   => show "Got Property Event"
+	   | Gdk.EVENT_SELECTION_CLEAR   => show "Got SelecitonClear Event"
+	   | Gdk.EVENT_SELECTION_REQUEST    => 
+		 show "Got SelectionRequest Event"
+	   | Gdk.EVENT_SELECTION_NOTIFY  => show "Got SelectionNotify Event"
+	   | Gdk.EVENT_PROXIMITY_IN      => show "Got ProximityIn Event"
+	   | Gdk.EVENT_PROXIMITY_OUT     => show "Got ProximityOut Event"
+	   | Gdk.EVENT_DRAG_ENTER        => show "Got DragEnter Event"
+	   | Gdk.EVENT_DRAG_LEAVE        => show "Got DragLeave Event"
+	   | Gdk.EVENT_DRAG_MOTION       => show "Got DrawMotion Event"
+	   | Gdk.EVENT_DRAG_STATUS       => show "Got DragStatus Event"
+	   | Gdk.EVENT_DROP_START        => show "Got DropStart Event"
+	   | Gdk.EVENT_DROP_FINISHED     => show "Got DropFinished Event"
+	   | Gdk.EVENT_CLIENT_EVENT      => show "Got Client Event"
+	   | _                           => show "Got Strange Event")
+	     
+    val pargs =
+	 [("points", 
+	     Gtk.OBJECT (Canvas.makePoints [20, 20, 380, 200, 20, 380])),
+	  ("fill_color_gdk", Gtk.OBJECT black),
+	  ("width_pixels", Gtk.INT 2)]
+    val pitem = Canvas.itemCreate (root, Canvas.lineGetType(), pargs)
+
+    val targs =
+	[("text", Gtk.STRING "Dies ist ein Test"),
+	 ("x", Gtk.REAL 100.0),
+	 ("y", Gtk.REAL 150.0),
+	 ("font", Gtk.STRING "Sans 10"),
+	     (*"-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"*)
+	 ("fill_color_gdk", Gtk.OBJECT black)]
+    val titem = Canvas.itemCreate (root, Canvas.textGetType(), targs)
+
+    val _ = Gtk.signalConnect (pitem, "event", canvasEvent)
+    val _ = Gtk.signalConnect (citem, "event", canvasEvent)
+
+			       
+in
+    val _ = (Gtk.containerSetBorderWidth (Window, 10);
+	     Gtk.widgetSetSizeRequest(MyCanvas, 400, 400);
+	     Canvas.setScrollRegion(MyCanvas, 0.0, 0.0, 400.0, 400.0);
+	     Gtk.containerAdd (Window, MyCanvas);
+	     Gtk.widgetShowAll Window)
+end

@@ -1,0 +1,30 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+
+(* Lecture 2: Redundant constraints *)
+
+fun pythagoras space =
+   let
+      (* problem variables *)
+      val a = FD.range (space, (1, 1000))
+      val b = FD.range (space, (1, 1000))
+      val c = FD.range (space, (1, 1000))
+      (* squares *)
+      val aa = FD.range (space, (0, maxValue))
+      val bb = FD.range (space, (0, maxValue))
+      val cc = FD.range (space, (0, maxValue))
+   in
+      (* intermediate variables *)
+      FD.mult (space, a, a, aa, FD.BND);
+      FD.mult (space, b, b, bb, FD.BND);
+      FD.mult (space, c, c, cc, FD.BND);
+      (* problem constraints *)
+      FD.linear (space, #[(1, aa), (1, bb), (~1, cc)],
+                        FD.EQ, 0, FD.BND);
+      FD.rel (space, a, FD.LQ, b);
+      FD.rel (space, b, FD.LQ, c);
+      (* redundant constraint *)
+      FD.linear (space, #[(2, bb), (~1, cc)], FD.GQ, 0, FD.BND);
+      (* branching *)
+      FD.branch (space, #[a, b, c], FD.B_SIZE_MIN, FD.B_MIN);
+      {a, b, c}
+   end

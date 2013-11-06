@@ -1,0 +1,152 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure PackageSample =
+struct
+    (*
+     * Part 1:
+     * Packing and unpacking of a simple value.
+     * Suspensions are kept inside the package.
+     *)
+
+    val  susp  = byneed(fn() => print "Welcome to the world of packages!\n")
+    val  value = {a = 0, b = "Knob the dopp.", c = susp, d = [4, 0, 2, 42]}
+    type ty    = {a : int, b : string, c : unit, d : int list}
+
+    structure P = Package.PackVal(val x = value type t = ty)
+    structure X = Package.UnpackVal(val package = P.package type t = ty)
+
+    val _ = print(if #b X.x = #b value then "Yeah!\n" else raise Fail "Ouch!")
+    val _ = #c X.x = ()
+
+
+    (*
+     * Part 2:
+     * Packing and unpacking of a function.
+     *)
+
+    fun fib 0 = 0
+    |   fib 1 = 1
+    |   fib n = fib(n-1) + fib(n-2)
+
+    structure P = Package.PackVal(val x = fib type t = int->int)
+    structure X = Package.UnpackVal(val package = P.package type t = int->int)
+
+    val _ = print("fib 10 = " ^ Int.toString(X.x 10) ^ "\n")
+
+
+    (*
+     * Part 3:
+     * Packing and unpacking of a polymorphic function.
+     * We have to resort to modules to do that.
+     * Type can be specified less general at unpacking
+     * (ie. usual enrichment rules apply).
+     *)
+
+    structure P         = Package.Pack(structure X = (val f = length)
+				       signature S = (val f : 'a list -> int))
+    structure Length    = Package.Unpack(val package = P.package
+					 signature S = (val f: 'a list -> int))
+    structure IntLength = Package.Unpack(val package = P.package
+					 signature S = (val f: int list -> int))
+
+    val _  = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
+    val _  = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
+
+
+    (*
+     * Part 4:
+     * Packing and unpacking of an abstract type.
+     * The unpacked type is compatible with the original one.
+     *)
+
+    signature NUM =
+    sig
+	type t
+	fun fromInt : int -> t
+	fun toInt : t -> int
+	fun add : t * t -> t
+    end
+
+    structure Num :> NUM =
+    struct
+	type t = int
+	fun toInt n   = n
+	fun fromInt n = n
+	val add       = op+
+    end
+
+    structure P    = Package.Pack(structure X = Num
+				  signature S = NUM where type t = Num.t)
+    structure Num' = Package.Unpack(val package = P.package
+				    signature S = NUM where type t = Num.t)
+
+    val n1 = Num.fromInt 2
+    val n2 = Num'.fromInt 53
+    val n3 = Num.add(n1,n2)
+    val _  = print("2 + 53 = " ^ Int.toString(Num'.toInt n3) ^ "\n")
+
+
+    (*
+     * Part 5:
+     * Packing of functors.
+     *)
+
+    functor Hello(val who : string) =
+    struct
+	val _ = print("Hello " ^ who ^ "!\n")
+    end
+
+    signature HELLO = fct(val who : string) -> any
+
+    structure P      = Package.Pack(structure X = Hello signature S = HELLO)
+    structure Hello' = Package.Unpack(val package = P.package
+				      signature S = HELLO)
+
+    structure _      = Hello(val who = "World")
+
+
+    (*
+     * Part 6:
+     * Packing of signatures.
+     * Signatures are first-class and can be packed.
+     * We can unpack packages with statically unknown signatures.
+     *)
+
+    signature T      = fct(_ : any) -> sig    type t       end
+    structure X :> T = fct(_ : any) => struct type t = int end
+
+    structure PM     = Package.Pack(structure X = X signature S = T)
+    structure PS     = Package.Pack(structure X = (signature U = T)
+				    signature S = (signature U))
+
+    structure Sig = Package.Unpack(val package = PS.package
+				   signature S = (signature U))
+    structure Mod = Package.Unpack(val package = PM.package
+				   signature S = Sig.U)
+
+    (*
+     * Part ultimo:
+     * Pack and unpack the packager, and then let the package be unpacked
+     * `by itself'.
+     *)
+
+    signature PACKAGE' = PACKAGE where type package = Package.t
+
+    structure P = Package.Pack(structure X = Package signature S = PACKAGE')
+    structure Package'  = Package.Unpack(val package = P.package
+					 signature S = PACKAGE')
+    structure Package'' = Package'.Unpack(val package = P.package
+					  signature S = PACKAGE')
+
+    val _ = OS.Process.exit(OS.Process.success)
+end

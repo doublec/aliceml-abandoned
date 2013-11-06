@@ -1,0 +1,211 @@
+(* Alice Snake 2.0 - ClientMain
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure GUI2       from "GUI2"
+import structure Protocol   from "../common/Protocol"
+import structure Server     from "../server/Server"
+import structure Config     from "../common/Config"
+import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
+import structure Remote     from "x-alice:/lib/distribution/Remote"
+import val log              from "../common/Log"
+
+open Ctrl
+
+fun proxyClient (c : Protocol.client_interface) : Protocol.client_interface =
+    {
+        playersJoined       = Remote.proxy $ #playersJoined c,
+        tournamentStarted   = Remote.proxy $ #tournamentStarted c,
+        levelStarted        = Remote.proxy $ #levelStarted c,
+        playerDisconnected  = Remote.proxy $ #playerDisconnected c,
+        countdown           = Remote.proxy $ #countdown c,
+        tick                = Remote.proxy $ #tick c,
+        playersDied         = Remote.proxy $ #playersDied c,
+        playersFinished     = Remote.proxy $ #playersFinished c,
+        tournamentFinished  = Remote.proxy $ #tournamentFinished c
+    }
+
+structure Gui = GUI2
+
+fun main () =
+    let
+        val guiP    = Promise.promise ()
+        val gui     = Promise.future guiP
+        val server  = ref NONE  : (Protocol.server_interface option ref)
+
+        (* called when user wants to quit *)
+        fun quit () = OS.Process.exit OS.Process.success
+        
+        fun invoke msg arg =
+            case !server of 
+                NONE    => SOME (Gui.CONN_ERROR ("internal error: you are not connected to the server.\n" ^
+                   "You should not have been able to trigger this functionality right now!"))
+            |   SOME server => 
+                (msg server arg; NONE)
+            handle e => SOME (Gui.CONN_ERROR "RPC failure.  The Server might be down.")
+
+        fun turnCB d =
+            invoke #turn d
+
+        fun changeViewCB h =
+            invoke #changeView h
+
+        fun giveUpCB () =
+            invoke #giveUp ()
+
+        fun playCB (name, color) =
+            invoke #play (name, color)
+
+        fun watchCB () =
+            invoke #watch ()
+
+        fun disconnectCB () =
+            invoke #disconnect ()               
+        
+        fun startCB () =
+            case !server of 
+                NONE    => SOME (Gui.CONN_ERROR ("internal error: you are not connected to the server.\n" ^
+                   "You should not have been able to trigger this functionality right now!"))
+            |   SOME server => 
+                case #startGame server of
+                    NONE    => SOME (Gui.CONN_ERROR ("internal error: you are not the privileged client.\n" ^
+                                 "You should not have been able to start a server!"))
+                |   SOME start =>
+                        (start (); NONE)
+                    handle e => SOME (Gui.CONN_ERROR "RPC failed.  The server might be down.")
+
+        (** code common to connect and startServer *)
+        fun startClient () =
+            let
+                fun playersJoined players   = Gui.playersJoined (gui, players)
+                
+                fun playerDisconnected (n,c)= Gui.playerDisconnected (gui, n, c)
+
+                fun tournamentStarted ()    = Gui.gameStarted gui
+
+                fun levelStarted info       = Gui.levelStart (gui, info)
+
+                fun tick (pts, diffs, pos, t)   = Gui.levelTick (gui, pts, diffs, pos, t)
+
+                fun countdown n             = Gui.levelCountdown (gui, n)
+
+                fun tournamentFinished h    = Gui.gameFinished (gui, h)
+            
+                val lock = Lock.lock ()
+
+                fun locked name f =
+                    Lock.sync lock (fn a => 
+                          let   val _   = log ("Client.aml", "calling: " ^ name); 
+                                val res = f a
+                            in
+                                log ("Client.aml", "leaving: " ^ name);
+                                res
+                            end handle e => (
+                                log ("Client.aml", "leaving: " ^ name ^ " with exception " ^ exnName e);
+                                raise e
+                            ))
+                (*
+                fun locked name f = Lock.sync lock f 
+                *)
+                fun playersDied _ = ()
+                fun playersFinished _ = ()
+            in
+               {
+                   playersJoined        = locked "playersJoined" playersJoined,
+                   tournamentStarted    = locked "tournamentStarted" tournamentStarted,
+                   levelStarted         = locked "levelStarted" levelStarted,
+                   playerDisconnected   = locked "playerDisconnected" playerDisconnected,
+                   countdown            = locked "countdown" countdown,
+                   tick                 = locked "tick" tick,
+                   playersDied          = locked "playersDied" playersDied,
+                   playersFinished      = locked "playersFinished" playersFinished,
+                   tournamentFinished   = locked "tournamentFinished" tournamentFinished
+                }
+            end 
+
+        (* called when user wants to connect to some existing server *) 
+        fun connectCB ticket  = 
+            let
+                 (* make physical connection --> take the ticket *)
+                val package     = Remote.take ticket
+                (* unpack it.  Dynamic type check!
+                   may fail with Package.Mismatch exception
+                 *)
+                structure Conn  = unpack package : Protocol.SERVER_CONNECTOR
+
+                (* start the actual client logic. returns
+                   more or less immediatly *) 
+                val client  = startClient ()
+                (* register ourselves at the server *)
+                val (config, serv)     = Conn.connect (proxyClient client)  
+            in
+                server := SOME serv;
+                NONE
+            end handle Protocol.Protocol msg =>
+                (* highlevel snake game specific logical error *)
+                SOME (Gui.CONN_ERROR msg)
+            |   Remote.Proxy Remote.Ticket =>
+                (* Server has been terminated! *)
+                SOME (Gui.CONN_ERROR "Ticket no longer valid.  Server has been terminated.")
+            |   Remote.Proxy e =>
+                (* lowlevel error. *)
+                SOME (Gui.CONN_ERROR (exnName e))
+            |   IO.Io { name, function, cause } =>
+                (* lowlevel error at Remote.take *)
+                SOME (Gui.CONN_ERROR ("IO error " ^ name ^ " at " ^ function ^ " cause: " ^
+                        exnName cause) )
+            |   Remote.Ticket      =>
+                (* take failed! *)
+                SOME (Gui.CONN_ERROR "Invalid ticket!  Make sure that you entered the ticket correctly and that the server is still running.")
+            |   Package.Mismatch _ =>
+                (* unpack failed! *)
+                SOME (Gui.CONN_ERROR "Ticket invalid!  Most probably from a different alice application.")
+
+
+        (* called when user wants to create own server *)
+        fun startServerCB (player, config : Config.config) = 
+            let
+                val client      = startClient ()
+
+                val (ticket, serv)   = Server.startServer (client, config)
+            in
+                server := SOME serv;
+
+                case player of
+                    NONE        =>  
+                        (* server does not want to play himself *)
+                        (* put him into spectator mode *)
+                    let val res = #watch serv () in
+                        FST ticket
+                    end 
+                |   SOME p      =>
+                        (* server wants to play ;-) *)
+                    let val res = #play serv p in
+                        FST ticket
+                    end
+            end handle e => SND (Gui.CONN_ERROR ("couldn't start server " ^ exnName e))
+
+        val callbacks = {
+            startServer = startServerCB,
+            connect     = connectCB,
+            turn        = turnCB,
+            changeView  = changeViewCB,
+            giveUp      = giveUpCB,
+            play        = playCB,
+            watch       = watchCB,
+            start       = startCB,
+            disconnect  = disconnectCB        
+        } : Gui.callbacks
+    in
+        Promise.fulfill (guiP, Gui.start callbacks )
+    end
+
+(* start it *)
+val _ = main ()

@@ -1,0 +1,35 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Time3 : REGRESSION =
+struct
+
+val name = "time3"
+
+val ok = SOME "time3.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+open Time
+
+fun pt t = (concatResult(toString t) ; concatResult "\n")
+
+val f = valOf o IntInf.fromString
+
+val messy = fromReal 123.456789
+   
+val _ = (pt zeroTime;
+	 pt messy;
+	 app (fn d => (concatResult(fmt d messy) ; 
+		       concatResult "\n")) [0,1,2,3,4,5,6,7];
+	 pt(fromReal 123.456789);
+	 pt(fromSeconds (f "123"));
+	 pt(fromMilliseconds (f "123456"));
+	 pt(fromMicroseconds (f "123456789"))
+	 )
+
+val result = !result
+
+end

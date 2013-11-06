@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label from "../../lib/rtt/Label"
+
+signature ARITY =
+    sig
+	datatype t =
+	    Unary
+	  | Tuple of int
+	    (* must be >= 0 *)
+	  | Product of Label.t vector
+	    (* sorted, all labels distinct, no tuple *)
+    end

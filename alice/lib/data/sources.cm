@@ -1,0 +1,21 @@
+Group is
+	../../bootstrap/sources.cm
+
+	STAMP-sig.aml
+	MkStamp.aml
+
+	GLOBAL_STAMP-sig.aml
+	../../bootstrap/GlobalStamp.sml
+
+	ORDERED-sig.aml
+	HASHABLE-sig.aml
+
+	MAP-sig.aml
+	SET-sig.aml
+	MkRedBlackMap.aml
+	MkRedBlackSet.aml
+
+	IMP_MAP-sig.aml
+	IMP_SET-sig.aml
+	MkHashImpMap.aml
+	MkHashImpSet.aml

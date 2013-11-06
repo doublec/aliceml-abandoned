@@ -1,0 +1,33 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure BinPrimIO from "BinPrimIO"
+import signature IMPERATIVE_IO from "IMPERATIVE_IO-sig"
+
+signature BIN_IO =
+    sig
+	include IMPERATIVE_IO
+	    where type StreamIO.vector = BinPrimIO.vector
+	      and type StreamIO.elem   = BinPrimIO.elem
+	      and type StreamIO.pos    = BinPrimIO.pos
+	      and type StreamIO.reader = BinPrimIO.reader
+	      and type StreamIO.writer = BinPrimIO.writer
+
+	val openIn: string -> instream
+	val openOut: string -> outstream
+	val openAppend: string -> outstream
+	val openOverwrite: string -> outstream
+
+	val seekIn: instream * Position.int -> unit
+	val seekOut: outstream * Position.int -> unit
+    end

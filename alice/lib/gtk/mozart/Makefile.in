@@ -1,0 +1,179 @@
+###
+### Authors:
+###   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+### 
+### Copyright:
+###   Thorsten Brunklaus, 2000
+###   Leif Kornstaedt, 2001
+### 
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+### 
+
+PREFIX	    = @prefix@
+SRCDIR      = @srcdir@
+VPATH       = @srcdir@
+
+OZC         = @OZC@
+OZL         = @OZL@
+COMPILE     = $(OZC) -c
+LINK        = $(OZL)
+
+CPP         = @CPP@
+CPPFLAGS    = -undef -D__GNUC__ -std=c99
+GTKCONFIG   = @GTKCONFIG@
+HAVE_CANVAS = @HAVE_CANVAS@
+CANVASDIR   = @CANVASDIR@
+
+ALICEC         = alicec
+ALICEC_OPTS    = --no-warn-conventions
+ALICELINK      = alicelink
+ALICELINK_OPTS = -v
+
+#---------------------------------------------------------------------
+# Extra Variables
+#---------------------------------------------------------------------
+
+BUILDDIR        = $(SRCDIR)
+GTKFLAGS        = $(shell $(GTKCONFIG) --cflags)
+GTKLIBS         = $(shell $(GTKCONFIG) --libs)
+
+ifeq ($(HAVE_CANVAS), yes)
+GTKCANVASFLAGS = -I$(CANVASDIR)/include
+GTKCANVASLIBS  = -L$(CANVASDIR)/lib -lgtk-canvas -lart_lgpl -lgdk_imlib
+else
+GTKCANVASFLAGS =
+GTKCANVASLIBS  =
+endif
+
+CPPEXTRAFLAGS = $(shell $(GTKCONFIG) --cflags gtk) $(GTKCANVASFLAGS)
+
+#---------------------------------------------------------------------
+# Alice Binding
+#---------------------------------------------------------------------
+
+OZSOURCES = AliceWrapper.oz
+OZOBJS    = $(OZSOURCES:%.oz=%.ozf)
+
+ALICESOURCES = GtkTreeTypes.aml \
+               UTIL-sig.aml \
+               Util.aml \
+               TYPE_MANAGER-sig.aml \
+               MkTypeManager.aml \
+               WRAPPER-sig.aml \
+               MkWrapper.aml \
+               SIGNATURE-sig.aml \
+               MkSignature.aml \
+               GTK_BINDING-sig.aml \
+               GtkBinding.aml \
+               GtkTypes.aml
+ALICEOBJS    = $(ALICESOURCES:%.aml=%.ozf)
+
+#---------------------------------------------------------------------
+# Alice Wrapper Files
+#---------------------------------------------------------------------
+
+OZWRPSRCS = UnsafeGdk.oz \
+            UnsafeGtk.oz \
+            UnsafeGtkCanvas.oz
+OZWRPOBJS = $(OZWRPSRCS:%.oz=%.ozf)
+
+WRPSRCS    = GtkTypes.aml \
+             GDK-sig.aml \
+             GTK-sig.aml \
+             GTK_CANVAS-sig.aml \
+             Gdk.aml \
+             Gtk.aml \
+             GtkCanvas.aml
+WRPOBJS    = $(WRPSRCS:%.aml=%.ozf)
+COMPONENTS = $(WRPOBJS:%.ozf=Linked%.ozf)
+
+TMPSIGSRCS = GDK-sig.aml \
+             GTK-sig.aml \
+             GTK_CANVAS-sig.aml
+TMPSIGOBJS = $(TMPSIGSRCS)
+
+#---------------------------------------------------------------------
+# Target Variables
+#---------------------------------------------------------------------
+
+TARGETS          = gtkraw.c $(ALICEOBJS) $(OZOBJS)
+TEMPLATE_TARGETS = $(TMPSIGOBJS)
+WRAPPER_TARGETS  = $(OZWRPOBJS)
+
+INSTALLDIRS  = $(PREFIX)/lib/gtk
+INSTALLFILES = $(COMPONENTS:Linked%=$(PREFIX)/lib/gtk/%)
+
+#---------------------------------------------------------------------
+# Rules
+#---------------------------------------------------------------------
+
+%.ozf: %.oz
+	$(COMPILE) $< -o $@
+
+%.ozf: %.aml
+	$(ALICEC) $(ALICEC_OPTS) -c $(BUILDDIR)/$< -o $(BUILDDIR)/$@
+
+Linked%.ozf: %.ozf
+	$(ALICELINK) $(ALICELINK_OPTS) $* --include $* --include Unsafe -o $@
+
+#---------------------------------------------------------------------
+# Building
+#---------------------------------------------------------------------
+
+.PHONY: all clean veryclean distclean binding
+
+all: $(TARGETS) binding $(COMPONENTS)
+
+#---------------------------------------------------------------------
+# Read GTK C Sources
+#---------------------------------------------------------------------
+
+gtkraw.c: gtkdefs.c
+	$(CPP) $(CPPFLAGS) $(CPPEXTRAFLAGS) $< $@
+
+#---------------------------------------------------------------------
+# Create Binding Files
+#---------------------------------------------------------------------
+
+binding:
+	alicerun "x-oz://system/gtk/Generator.ozf" \
+          --no-native AliceWrapper.ozf
+	@$(MAKE) template_files
+	@$(MAKE) wrapper_files
+
+template_files: $(TEMPLATE_TARGETS)
+wrapper_files: $(WRAPPER_TARGETS)
+wrapper: $(WRPOBJS) $(COMPONENTS)
+
+#---------------------------------------------------------------------
+# Installing
+#---------------------------------------------------------------------
+
+install: $(INSTALLDIRS) $(INSTALLFILES)
+
+$(INSTALLDIRS):
+	mkdir -p -m 775 $@
+
+$(PREFIX)/lib/gtk/%: Linked%
+	install -c -m 444 $< $@
+
+#---------------------------------------------------------------------
+# Cleaning up
+#---------------------------------------------------------------------
+
+clean veryclean:
+	-$(RM) $(OZOBJS) $(ALICEOBJS)
+	-$(RM) $(OZWRPSRCS) $(OZWRPOBJS) $(WRPOBJS)
+	-$(RM) $(COMPONENTS) $(TMPSIGOBJS)
+
+wrapper_clean:
+	-$(RM) $(WRPOBJS)
+
+template_clean:
+	-$(RM) $(TMPSIGOBJS)
+
+distclean: clean
+	-$(RM) gtkraw.c config.* Makefile

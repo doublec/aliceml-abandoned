@@ -1,0 +1,11 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+(* Immediately raises security failure *)
+import structure Sandbox from "../system/Sandbox"
+do raise Sandbox.Security "Security Failure"

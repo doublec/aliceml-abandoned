@@ -1,0 +1,297 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inspector  from "x-alice:/lib/tools/Inspector"
+import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+import structure Gdk        from "x-alice:/lib/gtk/Gdk"
+import structure GtkBuilder from "GtkBuilder"
+
+local
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
+
+    open GtkBuilder
+
+    fun newServer () =
+	let
+	    val tail   = Promise.promise ()
+	    val stream = Ref.ref tail
+
+	    fun process s = (case s of
+				 nil   => ()
+			       | p::pr => (p (); process pr))
+	    fun send p =
+		let
+		    val newtail = Promise.promise ()
+		    val tail    = Ref.exchange(stream, newtail)
+		in
+		    Promise.fulfill(tail, p::(Promise.future newtail))
+		end
+	in
+	    (spawn (process(Promise.future tail));
+	     send)
+	end
+
+    val serve = newServer ()
+
+    fun fileToString (file, lines) =
+	(case TextIO.inputLine file of
+	     NONE      => (TextIO.closeIn file; rev lines)
+	   | SOME line => fileToString(file, line::lines))
+
+    val keys = ["abstype", "and", "andalso", "as", "case", "datatype",
+		"do", "else", "end", "exception", "fn", "fun", "handle",
+		"if", "in", "infix", "infixr", "let", "local", "nonfix",
+		"of", "op", "open", "orelse", "raise", "rec", "then",
+		"type", "val", "with", "withtype", "while",
+		"eqtype", "functor", "include", "sharing",
+		"sig", "signature", "structure", "struct", "where",
+                "any", "constructor", "fct", "from", "import", "non",
+                "pack", "unpack", "when", "withfun", "withval"
+	       ]
+
+    fun searchKey(key, nil)   = false
+      | searchKey(key, k::kr) = (key = k) orelse searchKey(key, kr)
+
+    fun isKeyWord key = searchKey(key, keys) 
+
+    val isSep = not o Char.isAlphaNum
+
+    fun isToken c = not (isSep c)
+
+    fun insertTokens(pars as (text, tc, nc, bg, ft), nil)       = ()
+      | insertTokens(pars as (text, tc, nc, bg, ft), token::tr) =
+	let
+	    val fg = if isKeyWord token then tc else nc
+	in
+	    (Gtk.textInsert(text, ft, fg, bg, token, String.size token);
+	     insertTokens(pars, tr))
+	end
+
+    fun collectSeps(ts, nil)         = (String.implode (rev ts), nil)
+      | collectSeps(ts, cs as c::cr) =
+	if isSep c then collectSeps(c::ts, cr) else (String.implode (rev ts), cs)
+
+    fun collectTokens(ts, nil)         = (String.implode (rev ts), nil)
+      | collectTokens(ts, cs as c::cr) =
+	if isToken c then collectTokens(c::ts, cr) else (String.implode (rev ts), cs)
+
+    fun lineToTokens(nil)         = nil
+      | lineToTokens(cs as c::cr) =
+	(case isSep c of
+	     true  =>
+		 let
+		     val (str, cr) = collectSeps(nil, cs)
+		 in
+		     [str] @ lineToTokens(cr)
+		 end
+	   | false =>
+		 let
+		     val (str, cr) = collectTokens(nil, cs)
+		 in
+		     [str] @ lineToTokens(cr)
+		 end)
+
+    fun insertLines(pars, nil)      = ()
+      | insertLines(pars, line::lr) =
+	(insertTokens(pars, lineToTokens (String.explode line)); insertLines(pars, lr))
+
+    val textcolor = ref (Gdk.allocColor(0xf0f0, 0x2020, 0xa0a0))
+    val curwin    = ref NONE : Gtk.object option ref
+    val curfile   = ref ""
+
+    fun fileToWindow (file) =
+	let
+	    val xdim    = 800.0
+	    val ydim    = 600.0
+	    val lines   = fileToString(TextIO.openIn file, nil)
+	    val text    = MakeWidget (Text {xdim=xdim, ydim=ydim, text=nil})
+	    val xa      = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
+	    val ya      = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
+	    val vs      = Gtk.vscrollbarNew(ya)
+	    val entries = [TableSimple {x=0, y=0, item=Window text},
+			   TableSimple {x=1, y=0, item=Window vs}]
+
+	    val font  = Gdk.fontLoad("8x13")
+	    val map   = Gdk.colormapGetSystem ()
+	    val black = Gdk.allocColor(0, 0, 0)
+	    val white = Gdk.allocColor(65535, 65535, 65535)
+	    val kcol  = !textcolor
+	in
+	    (Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
+	     Gtk.textSetAdjustments(text, xa, ya);
+	     Gdk.colormapAllocColor(map, black, false, true);
+	     Gdk.colormapAllocColor(map, white, false, true);
+	     Gdk.colormapAllocColor(map, kcol, false, true);
+	     insertLines((text, kcol, black, white, font), lines);
+	     Table {rows=1, columns=2, homogeneous=false, entries=entries})
+	end
+
+    fun displayFile () =
+	let
+	    val note   = valOf(!curwin)
+	    val window = fileToWindow(!curfile)
+	    val align  = MakeWidget(Alignment {xalign=0.0,
+					       yalign=0.0, xscale=1.0,
+					       yscale=1.0, inner=window})
+	    val label  = MakeWidget(Label "")
+	in
+	    (Gtk.notebookRemovePage(note, 0);
+	     Gtk.widgetShowAll(align);
+	     Gtk.notebookAppendPage(note, align, label))
+	end
+
+    local
+	val enter        = ref true
+	val fileSel      = Gtk.fileSelectionNew "Select File to view"
+	val okButton     = Gtk.fileSelectionGetFieldOkButton fileSel
+	val cancelButton = Gtk.fileSelectionGetFieldCancelButton fileSel
+
+	fun okHandler _ = serve
+	    (fn () =>
+	     let
+		 val name = Gtk.fileSelectionGetFilename fileSel
+	     in
+		 (curfile := name;
+		  Gtk.widgetUnmap fileSel;
+		  displayFile ();
+		  enter := true)
+	     end)
+	    
+	fun cancelHandler _ =
+	    serve (fn () => (Gtk.widgetUnmap fileSel;
+			     enter := true))
+
+	val _  = Gtk.signalConnect(okButton, "clicked", okHandler)
+	val _  = Gtk.signalConnect(cancelButton, "clicked", cancelHandler)
+    in
+	fun readFileName () =
+	    (case !enter of
+		 false => ()
+	       | true  =>
+		     (enter := false;
+		      Gtk.widgetShowAll fileSel;
+		      Gtk.widgetMap fileSel;
+		      ()))
+    end
+
+    local
+	datatype entercase = FRESH | TRUE | FALSE
+
+	val enter = ref FRESH
+
+	val colorSel = Gtk.colorSelectionNew ()
+	val dialog   = Hole.hole ()
+	    
+	exception Error
+
+	fun numToHex 0 = #"0"
+	  | numToHex 1 = #"1"
+	  | numToHex 2 = #"2"
+	  | numToHex 3 = #"3"
+	  | numToHex 4 = #"4"
+	  | numToHex 5 = #"5"
+	  | numToHex 6 = #"6"
+	  | numToHex 7 = #"7"
+	  | numToHex 8 = #"8"
+	  | numToHex 9 = #"9"
+	  | numToHex 10 = #"A"
+	  | numToHex 11 = #"B"
+	  | numToHex 12 = #"C"
+	  | numToHex 13 = #"D"
+	  | numToHex 14 = #"E"
+	  | numToHex 15 = #"F"
+	  | numToHex _  = raise Error
+
+	fun fromReal r =
+	    let
+		val rn = Real.*(r, 255.0)
+		val ri = valOf(Int.fromString(Real.toString rn))
+	    in
+		String.implode [numToHex(ri div 16), numToHex(ri mod 16)]
+	    end
+
+	fun okHandler _ = serve
+	    (fn () =>
+	     let
+		 val [r, g, b, _] = Gtk.colorSelectionGetColor colorSel
+		 val (ri, gi, bi) = (fromReal r, fromReal g, fromReal b)
+		 val color        = Gdk.allocColor(0, 0, 0)
+		 val colorString  = "#" ^ ri ^ gi ^ bi
+	     in
+		 (textcolor := color;
+		  Gdk.colorParse(colorString, color);
+		  displayFile ();
+		  enter := TRUE;
+		  Gtk.widgetUnmap dialog)
+	     end)
+	    
+	fun cancelHandler _ = serve
+	    (fn () => (enter := TRUE;
+		       Gtk.widgetUnmap dialog))
+	    
+	val okButton     = Button("Ok", [Handler("clicked", okHandler)])
+	val cancelButton = Button("Cancel",
+				  [Handler("clicked", cancelHandler)])
+	val bBox         = HButtonBox(EndStyle, [okButton, cancelButton])
+	val vBox         =
+	    VBox {homogeneous=false, spacing=4,
+		  entries=[BoxSimple (Window colorSel), BoxSimple bBox]}
+	val toplevel     =
+	    Toplevel {title="Select TextColor",
+		      border=4, handler=nil, inner=vBox}
+    in
+	fun getTextColor () =
+	    (case !enter of
+		 FRESH => (Hole.fill(dialog, MakeWidget toplevel);
+			   enter := TRUE;
+			   getTextColor ())
+	       | FALSE => ()
+	       | TRUE  =>
+		     (enter := FALSE;
+		      Gtk.widgetMap dialog))
+    end
+
+    val viewer = Promise.promise ()
+
+    fun openHandler _  = readFileName ()
+    fun colorHandler _ = getTextColor ()
+    fun closeHandler _ = ()
+    (* Gtk.signalEmit(Promise.future viewer, "destroy") *)
+
+    val submenu = [MenuItem("Open...", [Handler("activate", openHandler)]),
+		   MenuItem("Textcolor...",
+			    [Handler("activate", colorHandler)]),
+		   MenuItem("Close", [Handler ("activate", closeHandler)])]
+    val menu    = MenuBar([{label="File", submenu=submenu}])
+    val malign  =
+	Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=0.0, inner=menu}
+
+    val _        = curfile := "TextViewer.aml"
+    val twin     = fileToWindow "TextViewer.aml"
+    val twalign  =
+	Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=1.0, inner=twin}
+    val notebook = MakeWidget (Notebook(false, [{label="", note=twalign}]))
+
+    val entries  = [BoxSimple malign, BoxSimple (Window notebook)]
+    val topbox   = VBox {homogeneous=false, spacing=0,  entries=entries}
+    val dHandler =
+	Handler("delete-event",
+		fn _ => OS.Process.exit OS.Process.success)
+    val toplevel =
+	Toplevel {title="TextViewer", border=2, handler=[dHandler],
+		  inner=topbox}
+in
+    val _ = curwin := SOME notebook
+    val _ = Promise.fulfill(viewer, MakeWidget toplevel)
+end

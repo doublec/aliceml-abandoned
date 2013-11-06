@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive
+       type unit and int and char and string  from "ToplevelTypes"
+import __primitive structure Word8            from "Word8"
+import __primitive structure Word8Vector      from "Word8Vector"
+import __primitive structure Word8Array       from "Word8Array"
+import __primitive structure Word8VectorSlice from "Word8VectorSlice"
+import __primitive structure Word8ArraySlice  from "Word8ArraySlice"
+import __primitive structure Substring        from "Substring"
+
+signature BYTE =
+sig
+    val byteToChar :      Word8.t -> char
+    val charToByte :      char -> Word8.t
+    val bytesToString :   Word8Vector.t -> string
+    val stringToBytes :   string -> Word8Vector.t
+    val unpackStringVec : Word8VectorSlice.t -> string
+    val unpackString :    Word8ArraySlice.t -> string
+    val packString :      Word8Array.t * int * Substring.t -> unit
+end

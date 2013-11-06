@@ -1,0 +1,175 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO      from "../../lib/system/TextIO"
+import structure IO          from "../../lib/system/IO"
+import structure OS          from "../../lib/system/OS"
+import structure CommandLine from "../../lib/system/CommandLine"
+import structure Url         from "../../lib/system/Url"
+import structure Resolver    from "../../lib/system/Resolver"
+import structure Store       from "../../lib/system/Store"
+import structure Config      from "../../lib/system/Config"
+import structure MyComponent from "MyComponent"
+import structure Link        from "Link"
+import structure PrintSig    from "PrintSig"
+
+signature MAIN =
+    sig
+	val main: string list -> OS.Process.status
+    end
+
+structure Main :> MAIN =
+    struct
+	exception Syntax
+
+	val root: string option ref = ref NONE
+	val outputFile: string option ref = ref NONE
+	val verbose = ref false
+	val minimize = ref false
+	val dumpsig = ref false
+	val boundary: Link.boundary list ref = ref nil
+	val rewrite: Resolver.Handler.t list ref = ref nil
+
+	fun error s =
+	    (TextIO.output (TextIO.stdErr, "alicelink: " ^ s);
+	     OS.Process.failure)
+
+        fun version () =
+            (TextIO.output (TextIO.stdOut,
+			    "alicelink " ^ Int.toString (#major Config.version)
+			    ^ "." ^ Int.toString (#minor Config.version)
+			    ^ "." ^ Int.toString (#revision Config.version)
+			    ^ "\n");
+             OS.Process.success)
+	fun usage (SOME s, status) =
+	    (TextIO.output (if status then TextIO.stdErr else TextIO.stdOut,
+                            "alicelink: " ^ s ^ "\n");
+	     usage (NONE, status))
+	  | usage (NONE, status) =
+	    (TextIO.output
+	     (if status then TextIO.stdErr else TextIO.stdOut,
+	      "Usage: alicelink [<option> ...] <root url> [<option> ...]\n\n\
+	      \Options:\n\
+	      \-?, -h, --help, --usage\n\
+	      \    Display this message.\n\
+	      \-o FILE, --output FILE\n\
+	      \    Specify the output file name (mandatory).\n\
+	      \-v, --verbose\n\
+	      \    Summarize which components are included/imported.\n\
+	      \-z, --minimize\n\
+	      \    Minimize output component.\n\
+	      \-d, --dumpsig\n\
+	      \    Print component's import and export signatures.\n\
+	      \--include PREFIX,...,PREFIX\n\
+	      \    Include components at URLs with the given prefixes.\n\
+	      \--exclude PREFIX,...,PREFIX\n\
+	      \    Exclude components at URLs with the given prefixes.\n\
+	      \--rewrite FROM=TO,...,FROM=TO\n\
+	      \    Rewrite imports URLs of the output component.\n\
+	      \    FROM and TO are patterns; ?{x} denotes a variable.\n");
+	     if status then OS.Process.failure else OS.Process.success)
+
+	fun help () = usage (NONE, false)
+	fun usageError s = usage (SOME s, true)
+
+	fun start (root, outputFile) =
+	    let
+		val component =
+		    Link.link {root = Url.fromString root,
+			       verbose = !verbose,
+			       boundary = !boundary,
+			       rewrite = !rewrite @ [Resolver.Handler.default]}
+		val component =
+		    if !minimize then Store.minimize component else component
+	    in
+		MyComponent.save (outputFile, component);
+		if !dumpsig then PrintSig.printSig (outputFile, component)
+		else ();
+		OS.Process.success
+	    end
+	    handle Link.ExcludedRoot url =>
+		       error ("cannot include root component\n\
+			      \   " ^ Url.toStringRaw url ^ "\n")
+		 | Link.Mismatch (url, url', _) =>
+		       error ("signature of component\n\
+			      \   " ^ Url.toStringRaw url ^ "\n\
+			      \does not match import requirement of component\n\
+			      \   " ^ Url.toStringRaw url' ^ "\n\
+			      \Try recompiling the latter.\n")
+		 | Link.Cycle urls =>
+		       error ("components have cyclic inter-dependencies:\n" ^
+			      String.concat (List.map (fn url =>
+				  "   " ^ Url.toStringRaw url ^ "\n") urls))
+		 | Link.Rewrite (url1, url2, url) =>
+		       error ("rewrites ambiguates urls\n\
+			      \   " ^ Url.toStringRaw url1 ^ "\n\
+			      \and\n\
+			      \   " ^ Url.toStringRaw url2 ^ "\n\
+			      \to\n\
+			      \   " ^ Url.toStringRaw url ^ "\n")
+		 | Link.Io (url, _) =>
+		       error ("could not load component\n\
+			      \   " ^ Url.toStringRaw url ^ "\n")
+
+	fun startDumpOnly root =
+	    (case MyComponent.load (Url.fromString root) of
+		 SOME component => (PrintSig.printSig (root, component);
+				    OS.Process.success)
+	       | NONE => error ("not a valid component:\n\
+				\   " ^ root ^ "\n"))
+	    handle IO.Io _ =>
+		       error ("could not load component\n\
+			      \   " ^ root ^ "\n")
+
+	(* Parse comma-separated lists *)
+	fun csl s = String.tokens (fn c => c = #",") s
+
+	(* Parse from-equals-to *)
+	fun fet s =
+	    case CharVector.findi (fn (_, c) => c = #"=") s of
+		SOME (i, _) =>
+		    Resolver.Handler.pattern (String.substring (s, 0, i),
+					      String.extract (s, i + 1, NONE))
+	      | NONE => raise Syntax
+
+	fun main (("-h"|"-?"|"--help"|"--usage")::_) = help ()
+          | main (("--version")::_) = version ()
+	  | main (("-v"|"--verbose")::rest) = (verbose := true; main rest)
+	  | main (("-z"|"--minimize")::rest) = (minimize := true; main rest)
+	  | main (("-d"|"--dumpsig")::rest) = (dumpsig := true; main rest)
+	  | main ("--include"::includes::rest) =
+	    (boundary := (!boundary @ List.map Link.INCLUDE (csl includes));
+	     main rest)
+	  | main ("--exclude"::excludes::rest) =
+	    (boundary := (!boundary @ List.map Link.EXCLUDE (csl excludes));
+	     main rest)
+	  | main ("--rewrite"::rules::rest) =
+	    ((rewrite := (!rewrite @ List.map fet (csl rules)); main rest)
+	     handle Syntax => usageError "illegal rewrite rule syntax")
+	  | main (("-o"|"--output")::name::rest) =
+	    (case !outputFile of
+		 NONE => (outputFile := SOME name; main rest)
+	       | SOME _ => usageError "only one output file name may be given")
+	  | main (name::rest) =
+	    (case !root of
+		 NONE => (root := SOME name; main rest)
+	       | SOME _ => usageError "only one root component may be given")
+	  | main nil =
+	    (case (!dumpsig, !root, !outputFile) of
+		 (_, SOME root, SOME outputFile) => start (root, outputFile)
+	       | (true, SOME root, NONE) => startDumpOnly root
+	       | (_, NONE, _) => usageError "no root component given"
+	       | (false, _, NONE) => usageError "no output file name given")
+    end
+
+val _ = OS.Process.exit (Main.main (CommandLine.arguments ()))

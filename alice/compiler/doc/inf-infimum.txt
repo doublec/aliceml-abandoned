@@ -1,0 +1,76 @@
+T		/\ i		= i
+i		/\ T		= i
+p:i1		/\ p:i2		= p:(i1 /\ i2)
+p:i1		/\ i2		= p:(i1 /\ i2)
+i1		/\ p:i2		= p:(i1 /\ i2)
+p_u1		/\ p_u2		= p_(u1 /\ u2)
+{s1}		/\ {s2}		= {s1 /\ s2}
+x:i11->i12	/\ x:i21->i22	= x:(i11 \/ i21)->(i12[x:(i11 \/ i21)/x] /\ i22[x:(i11 \/ i21)/x])
+\x:i11.i12	/\ \x:i21.i22	= \x:(i11 \/ i21)->(i12[x:(i11 \/ i21)/x] /\ i22[x:(i11 \/ i21)/x])
+i1 m1		/\ i2 m2	= (i1 /\ i2) (m1 /\ m2)
+
+*		/\ *		= *
+i		/\ u		= i if i:u
+u		/\ i		= i if i:u
+x:i1->u1	/\ x:i2->u2	= x:(i1 \/ i2)->(u1[x:(i11 \/ i21)/x] /\ u2[x:(i11 \/ i21)/x])
+
+s1		/\ s2		= (s1 \\ s2) \\ s1
+
+z;s1		\\ s2		= (z \ s2);(s1 \\ s2)
+z		\ e		= z
+z		\ l@x:t2;s2	= z \ s2[/x]		if z =/= l@x:t1
+z		\ l@x:k2;s2	= z \ s2[/x]		if z =/= l@x:k1
+z		\ l@x:i2;s2	= z \ s2[/x]		if z =/= l@x:i1
+z		\ l@x:u2;s2	= z \ s2[/x]		if z =/= l@x:u1
+l@x:t1		\ l@x:t2;s2	= l@x:(t1 /\ t2)
+l@x:k1		\ l@x:k2;s2	= l@x:(k1 /\ k2)
+l@x:i1		\ l@x:i2;s2	= l@x:(i1 /\ i2)
+l@x:u1		\ l@x:u2;s2	= l@x:(u1 /\ u2)
+
+T		\/ i		= T
+i		\/ T		= T
+p:i1		\/ p:i2		= p:(i1 \/ i2)
+p:i1		\/ i2		= i1 \/ i2
+i1		\/ p:i2		= i1 \/ i2
+p_u1		\/ p_u2		= p_(u1 \/ u2)
+{s1}		\/ {s2}		= {s1 \/ s2}
+x:i11->i12	\/ x:i21->i22	= x:(i11 /\ i21)->(i12[x:(i11 /\ i21)/x] \/ i22[x:(i11 /\ i21)/x])
+\x:i11.i12	\/ \x:i21.i22	= \x:(i11 /\ i21)->(i12[x:(i11 /\ i21)/x] \/ i22[x:(i11 /\ i21)/x])
+i1 m1		\/ i2 m2	= (i1 \/ i2) (m1 \/ m2)
+
+*		\/ *		= *
+i		\/ u		= u if i:u
+u		\/ i		= u if i:u
+x:i1->u1	\/ x:i2->u2	= x:(i1 /\ i2)->(u1[x:(i11 /\ i21)/x] \/ u2[x:(i11 /\ i21)/x])
+
+
+
+
+Infimum of signatures:
+
+1. calculate realisation
+
+  1.1. how treat nested infimum at this point?
+
+2. calculate (greatest) fixpoint of realisation
+
+  2.1. dependency analysis on realisation
+  2.2. if there are cycles on typ_rea, try fix (may require more general one)
+  2.3. other cycles are invalid (including cycles among path prefixes??)
+
+3. topological sort
+
+
+Some examples:
+
+a:(x:T); b:(x:(a.x:T)) /\ b:(y:T); a:(y:(b.y:T))
+= a:(x:T;y:T); b:(x:(a.x:T);y:(a.y:T))
+
+a:T; f:(x:(a:T)->T) /\ f:(x:T)->T; a:(f:T)
+= @ (because a = f => f:(x:(f:T)->T) @
+
+type t			 /\	type u			--   datatype t = T of u
+datatype u = U of t	/  \	datatype t = T of u	--   and      u = U of t
+
+type 'a t	 /\	type 'a t	--   type 'a t = 'a | type 'a t = int
+type u = int t	/  \	type u = int	--   type u = int	@!@$#$%#$

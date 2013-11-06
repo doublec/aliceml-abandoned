@@ -1,0 +1,85 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Unix structure", "The <TT>Unix</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature UNIX
+    structure Unix : UNIX
+  </PRE>
+
+  <P>
+    The Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/unix.html"><TT>Unix</TT></A>
+    structure.
+  </P>
+
+  <P>See also:
+    <A href="os.html"><TT>OS</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature UNIX =
+    sig
+	type ('a,'b) proc
+	type signal
+
+	datatype exit_status =
+	    W_EXITED
+	  | W_EXITSTATUS of Word8.word
+	  | W_SIGNALED of signal
+	  | W_STOPPED of signal
+
+	val execute :   string * string list -> ('a,'b) proc
+	val streamsOf : (TextIO.instream, TextIO.outstream) proc -> TextIO.instream * TextIO.outstream
+	val reap :      ('a,'b) proc -> OS.Process.status
+	val wait :      ('a,'b) proc -> OS.Process.status
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are like in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/unix.html"><TT>Unix</TT></A> structure.
+  </P>
+
+  <P>
+    <I>Limitations:</I> The following functionality is currently missing:
+  </P>
+
+  <UL>
+    <LI><TT>executeInEnv</TT></LI>
+    <LI><TT>fromStatus</TT></LI>
+    <LI><TT>textInstreamOf</TT></LI>
+    <LI><TT>binInstreamOf</TT></LI>
+    <LI><TT>textOutstreamOf</TT></LI>
+    <LI><TT>binOutstreamOf</TT></LI>
+    <LI><TT>kill</TT></LI>
+    <LI><TT>exit</TT></LI>
+  </UL>
+
+
+  <DL>
+    <DT>
+      <TT>wait <I>pr</I></TT>
+    </DT>
+    <DD>
+      <P>suspends the current process until the system process
+      corresponding to <TT><I>pr</I></TT> terminates. Unlike <TT>reap</TT>
+      it does not close input and output streams. It returns the exit status
+      given by <TT><I>pr</I></TT> when it terminated. If <TT>wait</TT> or
+      <TT>reap</TT> is applied again to <TT><I>pr</I></TT>, it should
+      immediately return the previous exit status.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

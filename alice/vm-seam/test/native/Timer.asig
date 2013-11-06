@@ -1,0 +1,8 @@
+signature TIMER =
+    sig
+	structure Timer:
+	    sig
+		val start: unit -> unit
+		val check: unit -> int
+	    end
+    end

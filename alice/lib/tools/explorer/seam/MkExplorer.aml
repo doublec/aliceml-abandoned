@@ -1,0 +1,234 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SPACE           from "x-alice:/lib/gecode/SPACE-sig"
+import signature EXPLORER_INSPECT from "EXPLORER_INSPECT-sig"
+
+
+import functor MkTypes           from "MkTypes"
+import functor MkOptionsWindow   from "MkOptionsWindow"
+import functor MkSaveWindow      from "MkSaveWindow"
+import functor MkTreeNode        from "MkTreeNode"
+import functor MkGtkNode         from "MkGtkNode"
+import functor MkVisualNode      from "MkVisualNode"
+import functor MkExplorerNode    from "MkExplorerNode"
+import functor MkMenuManager     from "MkMenuManager"
+import functor MkSearch          from "MkSearch"
+import functor MkExplorerSearch  from "MkExplorerSearch"
+import functor MkEventHandler    from "MkEventHandler"
+import functor MkCanvasHelper    from "MkCanvasHelper"
+import functor MkMainWindow      from "MkMainWindow"
+
+import signature EXPLORER from "EXPLORER-sig"
+
+functor MkExplorer (Space : SPACE)
+                   (ExplorerInspect : EXPLORER_INSPECT
+                                          where type space = Space.space)
+                   :> EXPLORER
+  where type space = Space.space=
+  struct
+  local
+  structure Types = MkTypes (Space)
+
+  structure OptionsWindow = MkOptionsWindow (Space) (Types)
+  structure SaveWindow = MkSaveWindow (Space) (Types)
+
+  structure TreeNode = MkTreeNode (Space) (Types)
+  structure GtkNode = MkGtkNode (Space) (Types) (TreeNode)
+  structure VisualNode = MkVisualNode (Space) (Types) (TreeNode) (GtkNode)
+  structure ExplorerNode =
+      MkExplorerNode (Space) (Types) (TreeNode) (GtkNode) (VisualNode)
+  structure MenuManager = 
+      MkMenuManager (Space) (Types) (TreeNode) (ExplorerNode)
+  structure Search =
+      MkSearch (Space) (Types) (TreeNode) (ExplorerNode)
+  structure ExplorerSearch =
+      MkExplorerSearch (Space) (Types) (ExplorerNode) (MenuManager) (Search)
+  structure EventHandler =
+      MkEventHandler (Space) (Types) (TreeNode) (GtkNode) (VisualNode)
+      (ExplorerNode) (MenuManager) (ExplorerSearch)
+      (OptionsWindow) (SaveWindow) 
+  structure CanvasHelper =
+      MkCanvasHelper (Space) (Types) (GtkNode) (EventHandler)
+  structure MainWindow =
+      MkMainWindow (Space) (Types) (ExplorerNode) (EventHandler) (CanvasHelper)
+  structure ExplorerSearch =
+      MkExplorerSearch (Space) (Types) (ExplorerNode) (MenuManager) (Search)
+  in
+
+  type space = Space.space
+  type explorer = Types.explorer_state option ref
+  
+  fun newServer() = 
+      let
+	  val tail   = Promise.promise ()
+	  val stream = Ref.ref tail
+		       
+	  fun process s = case s of
+			       nil   => ()
+			     | p::pr => process pr
+                                        handle e => (print ("Uncaught exception "^Exn.name e^"\n");
+					             print ("Message: "^Exn.message e^"\n");
+						     Exn.dumpTrace(Exn.currentPacket()))
+	  fun send p =
+	      let
+		  val newtail = Promise.promise ()
+		  val tail    = Ref.exchange(stream, newtail)
+	      in
+		  Promise.fulfill(tail, p::(Promise.future newtail))
+	      end
+      in
+	  (spawn (process(Promise.future tail));
+	   send)
+      end
+
+  val serve = newServer ()
+
+  fun makeState () =
+      MainWindow.createMainWindow serve
+      : Types.explorer_state option ref
+
+  val defaultExplorer = ref NONE
+
+  fun initExplorer () = case !defaultExplorer of
+			    NONE =>
+			    let
+				val s = makeState()
+			    in
+				defaultExplorer := SOME s;
+				s
+			    end
+			  | SOME s => s
+
+  fun initWithSpace (s, name) =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => MainWindow.setWindowTitle name) ;
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s, NONE));
+	  state
+      end
+
+  fun exploreAll s =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s, NONE));
+	  serve (fn () => ExplorerSearch.search
+                              (serve, state,
+                               MainWindow.refresh, MainWindow.setStatusMsg,
+                               0, NONE));
+	  state
+      end
+
+  fun exploreOne s =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s, NONE));
+	  serve (fn () => ExplorerSearch.search
+                              (serve, state,
+                               MainWindow.refresh, MainWindow.setStatusMsg,
+                               1, NONE));
+	  state
+      end
+
+  fun exploreBest (s,b) =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch
+                              (serve, state, MainWindow.refresh,
+                               CanvasHelper.resetCanvas, s, SOME b));
+	  serve (fn () => ExplorerSearch.search
+                              (serve, state,
+                               MainWindow.refresh, MainWindow.setStatusMsg,
+                               0, NONE));
+	  state
+      end
+
+  fun addInfoAction (e, action, name) =
+      case (!e) of
+	  SOME {inspect=inspect,
+                curInspAction=curInspAction,...} =>
+	  (inspect := List.filter (fn (_,n) => n<>name) (!inspect);
+           inspect := (action, name)::(!inspect);
+           curInspAction := name;
+	   serve (fn () =>
+		     MainWindow.updateInspectionActionsMenu
+                         (!inspect, serve, e)))
+	| _ => ()
+
+  fun deleteInfoAction (e, name) =
+      case (!e) of
+	  SOME ({inspect=inspect,...} : Types.explorer_state) =>
+	  (inspect := List.filter (fn (_,n) => n<>name) (!inspect);
+	   serve (fn () =>
+		     MainWindow.updateInspectionActionsMenu
+                         (!inspect, serve, e)))
+	| _ => ()
+
+  fun initScript' t script =
+      let
+          val space = Space.new()
+          val root = script space
+          val e = initWithSpace (space, "Explorer")
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreAllScript' t script =
+      let
+          val space = Space.new()
+          val root = script space
+          val e = exploreAll space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreOneScript' t script =
+      let
+          val space = Space.new()
+          val root = script space
+          val e = exploreOne space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreBestScript' t script =
+      let
+          val space = Space.new()
+          val (root, better) = script space
+          val e = exploreBest(space, better)
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreAllRoot' t space root =
+      let
+          val e = exploreAll space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+  end
+  end

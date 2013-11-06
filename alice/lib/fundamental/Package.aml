@@ -1,0 +1,32 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive         from "Pervasive"
+import __primitive type package      from "ToplevelTypes"
+import __primitive signature PACKAGE from "PACKAGE-sig"
+
+structure Package : PACKAGE where type package = package =
+struct
+    type package = package
+    type t = package
+
+    type      mismatch = __pervasive.RTT.Inf.mismatch
+    exception Mismatch = __pervasive.RTT.Inf.Mismatch
+
+    functor Pack(signature S structure X : S) = (val package = pack X : S)
+    functor Unpack(signature S val package : package) = unpack package : S
+
+    functor PackVal(type t val x : t) =
+	(val package = pack (val x = x) : (val x : t))
+    functor UnpackVal(val package : package type t) =
+	unpack package : (val x : t)
+end

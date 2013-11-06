@@ -1,0 +1,3 @@
+*.alc *.ozf
+*.ant
+Makefile.depend

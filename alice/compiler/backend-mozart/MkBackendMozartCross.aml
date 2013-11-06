@@ -1,0 +1,73 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS                from "../../lib/system/OS"
+import signature COMPONENT_MANAGER from "../../lib/system/COMPONENT_MANAGER-sig"
+import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
+import structure Target            from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC  from "../infrastructure/BACKEND_SPECIFIC-sig"
+import structure MkTracingPhase    from "../infrastructure/MkTracingPhase"
+import structure FlatGrammar       from "../backend-common/FlatGrammar"
+import structure MkEngine          from "../backend-common/MkEngine"
+import structure PickleFlatGrammar from "PickleFlatGrammar"
+
+structure MozartEngine =
+    MkEngine(fun cmd () =
+		 ("/bin/sh",
+		  [(*--**"/opt/mozart-1.2.0/bin/ozd", "-p",*)
+		   case OS.Process.getEnv "ALICEC_MOZART" of
+		       SOME s => s
+		     | NONE => "alicec-mozart.exe"])
+	     structure Code = PickleFlatGrammar)
+
+functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
+			structure Switches: SWITCHES): BACKEND_SPECIFIC =
+    let
+	fun save (context, code, dumpTarget) targetFilename =
+	    let
+		val fileOpt =
+		    if !dumpTarget then SOME (targetFilename ^ ".ozm")
+		    else NONE
+	    in
+		MozartEngine.save context
+		(MozartEngine.link context (code, fileOpt), targetFilename)
+	    end
+
+	val dumpTarget = Switches.Debug.dumpTarget
+	structure TracingPhase =
+	    MkTracingPhase(structure Phase =
+			       struct
+				   structure C = MozartEngine.C
+				   structure I = FlatGrammar
+				   structure O = Target
+
+				   fun translate (desc, context, component) =
+				       let
+					   val program =
+					       (desc, ref NONE, component)
+				       in
+					   (context,
+					    Target.FOREIGN
+						{save = save (context, program,
+							      dumpTarget),
+						 inf = #sign component})
+				       end
+			       end
+			   structure Switches = Switches
+			   val name = "Code Generation")
+    in
+	struct
+	    open TracingPhase
+	    structure O = Target
+	    val isCross = true
+	end
+    end

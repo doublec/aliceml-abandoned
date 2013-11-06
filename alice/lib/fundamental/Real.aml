@@ -1,0 +1,306 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                              from "Pervasive"
+import __primitive
+       type int and real and string
+       datatype bool and order and option                 from "ToplevelTypes"
+import __primitive
+       infix 4 = <> > < >= <= infix 6 + - infix 7 * /
+       val op = and op <>                                 from "ToplevelValues"
+import __primitive structure IEEEReal                     from "IEEEReal"
+import __primitive structure General                      from "General"
+import __primitive structure Bool                         from "Bool"
+import __primitive structure Int                          from "Int"
+import __primitive structure LargeInt                     from "LargeInt"
+import __primitive structure Char                         from "Char"
+import __primitive structure StringCvt                    from "StringCvt"
+import __primitive structure Substring                    from "Substring"
+import __primitive signature REAL                         from "REAL-sig"
+
+structure Real : REAL =
+struct
+    type real = real
+    type t    = real							(**)
+
+    infix 4  == != ?=
+
+    __primitive val ~ :		real -> real		= "Real.~"
+    __primitive val op + :	real * real -> real	= "Real.+"
+    __primitive val op - :	real * real -> real	= "Real.-"
+    __primitive val op * :	real * real -> real	= "Real.*"
+    __primitive val op / :	real * real -> real	= "Real./"
+    __primitive val rem :	real * real -> real	= "Real.rem"
+
+    __primitive val op < :	real * real -> bool	= "Real.<"
+    __primitive val op > :	real * real -> bool	= "Real.>"
+    __primitive val op <= :	real * real -> bool	= "Real.<="
+    __primitive val op >= :	real * real -> bool	= "Real.>="
+    __primitive val compare :	real * real -> order	= "Real.compare"
+
+    val posInf = 1.0 / 0.0
+    val negInf = ~1.0 / 0.0
+    val posNan = 0.0 / 0.0
+    val negNan = ~posNan
+
+    fun compareReal(x,y) =
+	(case compare(x,y)
+	   of LESS			=> IEEEReal.LESS
+	    | GREATER			=> IEEEReal.GREATER
+	    | EQUAL			=> IEEEReal.EQUAL
+	) handle IEEEReal.Unordered	=> IEEEReal.UNORDERED
+
+    fun *+(x,y,z)			= x*y + z
+    fun *-(x,y,z)			= x*y - z
+
+    fun x == y				= compareReal(x, y) = IEEEReal.EQUAL
+    fun x != y				= Bool.not(x == y)
+    val equal				= op ==
+
+    fun isNan x				= compareReal(x, x) = IEEEReal.UNORDERED
+    fun isFinite x			= x <> posInf andalso x <> negInf
+					  andalso Bool.not(isNan x)
+    fun isZero x			= x = 0.0 orelse x = ~0.0
+    fun isNormal x			= isFinite x andalso Bool.not(isZero x)
+
+    fun min(x,y)			= if isNan x then y else
+					  if isNan y then x else
+					  if x < y then x else y
+    fun max(x,y)			= if isNan x then y else
+					  if isNan y then x else
+					  if x > y then x else y
+
+    fun sign x if (x > 0.0)		= 1
+      | sign x if (x < 0.0)		= ~1
+      | sign x if (isNan x)		= raise General.Domain
+      | sign x				= 0
+
+    fun signBit x			= x < 0.0 orelse x = ~0.0 orelse
+					  x = negNan
+    fun abs x				= if signBit x then ~x else x
+
+    fun sameSign(x,y)			= signBit x = signBit y
+    fun copySign(x,y)			= if sameSign(x,y) then x else ~x
+
+    fun x ?= y				= if isNan x then isNan y else
+					  if isZero x then isZero y else x = y
+
+    fun class x				= class'(abs x)
+    and class' x			= if isNan x then IEEEReal.NAN else
+					  if Bool.not(isFinite x) then IEEEReal.INF
+					  else if abs x == 0.0 then IEEEReal.ZERO
+					  else IEEEReal.NORMAL
+					  (* TODO: detect SUBNORMAL *)
+
+    fun checkFloat x			= if isNan x then raise General.Div
+					  else if isFinite x then x
+					  else raise General.Overflow
+
+    __primitive val ceil :	real -> int	= "Real.ceil"
+    __primitive val floor :	real -> int	= "Real.floor"
+    __primitive val trunc :	real -> int	= "Real.trunc"
+    __primitive val round :	real -> int	= "Real.round"
+    __primitive val realCeil :	real -> real	= "Real.realCeil"
+    __primitive val realFloor :	real -> real	= "Real.realFloor"
+    __primitive val realTrunc :	real -> real	= "Real.realTrunc"
+    __primitive val realRound :	real -> real	= "Real.realRound"
+
+    __primitive val fromInt :	int -> real	= "Real.fromInt"
+
+    fun toInt IEEEReal.TO_POSINF		= ceil
+      | toInt IEEEReal.TO_NEGINF		= floor
+      | toInt IEEEReal.TO_ZERO			= trunc
+      | toInt IEEEReal.TO_NEAREST		= round
+
+    __primitive val largeCeil  : real -> LargeInt.int	= "Real.largeCeil"
+    __primitive val largeFloor : real -> LargeInt.int	= "Real.largeFloor"
+    __primitive val largeTrunc : real -> LargeInt.int	= "Real.largeTrunc"
+    __primitive val largeRound : real -> LargeInt.int	= "Real.largeRound"
+
+    fun toLargeInt IEEEReal.TO_POSINF		= largeCeil
+      | toLargeInt IEEEReal.TO_NEGINF		= largeFloor
+      | toLargeInt IEEEReal.TO_ZERO		= largeTrunc
+      | toLargeInt IEEEReal.TO_NEAREST		= largeRound
+    __primitive val fromLargeInt : LargeInt.int -> real = "Real.fromLargeInt"
+
+    fun toLarge x				= x
+    fun fromLarge mode x			= x
+
+    fun hash x = hash'(abs x)	(* TODO: more appropriate implementation *)
+    and hash' x =
+	if isNan x then 0 else
+	if Bool.not(isFinite x) then 1 else
+	toInt IEEEReal.TO_NEAREST (
+	    case Int.maxInt
+	      of NONE   => x
+	       | SOME n => rem(x, fromInt n)
+	)
+
+    (* Math *)
+
+    structure Math =
+    struct
+	type real = real
+
+	__primitive val e :	real			= "Math.e"
+	__primitive val pi :	real			= "Math.pi"
+
+	__primitive val sqrt :	real -> real		= "Math.sqrt"
+	__primitive val exp :	real -> real		= "Math.exp"
+	__primitive val pow :	real * real -> real	= "Math.pow"
+	__primitive val ln :	real -> real		= "Math.ln"
+
+	val ln10	= ln 10.0
+	fun log10 x	= ln x / ln10
+
+	__primitive val sin :	real -> real		= "Math.sin"
+	__primitive val cos :	real -> real		= "Math.cos"
+	__primitive val tan :	real -> real		= "Math.tan"
+	__primitive val asin :	real -> real		= "Math.asin"
+	__primitive val acos :	real -> real		= "Math.acos"
+	__primitive val atan :	real -> real		= "Math.atan"
+	__primitive val atan2 :	real * real -> real	= "Math.atan2"
+	__primitive val sinh :	real -> real		= "Math.sinh"
+	__primitive val cosh :	real -> real		= "Math.cosh"
+	__primitive val tanh :	real -> real		= "Math.tanh"
+	__primitive val asinh :	real -> real		= "Math.asinh"	(**)
+	__primitive val acosh :	real -> real		= "Math.acosh"	(**)
+	__primitive val atanh :	real -> real		= "Math.atanh"	(**)
+    end
+
+
+    (* Formatting *)
+
+    (*TODO*)
+    __primitive val toString: real -> string = "Real.toString"
+
+
+    (* Scanning *)
+
+    fun value c = fromInt(Int.-(Char.ord c, Char.ord #"0"))
+
+    fun scanSign getc src =
+	case getc src
+	  of SOME(#"-", src') => (~1.0, src')
+	   | SOME(#"~", src') => (~1.0, src')
+	   | SOME(#"+", src') => (1.0, src')
+	   | _                => (1.0, src)
+
+    fun scanTextual ss getc src =
+	if Substring.size ss = 0 then SOME src else
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.toLower c = Substring.sub(ss, 0)
+	     then scanTextual (Substring.triml 1 ss) getc src'
+	     else NONE
+	   | NONE => NONE
+
+    fun scanFractional getc src =
+        case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then SOME(scanFractional' getc src 0.0 0.1)
+	     else if c = #"_" then scanFractional getc src'
+	     else NONE
+	   | NONE => NONE
+    and scanFractional' getc src r d =
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanFractional' getc src' (r + d * value c) (d/10.0)
+	     else if c = #"_" then scanFractional' getc src' r d
+	     else (r, src)
+	   | NONE => (r, src)
+
+    fun scanMantissa getc src =
+	case getc src
+	  of SOME(#".", src') => scanFractional getc src'
+	   | SOME(c, src') =>
+	     if Char.isDigit c
+	     then SOME(scanMantissa' getc src 0.0)
+	     else if c = #"_" then scanMantissa getc src'
+	     else NONE
+	   | NONE => NONE
+    and scanMantissa' getc src r =
+	case getc src
+	  of SOME(#".", src') =>
+	     (case scanFractional getc src'
+		of SOME(r', src'') => (r + r', src'')
+		 | NONE => (r, src)
+	     )
+	   | SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanMantissa' getc src' (10.0*r + value c)
+	     else if c = #"_" then scanMantissa' getc src' r
+	     else (r, src)
+	   | NONE => (r, src)
+
+    fun scanExp getc src =
+	case getc src
+	  of SOME(#"e", src') => scanExp' getc src'
+	   | SOME(#"E", src') => scanExp' getc src'
+	   | _                => NONE
+    and scanExp' getc src =
+	let
+	    val (sign, src') = scanSign getc src
+	in
+	    scanExp'' getc src' sign
+	end
+    and scanExp'' getc src sign =
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then let val (r,src'') = scanExp''' getc src 0.0
+		  in SOME(sign*r, src'') end
+	     else if c = #"_" then scanExp'' getc src' sign
+	     else NONE
+	   | NONE => NONE
+    and scanExp''' getc src exp =
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.isDigit c
+	     then scanExp''' getc src' (10.0*exp + value c)
+	     else if c = #"_" then scanExp''' getc src' exp
+	     else (exp, src)
+	   | NONE => (exp, src)
+
+    fun scan getc src =
+	let
+	    val       src1  = StringCvt.skipWS getc src
+	    val (sign,src2) = scanSign getc src1
+	in
+	    case scanTextual (Substring.full "infinity") getc src2
+	      of SOME src3 => SOME(sign * posInf, src3)
+	       | NONE =>
+	    case scanTextual (Substring.full "inf") getc src2
+	      of SOME src3 => SOME(sign * posInf, src3)
+	       | NONE =>
+	    case scanTextual (Substring.full "nan") getc src2
+	      of SOME src3 => SOME(0.0 * posInf, src3)
+	       | NONE =>
+	    case scanMantissa getc src2
+	      of NONE => NONE
+	       | SOME(man, src3) =>
+	    case scanExp getc src3
+	      of NONE => SOME(sign * man, src3)
+	       | SOME(exp, src4) => SOME(if man == 0.0 then 0.0
+					 else sign * man * Math.pow(10.0, exp),
+					 src4)
+	end
+
+    val fromString = StringCvt.scanString scan
+end

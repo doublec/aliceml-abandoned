@@ -1,0 +1,60 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                from "Pervasive"
+import __primitive type int and list        from "ToplevelTypes"
+import __primitive infix 4 = < <= infix 6 -
+       val op = and op < and op <= and op - from "ToplevelValues"
+import __primitive structure General        from "General"
+import __primitive structure List           from "List"
+import __primitive functor MkRow            from "MkRow"
+
+(** uSub is like sub but needn't do bounds checking*)
+functor MkVector(type 'a vector
+		 type 'a dst_vector
+		 type 'a elem
+		 val maxLen :   int
+		 val length :   'a vector -> int
+		 val sub :      'a vector * int -> 'a elem
+		 val uSub :     'a vector * int -> 'a elem
+		 val toList :   'a vector -> 'a elem list
+		 val tabulate : int * (int -> 'a elem) -> 'a dst_vector
+		 val fromList : 'a elem list -> 'a dst_vector
+		 val concat :   'a vector list -> 'a dst_vector) =
+struct
+    structure Row = MkRow(type row   = vector
+			  type elem  = elem
+			  val length = length
+			  val sub    = sub
+			  val uSub   = uSub)
+    open Row
+
+    val maxLen		= maxLen
+    val tabulate	= tabulate
+    val fromList	= fromList
+    val toList		= toList
+    val concat		= concat
+
+    fun update(v,i,x)	= if i < 0 orelse length v <= i
+			  then raise General.Subscript else
+			  tabulate(length v, fn j => if j=i then x else uSub(v, j))
+    fun map f v		= tabulate(length v, fn i => f(uSub(v, i)))
+    fun mapi f v	= tabulate(length v, fn i => f(i, uSub(v, i)))
+    fun rev v		= tabulate(length v, fn i => uSub(v, length v - i -1))
+
+    fun sort cmp	= sort'(List.sort cmp)
+    and sort' lsort v	= fromList(lsort(toList v))
+end

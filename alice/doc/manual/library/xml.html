@@ -1,0 +1,170 @@
+<?php include("macros.php3"); ?>
+<?php heading("The XML structure", "The <TT>XML</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature XML
+    structure XML : XML
+  </PRE>
+
+  <P>
+    The <TT>XML</TT> structure provides a simple XML parser. It is
+    based on the libxml2
+    library (see <A HREF="http://www.xmlsoft.org">the libxml2 web
+    page</A> for further details).
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import structure XML from "x-alice:/lib/xml/XML"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+signature XML =
+    sig
+	type xml_node
+
+	exception XMLError of string
+
+	datatype xml_node_type =
+	    ATTRIBUTE_DECL
+	  | ATTRIBUTE_NODE
+	  | CDATA_SECTION_NODE
+	  | COMMENT_NODE
+	  | DOCB_DOCUMENT_NODE
+	  | DOCUMENT_FRAG_NODE
+	  | DOCUMENT_NODE
+	  | DOCUMENT_TYPE_NODE
+	  | DTD_NODE
+	  | ELEMENT_DECL
+	  | ELEMENT_NODE
+	  | ENTITY_DECL
+	  | ENTITY_NODE
+	  | ENTITY_REF_NODE
+	  | HTML_DOCUMENT_NODE
+	  | NAMESPACE_DECL
+	  | NOTATION_NODE
+	  | PI_NODE
+	  | TEXT_NODE
+	  | XINCLUDE_END
+	  | XINCLUDE_START
+
+	val parse : string -> xml_node
+	val parseString : string -> xml_node
+	fun name : xml_node -> string
+	fun children : xml_node -> xml_node list
+	fun null : xml_node -> bool
+	fun parent : xml_node -> xml_node
+	fun properties : xml_node -> xml_node list
+	fun getType : xml_node -> xml_node_type
+	fun getProp : xml_node -> string -> string option
+	fun getContent : xml_node -> bool -> string option
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+
+  <DL>
+
+    <DT>
+      <TT>parse <I>fileName</I></TT>
+    </DT>
+    <DD>
+      <P>Parses the file <TT><I>fileName</I></TT> into an xml document
+      tree and returns the root node. If this is not successfull, for
+      example because the file does not exist or is malformed, this
+      operation raises the <TT>XMLError</TT>
+      exception with a string describing the error.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>parseString <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Parses the string <TT><I>s</I></TT> into an xml document tree
+      and returns the root node. If this is not successfull, for
+      example because the string is malformed, this
+      operation raises the <TT>XMLError</TT>
+      exception with a string describing the error.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>name <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the name, i.e. the XML tag, of a node.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>children <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the list of children of <TT><I>node</I></TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>null <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>Tests whether <TT><I>node</I></TT> is null, i.e. an illegal
+      node. A null node is e.g. returned if you ask for the root
+      node's parent.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>parent <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the parent of <TT><I>node</I></TT>, or null for the root.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>properties <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the list of properties that <TT><I>node</I></TT>
+      has. Each property is again an xml_node.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>getType <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the type of <TT><I>node</I></TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>getProp <I>node</I> <I>prop</I></TT>
+    </DT>
+    <DD>
+      <P>If <TT><I>node</I></TT> has property <TT><I>prop</I></TT>
+      with value <TT><I>v</I></TT>, return <TT>SOME <I>v</I></TT>,
+      otherwise <TT>NONE</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>getContent <I>node</I></TT>
+    </DT>
+    <DD>
+      <P>If <TT><I>node</I></TT> contains text content
+      <TT></I>text</I></TT>, return <TT>SOME <I>text</I></TT>,
+      otherwise <TT>NONE</TT>.
+      </P>
+    </DD>
+
+  </DL>
+
+<?php footing() ?>

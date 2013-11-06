@@ -1,0 +1,3783 @@
+(* This file is generated automatically do not edit! *)
+structure Key =
+struct
+   datatype keyval =
+        K_VoidSymbol
+      | K_BackSpace
+      | K_Tab
+      | K_Linefeed
+      | K_Clear
+      | K_Return
+      | K_Pause
+      | K_Scroll_Lock
+      | K_Sys_Req
+      | K_Escape
+      | K_Delete
+      | K_Multi_key
+      | K_Codeinput
+      | K_SingleCandidate
+      | K_MultipleCandidate
+      | K_PreviousCandidate
+      | K_Kanji
+      | K_Muhenkan
+      | K_Henkan_Mode
+      | K_Romaji
+      | K_Hiragana
+      | K_Katakana
+      | K_Hiragana_Katakana
+      | K_Zenkaku
+      | K_Hankaku
+      | K_Zenkaku_Hankaku
+      | K_Touroku
+      | K_Massyo
+      | K_Kana_Lock
+      | K_Kana_Shift
+      | K_Eisu_Shift
+      | K_Eisu_toggle
+      | K_Home
+      | K_Left
+      | K_Up
+      | K_Right
+      | K_Down
+      | K_Prior
+      | K_Next
+      | K_End
+      | K_Begin
+      | K_Select
+      | K_Print
+      | K_Execute
+      | K_Insert
+      | K_Undo
+      | K_Redo
+      | K_Menu
+      | K_Find
+      | K_Cancel
+      | K_Help
+      | K_Break
+      | K_Mode_switch
+      | K_Num_Lock
+      | K_KP_Space
+      | K_KP_Tab
+      | K_KP_Enter
+      | K_KP_F1
+      | K_KP_F2
+      | K_KP_F3
+      | K_KP_F4
+      | K_KP_Home
+      | K_KP_Left
+      | K_KP_Up
+      | K_KP_Right
+      | K_KP_Down
+      | K_KP_Prior
+      | K_KP_Next
+      | K_KP_End
+      | K_KP_Begin
+      | K_KP_Insert
+      | K_KP_Delete
+      | K_KP_Equal
+      | K_KP_Multiply
+      | K_KP_Add
+      | K_KP_Separator
+      | K_KP_Subtract
+      | K_KP_Decimal
+      | K_KP_Divide
+      | K_KP_0
+      | K_KP_1
+      | K_KP_2
+      | K_KP_3
+      | K_KP_4
+      | K_KP_5
+      | K_KP_6
+      | K_KP_7
+      | K_KP_8
+      | K_KP_9
+      | K_F1
+      | K_F2
+      | K_F3
+      | K_F4
+      | K_F5
+      | K_F6
+      | K_F7
+      | K_F8
+      | K_F9
+      | K_F10
+      | K_F11
+      | K_F12
+      | K_F13
+      | K_F14
+      | K_F15
+      | K_F16
+      | K_F17
+      | K_F18
+      | K_F19
+      | K_F20
+      | K_F21
+      | K_F22
+      | K_F23
+      | K_F24
+      | K_F25
+      | K_F26
+      | K_F27
+      | K_F28
+      | K_F29
+      | K_F30
+      | K_F31
+      | K_F32
+      | K_F33
+      | K_F34
+      | K_F35
+      | K_Shift_L
+      | K_Shift_R
+      | K_Control_L
+      | K_Control_R
+      | K_Caps_Lock
+      | K_Shift_Lock
+      | K_Meta_L
+      | K_Meta_R
+      | K_Alt_L
+      | K_Alt_R
+      | K_Super_L
+      | K_Super_R
+      | K_Hyper_L
+      | K_Hyper_R
+      | K_ISO_Lock
+      | K_ISO_Level2_Latch
+      | K_ISO_Level3_Shift
+      | K_ISO_Level3_Latch
+      | K_ISO_Level3_Lock
+      | K_ISO_Group_Latch
+      | K_ISO_Group_Lock
+      | K_ISO_Next_Group
+      | K_ISO_Next_Group_Lock
+      | K_ISO_Prev_Group
+      | K_ISO_Prev_Group_Lock
+      | K_ISO_First_Group
+      | K_ISO_First_Group_Lock
+      | K_ISO_Last_Group
+      | K_ISO_Last_Group_Lock
+      | K_ISO_Left_Tab
+      | K_ISO_Move_Line_Up
+      | K_ISO_Move_Line_Down
+      | K_ISO_Partial_Line_Up
+      | K_ISO_Partial_Line_Down
+      | K_ISO_Partial_Space_Left
+      | K_ISO_Partial_Space_Right
+      | K_ISO_Set_Margin_Left
+      | K_ISO_Set_Margin_Right
+      | K_ISO_Release_Margin_Left
+      | K_ISO_Release_Margin_Right
+      | K_ISO_Release_Both_Margins
+      | K_ISO_Fast_Cursor_Left
+      | K_ISO_Fast_Cursor_Right
+      | K_ISO_Fast_Cursor_Up
+      | K_ISO_Fast_Cursor_Down
+      | K_ISO_Continuous_Underline
+      | K_ISO_Discontinuous_Underline
+      | K_ISO_Emphasize
+      | K_ISO_Center_Object
+      | K_ISO_Enter
+      | K_dead_grave
+      | K_dead_acute
+      | K_dead_circumflex
+      | K_dead_tilde
+      | K_dead_macron
+      | K_dead_breve
+      | K_dead_abovedot
+      | K_dead_diaeresis
+      | K_dead_abovering
+      | K_dead_doubleacute
+      | K_dead_caron
+      | K_dead_cedilla
+      | K_dead_ogonek
+      | K_dead_iota
+      | K_dead_voiced_sound
+      | K_dead_semivoiced_sound
+      | K_dead_belowdot
+      | K_dead_hook
+      | K_dead_horn
+      | K_First_Virtual_Screen
+      | K_Prev_Virtual_Screen
+      | K_Next_Virtual_Screen
+      | K_Last_Virtual_Screen
+      | K_Terminate_Server
+      | K_AccessX_Enable
+      | K_AccessX_Feedback_Enable
+      | K_RepeatKeys_Enable
+      | K_SlowKeys_Enable
+      | K_BounceKeys_Enable
+      | K_StickyKeys_Enable
+      | K_MouseKeys_Enable
+      | K_MouseKeys_Accel_Enable
+      | K_Overlay1_Enable
+      | K_Overlay2_Enable
+      | K_AudibleBell_Enable
+      | K_Pointer_Left
+      | K_Pointer_Right
+      | K_Pointer_Up
+      | K_Pointer_Down
+      | K_Pointer_UpLeft
+      | K_Pointer_UpRight
+      | K_Pointer_DownLeft
+      | K_Pointer_DownRight
+      | K_Pointer_Button_Dflt
+      | K_Pointer_Button1
+      | K_Pointer_Button2
+      | K_Pointer_Button3
+      | K_Pointer_Button4
+      | K_Pointer_Button5
+      | K_Pointer_DblClick_Dflt
+      | K_Pointer_DblClick1
+      | K_Pointer_DblClick2
+      | K_Pointer_DblClick3
+      | K_Pointer_DblClick4
+      | K_Pointer_DblClick5
+      | K_Pointer_Drag_Dflt
+      | K_Pointer_Drag1
+      | K_Pointer_Drag2
+      | K_Pointer_Drag3
+      | K_Pointer_Drag4
+      | K_Pointer_Drag5
+      | K_Pointer_EnableKeys
+      | K_Pointer_Accelerate
+      | K_Pointer_DfltBtnNext
+      | K_Pointer_DfltBtnPrev
+      | K_3270_Duplicate
+      | K_3270_FieldMark
+      | K_3270_Right2
+      | K_3270_Left2
+      | K_3270_BackTab
+      | K_3270_EraseEOF
+      | K_3270_EraseInput
+      | K_3270_Reset
+      | K_3270_Quit
+      | K_3270_PA1
+      | K_3270_PA2
+      | K_3270_PA3
+      | K_3270_Test
+      | K_3270_Attn
+      | K_3270_CursorBlink
+      | K_3270_AltCursor
+      | K_3270_KeyClick
+      | K_3270_Jump
+      | K_3270_Ident
+      | K_3270_Rule
+      | K_3270_Copy
+      | K_3270_Play
+      | K_3270_Setup
+      | K_3270_Record
+      | K_3270_ChangeScreen
+      | K_3270_DeleteWord
+      | K_3270_ExSelect
+      | K_3270_CursorSelect
+      | K_3270_PrintScreen
+      | K_3270_Enter
+      | K_space
+      | K_exclam
+      | K_quotedbl
+      | K_numbersign
+      | K_dollar
+      | K_percent
+      | K_ampersand
+      | K_apostrophe
+      | K_parenleft
+      | K_parenright
+      | K_asterisk
+      | K_plus
+      | K_comma
+      | K_minus
+      | K_period
+      | K_slash
+      | K_0
+      | K_1
+      | K_2
+      | K_3
+      | K_4
+      | K_5
+      | K_6
+      | K_7
+      | K_8
+      | K_9
+      | K_colon
+      | K_semicolon
+      | K_less
+      | K_equal
+      | K_greater
+      | K_question
+      | K_at
+      | K_A
+      | K_B
+      | K_C
+      | K_D
+      | K_E
+      | K_F
+      | K_G
+      | K_H
+      | K_I
+      | K_J
+      | K_K
+      | K_L
+      | K_M
+      | K_N
+      | K_O
+      | K_P
+      | K_Q
+      | K_R
+      | K_S
+      | K_T
+      | K_U
+      | K_V
+      | K_W
+      | K_X
+      | K_Y
+      | K_Z
+      | K_bracketleft
+      | K_backslash
+      | K_bracketright
+      | K_asciicircum
+      | K_underscore
+      | K_grave
+      | K_a
+      | K_b
+      | K_c
+      | K_d
+      | K_e
+      | K_f
+      | K_g
+      | K_h
+      | K_i
+      | K_j
+      | K_k
+      | K_l
+      | K_m
+      | K_n
+      | K_o
+      | K_p
+      | K_q
+      | K_r
+      | K_s
+      | K_t
+      | K_u
+      | K_v
+      | K_w
+      | K_x
+      | K_y
+      | K_z
+      | K_braceleft
+      | K_bar
+      | K_braceright
+      | K_asciitilde
+      | K_nobreakspace
+      | K_exclamdown
+      | K_cent
+      | K_sterling
+      | K_currency
+      | K_yen
+      | K_brokenbar
+      | K_section
+      | K_diaeresis
+      | K_copyright
+      | K_ordfeminine
+      | K_guillemotleft
+      | K_notsign
+      | K_hyphen
+      | K_registered
+      | K_macron
+      | K_degree
+      | K_plusminus
+      | K_twosuperior
+      | K_threesuperior
+      | K_acute
+      | K_mu
+      | K_paragraph
+      | K_periodcentered
+      | K_cedilla
+      | K_onesuperior
+      | K_masculine
+      | K_guillemotright
+      | K_onequarter
+      | K_onehalf
+      | K_threequarters
+      | K_questiondown
+      | K_Agrave
+      | K_Aacute
+      | K_Acircumflex
+      | K_Atilde
+      | K_Adiaeresis
+      | K_Aring
+      | K_AE
+      | K_Ccedilla
+      | K_Egrave
+      | K_Eacute
+      | K_Ecircumflex
+      | K_Ediaeresis
+      | K_Igrave
+      | K_Iacute
+      | K_Icircumflex
+      | K_Idiaeresis
+      | K_ETH
+      | K_Ntilde
+      | K_Ograve
+      | K_Oacute
+      | K_Ocircumflex
+      | K_Otilde
+      | K_Odiaeresis
+      | K_multiply
+      | K_Ooblique
+      | K_Ugrave
+      | K_Uacute
+      | K_Ucircumflex
+      | K_Udiaeresis
+      | K_Yacute
+      | K_THORN
+      | K_ssharp
+      | K_agrave
+      | K_aacute
+      | K_acircumflex
+      | K_atilde
+      | K_adiaeresis
+      | K_aring
+      | K_ae
+      | K_ccedilla
+      | K_egrave
+      | K_eacute
+      | K_ecircumflex
+      | K_ediaeresis
+      | K_igrave
+      | K_iacute
+      | K_icircumflex
+      | K_idiaeresis
+      | K_eth
+      | K_ntilde
+      | K_ograve
+      | K_oacute
+      | K_ocircumflex
+      | K_otilde
+      | K_odiaeresis
+      | K_division
+      | K_oslash
+      | K_ugrave
+      | K_uacute
+      | K_ucircumflex
+      | K_udiaeresis
+      | K_yacute
+      | K_thorn
+      | K_ydiaeresis
+      | K_Aogonek
+      | K_breve
+      | K_Lstroke
+      | K_Lcaron
+      | K_Sacute
+      | K_Scaron
+      | K_Scedilla
+      | K_Tcaron
+      | K_Zacute
+      | K_Zcaron
+      | K_Zabovedot
+      | K_aogonek
+      | K_ogonek
+      | K_lstroke
+      | K_lcaron
+      | K_sacute
+      | K_caron
+      | K_scaron
+      | K_scedilla
+      | K_tcaron
+      | K_zacute
+      | K_doubleacute
+      | K_zcaron
+      | K_zabovedot
+      | K_Racute
+      | K_Abreve
+      | K_Lacute
+      | K_Cacute
+      | K_Ccaron
+      | K_Eogonek
+      | K_Ecaron
+      | K_Dcaron
+      | K_Dstroke
+      | K_Nacute
+      | K_Ncaron
+      | K_Odoubleacute
+      | K_Rcaron
+      | K_Uring
+      | K_Udoubleacute
+      | K_Tcedilla
+      | K_racute
+      | K_abreve
+      | K_lacute
+      | K_cacute
+      | K_ccaron
+      | K_eogonek
+      | K_ecaron
+      | K_dcaron
+      | K_dstroke
+      | K_nacute
+      | K_ncaron
+      | K_odoubleacute
+      | K_udoubleacute
+      | K_rcaron
+      | K_uring
+      | K_tcedilla
+      | K_abovedot
+      | K_Hstroke
+      | K_Hcircumflex
+      | K_Iabovedot
+      | K_Gbreve
+      | K_Jcircumflex
+      | K_hstroke
+      | K_hcircumflex
+      | K_idotless
+      | K_gbreve
+      | K_jcircumflex
+      | K_Cabovedot
+      | K_Ccircumflex
+      | K_Gabovedot
+      | K_Gcircumflex
+      | K_Ubreve
+      | K_Scircumflex
+      | K_cabovedot
+      | K_ccircumflex
+      | K_gabovedot
+      | K_gcircumflex
+      | K_ubreve
+      | K_scircumflex
+      | K_kra
+      | K_Rcedilla
+      | K_Itilde
+      | K_Lcedilla
+      | K_Emacron
+      | K_Gcedilla
+      | K_Tslash
+      | K_rcedilla
+      | K_itilde
+      | K_lcedilla
+      | K_emacron
+      | K_gcedilla
+      | K_tslash
+      | K_ENG
+      | K_eng
+      | K_Amacron
+      | K_Iogonek
+      | K_Eabovedot
+      | K_Imacron
+      | K_Ncedilla
+      | K_Omacron
+      | K_Kcedilla
+      | K_Uogonek
+      | K_Utilde
+      | K_Umacron
+      | K_amacron
+      | K_iogonek
+      | K_eabovedot
+      | K_imacron
+      | K_ncedilla
+      | K_omacron
+      | K_kcedilla
+      | K_uogonek
+      | K_utilde
+      | K_umacron
+      | K_OE
+      | K_oe
+      | K_Ydiaeresis
+      | K_overline
+      | K_kana_fullstop
+      | K_kana_openingbracket
+      | K_kana_closingbracket
+      | K_kana_comma
+      | K_kana_conjunctive
+      | K_kana_WO
+      | K_kana_a
+      | K_kana_i
+      | K_kana_u
+      | K_kana_e
+      | K_kana_o
+      | K_kana_ya
+      | K_kana_yu
+      | K_kana_yo
+      | K_kana_tsu
+      | K_prolongedsound
+      | K_kana_A
+      | K_kana_I
+      | K_kana_U
+      | K_kana_E
+      | K_kana_O
+      | K_kana_KA
+      | K_kana_KI
+      | K_kana_KU
+      | K_kana_KE
+      | K_kana_KO
+      | K_kana_SA
+      | K_kana_SHI
+      | K_kana_SU
+      | K_kana_SE
+      | K_kana_SO
+      | K_kana_TA
+      | K_kana_CHI
+      | K_kana_TSU
+      | K_kana_TE
+      | K_kana_TO
+      | K_kana_NA
+      | K_kana_NI
+      | K_kana_NU
+      | K_kana_NE
+      | K_kana_NO
+      | K_kana_HA
+      | K_kana_HI
+      | K_kana_FU
+      | K_kana_HE
+      | K_kana_HO
+      | K_kana_MA
+      | K_kana_MI
+      | K_kana_MU
+      | K_kana_ME
+      | K_kana_MO
+      | K_kana_YA
+      | K_kana_YU
+      | K_kana_YO
+      | K_kana_RA
+      | K_kana_RI
+      | K_kana_RU
+      | K_kana_RE
+      | K_kana_RO
+      | K_kana_WA
+      | K_kana_N
+      | K_voicedsound
+      | K_semivoicedsound
+      | K_Arabic_comma
+      | K_Arabic_semicolon
+      | K_Arabic_question_mark
+      | K_Arabic_hamza
+      | K_Arabic_maddaonalef
+      | K_Arabic_hamzaonalef
+      | K_Arabic_hamzaonwaw
+      | K_Arabic_hamzaunderalef
+      | K_Arabic_hamzaonyeh
+      | K_Arabic_alef
+      | K_Arabic_beh
+      | K_Arabic_tehmarbuta
+      | K_Arabic_teh
+      | K_Arabic_theh
+      | K_Arabic_jeem
+      | K_Arabic_hah
+      | K_Arabic_khah
+      | K_Arabic_dal
+      | K_Arabic_thal
+      | K_Arabic_ra
+      | K_Arabic_zain
+      | K_Arabic_seen
+      | K_Arabic_sheen
+      | K_Arabic_sad
+      | K_Arabic_dad
+      | K_Arabic_tah
+      | K_Arabic_zah
+      | K_Arabic_ain
+      | K_Arabic_ghain
+      | K_Arabic_tatweel
+      | K_Arabic_feh
+      | K_Arabic_qaf
+      | K_Arabic_kaf
+      | K_Arabic_lam
+      | K_Arabic_meem
+      | K_Arabic_noon
+      | K_Arabic_ha
+      | K_Arabic_waw
+      | K_Arabic_alefmaksura
+      | K_Arabic_yeh
+      | K_Arabic_fathatan
+      | K_Arabic_dammatan
+      | K_Arabic_kasratan
+      | K_Arabic_fatha
+      | K_Arabic_damma
+      | K_Arabic_kasra
+      | K_Arabic_shadda
+      | K_Arabic_sukun
+      | K_Serbian_dje
+      | K_Macedonia_gje
+      | K_Cyrillic_io
+      | K_Ukrainian_ie
+      | K_Macedonia_dse
+      | K_Ukrainian_i
+      | K_Ukrainian_yi
+      | K_Cyrillic_je
+      | K_Cyrillic_lje
+      | K_Cyrillic_nje
+      | K_Serbian_tshe
+      | K_Macedonia_kje
+      | K_Ukrainian_ghe_with_upturn
+      | K_Byelorussian_shortu
+      | K_Cyrillic_dzhe
+      | K_numerosign
+      | K_Serbian_DJE
+      | K_Macedonia_GJE
+      | K_Cyrillic_IO
+      | K_Ukrainian_IE
+      | K_Macedonia_DSE
+      | K_Ukrainian_I
+      | K_Ukrainian_YI
+      | K_Cyrillic_JE
+      | K_Cyrillic_LJE
+      | K_Cyrillic_NJE
+      | K_Serbian_TSHE
+      | K_Macedonia_KJE
+      | K_Ukrainian_GHE_WITH_UPTURN
+      | K_Byelorussian_SHORTU
+      | K_Cyrillic_DZHE
+      | K_Cyrillic_yu
+      | K_Cyrillic_a
+      | K_Cyrillic_be
+      | K_Cyrillic_tse
+      | K_Cyrillic_de
+      | K_Cyrillic_ie
+      | K_Cyrillic_ef
+      | K_Cyrillic_ghe
+      | K_Cyrillic_ha
+      | K_Cyrillic_i
+      | K_Cyrillic_shorti
+      | K_Cyrillic_ka
+      | K_Cyrillic_el
+      | K_Cyrillic_em
+      | K_Cyrillic_en
+      | K_Cyrillic_o
+      | K_Cyrillic_pe
+      | K_Cyrillic_ya
+      | K_Cyrillic_er
+      | K_Cyrillic_es
+      | K_Cyrillic_te
+      | K_Cyrillic_u
+      | K_Cyrillic_zhe
+      | K_Cyrillic_ve
+      | K_Cyrillic_softsign
+      | K_Cyrillic_yeru
+      | K_Cyrillic_ze
+      | K_Cyrillic_sha
+      | K_Cyrillic_e
+      | K_Cyrillic_shcha
+      | K_Cyrillic_che
+      | K_Cyrillic_hardsign
+      | K_Cyrillic_YU
+      | K_Cyrillic_A
+      | K_Cyrillic_BE
+      | K_Cyrillic_TSE
+      | K_Cyrillic_DE
+      | K_Cyrillic_IE
+      | K_Cyrillic_EF
+      | K_Cyrillic_GHE
+      | K_Cyrillic_HA
+      | K_Cyrillic_I
+      | K_Cyrillic_SHORTI
+      | K_Cyrillic_KA
+      | K_Cyrillic_EL
+      | K_Cyrillic_EM
+      | K_Cyrillic_EN
+      | K_Cyrillic_O
+      | K_Cyrillic_PE
+      | K_Cyrillic_YA
+      | K_Cyrillic_ER
+      | K_Cyrillic_ES
+      | K_Cyrillic_TE
+      | K_Cyrillic_U
+      | K_Cyrillic_ZHE
+      | K_Cyrillic_VE
+      | K_Cyrillic_SOFTSIGN
+      | K_Cyrillic_YERU
+      | K_Cyrillic_ZE
+      | K_Cyrillic_SHA
+      | K_Cyrillic_E
+      | K_Cyrillic_SHCHA
+      | K_Cyrillic_CHE
+      | K_Cyrillic_HARDSIGN
+      | K_Greek_ALPHAaccent
+      | K_Greek_EPSILONaccent
+      | K_Greek_ETAaccent
+      | K_Greek_IOTAaccent
+      | K_Greek_IOTAdieresis
+      | K_Greek_OMICRONaccent
+      | K_Greek_UPSILONaccent
+      | K_Greek_UPSILONdieresis
+      | K_Greek_OMEGAaccent
+      | K_Greek_accentdieresis
+      | K_Greek_horizbar
+      | K_Greek_alphaaccent
+      | K_Greek_epsilonaccent
+      | K_Greek_etaaccent
+      | K_Greek_iotaaccent
+      | K_Greek_iotadieresis
+      | K_Greek_iotaaccentdieresis
+      | K_Greek_omicronaccent
+      | K_Greek_upsilonaccent
+      | K_Greek_upsilondieresis
+      | K_Greek_upsilonaccentdieresis
+      | K_Greek_omegaaccent
+      | K_Greek_ALPHA
+      | K_Greek_BETA
+      | K_Greek_GAMMA
+      | K_Greek_DELTA
+      | K_Greek_EPSILON
+      | K_Greek_ZETA
+      | K_Greek_ETA
+      | K_Greek_THETA
+      | K_Greek_IOTA
+      | K_Greek_KAPPA
+      | K_Greek_LAMDA
+      | K_Greek_MU
+      | K_Greek_NU
+      | K_Greek_XI
+      | K_Greek_OMICRON
+      | K_Greek_PI
+      | K_Greek_RHO
+      | K_Greek_SIGMA
+      | K_Greek_TAU
+      | K_Greek_UPSILON
+      | K_Greek_PHI
+      | K_Greek_CHI
+      | K_Greek_PSI
+      | K_Greek_OMEGA
+      | K_Greek_alpha
+      | K_Greek_beta
+      | K_Greek_gamma
+      | K_Greek_delta
+      | K_Greek_epsilon
+      | K_Greek_zeta
+      | K_Greek_eta
+      | K_Greek_theta
+      | K_Greek_iota
+      | K_Greek_kappa
+      | K_Greek_lamda
+      | K_Greek_mu
+      | K_Greek_nu
+      | K_Greek_xi
+      | K_Greek_omicron
+      | K_Greek_pi
+      | K_Greek_rho
+      | K_Greek_sigma
+      | K_Greek_finalsmallsigma
+      | K_Greek_tau
+      | K_Greek_upsilon
+      | K_Greek_phi
+      | K_Greek_chi
+      | K_Greek_psi
+      | K_Greek_omega
+      | K_leftradical
+      | K_topleftradical
+      | K_horizconnector
+      | K_topintegral
+      | K_botintegral
+      | K_vertconnector
+      | K_topleftsqbracket
+      | K_botleftsqbracket
+      | K_toprightsqbracket
+      | K_botrightsqbracket
+      | K_topleftparens
+      | K_botleftparens
+      | K_toprightparens
+      | K_botrightparens
+      | K_leftmiddlecurlybrace
+      | K_rightmiddlecurlybrace
+      | K_topleftsummation
+      | K_botleftsummation
+      | K_topvertsummationconnector
+      | K_botvertsummationconnector
+      | K_toprightsummation
+      | K_botrightsummation
+      | K_rightmiddlesummation
+      | K_lessthanequal
+      | K_notequal
+      | K_greaterthanequal
+      | K_integral
+      | K_therefore
+      | K_variation
+      | K_infinity
+      | K_nabla
+      | K_approximate
+      | K_similarequal
+      | K_ifonlyif
+      | K_implies
+      | K_identical
+      | K_radical
+      | K_includedin
+      | K_includes
+      | K_intersection
+      | K_union
+      | K_logicaland
+      | K_logicalor
+      | K_partialderivative
+      | K_function
+      | K_leftarrow
+      | K_uparrow
+      | K_rightarrow
+      | K_downarrow
+      | K_blank
+      | K_soliddiamond
+      | K_checkerboard
+      | K_ht
+      | K_ff
+      | K_cr
+      | K_lf
+      | K_nl
+      | K_vt
+      | K_lowrightcorner
+      | K_uprightcorner
+      | K_upleftcorner
+      | K_lowleftcorner
+      | K_crossinglines
+      | K_horizlinescan1
+      | K_horizlinescan3
+      | K_horizlinescan5
+      | K_horizlinescan7
+      | K_horizlinescan9
+      | K_leftt
+      | K_rightt
+      | K_bott
+      | K_topt
+      | K_vertbar
+      | K_emspace
+      | K_enspace
+      | K_em3space
+      | K_em4space
+      | K_digitspace
+      | K_punctspace
+      | K_thinspace
+      | K_hairspace
+      | K_emdash
+      | K_endash
+      | K_signifblank
+      | K_ellipsis
+      | K_doubbaselinedot
+      | K_onethird
+      | K_twothirds
+      | K_onefifth
+      | K_twofifths
+      | K_threefifths
+      | K_fourfifths
+      | K_onesixth
+      | K_fivesixths
+      | K_careof
+      | K_figdash
+      | K_leftanglebracket
+      | K_decimalpoint
+      | K_rightanglebracket
+      | K_marker
+      | K_oneeighth
+      | K_threeeighths
+      | K_fiveeighths
+      | K_seveneighths
+      | K_trademark
+      | K_signaturemark
+      | K_trademarkincircle
+      | K_leftopentriangle
+      | K_rightopentriangle
+      | K_emopencircle
+      | K_emopenrectangle
+      | K_leftsinglequotemark
+      | K_rightsinglequotemark
+      | K_leftdoublequotemark
+      | K_rightdoublequotemark
+      | K_prescription
+      | K_minutes
+      | K_seconds
+      | K_latincross
+      | K_hexagram
+      | K_filledrectbullet
+      | K_filledlefttribullet
+      | K_filledrighttribullet
+      | K_emfilledcircle
+      | K_emfilledrect
+      | K_enopencircbullet
+      | K_enopensquarebullet
+      | K_openrectbullet
+      | K_opentribulletup
+      | K_opentribulletdown
+      | K_openstar
+      | K_enfilledcircbullet
+      | K_enfilledsqbullet
+      | K_filledtribulletup
+      | K_filledtribulletdown
+      | K_leftpointer
+      | K_rightpointer
+      | K_club
+      | K_diamond
+      | K_heart
+      | K_maltesecross
+      | K_dagger
+      | K_doubledagger
+      | K_checkmark
+      | K_ballotcross
+      | K_musicalsharp
+      | K_musicalflat
+      | K_malesymbol
+      | K_femalesymbol
+      | K_telephone
+      | K_telephonerecorder
+      | K_phonographcopyright
+      | K_caret
+      | K_singlelowquotemark
+      | K_doublelowquotemark
+      | K_cursor
+      | K_leftcaret
+      | K_rightcaret
+      | K_downcaret
+      | K_upcaret
+      | K_overbar
+      | K_downtack
+      | K_upshoe
+      | K_downstile
+      | K_underbar
+      | K_jot
+      | K_quad
+      | K_uptack
+      | K_circle
+      | K_upstile
+      | K_downshoe
+      | K_rightshoe
+      | K_leftshoe
+      | K_lefttack
+      | K_righttack
+      | K_hebrew_doublelowline
+      | K_hebrew_aleph
+      | K_hebrew_bet
+      | K_hebrew_gimel
+      | K_hebrew_dalet
+      | K_hebrew_he
+      | K_hebrew_waw
+      | K_hebrew_zain
+      | K_hebrew_chet
+      | K_hebrew_tet
+      | K_hebrew_yod
+      | K_hebrew_finalkaph
+      | K_hebrew_kaph
+      | K_hebrew_lamed
+      | K_hebrew_finalmem
+      | K_hebrew_mem
+      | K_hebrew_finalnun
+      | K_hebrew_nun
+      | K_hebrew_samech
+      | K_hebrew_ayin
+      | K_hebrew_finalpe
+      | K_hebrew_pe
+      | K_hebrew_finalzade
+      | K_hebrew_zade
+      | K_hebrew_qoph
+      | K_hebrew_resh
+      | K_hebrew_shin
+      | K_hebrew_taw
+      | K_Thai_kokai
+      | K_Thai_khokhai
+      | K_Thai_khokhuat
+      | K_Thai_khokhwai
+      | K_Thai_khokhon
+      | K_Thai_khorakhang
+      | K_Thai_ngongu
+      | K_Thai_chochan
+      | K_Thai_choching
+      | K_Thai_chochang
+      | K_Thai_soso
+      | K_Thai_chochoe
+      | K_Thai_yoying
+      | K_Thai_dochada
+      | K_Thai_topatak
+      | K_Thai_thothan
+      | K_Thai_thonangmontho
+      | K_Thai_thophuthao
+      | K_Thai_nonen
+      | K_Thai_dodek
+      | K_Thai_totao
+      | K_Thai_thothung
+      | K_Thai_thothahan
+      | K_Thai_thothong
+      | K_Thai_nonu
+      | K_Thai_bobaimai
+      | K_Thai_popla
+      | K_Thai_phophung
+      | K_Thai_fofa
+      | K_Thai_phophan
+      | K_Thai_fofan
+      | K_Thai_phosamphao
+      | K_Thai_moma
+      | K_Thai_yoyak
+      | K_Thai_rorua
+      | K_Thai_ru
+      | K_Thai_loling
+      | K_Thai_lu
+      | K_Thai_wowaen
+      | K_Thai_sosala
+      | K_Thai_sorusi
+      | K_Thai_sosua
+      | K_Thai_hohip
+      | K_Thai_lochula
+      | K_Thai_oang
+      | K_Thai_honokhuk
+      | K_Thai_paiyannoi
+      | K_Thai_saraa
+      | K_Thai_maihanakat
+      | K_Thai_saraaa
+      | K_Thai_saraam
+      | K_Thai_sarai
+      | K_Thai_saraii
+      | K_Thai_saraue
+      | K_Thai_sarauee
+      | K_Thai_sarau
+      | K_Thai_sarauu
+      | K_Thai_phinthu
+      | K_Thai_maihanakat_maitho
+      | K_Thai_baht
+      | K_Thai_sarae
+      | K_Thai_saraae
+      | K_Thai_sarao
+      | K_Thai_saraaimaimuan
+      | K_Thai_saraaimaimalai
+      | K_Thai_lakkhangyao
+      | K_Thai_maiyamok
+      | K_Thai_maitaikhu
+      | K_Thai_maiek
+      | K_Thai_maitho
+      | K_Thai_maitri
+      | K_Thai_maichattawa
+      | K_Thai_thanthakhat
+      | K_Thai_nikhahit
+      | K_Thai_leksun
+      | K_Thai_leknung
+      | K_Thai_leksong
+      | K_Thai_leksam
+      | K_Thai_leksi
+      | K_Thai_lekha
+      | K_Thai_lekhok
+      | K_Thai_lekchet
+      | K_Thai_lekpaet
+      | K_Thai_lekkao
+      | K_Hangul
+      | K_Hangul_Start
+      | K_Hangul_End
+      | K_Hangul_Hanja
+      | K_Hangul_Jamo
+      | K_Hangul_Romaja
+      | K_Hangul_Jeonja
+      | K_Hangul_Banja
+      | K_Hangul_PreHanja
+      | K_Hangul_PostHanja
+      | K_Hangul_Special
+      | K_Hangul_Kiyeog
+      | K_Hangul_SsangKiyeog
+      | K_Hangul_KiyeogSios
+      | K_Hangul_Nieun
+      | K_Hangul_NieunJieuj
+      | K_Hangul_NieunHieuh
+      | K_Hangul_Dikeud
+      | K_Hangul_SsangDikeud
+      | K_Hangul_Rieul
+      | K_Hangul_RieulKiyeog
+      | K_Hangul_RieulMieum
+      | K_Hangul_RieulPieub
+      | K_Hangul_RieulSios
+      | K_Hangul_RieulTieut
+      | K_Hangul_RieulPhieuf
+      | K_Hangul_RieulHieuh
+      | K_Hangul_Mieum
+      | K_Hangul_Pieub
+      | K_Hangul_SsangPieub
+      | K_Hangul_PieubSios
+      | K_Hangul_Sios
+      | K_Hangul_SsangSios
+      | K_Hangul_Ieung
+      | K_Hangul_Jieuj
+      | K_Hangul_SsangJieuj
+      | K_Hangul_Cieuc
+      | K_Hangul_Khieuq
+      | K_Hangul_Tieut
+      | K_Hangul_Phieuf
+      | K_Hangul_Hieuh
+      | K_Hangul_A
+      | K_Hangul_AE
+      | K_Hangul_YA
+      | K_Hangul_YAE
+      | K_Hangul_EO
+      | K_Hangul_E
+      | K_Hangul_YEO
+      | K_Hangul_YE
+      | K_Hangul_O
+      | K_Hangul_WA
+      | K_Hangul_WAE
+      | K_Hangul_OE
+      | K_Hangul_YO
+      | K_Hangul_U
+      | K_Hangul_WEO
+      | K_Hangul_WE
+      | K_Hangul_WI
+      | K_Hangul_YU
+      | K_Hangul_EU
+      | K_Hangul_YI
+      | K_Hangul_I
+      | K_Hangul_J_Kiyeog
+      | K_Hangul_J_SsangKiyeog
+      | K_Hangul_J_KiyeogSios
+      | K_Hangul_J_Nieun
+      | K_Hangul_J_NieunJieuj
+      | K_Hangul_J_NieunHieuh
+      | K_Hangul_J_Dikeud
+      | K_Hangul_J_Rieul
+      | K_Hangul_J_RieulKiyeog
+      | K_Hangul_J_RieulMieum
+      | K_Hangul_J_RieulPieub
+      | K_Hangul_J_RieulSios
+      | K_Hangul_J_RieulTieut
+      | K_Hangul_J_RieulPhieuf
+      | K_Hangul_J_RieulHieuh
+      | K_Hangul_J_Mieum
+      | K_Hangul_J_Pieub
+      | K_Hangul_J_PieubSios
+      | K_Hangul_J_Sios
+      | K_Hangul_J_SsangSios
+      | K_Hangul_J_Ieung
+      | K_Hangul_J_Jieuj
+      | K_Hangul_J_Cieuc
+      | K_Hangul_J_Khieuq
+      | K_Hangul_J_Tieut
+      | K_Hangul_J_Phieuf
+      | K_Hangul_J_Hieuh
+      | K_Hangul_RieulYeorinHieuh
+      | K_Hangul_SunkyeongeumMieum
+      | K_Hangul_SunkyeongeumPieub
+      | K_Hangul_PanSios
+      | K_Hangul_KkogjiDalrinIeung
+      | K_Hangul_SunkyeongeumPhieuf
+      | K_Hangul_YeorinHieuh
+      | K_Hangul_AraeA
+      | K_Hangul_AraeAE
+      | K_Hangul_J_PanSios
+      | K_Hangul_J_KkogjiDalrinIeung
+      | K_Hangul_J_YeorinHieuh
+      | K_Korean_Won
+      | K_EcuSign
+      | K_ColonSign
+      | K_CruzeiroSign
+      | K_FFrancSign
+      | K_LiraSign
+      | K_MillSign
+      | K_NairaSign
+      | K_PesetaSign
+      | K_RupeeSign
+      | K_WonSign
+      | K_NewSheqelSign
+      | K_DongSign
+      | K_EuroSign
+
+    fun keyvalToInt kv =
+        case kv of
+            K_VoidSymbol	 => 16777215
+          | K_BackSpace	 => 65288
+          | K_Tab	 => 65289
+          | K_Linefeed	 => 65290
+          | K_Clear	 => 65291
+          | K_Return	 => 65293
+          | K_Pause	 => 65299
+          | K_Scroll_Lock	 => 65300
+          | K_Sys_Req	 => 65301
+          | K_Escape	 => 65307
+          | K_Delete	 => 65535
+          | K_Multi_key	 => 65312
+          | K_Codeinput	 => 65335
+          | K_SingleCandidate	 => 65340
+          | K_MultipleCandidate	 => 65341
+          | K_PreviousCandidate	 => 65342
+          | K_Kanji	 => 65313
+          | K_Muhenkan	 => 65314
+          | K_Henkan_Mode	 => 65315
+          | K_Romaji	 => 65316
+          | K_Hiragana	 => 65317
+          | K_Katakana	 => 65318
+          | K_Hiragana_Katakana	 => 65319
+          | K_Zenkaku	 => 65320
+          | K_Hankaku	 => 65321
+          | K_Zenkaku_Hankaku	 => 65322
+          | K_Touroku	 => 65323
+          | K_Massyo	 => 65324
+          | K_Kana_Lock	 => 65325
+          | K_Kana_Shift	 => 65326
+          | K_Eisu_Shift	 => 65327
+          | K_Eisu_toggle	 => 65328
+          | K_Home	 => 65360
+          | K_Left	 => 65361
+          | K_Up	 => 65362
+          | K_Right	 => 65363
+          | K_Down	 => 65364
+          | K_Prior	 => 65365
+          | K_Next	 => 65366
+          | K_End	 => 65367
+          | K_Begin	 => 65368
+          | K_Select	 => 65376
+          | K_Print	 => 65377
+          | K_Execute	 => 65378
+          | K_Insert	 => 65379
+          | K_Undo	 => 65381
+          | K_Redo	 => 65382
+          | K_Menu	 => 65383
+          | K_Find	 => 65384
+          | K_Cancel	 => 65385
+          | K_Help	 => 65386
+          | K_Break	 => 65387
+          | K_Mode_switch	 => 65406
+          | K_Num_Lock	 => 65407
+          | K_KP_Space	 => 65408
+          | K_KP_Tab	 => 65417
+          | K_KP_Enter	 => 65421
+          | K_KP_F1	 => 65425
+          | K_KP_F2	 => 65426
+          | K_KP_F3	 => 65427
+          | K_KP_F4	 => 65428
+          | K_KP_Home	 => 65429
+          | K_KP_Left	 => 65430
+          | K_KP_Up	 => 65431
+          | K_KP_Right	 => 65432
+          | K_KP_Down	 => 65433
+          | K_KP_Prior	 => 65434
+          | K_KP_Next	 => 65435
+          | K_KP_End	 => 65436
+          | K_KP_Begin	 => 65437
+          | K_KP_Insert	 => 65438
+          | K_KP_Delete	 => 65439
+          | K_KP_Equal	 => 65469
+          | K_KP_Multiply	 => 65450
+          | K_KP_Add	 => 65451
+          | K_KP_Separator	 => 65452
+          | K_KP_Subtract	 => 65453
+          | K_KP_Decimal	 => 65454
+          | K_KP_Divide	 => 65455
+          | K_KP_0	 => 65456
+          | K_KP_1	 => 65457
+          | K_KP_2	 => 65458
+          | K_KP_3	 => 65459
+          | K_KP_4	 => 65460
+          | K_KP_5	 => 65461
+          | K_KP_6	 => 65462
+          | K_KP_7	 => 65463
+          | K_KP_8	 => 65464
+          | K_KP_9	 => 65465
+          | K_F1	 => 65470
+          | K_F2	 => 65471
+          | K_F3	 => 65472
+          | K_F4	 => 65473
+          | K_F5	 => 65474
+          | K_F6	 => 65475
+          | K_F7	 => 65476
+          | K_F8	 => 65477
+          | K_F9	 => 65478
+          | K_F10	 => 65479
+          | K_F11	 => 65480
+          | K_F12	 => 65481
+          | K_F13	 => 65482
+          | K_F14	 => 65483
+          | K_F15	 => 65484
+          | K_F16	 => 65485
+          | K_F17	 => 65486
+          | K_F18	 => 65487
+          | K_F19	 => 65488
+          | K_F20	 => 65489
+          | K_F21	 => 65490
+          | K_F22	 => 65491
+          | K_F23	 => 65492
+          | K_F24	 => 65493
+          | K_F25	 => 65494
+          | K_F26	 => 65495
+          | K_F27	 => 65496
+          | K_F28	 => 65497
+          | K_F29	 => 65498
+          | K_F30	 => 65499
+          | K_F31	 => 65500
+          | K_F32	 => 65501
+          | K_F33	 => 65502
+          | K_F34	 => 65503
+          | K_F35	 => 65504
+          | K_Shift_L	 => 65505
+          | K_Shift_R	 => 65506
+          | K_Control_L	 => 65507
+          | K_Control_R	 => 65508
+          | K_Caps_Lock	 => 65509
+          | K_Shift_Lock	 => 65510
+          | K_Meta_L	 => 65511
+          | K_Meta_R	 => 65512
+          | K_Alt_L	 => 65513
+          | K_Alt_R	 => 65514
+          | K_Super_L	 => 65515
+          | K_Super_R	 => 65516
+          | K_Hyper_L	 => 65517
+          | K_Hyper_R	 => 65518
+          | K_ISO_Lock	 => 65025
+          | K_ISO_Level2_Latch	 => 65026
+          | K_ISO_Level3_Shift	 => 65027
+          | K_ISO_Level3_Latch	 => 65028
+          | K_ISO_Level3_Lock	 => 65029
+          | K_ISO_Group_Latch	 => 65030
+          | K_ISO_Group_Lock	 => 65031
+          | K_ISO_Next_Group	 => 65032
+          | K_ISO_Next_Group_Lock	 => 65033
+          | K_ISO_Prev_Group	 => 65034
+          | K_ISO_Prev_Group_Lock	 => 65035
+          | K_ISO_First_Group	 => 65036
+          | K_ISO_First_Group_Lock	 => 65037
+          | K_ISO_Last_Group	 => 65038
+          | K_ISO_Last_Group_Lock	 => 65039
+          | K_ISO_Left_Tab	 => 65056
+          | K_ISO_Move_Line_Up	 => 65057
+          | K_ISO_Move_Line_Down	 => 65058
+          | K_ISO_Partial_Line_Up	 => 65059
+          | K_ISO_Partial_Line_Down	 => 65060
+          | K_ISO_Partial_Space_Left	 => 65061
+          | K_ISO_Partial_Space_Right	 => 65062
+          | K_ISO_Set_Margin_Left	 => 65063
+          | K_ISO_Set_Margin_Right	 => 65064
+          | K_ISO_Release_Margin_Left	 => 65065
+          | K_ISO_Release_Margin_Right	 => 65066
+          | K_ISO_Release_Both_Margins	 => 65067
+          | K_ISO_Fast_Cursor_Left	 => 65068
+          | K_ISO_Fast_Cursor_Right	 => 65069
+          | K_ISO_Fast_Cursor_Up	 => 65070
+          | K_ISO_Fast_Cursor_Down	 => 65071
+          | K_ISO_Continuous_Underline	 => 65072
+          | K_ISO_Discontinuous_Underline	 => 65073
+          | K_ISO_Emphasize	 => 65074
+          | K_ISO_Center_Object	 => 65075
+          | K_ISO_Enter	 => 65076
+          | K_dead_grave	 => 65104
+          | K_dead_acute	 => 65105
+          | K_dead_circumflex	 => 65106
+          | K_dead_tilde	 => 65107
+          | K_dead_macron	 => 65108
+          | K_dead_breve	 => 65109
+          | K_dead_abovedot	 => 65110
+          | K_dead_diaeresis	 => 65111
+          | K_dead_abovering	 => 65112
+          | K_dead_doubleacute	 => 65113
+          | K_dead_caron	 => 65114
+          | K_dead_cedilla	 => 65115
+          | K_dead_ogonek	 => 65116
+          | K_dead_iota	 => 65117
+          | K_dead_voiced_sound	 => 65118
+          | K_dead_semivoiced_sound	 => 65119
+          | K_dead_belowdot	 => 65120
+          | K_dead_hook	 => 65121
+          | K_dead_horn	 => 65122
+          | K_First_Virtual_Screen	 => 65232
+          | K_Prev_Virtual_Screen	 => 65233
+          | K_Next_Virtual_Screen	 => 65234
+          | K_Last_Virtual_Screen	 => 65236
+          | K_Terminate_Server	 => 65237
+          | K_AccessX_Enable	 => 65136
+          | K_AccessX_Feedback_Enable	 => 65137
+          | K_RepeatKeys_Enable	 => 65138
+          | K_SlowKeys_Enable	 => 65139
+          | K_BounceKeys_Enable	 => 65140
+          | K_StickyKeys_Enable	 => 65141
+          | K_MouseKeys_Enable	 => 65142
+          | K_MouseKeys_Accel_Enable	 => 65143
+          | K_Overlay1_Enable	 => 65144
+          | K_Overlay2_Enable	 => 65145
+          | K_AudibleBell_Enable	 => 65146
+          | K_Pointer_Left	 => 65248
+          | K_Pointer_Right	 => 65249
+          | K_Pointer_Up	 => 65250
+          | K_Pointer_Down	 => 65251
+          | K_Pointer_UpLeft	 => 65252
+          | K_Pointer_UpRight	 => 65253
+          | K_Pointer_DownLeft	 => 65254
+          | K_Pointer_DownRight	 => 65255
+          | K_Pointer_Button_Dflt	 => 65256
+          | K_Pointer_Button1	 => 65257
+          | K_Pointer_Button2	 => 65258
+          | K_Pointer_Button3	 => 65259
+          | K_Pointer_Button4	 => 65260
+          | K_Pointer_Button5	 => 65261
+          | K_Pointer_DblClick_Dflt	 => 65262
+          | K_Pointer_DblClick1	 => 65263
+          | K_Pointer_DblClick2	 => 65264
+          | K_Pointer_DblClick3	 => 65265
+          | K_Pointer_DblClick4	 => 65266
+          | K_Pointer_DblClick5	 => 65267
+          | K_Pointer_Drag_Dflt	 => 65268
+          | K_Pointer_Drag1	 => 65269
+          | K_Pointer_Drag2	 => 65270
+          | K_Pointer_Drag3	 => 65271
+          | K_Pointer_Drag4	 => 65272
+          | K_Pointer_Drag5	 => 65277
+          | K_Pointer_EnableKeys	 => 65273
+          | K_Pointer_Accelerate	 => 65274
+          | K_Pointer_DfltBtnNext	 => 65275
+          | K_Pointer_DfltBtnPrev	 => 65276
+          | K_3270_Duplicate	 => 64769
+          | K_3270_FieldMark	 => 64770
+          | K_3270_Right2	 => 64771
+          | K_3270_Left2	 => 64772
+          | K_3270_BackTab	 => 64773
+          | K_3270_EraseEOF	 => 64774
+          | K_3270_EraseInput	 => 64775
+          | K_3270_Reset	 => 64776
+          | K_3270_Quit	 => 64777
+          | K_3270_PA1	 => 64778
+          | K_3270_PA2	 => 64779
+          | K_3270_PA3	 => 64780
+          | K_3270_Test	 => 64781
+          | K_3270_Attn	 => 64782
+          | K_3270_CursorBlink	 => 64783
+          | K_3270_AltCursor	 => 64784
+          | K_3270_KeyClick	 => 64785
+          | K_3270_Jump	 => 64786
+          | K_3270_Ident	 => 64787
+          | K_3270_Rule	 => 64788
+          | K_3270_Copy	 => 64789
+          | K_3270_Play	 => 64790
+          | K_3270_Setup	 => 64791
+          | K_3270_Record	 => 64792
+          | K_3270_ChangeScreen	 => 64793
+          | K_3270_DeleteWord	 => 64794
+          | K_3270_ExSelect	 => 64795
+          | K_3270_CursorSelect	 => 64796
+          | K_3270_PrintScreen	 => 64797
+          | K_3270_Enter	 => 64798
+          | K_space	 => 32
+          | K_exclam	 => 33
+          | K_quotedbl	 => 34
+          | K_numbersign	 => 35
+          | K_dollar	 => 36
+          | K_percent	 => 37
+          | K_ampersand	 => 38
+          | K_apostrophe	 => 39
+          | K_parenleft	 => 40
+          | K_parenright	 => 41
+          | K_asterisk	 => 42
+          | K_plus	 => 43
+          | K_comma	 => 44
+          | K_minus	 => 45
+          | K_period	 => 46
+          | K_slash	 => 47
+          | K_0	 => 48
+          | K_1	 => 49
+          | K_2	 => 50
+          | K_3	 => 51
+          | K_4	 => 52
+          | K_5	 => 53
+          | K_6	 => 54
+          | K_7	 => 55
+          | K_8	 => 56
+          | K_9	 => 57
+          | K_colon	 => 58
+          | K_semicolon	 => 59
+          | K_less	 => 60
+          | K_equal	 => 61
+          | K_greater	 => 62
+          | K_question	 => 63
+          | K_at	 => 64
+          | K_A	 => 65
+          | K_B	 => 66
+          | K_C	 => 67
+          | K_D	 => 68
+          | K_E	 => 69
+          | K_F	 => 70
+          | K_G	 => 71
+          | K_H	 => 72
+          | K_I	 => 73
+          | K_J	 => 74
+          | K_K	 => 75
+          | K_L	 => 76
+          | K_M	 => 77
+          | K_N	 => 78
+          | K_O	 => 79
+          | K_P	 => 80
+          | K_Q	 => 81
+          | K_R	 => 82
+          | K_S	 => 83
+          | K_T	 => 84
+          | K_U	 => 85
+          | K_V	 => 86
+          | K_W	 => 87
+          | K_X	 => 88
+          | K_Y	 => 89
+          | K_Z	 => 90
+          | K_bracketleft	 => 91
+          | K_backslash	 => 92
+          | K_bracketright	 => 93
+          | K_asciicircum	 => 94
+          | K_underscore	 => 95
+          | K_grave	 => 96
+          | K_a	 => 97
+          | K_b	 => 98
+          | K_c	 => 99
+          | K_d	 => 100
+          | K_e	 => 101
+          | K_f	 => 102
+          | K_g	 => 103
+          | K_h	 => 104
+          | K_i	 => 105
+          | K_j	 => 106
+          | K_k	 => 107
+          | K_l	 => 108
+          | K_m	 => 109
+          | K_n	 => 110
+          | K_o	 => 111
+          | K_p	 => 112
+          | K_q	 => 113
+          | K_r	 => 114
+          | K_s	 => 115
+          | K_t	 => 116
+          | K_u	 => 117
+          | K_v	 => 118
+          | K_w	 => 119
+          | K_x	 => 120
+          | K_y	 => 121
+          | K_z	 => 122
+          | K_braceleft	 => 123
+          | K_bar	 => 124
+          | K_braceright	 => 125
+          | K_asciitilde	 => 126
+          | K_nobreakspace	 => 160
+          | K_exclamdown	 => 161
+          | K_cent	 => 162
+          | K_sterling	 => 163
+          | K_currency	 => 164
+          | K_yen	 => 165
+          | K_brokenbar	 => 166
+          | K_section	 => 167
+          | K_diaeresis	 => 168
+          | K_copyright	 => 169
+          | K_ordfeminine	 => 170
+          | K_guillemotleft	 => 171
+          | K_notsign	 => 172
+          | K_hyphen	 => 173
+          | K_registered	 => 174
+          | K_macron	 => 175
+          | K_degree	 => 176
+          | K_plusminus	 => 177
+          | K_twosuperior	 => 178
+          | K_threesuperior	 => 179
+          | K_acute	 => 180
+          | K_mu	 => 181
+          | K_paragraph	 => 182
+          | K_periodcentered	 => 183
+          | K_cedilla	 => 184
+          | K_onesuperior	 => 185
+          | K_masculine	 => 186
+          | K_guillemotright	 => 187
+          | K_onequarter	 => 188
+          | K_onehalf	 => 189
+          | K_threequarters	 => 190
+          | K_questiondown	 => 191
+          | K_Agrave	 => 192
+          | K_Aacute	 => 193
+          | K_Acircumflex	 => 194
+          | K_Atilde	 => 195
+          | K_Adiaeresis	 => 196
+          | K_Aring	 => 197
+          | K_AE	 => 198
+          | K_Ccedilla	 => 199
+          | K_Egrave	 => 200
+          | K_Eacute	 => 201
+          | K_Ecircumflex	 => 202
+          | K_Ediaeresis	 => 203
+          | K_Igrave	 => 204
+          | K_Iacute	 => 205
+          | K_Icircumflex	 => 206
+          | K_Idiaeresis	 => 207
+          | K_ETH	 => 208
+          | K_Ntilde	 => 209
+          | K_Ograve	 => 210
+          | K_Oacute	 => 211
+          | K_Ocircumflex	 => 212
+          | K_Otilde	 => 213
+          | K_Odiaeresis	 => 214
+          | K_multiply	 => 215
+          | K_Ooblique	 => 216
+          | K_Ugrave	 => 217
+          | K_Uacute	 => 218
+          | K_Ucircumflex	 => 219
+          | K_Udiaeresis	 => 220
+          | K_Yacute	 => 221
+          | K_THORN	 => 222
+          | K_ssharp	 => 223
+          | K_agrave	 => 224
+          | K_aacute	 => 225
+          | K_acircumflex	 => 226
+          | K_atilde	 => 227
+          | K_adiaeresis	 => 228
+          | K_aring	 => 229
+          | K_ae	 => 230
+          | K_ccedilla	 => 231
+          | K_egrave	 => 232
+          | K_eacute	 => 233
+          | K_ecircumflex	 => 234
+          | K_ediaeresis	 => 235
+          | K_igrave	 => 236
+          | K_iacute	 => 237
+          | K_icircumflex	 => 238
+          | K_idiaeresis	 => 239
+          | K_eth	 => 240
+          | K_ntilde	 => 241
+          | K_ograve	 => 242
+          | K_oacute	 => 243
+          | K_ocircumflex	 => 244
+          | K_otilde	 => 245
+          | K_odiaeresis	 => 246
+          | K_division	 => 247
+          | K_oslash	 => 248
+          | K_ugrave	 => 249
+          | K_uacute	 => 250
+          | K_ucircumflex	 => 251
+          | K_udiaeresis	 => 252
+          | K_yacute	 => 253
+          | K_thorn	 => 254
+          | K_ydiaeresis	 => 255
+          | K_Aogonek	 => 417
+          | K_breve	 => 418
+          | K_Lstroke	 => 419
+          | K_Lcaron	 => 421
+          | K_Sacute	 => 422
+          | K_Scaron	 => 425
+          | K_Scedilla	 => 426
+          | K_Tcaron	 => 427
+          | K_Zacute	 => 428
+          | K_Zcaron	 => 430
+          | K_Zabovedot	 => 431
+          | K_aogonek	 => 433
+          | K_ogonek	 => 434
+          | K_lstroke	 => 435
+          | K_lcaron	 => 437
+          | K_sacute	 => 438
+          | K_caron	 => 439
+          | K_scaron	 => 441
+          | K_scedilla	 => 442
+          | K_tcaron	 => 443
+          | K_zacute	 => 444
+          | K_doubleacute	 => 445
+          | K_zcaron	 => 446
+          | K_zabovedot	 => 447
+          | K_Racute	 => 448
+          | K_Abreve	 => 451
+          | K_Lacute	 => 453
+          | K_Cacute	 => 454
+          | K_Ccaron	 => 456
+          | K_Eogonek	 => 458
+          | K_Ecaron	 => 460
+          | K_Dcaron	 => 463
+          | K_Dstroke	 => 464
+          | K_Nacute	 => 465
+          | K_Ncaron	 => 466
+          | K_Odoubleacute	 => 469
+          | K_Rcaron	 => 472
+          | K_Uring	 => 473
+          | K_Udoubleacute	 => 475
+          | K_Tcedilla	 => 478
+          | K_racute	 => 480
+          | K_abreve	 => 483
+          | K_lacute	 => 485
+          | K_cacute	 => 486
+          | K_ccaron	 => 488
+          | K_eogonek	 => 490
+          | K_ecaron	 => 492
+          | K_dcaron	 => 495
+          | K_dstroke	 => 496
+          | K_nacute	 => 497
+          | K_ncaron	 => 498
+          | K_odoubleacute	 => 501
+          | K_udoubleacute	 => 507
+          | K_rcaron	 => 504
+          | K_uring	 => 505
+          | K_tcedilla	 => 510
+          | K_abovedot	 => 511
+          | K_Hstroke	 => 673
+          | K_Hcircumflex	 => 678
+          | K_Iabovedot	 => 681
+          | K_Gbreve	 => 683
+          | K_Jcircumflex	 => 684
+          | K_hstroke	 => 689
+          | K_hcircumflex	 => 694
+          | K_idotless	 => 697
+          | K_gbreve	 => 699
+          | K_jcircumflex	 => 700
+          | K_Cabovedot	 => 709
+          | K_Ccircumflex	 => 710
+          | K_Gabovedot	 => 725
+          | K_Gcircumflex	 => 728
+          | K_Ubreve	 => 733
+          | K_Scircumflex	 => 734
+          | K_cabovedot	 => 741
+          | K_ccircumflex	 => 742
+          | K_gabovedot	 => 757
+          | K_gcircumflex	 => 760
+          | K_ubreve	 => 765
+          | K_scircumflex	 => 766
+          | K_kra	 => 930
+          | K_Rcedilla	 => 931
+          | K_Itilde	 => 933
+          | K_Lcedilla	 => 934
+          | K_Emacron	 => 938
+          | K_Gcedilla	 => 939
+          | K_Tslash	 => 940
+          | K_rcedilla	 => 947
+          | K_itilde	 => 949
+          | K_lcedilla	 => 950
+          | K_emacron	 => 954
+          | K_gcedilla	 => 955
+          | K_tslash	 => 956
+          | K_ENG	 => 957
+          | K_eng	 => 959
+          | K_Amacron	 => 960
+          | K_Iogonek	 => 967
+          | K_Eabovedot	 => 972
+          | K_Imacron	 => 975
+          | K_Ncedilla	 => 977
+          | K_Omacron	 => 978
+          | K_Kcedilla	 => 979
+          | K_Uogonek	 => 985
+          | K_Utilde	 => 989
+          | K_Umacron	 => 990
+          | K_amacron	 => 992
+          | K_iogonek	 => 999
+          | K_eabovedot	 => 1004
+          | K_imacron	 => 1007
+          | K_ncedilla	 => 1009
+          | K_omacron	 => 1010
+          | K_kcedilla	 => 1011
+          | K_uogonek	 => 1017
+          | K_utilde	 => 1021
+          | K_umacron	 => 1022
+          | K_OE	 => 5052
+          | K_oe	 => 5053
+          | K_Ydiaeresis	 => 5054
+          | K_overline	 => 1150
+          | K_kana_fullstop	 => 1185
+          | K_kana_openingbracket	 => 1186
+          | K_kana_closingbracket	 => 1187
+          | K_kana_comma	 => 1188
+          | K_kana_conjunctive	 => 1189
+          | K_kana_WO	 => 1190
+          | K_kana_a	 => 1191
+          | K_kana_i	 => 1192
+          | K_kana_u	 => 1193
+          | K_kana_e	 => 1194
+          | K_kana_o	 => 1195
+          | K_kana_ya	 => 1196
+          | K_kana_yu	 => 1197
+          | K_kana_yo	 => 1198
+          | K_kana_tsu	 => 1199
+          | K_prolongedsound	 => 1200
+          | K_kana_A	 => 1201
+          | K_kana_I	 => 1202
+          | K_kana_U	 => 1203
+          | K_kana_E	 => 1204
+          | K_kana_O	 => 1205
+          | K_kana_KA	 => 1206
+          | K_kana_KI	 => 1207
+          | K_kana_KU	 => 1208
+          | K_kana_KE	 => 1209
+          | K_kana_KO	 => 1210
+          | K_kana_SA	 => 1211
+          | K_kana_SHI	 => 1212
+          | K_kana_SU	 => 1213
+          | K_kana_SE	 => 1214
+          | K_kana_SO	 => 1215
+          | K_kana_TA	 => 1216
+          | K_kana_CHI	 => 1217
+          | K_kana_TSU	 => 1218
+          | K_kana_TE	 => 1219
+          | K_kana_TO	 => 1220
+          | K_kana_NA	 => 1221
+          | K_kana_NI	 => 1222
+          | K_kana_NU	 => 1223
+          | K_kana_NE	 => 1224
+          | K_kana_NO	 => 1225
+          | K_kana_HA	 => 1226
+          | K_kana_HI	 => 1227
+          | K_kana_FU	 => 1228
+          | K_kana_HE	 => 1229
+          | K_kana_HO	 => 1230
+          | K_kana_MA	 => 1231
+          | K_kana_MI	 => 1232
+          | K_kana_MU	 => 1233
+          | K_kana_ME	 => 1234
+          | K_kana_MO	 => 1235
+          | K_kana_YA	 => 1236
+          | K_kana_YU	 => 1237
+          | K_kana_YO	 => 1238
+          | K_kana_RA	 => 1239
+          | K_kana_RI	 => 1240
+          | K_kana_RU	 => 1241
+          | K_kana_RE	 => 1242
+          | K_kana_RO	 => 1243
+          | K_kana_WA	 => 1244
+          | K_kana_N	 => 1245
+          | K_voicedsound	 => 1246
+          | K_semivoicedsound	 => 1247
+          | K_Arabic_comma	 => 1452
+          | K_Arabic_semicolon	 => 1467
+          | K_Arabic_question_mark	 => 1471
+          | K_Arabic_hamza	 => 1473
+          | K_Arabic_maddaonalef	 => 1474
+          | K_Arabic_hamzaonalef	 => 1475
+          | K_Arabic_hamzaonwaw	 => 1476
+          | K_Arabic_hamzaunderalef	 => 1477
+          | K_Arabic_hamzaonyeh	 => 1478
+          | K_Arabic_alef	 => 1479
+          | K_Arabic_beh	 => 1480
+          | K_Arabic_tehmarbuta	 => 1481
+          | K_Arabic_teh	 => 1482
+          | K_Arabic_theh	 => 1483
+          | K_Arabic_jeem	 => 1484
+          | K_Arabic_hah	 => 1485
+          | K_Arabic_khah	 => 1486
+          | K_Arabic_dal	 => 1487
+          | K_Arabic_thal	 => 1488
+          | K_Arabic_ra	 => 1489
+          | K_Arabic_zain	 => 1490
+          | K_Arabic_seen	 => 1491
+          | K_Arabic_sheen	 => 1492
+          | K_Arabic_sad	 => 1493
+          | K_Arabic_dad	 => 1494
+          | K_Arabic_tah	 => 1495
+          | K_Arabic_zah	 => 1496
+          | K_Arabic_ain	 => 1497
+          | K_Arabic_ghain	 => 1498
+          | K_Arabic_tatweel	 => 1504
+          | K_Arabic_feh	 => 1505
+          | K_Arabic_qaf	 => 1506
+          | K_Arabic_kaf	 => 1507
+          | K_Arabic_lam	 => 1508
+          | K_Arabic_meem	 => 1509
+          | K_Arabic_noon	 => 1510
+          | K_Arabic_ha	 => 1511
+          | K_Arabic_waw	 => 1512
+          | K_Arabic_alefmaksura	 => 1513
+          | K_Arabic_yeh	 => 1514
+          | K_Arabic_fathatan	 => 1515
+          | K_Arabic_dammatan	 => 1516
+          | K_Arabic_kasratan	 => 1517
+          | K_Arabic_fatha	 => 1518
+          | K_Arabic_damma	 => 1519
+          | K_Arabic_kasra	 => 1520
+          | K_Arabic_shadda	 => 1521
+          | K_Arabic_sukun	 => 1522
+          | K_Serbian_dje	 => 1697
+          | K_Macedonia_gje	 => 1698
+          | K_Cyrillic_io	 => 1699
+          | K_Ukrainian_ie	 => 1700
+          | K_Macedonia_dse	 => 1701
+          | K_Ukrainian_i	 => 1702
+          | K_Ukrainian_yi	 => 1703
+          | K_Cyrillic_je	 => 1704
+          | K_Cyrillic_lje	 => 1705
+          | K_Cyrillic_nje	 => 1706
+          | K_Serbian_tshe	 => 1707
+          | K_Macedonia_kje	 => 1708
+          | K_Ukrainian_ghe_with_upturn	 => 1709
+          | K_Byelorussian_shortu	 => 1710
+          | K_Cyrillic_dzhe	 => 1711
+          | K_numerosign	 => 1712
+          | K_Serbian_DJE	 => 1713
+          | K_Macedonia_GJE	 => 1714
+          | K_Cyrillic_IO	 => 1715
+          | K_Ukrainian_IE	 => 1716
+          | K_Macedonia_DSE	 => 1717
+          | K_Ukrainian_I	 => 1718
+          | K_Ukrainian_YI	 => 1719
+          | K_Cyrillic_JE	 => 1720
+          | K_Cyrillic_LJE	 => 1721
+          | K_Cyrillic_NJE	 => 1722
+          | K_Serbian_TSHE	 => 1723
+          | K_Macedonia_KJE	 => 1724
+          | K_Ukrainian_GHE_WITH_UPTURN	 => 1725
+          | K_Byelorussian_SHORTU	 => 1726
+          | K_Cyrillic_DZHE	 => 1727
+          | K_Cyrillic_yu	 => 1728
+          | K_Cyrillic_a	 => 1729
+          | K_Cyrillic_be	 => 1730
+          | K_Cyrillic_tse	 => 1731
+          | K_Cyrillic_de	 => 1732
+          | K_Cyrillic_ie	 => 1733
+          | K_Cyrillic_ef	 => 1734
+          | K_Cyrillic_ghe	 => 1735
+          | K_Cyrillic_ha	 => 1736
+          | K_Cyrillic_i	 => 1737
+          | K_Cyrillic_shorti	 => 1738
+          | K_Cyrillic_ka	 => 1739
+          | K_Cyrillic_el	 => 1740
+          | K_Cyrillic_em	 => 1741
+          | K_Cyrillic_en	 => 1742
+          | K_Cyrillic_o	 => 1743
+          | K_Cyrillic_pe	 => 1744
+          | K_Cyrillic_ya	 => 1745
+          | K_Cyrillic_er	 => 1746
+          | K_Cyrillic_es	 => 1747
+          | K_Cyrillic_te	 => 1748
+          | K_Cyrillic_u	 => 1749
+          | K_Cyrillic_zhe	 => 1750
+          | K_Cyrillic_ve	 => 1751
+          | K_Cyrillic_softsign	 => 1752
+          | K_Cyrillic_yeru	 => 1753
+          | K_Cyrillic_ze	 => 1754
+          | K_Cyrillic_sha	 => 1755
+          | K_Cyrillic_e	 => 1756
+          | K_Cyrillic_shcha	 => 1757
+          | K_Cyrillic_che	 => 1758
+          | K_Cyrillic_hardsign	 => 1759
+          | K_Cyrillic_YU	 => 1760
+          | K_Cyrillic_A	 => 1761
+          | K_Cyrillic_BE	 => 1762
+          | K_Cyrillic_TSE	 => 1763
+          | K_Cyrillic_DE	 => 1764
+          | K_Cyrillic_IE	 => 1765
+          | K_Cyrillic_EF	 => 1766
+          | K_Cyrillic_GHE	 => 1767
+          | K_Cyrillic_HA	 => 1768
+          | K_Cyrillic_I	 => 1769
+          | K_Cyrillic_SHORTI	 => 1770
+          | K_Cyrillic_KA	 => 1771
+          | K_Cyrillic_EL	 => 1772
+          | K_Cyrillic_EM	 => 1773
+          | K_Cyrillic_EN	 => 1774
+          | K_Cyrillic_O	 => 1775
+          | K_Cyrillic_PE	 => 1776
+          | K_Cyrillic_YA	 => 1777
+          | K_Cyrillic_ER	 => 1778
+          | K_Cyrillic_ES	 => 1779
+          | K_Cyrillic_TE	 => 1780
+          | K_Cyrillic_U	 => 1781
+          | K_Cyrillic_ZHE	 => 1782
+          | K_Cyrillic_VE	 => 1783
+          | K_Cyrillic_SOFTSIGN	 => 1784
+          | K_Cyrillic_YERU	 => 1785
+          | K_Cyrillic_ZE	 => 1786
+          | K_Cyrillic_SHA	 => 1787
+          | K_Cyrillic_E	 => 1788
+          | K_Cyrillic_SHCHA	 => 1789
+          | K_Cyrillic_CHE	 => 1790
+          | K_Cyrillic_HARDSIGN	 => 1791
+          | K_Greek_ALPHAaccent	 => 1953
+          | K_Greek_EPSILONaccent	 => 1954
+          | K_Greek_ETAaccent	 => 1955
+          | K_Greek_IOTAaccent	 => 1956
+          | K_Greek_IOTAdieresis	 => 1957
+          | K_Greek_OMICRONaccent	 => 1959
+          | K_Greek_UPSILONaccent	 => 1960
+          | K_Greek_UPSILONdieresis	 => 1961
+          | K_Greek_OMEGAaccent	 => 1963
+          | K_Greek_accentdieresis	 => 1966
+          | K_Greek_horizbar	 => 1967
+          | K_Greek_alphaaccent	 => 1969
+          | K_Greek_epsilonaccent	 => 1970
+          | K_Greek_etaaccent	 => 1971
+          | K_Greek_iotaaccent	 => 1972
+          | K_Greek_iotadieresis	 => 1973
+          | K_Greek_iotaaccentdieresis	 => 1974
+          | K_Greek_omicronaccent	 => 1975
+          | K_Greek_upsilonaccent	 => 1976
+          | K_Greek_upsilondieresis	 => 1977
+          | K_Greek_upsilonaccentdieresis	 => 1978
+          | K_Greek_omegaaccent	 => 1979
+          | K_Greek_ALPHA	 => 1985
+          | K_Greek_BETA	 => 1986
+          | K_Greek_GAMMA	 => 1987
+          | K_Greek_DELTA	 => 1988
+          | K_Greek_EPSILON	 => 1989
+          | K_Greek_ZETA	 => 1990
+          | K_Greek_ETA	 => 1991
+          | K_Greek_THETA	 => 1992
+          | K_Greek_IOTA	 => 1993
+          | K_Greek_KAPPA	 => 1994
+          | K_Greek_LAMDA	 => 1995
+          | K_Greek_MU	 => 1996
+          | K_Greek_NU	 => 1997
+          | K_Greek_XI	 => 1998
+          | K_Greek_OMICRON	 => 1999
+          | K_Greek_PI	 => 2000
+          | K_Greek_RHO	 => 2001
+          | K_Greek_SIGMA	 => 2002
+          | K_Greek_TAU	 => 2004
+          | K_Greek_UPSILON	 => 2005
+          | K_Greek_PHI	 => 2006
+          | K_Greek_CHI	 => 2007
+          | K_Greek_PSI	 => 2008
+          | K_Greek_OMEGA	 => 2009
+          | K_Greek_alpha	 => 2017
+          | K_Greek_beta	 => 2018
+          | K_Greek_gamma	 => 2019
+          | K_Greek_delta	 => 2020
+          | K_Greek_epsilon	 => 2021
+          | K_Greek_zeta	 => 2022
+          | K_Greek_eta	 => 2023
+          | K_Greek_theta	 => 2024
+          | K_Greek_iota	 => 2025
+          | K_Greek_kappa	 => 2026
+          | K_Greek_lamda	 => 2027
+          | K_Greek_mu	 => 2028
+          | K_Greek_nu	 => 2029
+          | K_Greek_xi	 => 2030
+          | K_Greek_omicron	 => 2031
+          | K_Greek_pi	 => 2032
+          | K_Greek_rho	 => 2033
+          | K_Greek_sigma	 => 2034
+          | K_Greek_finalsmallsigma	 => 2035
+          | K_Greek_tau	 => 2036
+          | K_Greek_upsilon	 => 2037
+          | K_Greek_phi	 => 2038
+          | K_Greek_chi	 => 2039
+          | K_Greek_psi	 => 2040
+          | K_Greek_omega	 => 2041
+          | K_leftradical	 => 2209
+          | K_topleftradical	 => 2210
+          | K_horizconnector	 => 2211
+          | K_topintegral	 => 2212
+          | K_botintegral	 => 2213
+          | K_vertconnector	 => 2214
+          | K_topleftsqbracket	 => 2215
+          | K_botleftsqbracket	 => 2216
+          | K_toprightsqbracket	 => 2217
+          | K_botrightsqbracket	 => 2218
+          | K_topleftparens	 => 2219
+          | K_botleftparens	 => 2220
+          | K_toprightparens	 => 2221
+          | K_botrightparens	 => 2222
+          | K_leftmiddlecurlybrace	 => 2223
+          | K_rightmiddlecurlybrace	 => 2224
+          | K_topleftsummation	 => 2225
+          | K_botleftsummation	 => 2226
+          | K_topvertsummationconnector	 => 2227
+          | K_botvertsummationconnector	 => 2228
+          | K_toprightsummation	 => 2229
+          | K_botrightsummation	 => 2230
+          | K_rightmiddlesummation	 => 2231
+          | K_lessthanequal	 => 2236
+          | K_notequal	 => 2237
+          | K_greaterthanequal	 => 2238
+          | K_integral	 => 2239
+          | K_therefore	 => 2240
+          | K_variation	 => 2241
+          | K_infinity	 => 2242
+          | K_nabla	 => 2245
+          | K_approximate	 => 2248
+          | K_similarequal	 => 2249
+          | K_ifonlyif	 => 2253
+          | K_implies	 => 2254
+          | K_identical	 => 2255
+          | K_radical	 => 2262
+          | K_includedin	 => 2266
+          | K_includes	 => 2267
+          | K_intersection	 => 2268
+          | K_union	 => 2269
+          | K_logicaland	 => 2270
+          | K_logicalor	 => 2271
+          | K_partialderivative	 => 2287
+          | K_function	 => 2294
+          | K_leftarrow	 => 2299
+          | K_uparrow	 => 2300
+          | K_rightarrow	 => 2301
+          | K_downarrow	 => 2302
+          | K_blank	 => 2527
+          | K_soliddiamond	 => 2528
+          | K_checkerboard	 => 2529
+          | K_ht	 => 2530
+          | K_ff	 => 2531
+          | K_cr	 => 2532
+          | K_lf	 => 2533
+          | K_nl	 => 2536
+          | K_vt	 => 2537
+          | K_lowrightcorner	 => 2538
+          | K_uprightcorner	 => 2539
+          | K_upleftcorner	 => 2540
+          | K_lowleftcorner	 => 2541
+          | K_crossinglines	 => 2542
+          | K_horizlinescan1	 => 2543
+          | K_horizlinescan3	 => 2544
+          | K_horizlinescan5	 => 2545
+          | K_horizlinescan7	 => 2546
+          | K_horizlinescan9	 => 2547
+          | K_leftt	 => 2548
+          | K_rightt	 => 2549
+          | K_bott	 => 2550
+          | K_topt	 => 2551
+          | K_vertbar	 => 2552
+          | K_emspace	 => 2721
+          | K_enspace	 => 2722
+          | K_em3space	 => 2723
+          | K_em4space	 => 2724
+          | K_digitspace	 => 2725
+          | K_punctspace	 => 2726
+          | K_thinspace	 => 2727
+          | K_hairspace	 => 2728
+          | K_emdash	 => 2729
+          | K_endash	 => 2730
+          | K_signifblank	 => 2732
+          | K_ellipsis	 => 2734
+          | K_doubbaselinedot	 => 2735
+          | K_onethird	 => 2736
+          | K_twothirds	 => 2737
+          | K_onefifth	 => 2738
+          | K_twofifths	 => 2739
+          | K_threefifths	 => 2740
+          | K_fourfifths	 => 2741
+          | K_onesixth	 => 2742
+          | K_fivesixths	 => 2743
+          | K_careof	 => 2744
+          | K_figdash	 => 2747
+          | K_leftanglebracket	 => 2748
+          | K_decimalpoint	 => 2749
+          | K_rightanglebracket	 => 2750
+          | K_marker	 => 2751
+          | K_oneeighth	 => 2755
+          | K_threeeighths	 => 2756
+          | K_fiveeighths	 => 2757
+          | K_seveneighths	 => 2758
+          | K_trademark	 => 2761
+          | K_signaturemark	 => 2762
+          | K_trademarkincircle	 => 2763
+          | K_leftopentriangle	 => 2764
+          | K_rightopentriangle	 => 2765
+          | K_emopencircle	 => 2766
+          | K_emopenrectangle	 => 2767
+          | K_leftsinglequotemark	 => 2768
+          | K_rightsinglequotemark	 => 2769
+          | K_leftdoublequotemark	 => 2770
+          | K_rightdoublequotemark	 => 2771
+          | K_prescription	 => 2772
+          | K_minutes	 => 2774
+          | K_seconds	 => 2775
+          | K_latincross	 => 2777
+          | K_hexagram	 => 2778
+          | K_filledrectbullet	 => 2779
+          | K_filledlefttribullet	 => 2780
+          | K_filledrighttribullet	 => 2781
+          | K_emfilledcircle	 => 2782
+          | K_emfilledrect	 => 2783
+          | K_enopencircbullet	 => 2784
+          | K_enopensquarebullet	 => 2785
+          | K_openrectbullet	 => 2786
+          | K_opentribulletup	 => 2787
+          | K_opentribulletdown	 => 2788
+          | K_openstar	 => 2789
+          | K_enfilledcircbullet	 => 2790
+          | K_enfilledsqbullet	 => 2791
+          | K_filledtribulletup	 => 2792
+          | K_filledtribulletdown	 => 2793
+          | K_leftpointer	 => 2794
+          | K_rightpointer	 => 2795
+          | K_club	 => 2796
+          | K_diamond	 => 2797
+          | K_heart	 => 2798
+          | K_maltesecross	 => 2800
+          | K_dagger	 => 2801
+          | K_doubledagger	 => 2802
+          | K_checkmark	 => 2803
+          | K_ballotcross	 => 2804
+          | K_musicalsharp	 => 2805
+          | K_musicalflat	 => 2806
+          | K_malesymbol	 => 2807
+          | K_femalesymbol	 => 2808
+          | K_telephone	 => 2809
+          | K_telephonerecorder	 => 2810
+          | K_phonographcopyright	 => 2811
+          | K_caret	 => 2812
+          | K_singlelowquotemark	 => 2813
+          | K_doublelowquotemark	 => 2814
+          | K_cursor	 => 2815
+          | K_leftcaret	 => 2979
+          | K_rightcaret	 => 2982
+          | K_downcaret	 => 2984
+          | K_upcaret	 => 2985
+          | K_overbar	 => 3008
+          | K_downtack	 => 3010
+          | K_upshoe	 => 3011
+          | K_downstile	 => 3012
+          | K_underbar	 => 3014
+          | K_jot	 => 3018
+          | K_quad	 => 3020
+          | K_uptack	 => 3022
+          | K_circle	 => 3023
+          | K_upstile	 => 3027
+          | K_downshoe	 => 3030
+          | K_rightshoe	 => 3032
+          | K_leftshoe	 => 3034
+          | K_lefttack	 => 3036
+          | K_righttack	 => 3068
+          | K_hebrew_doublelowline	 => 3295
+          | K_hebrew_aleph	 => 3296
+          | K_hebrew_bet	 => 3297
+          | K_hebrew_gimel	 => 3298
+          | K_hebrew_dalet	 => 3299
+          | K_hebrew_he	 => 3300
+          | K_hebrew_waw	 => 3301
+          | K_hebrew_zain	 => 3302
+          | K_hebrew_chet	 => 3303
+          | K_hebrew_tet	 => 3304
+          | K_hebrew_yod	 => 3305
+          | K_hebrew_finalkaph	 => 3306
+          | K_hebrew_kaph	 => 3307
+          | K_hebrew_lamed	 => 3308
+          | K_hebrew_finalmem	 => 3309
+          | K_hebrew_mem	 => 3310
+          | K_hebrew_finalnun	 => 3311
+          | K_hebrew_nun	 => 3312
+          | K_hebrew_samech	 => 3313
+          | K_hebrew_ayin	 => 3314
+          | K_hebrew_finalpe	 => 3315
+          | K_hebrew_pe	 => 3316
+          | K_hebrew_finalzade	 => 3317
+          | K_hebrew_zade	 => 3318
+          | K_hebrew_qoph	 => 3319
+          | K_hebrew_resh	 => 3320
+          | K_hebrew_shin	 => 3321
+          | K_hebrew_taw	 => 3322
+          | K_Thai_kokai	 => 3489
+          | K_Thai_khokhai	 => 3490
+          | K_Thai_khokhuat	 => 3491
+          | K_Thai_khokhwai	 => 3492
+          | K_Thai_khokhon	 => 3493
+          | K_Thai_khorakhang	 => 3494
+          | K_Thai_ngongu	 => 3495
+          | K_Thai_chochan	 => 3496
+          | K_Thai_choching	 => 3497
+          | K_Thai_chochang	 => 3498
+          | K_Thai_soso	 => 3499
+          | K_Thai_chochoe	 => 3500
+          | K_Thai_yoying	 => 3501
+          | K_Thai_dochada	 => 3502
+          | K_Thai_topatak	 => 3503
+          | K_Thai_thothan	 => 3504
+          | K_Thai_thonangmontho	 => 3505
+          | K_Thai_thophuthao	 => 3506
+          | K_Thai_nonen	 => 3507
+          | K_Thai_dodek	 => 3508
+          | K_Thai_totao	 => 3509
+          | K_Thai_thothung	 => 3510
+          | K_Thai_thothahan	 => 3511
+          | K_Thai_thothong	 => 3512
+          | K_Thai_nonu	 => 3513
+          | K_Thai_bobaimai	 => 3514
+          | K_Thai_popla	 => 3515
+          | K_Thai_phophung	 => 3516
+          | K_Thai_fofa	 => 3517
+          | K_Thai_phophan	 => 3518
+          | K_Thai_fofan	 => 3519
+          | K_Thai_phosamphao	 => 3520
+          | K_Thai_moma	 => 3521
+          | K_Thai_yoyak	 => 3522
+          | K_Thai_rorua	 => 3523
+          | K_Thai_ru	 => 3524
+          | K_Thai_loling	 => 3525
+          | K_Thai_lu	 => 3526
+          | K_Thai_wowaen	 => 3527
+          | K_Thai_sosala	 => 3528
+          | K_Thai_sorusi	 => 3529
+          | K_Thai_sosua	 => 3530
+          | K_Thai_hohip	 => 3531
+          | K_Thai_lochula	 => 3532
+          | K_Thai_oang	 => 3533
+          | K_Thai_honokhuk	 => 3534
+          | K_Thai_paiyannoi	 => 3535
+          | K_Thai_saraa	 => 3536
+          | K_Thai_maihanakat	 => 3537
+          | K_Thai_saraaa	 => 3538
+          | K_Thai_saraam	 => 3539
+          | K_Thai_sarai	 => 3540
+          | K_Thai_saraii	 => 3541
+          | K_Thai_saraue	 => 3542
+          | K_Thai_sarauee	 => 3543
+          | K_Thai_sarau	 => 3544
+          | K_Thai_sarauu	 => 3545
+          | K_Thai_phinthu	 => 3546
+          | K_Thai_maihanakat_maitho	 => 3550
+          | K_Thai_baht	 => 3551
+          | K_Thai_sarae	 => 3552
+          | K_Thai_saraae	 => 3553
+          | K_Thai_sarao	 => 3554
+          | K_Thai_saraaimaimuan	 => 3555
+          | K_Thai_saraaimaimalai	 => 3556
+          | K_Thai_lakkhangyao	 => 3557
+          | K_Thai_maiyamok	 => 3558
+          | K_Thai_maitaikhu	 => 3559
+          | K_Thai_maiek	 => 3560
+          | K_Thai_maitho	 => 3561
+          | K_Thai_maitri	 => 3562
+          | K_Thai_maichattawa	 => 3563
+          | K_Thai_thanthakhat	 => 3564
+          | K_Thai_nikhahit	 => 3565
+          | K_Thai_leksun	 => 3568
+          | K_Thai_leknung	 => 3569
+          | K_Thai_leksong	 => 3570
+          | K_Thai_leksam	 => 3571
+          | K_Thai_leksi	 => 3572
+          | K_Thai_lekha	 => 3573
+          | K_Thai_lekhok	 => 3574
+          | K_Thai_lekchet	 => 3575
+          | K_Thai_lekpaet	 => 3576
+          | K_Thai_lekkao	 => 3577
+          | K_Hangul	 => 65329
+          | K_Hangul_Start	 => 65330
+          | K_Hangul_End	 => 65331
+          | K_Hangul_Hanja	 => 65332
+          | K_Hangul_Jamo	 => 65333
+          | K_Hangul_Romaja	 => 65334
+          | K_Hangul_Jeonja	 => 65336
+          | K_Hangul_Banja	 => 65337
+          | K_Hangul_PreHanja	 => 65338
+          | K_Hangul_PostHanja	 => 65339
+          | K_Hangul_Special	 => 65343
+          | K_Hangul_Kiyeog	 => 3745
+          | K_Hangul_SsangKiyeog	 => 3746
+          | K_Hangul_KiyeogSios	 => 3747
+          | K_Hangul_Nieun	 => 3748
+          | K_Hangul_NieunJieuj	 => 3749
+          | K_Hangul_NieunHieuh	 => 3750
+          | K_Hangul_Dikeud	 => 3751
+          | K_Hangul_SsangDikeud	 => 3752
+          | K_Hangul_Rieul	 => 3753
+          | K_Hangul_RieulKiyeog	 => 3754
+          | K_Hangul_RieulMieum	 => 3755
+          | K_Hangul_RieulPieub	 => 3756
+          | K_Hangul_RieulSios	 => 3757
+          | K_Hangul_RieulTieut	 => 3758
+          | K_Hangul_RieulPhieuf	 => 3759
+          | K_Hangul_RieulHieuh	 => 3760
+          | K_Hangul_Mieum	 => 3761
+          | K_Hangul_Pieub	 => 3762
+          | K_Hangul_SsangPieub	 => 3763
+          | K_Hangul_PieubSios	 => 3764
+          | K_Hangul_Sios	 => 3765
+          | K_Hangul_SsangSios	 => 3766
+          | K_Hangul_Ieung	 => 3767
+          | K_Hangul_Jieuj	 => 3768
+          | K_Hangul_SsangJieuj	 => 3769
+          | K_Hangul_Cieuc	 => 3770
+          | K_Hangul_Khieuq	 => 3771
+          | K_Hangul_Tieut	 => 3772
+          | K_Hangul_Phieuf	 => 3773
+          | K_Hangul_Hieuh	 => 3774
+          | K_Hangul_A	 => 3775
+          | K_Hangul_AE	 => 3776
+          | K_Hangul_YA	 => 3777
+          | K_Hangul_YAE	 => 3778
+          | K_Hangul_EO	 => 3779
+          | K_Hangul_E	 => 3780
+          | K_Hangul_YEO	 => 3781
+          | K_Hangul_YE	 => 3782
+          | K_Hangul_O	 => 3783
+          | K_Hangul_WA	 => 3784
+          | K_Hangul_WAE	 => 3785
+          | K_Hangul_OE	 => 3786
+          | K_Hangul_YO	 => 3787
+          | K_Hangul_U	 => 3788
+          | K_Hangul_WEO	 => 3789
+          | K_Hangul_WE	 => 3790
+          | K_Hangul_WI	 => 3791
+          | K_Hangul_YU	 => 3792
+          | K_Hangul_EU	 => 3793
+          | K_Hangul_YI	 => 3794
+          | K_Hangul_I	 => 3795
+          | K_Hangul_J_Kiyeog	 => 3796
+          | K_Hangul_J_SsangKiyeog	 => 3797
+          | K_Hangul_J_KiyeogSios	 => 3798
+          | K_Hangul_J_Nieun	 => 3799
+          | K_Hangul_J_NieunJieuj	 => 3800
+          | K_Hangul_J_NieunHieuh	 => 3801
+          | K_Hangul_J_Dikeud	 => 3802
+          | K_Hangul_J_Rieul	 => 3803
+          | K_Hangul_J_RieulKiyeog	 => 3804
+          | K_Hangul_J_RieulMieum	 => 3805
+          | K_Hangul_J_RieulPieub	 => 3806
+          | K_Hangul_J_RieulSios	 => 3807
+          | K_Hangul_J_RieulTieut	 => 3808
+          | K_Hangul_J_RieulPhieuf	 => 3809
+          | K_Hangul_J_RieulHieuh	 => 3810
+          | K_Hangul_J_Mieum	 => 3811
+          | K_Hangul_J_Pieub	 => 3812
+          | K_Hangul_J_PieubSios	 => 3813
+          | K_Hangul_J_Sios	 => 3814
+          | K_Hangul_J_SsangSios	 => 3815
+          | K_Hangul_J_Ieung	 => 3816
+          | K_Hangul_J_Jieuj	 => 3817
+          | K_Hangul_J_Cieuc	 => 3818
+          | K_Hangul_J_Khieuq	 => 3819
+          | K_Hangul_J_Tieut	 => 3820
+          | K_Hangul_J_Phieuf	 => 3821
+          | K_Hangul_J_Hieuh	 => 3822
+          | K_Hangul_RieulYeorinHieuh	 => 3823
+          | K_Hangul_SunkyeongeumMieum	 => 3824
+          | K_Hangul_SunkyeongeumPieub	 => 3825
+          | K_Hangul_PanSios	 => 3826
+          | K_Hangul_KkogjiDalrinIeung	 => 3827
+          | K_Hangul_SunkyeongeumPhieuf	 => 3828
+          | K_Hangul_YeorinHieuh	 => 3829
+          | K_Hangul_AraeA	 => 3830
+          | K_Hangul_AraeAE	 => 3831
+          | K_Hangul_J_PanSios	 => 3832
+          | K_Hangul_J_KkogjiDalrinIeung	 => 3833
+          | K_Hangul_J_YeorinHieuh	 => 3834
+          | K_Korean_Won	 => 3839
+          | K_EcuSign	 => 8352
+          | K_ColonSign	 => 8353
+          | K_CruzeiroSign	 => 8354
+          | K_FFrancSign	 => 8355
+          | K_LiraSign	 => 8356
+          | K_MillSign	 => 8357
+          | K_NairaSign	 => 8358
+          | K_PesetaSign	 => 8359
+          | K_RupeeSign	 => 8360
+          | K_WonSign	 => 8361
+          | K_NewSheqelSign	 => 8362
+          | K_DongSign	 => 8363
+          | K_EuroSign	 => 8364
+
+    fun intToKeyval i  =
+        case i of
+            16777215	 => K_VoidSymbol
+          | 65288	 => K_BackSpace
+          | 65289	 => K_Tab
+          | 65290	 => K_Linefeed
+          | 65291	 => K_Clear
+          | 65293	 => K_Return
+          | 65299	 => K_Pause
+          | 65300	 => K_Scroll_Lock
+          | 65301	 => K_Sys_Req
+          | 65307	 => K_Escape
+          | 65535	 => K_Delete
+          | 65312	 => K_Multi_key
+          | 65335	 => K_Codeinput
+          | 65340	 => K_SingleCandidate
+          | 65341	 => K_MultipleCandidate
+          | 65342	 => K_PreviousCandidate
+          | 65313	 => K_Kanji
+          | 65314	 => K_Muhenkan
+          | 65315	 => K_Henkan_Mode
+          | 65316	 => K_Romaji
+          | 65317	 => K_Hiragana
+          | 65318	 => K_Katakana
+          | 65319	 => K_Hiragana_Katakana
+          | 65320	 => K_Zenkaku
+          | 65321	 => K_Hankaku
+          | 65322	 => K_Zenkaku_Hankaku
+          | 65323	 => K_Touroku
+          | 65324	 => K_Massyo
+          | 65325	 => K_Kana_Lock
+          | 65326	 => K_Kana_Shift
+          | 65327	 => K_Eisu_Shift
+          | 65328	 => K_Eisu_toggle
+          | 65360	 => K_Home
+          | 65361	 => K_Left
+          | 65362	 => K_Up
+          | 65363	 => K_Right
+          | 65364	 => K_Down
+          | 65365	 => K_Prior
+          | 65366	 => K_Next
+          | 65367	 => K_End
+          | 65368	 => K_Begin
+          | 65376	 => K_Select
+          | 65377	 => K_Print
+          | 65378	 => K_Execute
+          | 65379	 => K_Insert
+          | 65381	 => K_Undo
+          | 65382	 => K_Redo
+          | 65383	 => K_Menu
+          | 65384	 => K_Find
+          | 65385	 => K_Cancel
+          | 65386	 => K_Help
+          | 65387	 => K_Break
+          | 65406	 => K_Mode_switch
+          | 65407	 => K_Num_Lock
+          | 65408	 => K_KP_Space
+          | 65417	 => K_KP_Tab
+          | 65421	 => K_KP_Enter
+          | 65425	 => K_KP_F1
+          | 65426	 => K_KP_F2
+          | 65427	 => K_KP_F3
+          | 65428	 => K_KP_F4
+          | 65429	 => K_KP_Home
+          | 65430	 => K_KP_Left
+          | 65431	 => K_KP_Up
+          | 65432	 => K_KP_Right
+          | 65433	 => K_KP_Down
+          | 65434	 => K_KP_Prior
+          | 65435	 => K_KP_Next
+          | 65436	 => K_KP_End
+          | 65437	 => K_KP_Begin
+          | 65438	 => K_KP_Insert
+          | 65439	 => K_KP_Delete
+          | 65469	 => K_KP_Equal
+          | 65450	 => K_KP_Multiply
+          | 65451	 => K_KP_Add
+          | 65452	 => K_KP_Separator
+          | 65453	 => K_KP_Subtract
+          | 65454	 => K_KP_Decimal
+          | 65455	 => K_KP_Divide
+          | 65456	 => K_KP_0
+          | 65457	 => K_KP_1
+          | 65458	 => K_KP_2
+          | 65459	 => K_KP_3
+          | 65460	 => K_KP_4
+          | 65461	 => K_KP_5
+          | 65462	 => K_KP_6
+          | 65463	 => K_KP_7
+          | 65464	 => K_KP_8
+          | 65465	 => K_KP_9
+          | 65470	 => K_F1
+          | 65471	 => K_F2
+          | 65472	 => K_F3
+          | 65473	 => K_F4
+          | 65474	 => K_F5
+          | 65475	 => K_F6
+          | 65476	 => K_F7
+          | 65477	 => K_F8
+          | 65478	 => K_F9
+          | 65479	 => K_F10
+          | 65480	 => K_F11
+          | 65481	 => K_F12
+          | 65482	 => K_F13
+          | 65483	 => K_F14
+          | 65484	 => K_F15
+          | 65485	 => K_F16
+          | 65486	 => K_F17
+          | 65487	 => K_F18
+          | 65488	 => K_F19
+          | 65489	 => K_F20
+          | 65490	 => K_F21
+          | 65491	 => K_F22
+          | 65492	 => K_F23
+          | 65493	 => K_F24
+          | 65494	 => K_F25
+          | 65495	 => K_F26
+          | 65496	 => K_F27
+          | 65497	 => K_F28
+          | 65498	 => K_F29
+          | 65499	 => K_F30
+          | 65500	 => K_F31
+          | 65501	 => K_F32
+          | 65502	 => K_F33
+          | 65503	 => K_F34
+          | 65504	 => K_F35
+          | 65505	 => K_Shift_L
+          | 65506	 => K_Shift_R
+          | 65507	 => K_Control_L
+          | 65508	 => K_Control_R
+          | 65509	 => K_Caps_Lock
+          | 65510	 => K_Shift_Lock
+          | 65511	 => K_Meta_L
+          | 65512	 => K_Meta_R
+          | 65513	 => K_Alt_L
+          | 65514	 => K_Alt_R
+          | 65515	 => K_Super_L
+          | 65516	 => K_Super_R
+          | 65517	 => K_Hyper_L
+          | 65518	 => K_Hyper_R
+          | 65025	 => K_ISO_Lock
+          | 65026	 => K_ISO_Level2_Latch
+          | 65027	 => K_ISO_Level3_Shift
+          | 65028	 => K_ISO_Level3_Latch
+          | 65029	 => K_ISO_Level3_Lock
+          | 65030	 => K_ISO_Group_Latch
+          | 65031	 => K_ISO_Group_Lock
+          | 65032	 => K_ISO_Next_Group
+          | 65033	 => K_ISO_Next_Group_Lock
+          | 65034	 => K_ISO_Prev_Group
+          | 65035	 => K_ISO_Prev_Group_Lock
+          | 65036	 => K_ISO_First_Group
+          | 65037	 => K_ISO_First_Group_Lock
+          | 65038	 => K_ISO_Last_Group
+          | 65039	 => K_ISO_Last_Group_Lock
+          | 65056	 => K_ISO_Left_Tab
+          | 65057	 => K_ISO_Move_Line_Up
+          | 65058	 => K_ISO_Move_Line_Down
+          | 65059	 => K_ISO_Partial_Line_Up
+          | 65060	 => K_ISO_Partial_Line_Down
+          | 65061	 => K_ISO_Partial_Space_Left
+          | 65062	 => K_ISO_Partial_Space_Right
+          | 65063	 => K_ISO_Set_Margin_Left
+          | 65064	 => K_ISO_Set_Margin_Right
+          | 65065	 => K_ISO_Release_Margin_Left
+          | 65066	 => K_ISO_Release_Margin_Right
+          | 65067	 => K_ISO_Release_Both_Margins
+          | 65068	 => K_ISO_Fast_Cursor_Left
+          | 65069	 => K_ISO_Fast_Cursor_Right
+          | 65070	 => K_ISO_Fast_Cursor_Up
+          | 65071	 => K_ISO_Fast_Cursor_Down
+          | 65072	 => K_ISO_Continuous_Underline
+          | 65073	 => K_ISO_Discontinuous_Underline
+          | 65074	 => K_ISO_Emphasize
+          | 65075	 => K_ISO_Center_Object
+          | 65076	 => K_ISO_Enter
+          | 65104	 => K_dead_grave
+          | 65105	 => K_dead_acute
+          | 65106	 => K_dead_circumflex
+          | 65107	 => K_dead_tilde
+          | 65108	 => K_dead_macron
+          | 65109	 => K_dead_breve
+          | 65110	 => K_dead_abovedot
+          | 65111	 => K_dead_diaeresis
+          | 65112	 => K_dead_abovering
+          | 65113	 => K_dead_doubleacute
+          | 65114	 => K_dead_caron
+          | 65115	 => K_dead_cedilla
+          | 65116	 => K_dead_ogonek
+          | 65117	 => K_dead_iota
+          | 65118	 => K_dead_voiced_sound
+          | 65119	 => K_dead_semivoiced_sound
+          | 65120	 => K_dead_belowdot
+          | 65121	 => K_dead_hook
+          | 65122	 => K_dead_horn
+          | 65232	 => K_First_Virtual_Screen
+          | 65233	 => K_Prev_Virtual_Screen
+          | 65234	 => K_Next_Virtual_Screen
+          | 65236	 => K_Last_Virtual_Screen
+          | 65237	 => K_Terminate_Server
+          | 65136	 => K_AccessX_Enable
+          | 65137	 => K_AccessX_Feedback_Enable
+          | 65138	 => K_RepeatKeys_Enable
+          | 65139	 => K_SlowKeys_Enable
+          | 65140	 => K_BounceKeys_Enable
+          | 65141	 => K_StickyKeys_Enable
+          | 65142	 => K_MouseKeys_Enable
+          | 65143	 => K_MouseKeys_Accel_Enable
+          | 65144	 => K_Overlay1_Enable
+          | 65145	 => K_Overlay2_Enable
+          | 65146	 => K_AudibleBell_Enable
+          | 65248	 => K_Pointer_Left
+          | 65249	 => K_Pointer_Right
+          | 65250	 => K_Pointer_Up
+          | 65251	 => K_Pointer_Down
+          | 65252	 => K_Pointer_UpLeft
+          | 65253	 => K_Pointer_UpRight
+          | 65254	 => K_Pointer_DownLeft
+          | 65255	 => K_Pointer_DownRight
+          | 65256	 => K_Pointer_Button_Dflt
+          | 65257	 => K_Pointer_Button1
+          | 65258	 => K_Pointer_Button2
+          | 65259	 => K_Pointer_Button3
+          | 65260	 => K_Pointer_Button4
+          | 65261	 => K_Pointer_Button5
+          | 65262	 => K_Pointer_DblClick_Dflt
+          | 65263	 => K_Pointer_DblClick1
+          | 65264	 => K_Pointer_DblClick2
+          | 65265	 => K_Pointer_DblClick3
+          | 65266	 => K_Pointer_DblClick4
+          | 65267	 => K_Pointer_DblClick5
+          | 65268	 => K_Pointer_Drag_Dflt
+          | 65269	 => K_Pointer_Drag1
+          | 65270	 => K_Pointer_Drag2
+          | 65271	 => K_Pointer_Drag3
+          | 65272	 => K_Pointer_Drag4
+          | 65277	 => K_Pointer_Drag5
+          | 65273	 => K_Pointer_EnableKeys
+          | 65274	 => K_Pointer_Accelerate
+          | 65275	 => K_Pointer_DfltBtnNext
+          | 65276	 => K_Pointer_DfltBtnPrev
+          | 64769	 => K_3270_Duplicate
+          | 64770	 => K_3270_FieldMark
+          | 64771	 => K_3270_Right2
+          | 64772	 => K_3270_Left2
+          | 64773	 => K_3270_BackTab
+          | 64774	 => K_3270_EraseEOF
+          | 64775	 => K_3270_EraseInput
+          | 64776	 => K_3270_Reset
+          | 64777	 => K_3270_Quit
+          | 64778	 => K_3270_PA1
+          | 64779	 => K_3270_PA2
+          | 64780	 => K_3270_PA3
+          | 64781	 => K_3270_Test
+          | 64782	 => K_3270_Attn
+          | 64783	 => K_3270_CursorBlink
+          | 64784	 => K_3270_AltCursor
+          | 64785	 => K_3270_KeyClick
+          | 64786	 => K_3270_Jump
+          | 64787	 => K_3270_Ident
+          | 64788	 => K_3270_Rule
+          | 64789	 => K_3270_Copy
+          | 64790	 => K_3270_Play
+          | 64791	 => K_3270_Setup
+          | 64792	 => K_3270_Record
+          | 64793	 => K_3270_ChangeScreen
+          | 64794	 => K_3270_DeleteWord
+          | 64795	 => K_3270_ExSelect
+          | 64796	 => K_3270_CursorSelect
+          | 64797	 => K_3270_PrintScreen
+          | 64798	 => K_3270_Enter
+          | 32	 => K_space
+          | 33	 => K_exclam
+          | 34	 => K_quotedbl
+          | 35	 => K_numbersign
+          | 36	 => K_dollar
+          | 37	 => K_percent
+          | 38	 => K_ampersand
+          | 39	 => K_apostrophe
+          | 40	 => K_parenleft
+          | 41	 => K_parenright
+          | 42	 => K_asterisk
+          | 43	 => K_plus
+          | 44	 => K_comma
+          | 45	 => K_minus
+          | 46	 => K_period
+          | 47	 => K_slash
+          | 48	 => K_0
+          | 49	 => K_1
+          | 50	 => K_2
+          | 51	 => K_3
+          | 52	 => K_4
+          | 53	 => K_5
+          | 54	 => K_6
+          | 55	 => K_7
+          | 56	 => K_8
+          | 57	 => K_9
+          | 58	 => K_colon
+          | 59	 => K_semicolon
+          | 60	 => K_less
+          | 61	 => K_equal
+          | 62	 => K_greater
+          | 63	 => K_question
+          | 64	 => K_at
+          | 65	 => K_A
+          | 66	 => K_B
+          | 67	 => K_C
+          | 68	 => K_D
+          | 69	 => K_E
+          | 70	 => K_F
+          | 71	 => K_G
+          | 72	 => K_H
+          | 73	 => K_I
+          | 74	 => K_J
+          | 75	 => K_K
+          | 76	 => K_L
+          | 77	 => K_M
+          | 78	 => K_N
+          | 79	 => K_O
+          | 80	 => K_P
+          | 81	 => K_Q
+          | 82	 => K_R
+          | 83	 => K_S
+          | 84	 => K_T
+          | 85	 => K_U
+          | 86	 => K_V
+          | 87	 => K_W
+          | 88	 => K_X
+          | 89	 => K_Y
+          | 90	 => K_Z
+          | 91	 => K_bracketleft
+          | 92	 => K_backslash
+          | 93	 => K_bracketright
+          | 94	 => K_asciicircum
+          | 95	 => K_underscore
+          | 96	 => K_grave
+          | 97	 => K_a
+          | 98	 => K_b
+          | 99	 => K_c
+          | 100	 => K_d
+          | 101	 => K_e
+          | 102	 => K_f
+          | 103	 => K_g
+          | 104	 => K_h
+          | 105	 => K_i
+          | 106	 => K_j
+          | 107	 => K_k
+          | 108	 => K_l
+          | 109	 => K_m
+          | 110	 => K_n
+          | 111	 => K_o
+          | 112	 => K_p
+          | 113	 => K_q
+          | 114	 => K_r
+          | 115	 => K_s
+          | 116	 => K_t
+          | 117	 => K_u
+          | 118	 => K_v
+          | 119	 => K_w
+          | 120	 => K_x
+          | 121	 => K_y
+          | 122	 => K_z
+          | 123	 => K_braceleft
+          | 124	 => K_bar
+          | 125	 => K_braceright
+          | 126	 => K_asciitilde
+          | 160	 => K_nobreakspace
+          | 161	 => K_exclamdown
+          | 162	 => K_cent
+          | 163	 => K_sterling
+          | 164	 => K_currency
+          | 165	 => K_yen
+          | 166	 => K_brokenbar
+          | 167	 => K_section
+          | 168	 => K_diaeresis
+          | 169	 => K_copyright
+          | 170	 => K_ordfeminine
+          | 171	 => K_guillemotleft
+          | 172	 => K_notsign
+          | 173	 => K_hyphen
+          | 174	 => K_registered
+          | 175	 => K_macron
+          | 176	 => K_degree
+          | 177	 => K_plusminus
+          | 178	 => K_twosuperior
+          | 179	 => K_threesuperior
+          | 180	 => K_acute
+          | 181	 => K_mu
+          | 182	 => K_paragraph
+          | 183	 => K_periodcentered
+          | 184	 => K_cedilla
+          | 185	 => K_onesuperior
+          | 186	 => K_masculine
+          | 187	 => K_guillemotright
+          | 188	 => K_onequarter
+          | 189	 => K_onehalf
+          | 190	 => K_threequarters
+          | 191	 => K_questiondown
+          | 192	 => K_Agrave
+          | 193	 => K_Aacute
+          | 194	 => K_Acircumflex
+          | 195	 => K_Atilde
+          | 196	 => K_Adiaeresis
+          | 197	 => K_Aring
+          | 198	 => K_AE
+          | 199	 => K_Ccedilla
+          | 200	 => K_Egrave
+          | 201	 => K_Eacute
+          | 202	 => K_Ecircumflex
+          | 203	 => K_Ediaeresis
+          | 204	 => K_Igrave
+          | 205	 => K_Iacute
+          | 206	 => K_Icircumflex
+          | 207	 => K_Idiaeresis
+          | 208	 => K_ETH
+          | 209	 => K_Ntilde
+          | 210	 => K_Ograve
+          | 211	 => K_Oacute
+          | 212	 => K_Ocircumflex
+          | 213	 => K_Otilde
+          | 214	 => K_Odiaeresis
+          | 215	 => K_multiply
+          | 216	 => K_Ooblique
+          | 217	 => K_Ugrave
+          | 218	 => K_Uacute
+          | 219	 => K_Ucircumflex
+          | 220	 => K_Udiaeresis
+          | 221	 => K_Yacute
+          | 222	 => K_THORN
+          | 223	 => K_ssharp
+          | 224	 => K_agrave
+          | 225	 => K_aacute
+          | 226	 => K_acircumflex
+          | 227	 => K_atilde
+          | 228	 => K_adiaeresis
+          | 229	 => K_aring
+          | 230	 => K_ae
+          | 231	 => K_ccedilla
+          | 232	 => K_egrave
+          | 233	 => K_eacute
+          | 234	 => K_ecircumflex
+          | 235	 => K_ediaeresis
+          | 236	 => K_igrave
+          | 237	 => K_iacute
+          | 238	 => K_icircumflex
+          | 239	 => K_idiaeresis
+          | 240	 => K_eth
+          | 241	 => K_ntilde
+          | 242	 => K_ograve
+          | 243	 => K_oacute
+          | 244	 => K_ocircumflex
+          | 245	 => K_otilde
+          | 246	 => K_odiaeresis
+          | 247	 => K_division
+          | 248	 => K_oslash
+          | 249	 => K_ugrave
+          | 250	 => K_uacute
+          | 251	 => K_ucircumflex
+          | 252	 => K_udiaeresis
+          | 253	 => K_yacute
+          | 254	 => K_thorn
+          | 255	 => K_ydiaeresis
+          | 417	 => K_Aogonek
+          | 418	 => K_breve
+          | 419	 => K_Lstroke
+          | 421	 => K_Lcaron
+          | 422	 => K_Sacute
+          | 425	 => K_Scaron
+          | 426	 => K_Scedilla
+          | 427	 => K_Tcaron
+          | 428	 => K_Zacute
+          | 430	 => K_Zcaron
+          | 431	 => K_Zabovedot
+          | 433	 => K_aogonek
+          | 434	 => K_ogonek
+          | 435	 => K_lstroke
+          | 437	 => K_lcaron
+          | 438	 => K_sacute
+          | 439	 => K_caron
+          | 441	 => K_scaron
+          | 442	 => K_scedilla
+          | 443	 => K_tcaron
+          | 444	 => K_zacute
+          | 445	 => K_doubleacute
+          | 446	 => K_zcaron
+          | 447	 => K_zabovedot
+          | 448	 => K_Racute
+          | 451	 => K_Abreve
+          | 453	 => K_Lacute
+          | 454	 => K_Cacute
+          | 456	 => K_Ccaron
+          | 458	 => K_Eogonek
+          | 460	 => K_Ecaron
+          | 463	 => K_Dcaron
+          | 464	 => K_Dstroke
+          | 465	 => K_Nacute
+          | 466	 => K_Ncaron
+          | 469	 => K_Odoubleacute
+          | 472	 => K_Rcaron
+          | 473	 => K_Uring
+          | 475	 => K_Udoubleacute
+          | 478	 => K_Tcedilla
+          | 480	 => K_racute
+          | 483	 => K_abreve
+          | 485	 => K_lacute
+          | 486	 => K_cacute
+          | 488	 => K_ccaron
+          | 490	 => K_eogonek
+          | 492	 => K_ecaron
+          | 495	 => K_dcaron
+          | 496	 => K_dstroke
+          | 497	 => K_nacute
+          | 498	 => K_ncaron
+          | 501	 => K_odoubleacute
+          | 507	 => K_udoubleacute
+          | 504	 => K_rcaron
+          | 505	 => K_uring
+          | 510	 => K_tcedilla
+          | 511	 => K_abovedot
+          | 673	 => K_Hstroke
+          | 678	 => K_Hcircumflex
+          | 681	 => K_Iabovedot
+          | 683	 => K_Gbreve
+          | 684	 => K_Jcircumflex
+          | 689	 => K_hstroke
+          | 694	 => K_hcircumflex
+          | 697	 => K_idotless
+          | 699	 => K_gbreve
+          | 700	 => K_jcircumflex
+          | 709	 => K_Cabovedot
+          | 710	 => K_Ccircumflex
+          | 725	 => K_Gabovedot
+          | 728	 => K_Gcircumflex
+          | 733	 => K_Ubreve
+          | 734	 => K_Scircumflex
+          | 741	 => K_cabovedot
+          | 742	 => K_ccircumflex
+          | 757	 => K_gabovedot
+          | 760	 => K_gcircumflex
+          | 765	 => K_ubreve
+          | 766	 => K_scircumflex
+          | 930	 => K_kra
+          | 931	 => K_Rcedilla
+          | 933	 => K_Itilde
+          | 934	 => K_Lcedilla
+          | 938	 => K_Emacron
+          | 939	 => K_Gcedilla
+          | 940	 => K_Tslash
+          | 947	 => K_rcedilla
+          | 949	 => K_itilde
+          | 950	 => K_lcedilla
+          | 954	 => K_emacron
+          | 955	 => K_gcedilla
+          | 956	 => K_tslash
+          | 957	 => K_ENG
+          | 959	 => K_eng
+          | 960	 => K_Amacron
+          | 967	 => K_Iogonek
+          | 972	 => K_Eabovedot
+          | 975	 => K_Imacron
+          | 977	 => K_Ncedilla
+          | 978	 => K_Omacron
+          | 979	 => K_Kcedilla
+          | 985	 => K_Uogonek
+          | 989	 => K_Utilde
+          | 990	 => K_Umacron
+          | 992	 => K_amacron
+          | 999	 => K_iogonek
+          | 1004	 => K_eabovedot
+          | 1007	 => K_imacron
+          | 1009	 => K_ncedilla
+          | 1010	 => K_omacron
+          | 1011	 => K_kcedilla
+          | 1017	 => K_uogonek
+          | 1021	 => K_utilde
+          | 1022	 => K_umacron
+          | 5052	 => K_OE
+          | 5053	 => K_oe
+          | 5054	 => K_Ydiaeresis
+          | 1150	 => K_overline
+          | 1185	 => K_kana_fullstop
+          | 1186	 => K_kana_openingbracket
+          | 1187	 => K_kana_closingbracket
+          | 1188	 => K_kana_comma
+          | 1189	 => K_kana_conjunctive
+          | 1190	 => K_kana_WO
+          | 1191	 => K_kana_a
+          | 1192	 => K_kana_i
+          | 1193	 => K_kana_u
+          | 1194	 => K_kana_e
+          | 1195	 => K_kana_o
+          | 1196	 => K_kana_ya
+          | 1197	 => K_kana_yu
+          | 1198	 => K_kana_yo
+          | 1199	 => K_kana_tsu
+          | 1200	 => K_prolongedsound
+          | 1201	 => K_kana_A
+          | 1202	 => K_kana_I
+          | 1203	 => K_kana_U
+          | 1204	 => K_kana_E
+          | 1205	 => K_kana_O
+          | 1206	 => K_kana_KA
+          | 1207	 => K_kana_KI
+          | 1208	 => K_kana_KU
+          | 1209	 => K_kana_KE
+          | 1210	 => K_kana_KO
+          | 1211	 => K_kana_SA
+          | 1212	 => K_kana_SHI
+          | 1213	 => K_kana_SU
+          | 1214	 => K_kana_SE
+          | 1215	 => K_kana_SO
+          | 1216	 => K_kana_TA
+          | 1217	 => K_kana_CHI
+          | 1218	 => K_kana_TSU
+          | 1219	 => K_kana_TE
+          | 1220	 => K_kana_TO
+          | 1221	 => K_kana_NA
+          | 1222	 => K_kana_NI
+          | 1223	 => K_kana_NU
+          | 1224	 => K_kana_NE
+          | 1225	 => K_kana_NO
+          | 1226	 => K_kana_HA
+          | 1227	 => K_kana_HI
+          | 1228	 => K_kana_FU
+          | 1229	 => K_kana_HE
+          | 1230	 => K_kana_HO
+          | 1231	 => K_kana_MA
+          | 1232	 => K_kana_MI
+          | 1233	 => K_kana_MU
+          | 1234	 => K_kana_ME
+          | 1235	 => K_kana_MO
+          | 1236	 => K_kana_YA
+          | 1237	 => K_kana_YU
+          | 1238	 => K_kana_YO
+          | 1239	 => K_kana_RA
+          | 1240	 => K_kana_RI
+          | 1241	 => K_kana_RU
+          | 1242	 => K_kana_RE
+          | 1243	 => K_kana_RO
+          | 1244	 => K_kana_WA
+          | 1245	 => K_kana_N
+          | 1246	 => K_voicedsound
+          | 1247	 => K_semivoicedsound
+          | 1452	 => K_Arabic_comma
+          | 1467	 => K_Arabic_semicolon
+          | 1471	 => K_Arabic_question_mark
+          | 1473	 => K_Arabic_hamza
+          | 1474	 => K_Arabic_maddaonalef
+          | 1475	 => K_Arabic_hamzaonalef
+          | 1476	 => K_Arabic_hamzaonwaw
+          | 1477	 => K_Arabic_hamzaunderalef
+          | 1478	 => K_Arabic_hamzaonyeh
+          | 1479	 => K_Arabic_alef
+          | 1480	 => K_Arabic_beh
+          | 1481	 => K_Arabic_tehmarbuta
+          | 1482	 => K_Arabic_teh
+          | 1483	 => K_Arabic_theh
+          | 1484	 => K_Arabic_jeem
+          | 1485	 => K_Arabic_hah
+          | 1486	 => K_Arabic_khah
+          | 1487	 => K_Arabic_dal
+          | 1488	 => K_Arabic_thal
+          | 1489	 => K_Arabic_ra
+          | 1490	 => K_Arabic_zain
+          | 1491	 => K_Arabic_seen
+          | 1492	 => K_Arabic_sheen
+          | 1493	 => K_Arabic_sad
+          | 1494	 => K_Arabic_dad
+          | 1495	 => K_Arabic_tah
+          | 1496	 => K_Arabic_zah
+          | 1497	 => K_Arabic_ain
+          | 1498	 => K_Arabic_ghain
+          | 1504	 => K_Arabic_tatweel
+          | 1505	 => K_Arabic_feh
+          | 1506	 => K_Arabic_qaf
+          | 1507	 => K_Arabic_kaf
+          | 1508	 => K_Arabic_lam
+          | 1509	 => K_Arabic_meem
+          | 1510	 => K_Arabic_noon
+          | 1511	 => K_Arabic_ha
+          | 1512	 => K_Arabic_waw
+          | 1513	 => K_Arabic_alefmaksura
+          | 1514	 => K_Arabic_yeh
+          | 1515	 => K_Arabic_fathatan
+          | 1516	 => K_Arabic_dammatan
+          | 1517	 => K_Arabic_kasratan
+          | 1518	 => K_Arabic_fatha
+          | 1519	 => K_Arabic_damma
+          | 1520	 => K_Arabic_kasra
+          | 1521	 => K_Arabic_shadda
+          | 1522	 => K_Arabic_sukun
+          | 1697	 => K_Serbian_dje
+          | 1698	 => K_Macedonia_gje
+          | 1699	 => K_Cyrillic_io
+          | 1700	 => K_Ukrainian_ie
+          | 1701	 => K_Macedonia_dse
+          | 1702	 => K_Ukrainian_i
+          | 1703	 => K_Ukrainian_yi
+          | 1704	 => K_Cyrillic_je
+          | 1705	 => K_Cyrillic_lje
+          | 1706	 => K_Cyrillic_nje
+          | 1707	 => K_Serbian_tshe
+          | 1708	 => K_Macedonia_kje
+          | 1709	 => K_Ukrainian_ghe_with_upturn
+          | 1710	 => K_Byelorussian_shortu
+          | 1711	 => K_Cyrillic_dzhe
+          | 1712	 => K_numerosign
+          | 1713	 => K_Serbian_DJE
+          | 1714	 => K_Macedonia_GJE
+          | 1715	 => K_Cyrillic_IO
+          | 1716	 => K_Ukrainian_IE
+          | 1717	 => K_Macedonia_DSE
+          | 1718	 => K_Ukrainian_I
+          | 1719	 => K_Ukrainian_YI
+          | 1720	 => K_Cyrillic_JE
+          | 1721	 => K_Cyrillic_LJE
+          | 1722	 => K_Cyrillic_NJE
+          | 1723	 => K_Serbian_TSHE
+          | 1724	 => K_Macedonia_KJE
+          | 1725	 => K_Ukrainian_GHE_WITH_UPTURN
+          | 1726	 => K_Byelorussian_SHORTU
+          | 1727	 => K_Cyrillic_DZHE
+          | 1728	 => K_Cyrillic_yu
+          | 1729	 => K_Cyrillic_a
+          | 1730	 => K_Cyrillic_be
+          | 1731	 => K_Cyrillic_tse
+          | 1732	 => K_Cyrillic_de
+          | 1733	 => K_Cyrillic_ie
+          | 1734	 => K_Cyrillic_ef
+          | 1735	 => K_Cyrillic_ghe
+          | 1736	 => K_Cyrillic_ha
+          | 1737	 => K_Cyrillic_i
+          | 1738	 => K_Cyrillic_shorti
+          | 1739	 => K_Cyrillic_ka
+          | 1740	 => K_Cyrillic_el
+          | 1741	 => K_Cyrillic_em
+          | 1742	 => K_Cyrillic_en
+          | 1743	 => K_Cyrillic_o
+          | 1744	 => K_Cyrillic_pe
+          | 1745	 => K_Cyrillic_ya
+          | 1746	 => K_Cyrillic_er
+          | 1747	 => K_Cyrillic_es
+          | 1748	 => K_Cyrillic_te
+          | 1749	 => K_Cyrillic_u
+          | 1750	 => K_Cyrillic_zhe
+          | 1751	 => K_Cyrillic_ve
+          | 1752	 => K_Cyrillic_softsign
+          | 1753	 => K_Cyrillic_yeru
+          | 1754	 => K_Cyrillic_ze
+          | 1755	 => K_Cyrillic_sha
+          | 1756	 => K_Cyrillic_e
+          | 1757	 => K_Cyrillic_shcha
+          | 1758	 => K_Cyrillic_che
+          | 1759	 => K_Cyrillic_hardsign
+          | 1760	 => K_Cyrillic_YU
+          | 1761	 => K_Cyrillic_A
+          | 1762	 => K_Cyrillic_BE
+          | 1763	 => K_Cyrillic_TSE
+          | 1764	 => K_Cyrillic_DE
+          | 1765	 => K_Cyrillic_IE
+          | 1766	 => K_Cyrillic_EF
+          | 1767	 => K_Cyrillic_GHE
+          | 1768	 => K_Cyrillic_HA
+          | 1769	 => K_Cyrillic_I
+          | 1770	 => K_Cyrillic_SHORTI
+          | 1771	 => K_Cyrillic_KA
+          | 1772	 => K_Cyrillic_EL
+          | 1773	 => K_Cyrillic_EM
+          | 1774	 => K_Cyrillic_EN
+          | 1775	 => K_Cyrillic_O
+          | 1776	 => K_Cyrillic_PE
+          | 1777	 => K_Cyrillic_YA
+          | 1778	 => K_Cyrillic_ER
+          | 1779	 => K_Cyrillic_ES
+          | 1780	 => K_Cyrillic_TE
+          | 1781	 => K_Cyrillic_U
+          | 1782	 => K_Cyrillic_ZHE
+          | 1783	 => K_Cyrillic_VE
+          | 1784	 => K_Cyrillic_SOFTSIGN
+          | 1785	 => K_Cyrillic_YERU
+          | 1786	 => K_Cyrillic_ZE
+          | 1787	 => K_Cyrillic_SHA
+          | 1788	 => K_Cyrillic_E
+          | 1789	 => K_Cyrillic_SHCHA
+          | 1790	 => K_Cyrillic_CHE
+          | 1791	 => K_Cyrillic_HARDSIGN
+          | 1953	 => K_Greek_ALPHAaccent
+          | 1954	 => K_Greek_EPSILONaccent
+          | 1955	 => K_Greek_ETAaccent
+          | 1956	 => K_Greek_IOTAaccent
+          | 1957	 => K_Greek_IOTAdieresis
+          | 1959	 => K_Greek_OMICRONaccent
+          | 1960	 => K_Greek_UPSILONaccent
+          | 1961	 => K_Greek_UPSILONdieresis
+          | 1963	 => K_Greek_OMEGAaccent
+          | 1966	 => K_Greek_accentdieresis
+          | 1967	 => K_Greek_horizbar
+          | 1969	 => K_Greek_alphaaccent
+          | 1970	 => K_Greek_epsilonaccent
+          | 1971	 => K_Greek_etaaccent
+          | 1972	 => K_Greek_iotaaccent
+          | 1973	 => K_Greek_iotadieresis
+          | 1974	 => K_Greek_iotaaccentdieresis
+          | 1975	 => K_Greek_omicronaccent
+          | 1976	 => K_Greek_upsilonaccent
+          | 1977	 => K_Greek_upsilondieresis
+          | 1978	 => K_Greek_upsilonaccentdieresis
+          | 1979	 => K_Greek_omegaaccent
+          | 1985	 => K_Greek_ALPHA
+          | 1986	 => K_Greek_BETA
+          | 1987	 => K_Greek_GAMMA
+          | 1988	 => K_Greek_DELTA
+          | 1989	 => K_Greek_EPSILON
+          | 1990	 => K_Greek_ZETA
+          | 1991	 => K_Greek_ETA
+          | 1992	 => K_Greek_THETA
+          | 1993	 => K_Greek_IOTA
+          | 1994	 => K_Greek_KAPPA
+          | 1995	 => K_Greek_LAMDA
+          | 1996	 => K_Greek_MU
+          | 1997	 => K_Greek_NU
+          | 1998	 => K_Greek_XI
+          | 1999	 => K_Greek_OMICRON
+          | 2000	 => K_Greek_PI
+          | 2001	 => K_Greek_RHO
+          | 2002	 => K_Greek_SIGMA
+          | 2004	 => K_Greek_TAU
+          | 2005	 => K_Greek_UPSILON
+          | 2006	 => K_Greek_PHI
+          | 2007	 => K_Greek_CHI
+          | 2008	 => K_Greek_PSI
+          | 2009	 => K_Greek_OMEGA
+          | 2017	 => K_Greek_alpha
+          | 2018	 => K_Greek_beta
+          | 2019	 => K_Greek_gamma
+          | 2020	 => K_Greek_delta
+          | 2021	 => K_Greek_epsilon
+          | 2022	 => K_Greek_zeta
+          | 2023	 => K_Greek_eta
+          | 2024	 => K_Greek_theta
+          | 2025	 => K_Greek_iota
+          | 2026	 => K_Greek_kappa
+          | 2027	 => K_Greek_lamda
+          | 2028	 => K_Greek_mu
+          | 2029	 => K_Greek_nu
+          | 2030	 => K_Greek_xi
+          | 2031	 => K_Greek_omicron
+          | 2032	 => K_Greek_pi
+          | 2033	 => K_Greek_rho
+          | 2034	 => K_Greek_sigma
+          | 2035	 => K_Greek_finalsmallsigma
+          | 2036	 => K_Greek_tau
+          | 2037	 => K_Greek_upsilon
+          | 2038	 => K_Greek_phi
+          | 2039	 => K_Greek_chi
+          | 2040	 => K_Greek_psi
+          | 2041	 => K_Greek_omega
+          | 2209	 => K_leftradical
+          | 2210	 => K_topleftradical
+          | 2211	 => K_horizconnector
+          | 2212	 => K_topintegral
+          | 2213	 => K_botintegral
+          | 2214	 => K_vertconnector
+          | 2215	 => K_topleftsqbracket
+          | 2216	 => K_botleftsqbracket
+          | 2217	 => K_toprightsqbracket
+          | 2218	 => K_botrightsqbracket
+          | 2219	 => K_topleftparens
+          | 2220	 => K_botleftparens
+          | 2221	 => K_toprightparens
+          | 2222	 => K_botrightparens
+          | 2223	 => K_leftmiddlecurlybrace
+          | 2224	 => K_rightmiddlecurlybrace
+          | 2225	 => K_topleftsummation
+          | 2226	 => K_botleftsummation
+          | 2227	 => K_topvertsummationconnector
+          | 2228	 => K_botvertsummationconnector
+          | 2229	 => K_toprightsummation
+          | 2230	 => K_botrightsummation
+          | 2231	 => K_rightmiddlesummation
+          | 2236	 => K_lessthanequal
+          | 2237	 => K_notequal
+          | 2238	 => K_greaterthanequal
+          | 2239	 => K_integral
+          | 2240	 => K_therefore
+          | 2241	 => K_variation
+          | 2242	 => K_infinity
+          | 2245	 => K_nabla
+          | 2248	 => K_approximate
+          | 2249	 => K_similarequal
+          | 2253	 => K_ifonlyif
+          | 2254	 => K_implies
+          | 2255	 => K_identical
+          | 2262	 => K_radical
+          | 2266	 => K_includedin
+          | 2267	 => K_includes
+          | 2268	 => K_intersection
+          | 2269	 => K_union
+          | 2270	 => K_logicaland
+          | 2271	 => K_logicalor
+          | 2287	 => K_partialderivative
+          | 2294	 => K_function
+          | 2299	 => K_leftarrow
+          | 2300	 => K_uparrow
+          | 2301	 => K_rightarrow
+          | 2302	 => K_downarrow
+          | 2527	 => K_blank
+          | 2528	 => K_soliddiamond
+          | 2529	 => K_checkerboard
+          | 2530	 => K_ht
+          | 2531	 => K_ff
+          | 2532	 => K_cr
+          | 2533	 => K_lf
+          | 2536	 => K_nl
+          | 2537	 => K_vt
+          | 2538	 => K_lowrightcorner
+          | 2539	 => K_uprightcorner
+          | 2540	 => K_upleftcorner
+          | 2541	 => K_lowleftcorner
+          | 2542	 => K_crossinglines
+          | 2543	 => K_horizlinescan1
+          | 2544	 => K_horizlinescan3
+          | 2545	 => K_horizlinescan5
+          | 2546	 => K_horizlinescan7
+          | 2547	 => K_horizlinescan9
+          | 2548	 => K_leftt
+          | 2549	 => K_rightt
+          | 2550	 => K_bott
+          | 2551	 => K_topt
+          | 2552	 => K_vertbar
+          | 2721	 => K_emspace
+          | 2722	 => K_enspace
+          | 2723	 => K_em3space
+          | 2724	 => K_em4space
+          | 2725	 => K_digitspace
+          | 2726	 => K_punctspace
+          | 2727	 => K_thinspace
+          | 2728	 => K_hairspace
+          | 2729	 => K_emdash
+          | 2730	 => K_endash
+          | 2732	 => K_signifblank
+          | 2734	 => K_ellipsis
+          | 2735	 => K_doubbaselinedot
+          | 2736	 => K_onethird
+          | 2737	 => K_twothirds
+          | 2738	 => K_onefifth
+          | 2739	 => K_twofifths
+          | 2740	 => K_threefifths
+          | 2741	 => K_fourfifths
+          | 2742	 => K_onesixth
+          | 2743	 => K_fivesixths
+          | 2744	 => K_careof
+          | 2747	 => K_figdash
+          | 2748	 => K_leftanglebracket
+          | 2749	 => K_decimalpoint
+          | 2750	 => K_rightanglebracket
+          | 2751	 => K_marker
+          | 2755	 => K_oneeighth
+          | 2756	 => K_threeeighths
+          | 2757	 => K_fiveeighths
+          | 2758	 => K_seveneighths
+          | 2761	 => K_trademark
+          | 2762	 => K_signaturemark
+          | 2763	 => K_trademarkincircle
+          | 2764	 => K_leftopentriangle
+          | 2765	 => K_rightopentriangle
+          | 2766	 => K_emopencircle
+          | 2767	 => K_emopenrectangle
+          | 2768	 => K_leftsinglequotemark
+          | 2769	 => K_rightsinglequotemark
+          | 2770	 => K_leftdoublequotemark
+          | 2771	 => K_rightdoublequotemark
+          | 2772	 => K_prescription
+          | 2774	 => K_minutes
+          | 2775	 => K_seconds
+          | 2777	 => K_latincross
+          | 2778	 => K_hexagram
+          | 2779	 => K_filledrectbullet
+          | 2780	 => K_filledlefttribullet
+          | 2781	 => K_filledrighttribullet
+          | 2782	 => K_emfilledcircle
+          | 2783	 => K_emfilledrect
+          | 2784	 => K_enopencircbullet
+          | 2785	 => K_enopensquarebullet
+          | 2786	 => K_openrectbullet
+          | 2787	 => K_opentribulletup
+          | 2788	 => K_opentribulletdown
+          | 2789	 => K_openstar
+          | 2790	 => K_enfilledcircbullet
+          | 2791	 => K_enfilledsqbullet
+          | 2792	 => K_filledtribulletup
+          | 2793	 => K_filledtribulletdown
+          | 2794	 => K_leftpointer
+          | 2795	 => K_rightpointer
+          | 2796	 => K_club
+          | 2797	 => K_diamond
+          | 2798	 => K_heart
+          | 2800	 => K_maltesecross
+          | 2801	 => K_dagger
+          | 2802	 => K_doubledagger
+          | 2803	 => K_checkmark
+          | 2804	 => K_ballotcross
+          | 2805	 => K_musicalsharp
+          | 2806	 => K_musicalflat
+          | 2807	 => K_malesymbol
+          | 2808	 => K_femalesymbol
+          | 2809	 => K_telephone
+          | 2810	 => K_telephonerecorder
+          | 2811	 => K_phonographcopyright
+          | 2812	 => K_caret
+          | 2813	 => K_singlelowquotemark
+          | 2814	 => K_doublelowquotemark
+          | 2815	 => K_cursor
+          | 2979	 => K_leftcaret
+          | 2982	 => K_rightcaret
+          | 2984	 => K_downcaret
+          | 2985	 => K_upcaret
+          | 3008	 => K_overbar
+          | 3010	 => K_downtack
+          | 3011	 => K_upshoe
+          | 3012	 => K_downstile
+          | 3014	 => K_underbar
+          | 3018	 => K_jot
+          | 3020	 => K_quad
+          | 3022	 => K_uptack
+          | 3023	 => K_circle
+          | 3027	 => K_upstile
+          | 3030	 => K_downshoe
+          | 3032	 => K_rightshoe
+          | 3034	 => K_leftshoe
+          | 3036	 => K_lefttack
+          | 3068	 => K_righttack
+          | 3295	 => K_hebrew_doublelowline
+          | 3296	 => K_hebrew_aleph
+          | 3297	 => K_hebrew_bet
+          | 3298	 => K_hebrew_gimel
+          | 3299	 => K_hebrew_dalet
+          | 3300	 => K_hebrew_he
+          | 3301	 => K_hebrew_waw
+          | 3302	 => K_hebrew_zain
+          | 3303	 => K_hebrew_chet
+          | 3304	 => K_hebrew_tet
+          | 3305	 => K_hebrew_yod
+          | 3306	 => K_hebrew_finalkaph
+          | 3307	 => K_hebrew_kaph
+          | 3308	 => K_hebrew_lamed
+          | 3309	 => K_hebrew_finalmem
+          | 3310	 => K_hebrew_mem
+          | 3311	 => K_hebrew_finalnun
+          | 3312	 => K_hebrew_nun
+          | 3313	 => K_hebrew_samech
+          | 3314	 => K_hebrew_ayin
+          | 3315	 => K_hebrew_finalpe
+          | 3316	 => K_hebrew_pe
+          | 3317	 => K_hebrew_finalzade
+          | 3318	 => K_hebrew_zade
+          | 3319	 => K_hebrew_qoph
+          | 3320	 => K_hebrew_resh
+          | 3321	 => K_hebrew_shin
+          | 3322	 => K_hebrew_taw
+          | 3489	 => K_Thai_kokai
+          | 3490	 => K_Thai_khokhai
+          | 3491	 => K_Thai_khokhuat
+          | 3492	 => K_Thai_khokhwai
+          | 3493	 => K_Thai_khokhon
+          | 3494	 => K_Thai_khorakhang
+          | 3495	 => K_Thai_ngongu
+          | 3496	 => K_Thai_chochan
+          | 3497	 => K_Thai_choching
+          | 3498	 => K_Thai_chochang
+          | 3499	 => K_Thai_soso
+          | 3500	 => K_Thai_chochoe
+          | 3501	 => K_Thai_yoying
+          | 3502	 => K_Thai_dochada
+          | 3503	 => K_Thai_topatak
+          | 3504	 => K_Thai_thothan
+          | 3505	 => K_Thai_thonangmontho
+          | 3506	 => K_Thai_thophuthao
+          | 3507	 => K_Thai_nonen
+          | 3508	 => K_Thai_dodek
+          | 3509	 => K_Thai_totao
+          | 3510	 => K_Thai_thothung
+          | 3511	 => K_Thai_thothahan
+          | 3512	 => K_Thai_thothong
+          | 3513	 => K_Thai_nonu
+          | 3514	 => K_Thai_bobaimai
+          | 3515	 => K_Thai_popla
+          | 3516	 => K_Thai_phophung
+          | 3517	 => K_Thai_fofa
+          | 3518	 => K_Thai_phophan
+          | 3519	 => K_Thai_fofan
+          | 3520	 => K_Thai_phosamphao
+          | 3521	 => K_Thai_moma
+          | 3522	 => K_Thai_yoyak
+          | 3523	 => K_Thai_rorua
+          | 3524	 => K_Thai_ru
+          | 3525	 => K_Thai_loling
+          | 3526	 => K_Thai_lu
+          | 3527	 => K_Thai_wowaen
+          | 3528	 => K_Thai_sosala
+          | 3529	 => K_Thai_sorusi
+          | 3530	 => K_Thai_sosua
+          | 3531	 => K_Thai_hohip
+          | 3532	 => K_Thai_lochula
+          | 3533	 => K_Thai_oang
+          | 3534	 => K_Thai_honokhuk
+          | 3535	 => K_Thai_paiyannoi
+          | 3536	 => K_Thai_saraa
+          | 3537	 => K_Thai_maihanakat
+          | 3538	 => K_Thai_saraaa
+          | 3539	 => K_Thai_saraam
+          | 3540	 => K_Thai_sarai
+          | 3541	 => K_Thai_saraii
+          | 3542	 => K_Thai_saraue
+          | 3543	 => K_Thai_sarauee
+          | 3544	 => K_Thai_sarau
+          | 3545	 => K_Thai_sarauu
+          | 3546	 => K_Thai_phinthu
+          | 3550	 => K_Thai_maihanakat_maitho
+          | 3551	 => K_Thai_baht
+          | 3552	 => K_Thai_sarae
+          | 3553	 => K_Thai_saraae
+          | 3554	 => K_Thai_sarao
+          | 3555	 => K_Thai_saraaimaimuan
+          | 3556	 => K_Thai_saraaimaimalai
+          | 3557	 => K_Thai_lakkhangyao
+          | 3558	 => K_Thai_maiyamok
+          | 3559	 => K_Thai_maitaikhu
+          | 3560	 => K_Thai_maiek
+          | 3561	 => K_Thai_maitho
+          | 3562	 => K_Thai_maitri
+          | 3563	 => K_Thai_maichattawa
+          | 3564	 => K_Thai_thanthakhat
+          | 3565	 => K_Thai_nikhahit
+          | 3568	 => K_Thai_leksun
+          | 3569	 => K_Thai_leknung
+          | 3570	 => K_Thai_leksong
+          | 3571	 => K_Thai_leksam
+          | 3572	 => K_Thai_leksi
+          | 3573	 => K_Thai_lekha
+          | 3574	 => K_Thai_lekhok
+          | 3575	 => K_Thai_lekchet
+          | 3576	 => K_Thai_lekpaet
+          | 3577	 => K_Thai_lekkao
+          | 65329	 => K_Hangul
+          | 65330	 => K_Hangul_Start
+          | 65331	 => K_Hangul_End
+          | 65332	 => K_Hangul_Hanja
+          | 65333	 => K_Hangul_Jamo
+          | 65334	 => K_Hangul_Romaja
+          | 65336	 => K_Hangul_Jeonja
+          | 65337	 => K_Hangul_Banja
+          | 65338	 => K_Hangul_PreHanja
+          | 65339	 => K_Hangul_PostHanja
+          | 65343	 => K_Hangul_Special
+          | 3745	 => K_Hangul_Kiyeog
+          | 3746	 => K_Hangul_SsangKiyeog
+          | 3747	 => K_Hangul_KiyeogSios
+          | 3748	 => K_Hangul_Nieun
+          | 3749	 => K_Hangul_NieunJieuj
+          | 3750	 => K_Hangul_NieunHieuh
+          | 3751	 => K_Hangul_Dikeud
+          | 3752	 => K_Hangul_SsangDikeud
+          | 3753	 => K_Hangul_Rieul
+          | 3754	 => K_Hangul_RieulKiyeog
+          | 3755	 => K_Hangul_RieulMieum
+          | 3756	 => K_Hangul_RieulPieub
+          | 3757	 => K_Hangul_RieulSios
+          | 3758	 => K_Hangul_RieulTieut
+          | 3759	 => K_Hangul_RieulPhieuf
+          | 3760	 => K_Hangul_RieulHieuh
+          | 3761	 => K_Hangul_Mieum
+          | 3762	 => K_Hangul_Pieub
+          | 3763	 => K_Hangul_SsangPieub
+          | 3764	 => K_Hangul_PieubSios
+          | 3765	 => K_Hangul_Sios
+          | 3766	 => K_Hangul_SsangSios
+          | 3767	 => K_Hangul_Ieung
+          | 3768	 => K_Hangul_Jieuj
+          | 3769	 => K_Hangul_SsangJieuj
+          | 3770	 => K_Hangul_Cieuc
+          | 3771	 => K_Hangul_Khieuq
+          | 3772	 => K_Hangul_Tieut
+          | 3773	 => K_Hangul_Phieuf
+          | 3774	 => K_Hangul_Hieuh
+          | 3775	 => K_Hangul_A
+          | 3776	 => K_Hangul_AE
+          | 3777	 => K_Hangul_YA
+          | 3778	 => K_Hangul_YAE
+          | 3779	 => K_Hangul_EO
+          | 3780	 => K_Hangul_E
+          | 3781	 => K_Hangul_YEO
+          | 3782	 => K_Hangul_YE
+          | 3783	 => K_Hangul_O
+          | 3784	 => K_Hangul_WA
+          | 3785	 => K_Hangul_WAE
+          | 3786	 => K_Hangul_OE
+          | 3787	 => K_Hangul_YO
+          | 3788	 => K_Hangul_U
+          | 3789	 => K_Hangul_WEO
+          | 3790	 => K_Hangul_WE
+          | 3791	 => K_Hangul_WI
+          | 3792	 => K_Hangul_YU
+          | 3793	 => K_Hangul_EU
+          | 3794	 => K_Hangul_YI
+          | 3795	 => K_Hangul_I
+          | 3796	 => K_Hangul_J_Kiyeog
+          | 3797	 => K_Hangul_J_SsangKiyeog
+          | 3798	 => K_Hangul_J_KiyeogSios
+          | 3799	 => K_Hangul_J_Nieun
+          | 3800	 => K_Hangul_J_NieunJieuj
+          | 3801	 => K_Hangul_J_NieunHieuh
+          | 3802	 => K_Hangul_J_Dikeud
+          | 3803	 => K_Hangul_J_Rieul
+          | 3804	 => K_Hangul_J_RieulKiyeog
+          | 3805	 => K_Hangul_J_RieulMieum
+          | 3806	 => K_Hangul_J_RieulPieub
+          | 3807	 => K_Hangul_J_RieulSios
+          | 3808	 => K_Hangul_J_RieulTieut
+          | 3809	 => K_Hangul_J_RieulPhieuf
+          | 3810	 => K_Hangul_J_RieulHieuh
+          | 3811	 => K_Hangul_J_Mieum
+          | 3812	 => K_Hangul_J_Pieub
+          | 3813	 => K_Hangul_J_PieubSios
+          | 3814	 => K_Hangul_J_Sios
+          | 3815	 => K_Hangul_J_SsangSios
+          | 3816	 => K_Hangul_J_Ieung
+          | 3817	 => K_Hangul_J_Jieuj
+          | 3818	 => K_Hangul_J_Cieuc
+          | 3819	 => K_Hangul_J_Khieuq
+          | 3820	 => K_Hangul_J_Tieut
+          | 3821	 => K_Hangul_J_Phieuf
+          | 3822	 => K_Hangul_J_Hieuh
+          | 3823	 => K_Hangul_RieulYeorinHieuh
+          | 3824	 => K_Hangul_SunkyeongeumMieum
+          | 3825	 => K_Hangul_SunkyeongeumPieub
+          | 3826	 => K_Hangul_PanSios
+          | 3827	 => K_Hangul_KkogjiDalrinIeung
+          | 3828	 => K_Hangul_SunkyeongeumPhieuf
+          | 3829	 => K_Hangul_YeorinHieuh
+          | 3830	 => K_Hangul_AraeA
+          | 3831	 => K_Hangul_AraeAE
+          | 3832	 => K_Hangul_J_PanSios
+          | 3833	 => K_Hangul_J_KkogjiDalrinIeung
+          | 3834	 => K_Hangul_J_YeorinHieuh
+          | 3839	 => K_Korean_Won
+          | 8352	 => K_EcuSign
+          | 8353	 => K_ColonSign
+          | 8354	 => K_CruzeiroSign
+          | 8355	 => K_FFrancSign
+          | 8356	 => K_LiraSign
+          | 8357	 => K_MillSign
+          | 8358	 => K_NairaSign
+          | 8359	 => K_PesetaSign
+          | 8360	 => K_RupeeSign
+          | 8361	 => K_WonSign
+          | 8362	 => K_NewSheqelSign
+          | 8363	 => K_DongSign
+          | 8364	 => K_EuroSign
+	| _	 => raise Fail "intToKeyval"
+end

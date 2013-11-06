@@ -1,0 +1,57 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure IL
+from "IL"
+
+structure Alice =
+    struct
+	val Procedure = #["Alice", "Values", "Procedure"]
+	val ProcedureTy = IL.ClassTy Procedure
+	val Procedure0 = #["Alice", "Values", "Procedure0"]
+	val Procedure0Ty = IL.ClassTy Procedure0
+	val Procedure2 = #["Alice", "Values", "Procedure2"]
+	val Procedure2Ty = IL.ClassTy Procedure2
+	val Procedure3 = #["Alice", "Values", "Procedure3"]
+	val Procedure3Ty = IL.ClassTy Procedure3
+	val Procedure4 = #["Alice", "Values", "Procedure4"]
+	val Procedure4Ty = IL.ClassTy Procedure4
+	val Procedure5 = #["Alice", "Values", "Procedure5"]
+	val Procedure5Ty = IL.ClassTy Procedure5
+	val Procedure6 = #["Alice", "Values", "Procedure6"]
+	val Procedure6Ty = IL.ClassTy Procedure6
+	val Procedure7 = #["Alice", "Values", "Procedure7"]
+	val Procedure7Ty = IL.ClassTy Procedure7
+	val Procedure8 = #["Alice", "Values", "Procedure8"]
+	val Procedure8Ty = IL.ClassTy Procedure8
+	val Procedure9 = #["Alice", "Values", "Procedure9"]
+	val Procedure9Ty = IL.ClassTy Procedure9
+	val Cell = #["Alice", "Values", "Cell"]
+	val CellTy = IL.ClassTy Cell
+	val Transient = #["Alice", "Values", "Transient"]
+	val TransientTy = IL.ClassTy Transient
+	val ByNeed = #["Alice", "Values", "ByNeed"]
+	val ByNeedTy = IL.ClassTy ByNeed
+	val Record = #["Alice", "Values", "Record"]
+	val RecordTy = IL.ClassTy Record
+	val Selector = #["Alice", "Values", "Selector"]
+	val SelectorTy = IL.ClassTy Selector
+	val TagVal = #["Alice", "Values", "TagVal"]
+	val TagValTy = IL.ClassTy TagVal
+	val ConVal = #["Alice", "Values", "ConVal"]
+	val ConValTy = IL.ClassTy ConVal
+	val Exception = #["Alice", "Values", "Exception"]
+	val ExceptionTy = IL.ClassTy Exception
+	val Komponist = #["Alice", "Komponist"]
+	val KomponistTy = IL.ClassTy Komponist
+    end

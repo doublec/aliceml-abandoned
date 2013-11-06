@@ -1,0 +1,181 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and Word and LargeWord and LargeInt
+                                                      from "Pervasive"
+import __primitive type int and string
+       datatype bool and order and option and list    from "ToplevelTypes"
+import __primitive infix 4 = < >
+       infixr 5 :: infix 6 + - infix 7 * div mod
+       val op = and abs                               from "ToplevelValues"
+import __primitive structure General                  from "General"
+import __primitive structure Option                   from "Option"
+import __primitive structure Char                     from "Char"
+import __primitive structure String                   from "String"
+import __primitive structure StringCvt                from "StringCvt"
+import __primitive signature WORD                     from "WORD-sig"
+
+functor MkWord(BaseWord: sig
+    eqtype word
+
+    val wordSize : int
+
+    val fromInt : int  -> word
+    val toInt :   word -> int
+    val toIntX :  word -> int
+
+    val fromLarge : LargeWord.word -> word
+    val toLarge :   word -> LargeWord.word
+    val toLargeX :  word -> LargeWord.word
+
+    val fromLargeInt : LargeInt.int -> word
+    val toLargeInt : word -> LargeInt.int
+    val toLargeIntX : word -> LargeInt.int
+
+    val op + :   word * word -> word
+    val op - :   word * word -> word
+    val op * :   word * word -> word
+    val op div : word * word -> word
+    val op mod : word * word -> word
+
+    val notb :   word -> word
+    val orb :    word * word -> word
+    val xorb :   word * word -> word
+    val andb :   word * word -> word
+
+    val op << :  word * Word.word -> word
+    val op >> :  word * Word.word -> word
+    val op ~>> : word * Word.word -> word
+
+    val op < :   word * word -> bool
+    val op > :   word * word -> bool
+    val op <= :  word * word -> bool
+    val op >= :  word * word -> bool
+end) : WORD =
+struct
+    open BaseWord
+
+    type t = word							(**)
+
+    val equal	= op =
+    fun hash w	= abs(toInt w) handle General.Overflow => 0
+
+    fun compare(w1,w2) =
+	if w1 < w2 then LESS
+	else if w1 > w2 then GREATER
+	else EQUAL
+
+    val w0 = fromInt 0
+    val w2 = fromInt 2
+    val w8 = fromInt 8
+    val w10 = fromInt 10
+    val w16 = fromInt 16
+
+    fun ~w = w0-w
+
+    fun min(w1,w2) = if w1 < w2 then w1 else w2
+    fun max(w1,w2) = if w1 > w2 then w1 else w2
+
+
+    (* Formatting *)
+
+    open StringCvt
+
+    (* fmt and scan both use inverted signs to cope with minInt! *)
+
+    fun base BIN	= w2
+      | base OCT	= w8
+      | base DEC	= w10
+      | base HEX	= w16
+
+    fun toIsDigit BIN	= Char.isBinDigit
+      | toIsDigit OCT	= Char.isOctDigit
+      | toIsDigit DEC	= Char.isDigit
+      | toIsDigit HEX	= Char.isHexDigit
+
+    val zero		= fromInt(Char.ord #"0")
+    val ten		= fromInt(Char.ord #"A") - w10
+    fun digit i		= Char.chr(toInt(i + (if i < w10 then zero else ten)))
+    fun value c		= fromInt(Char.ord(Char.toUpper c)) -
+			  (if fromInt(Char.ord c) < ten+w10 then zero else ten)
+
+    fun fmt radix i	= if i = w0 then "0"
+			  else fmt'(base radix, i, [])
+    and fmt'(b, i, cs)	= if i = w0 then String.implode cs
+			  else fmt'(b, i div b, digit(i mod b) :: cs)
+
+
+    (* Scanning *)
+
+    fun scanPrefix getc src =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"w", src'') => (true, src'')
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanHexPrefix getc src =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"x", src'') => (true, src'')
+		 | SOME(#"X", src'') => (true, src'')
+		 | SOME(#"w", src'') =>
+		   (case getc src''
+		      of SOME(#"x", src''') => (true, src''')
+		       | SOME(#"X", src''') => (true, src''')
+		       | _                  => (true, src'')
+		   )
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanNum (isDigit, b) getc src =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then SOME(scanNum' (isDigit, b) getc src w0)
+	     else if c = #"_" then scanNum (isDigit, b) getc src'
+	     else NONE
+	   | NONE => NONE
+    and scanNum' (isDigit, b) getc src i =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then if i > fromInt ~1 div b then raise General.Overflow
+		  else scanNum' (isDigit, b) getc src' (b*i + value c)
+	     else if c = #"_" then scanNum' (isDigit, b) getc src' i
+	     else (i, src)
+	   | NONE => (i, src)
+
+    fun scan radix getc src =
+	let
+	    val       src1  = skipWS getc src
+	    val (pref,src2) = if radix = HEX then scanHexPrefix getc src1
+					     else scanPrefix getc src1
+	in
+	    case scanNum (toIsDigit radix, base radix) getc src2
+	      of NONE => if pref then SOME(w0, #2(Option.valOf(getc src1)))
+				 else NONE
+	       | some => some
+	end
+
+    val toString	= fmt HEX
+    val fromString	= scanString(scan HEX)
+end

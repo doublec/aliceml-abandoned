@@ -1,0 +1,99 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature ORDERED     from "ORDERED-sig"
+import signature IMP_MAP     from "IMP_MAP-sig"
+import functor MkRedBlackMap from "MkRedBlackMap"
+
+functor MkRedBlackImpMap (Key : ORDERED) :> IMP_MAP where type key = Key.t =
+struct
+    structure Map		= MkRedBlackMap Key
+
+    type key			= Map.key
+    type 'a map			= 'a Map.t ref
+    type t			= map
+
+    exception Unknown		= Map.Unknown
+    exception Collision		= Map.Collision
+
+    fun map ()			= ref Map.empty
+    fun clone m			= ref (!m)
+    fun fromList xys		= ref (Map.fromList xys)
+    fun fromVector xys		= ref (Map.fromVector xys)
+    fun toList m		= Map.toList (!m)
+    fun toVector m		= Map.toVector (!m)
+    fun cloneWithi f            = fromList o List.map (fn (k, v) => (k, f (k, v))) o toList
+    fun cloneWith f             = cloneWithi (fn (_, v) => f v)
+
+    fun update (m,f)		= let val p  = Promise.promise ()
+				      val m' = Ref.exchange (m,Promise.future p)
+				  in  Promise.fulfill (p, f m') end
+
+    fun insert (m,x,y)		= update (m, fn m' => Map.insert (m',x,y))
+    fun insertDisjoint (m,x,y)	= update (m, fn m' =>
+						Map.insertDisjoint (m',x,y))
+    fun insertWith f (m,x,y)	= update (m, fn m' => Map.insertWith f (m',x,y))
+    fun insertWithi f (m,x,y)	= update (m, fn m' => Map.insertWithi f(m',x,y))
+
+    fun remove (m,x)		= update (m, fn m' => Map.remove (m',x))
+    fun removeExistent (m,x)	= update (m, fn m' => Map.removeExistent (m',x))
+    fun removeWith f (m,x)	= update (m, fn m' => Map.removeWith f (m',x))
+    fun removeAll m		= m := Map.empty
+
+    fun union (m1,m2)		= update (m1, fn m1' => Map.union (m1',!m2))
+    fun unionDisjoint (m1,m2)	= update (m1, fn m1' =>
+						 Map.unionDisjoint (m1',!m2))
+    fun unionWith f (m1,m2)	= update (m1, fn m1' =>
+						 Map.unionWith f (m1',!m2))
+    fun unionWithi f (m1,m2)	= update (m1, fn m1' =>
+						 Map.unionWithi f (m1',!m2))
+
+    fun intersect (m1,m2)	= update (m1, fn m1' => Map.intersect (m1',!m2))
+    fun intersectWith f (m1,m2)	= update (m1, fn m1' =>
+						 Map.intersectWith f (m1',!m2))
+    fun intersectWithi f(m1,m2)	= update (m1, fn m1' =>
+						 Map.intersectWithi f (m1',!m2))
+
+    fun difference (m1,m2)	= update (m1, fn m1' => Map.difference(m1',!m2))
+
+    fun lookup (m,x)		= Map.lookup (!m,x)
+    fun lookupExistent (m,x)	= Map.lookupExistent (!m,x)
+    fun member (m,x)		= Map.member (!m,x)
+    fun choose m		= Map.choose (!m)
+    fun choosei m		= Map.choosei (!m)
+    fun size m			= Map.size (!m)
+    fun isEmpty m		= Map.isEmpty (!m)
+
+    fun app f m			= Map.app f (!m)
+    fun fold f x m		= Map.fold f x (!m)
+    fun all f m			= Map.all f (!m)
+    fun exists f m		= Map.exists f (!m)
+    fun find f m		= Map.find f (!m)
+    fun modify f m		= update (m, fn m' => Map.map f m')
+    fun filter f m		= update (m, fn m' => Map.filter f m')
+
+    fun appi f m		= Map.appi f (!m)
+    fun foldi f x m		= Map.foldi f x (!m)
+    fun alli f m		= Map.alli f (!m)
+    fun existsi f m		= Map.existsi f (!m)
+    fun findi f m		= Map.findi f (!m)
+    fun modifyi f m		= update (m, fn m' => Map.mapi f m')
+    fun filteri f m		= update (m, fn m' => Map.filteri f m')
+
+    fun equal f (m1,m2)		= Map.equal f (!m1,!m2)
+    fun submap f (m1,m2)	= Map.submap f (!m1,!m2)
+    fun disjoint (m1,m2)	= Map.disjoint (!m1,!m2)
+
+    fun lookupOrInsert f (m, k) = lookupExistent (m, k)
+                                  handle Unknown _ => let val v = f k
+                                                      in (insert (m, k, v); v) end
+end

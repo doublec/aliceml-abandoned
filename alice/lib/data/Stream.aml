@@ -1,0 +1,100 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import signature STREAM from "STREAM-sig"
+
+structure Stream :> STREAM =
+    struct
+	type 'a stream = 'a list ref
+	type 'a t      = 'a stream
+
+	exception Closed
+
+	fun stream () =
+	    let
+		val h = Hole.hole ()
+	    in
+		(ref h, Hole.future h)
+	    end
+
+	fun send (stream, x) =
+	    let
+		val new = Hole.hole ()
+		val old = Ref.exchange (stream, new)
+	    in
+		Hole.fill (old, x::Hole.future new)
+		handle Hole.Hole => (Hole.fill(new, nil); raise Closed)
+			(*FIXME: this is not thread-safe! *)
+	    end
+
+	fun close stream =
+	    let
+		val old = Ref.exchange (stream, nil)
+	    in
+		Hole.fill (old, nil) handle Hole.Hole => ()
+	    end
+
+	fun isClosed stream =
+	    let
+		val xs = Hole.future (!stream)
+	    in
+		Future.isDetermined xs andalso List.null xs
+	    end
+    end
+
+(* Implementation with promises, equivalent but somewhat less efficient...
+structure Stream :> STREAM =
+    struct
+	type 'a stream = 'a list Promise.promise ref
+	type 'a t      = 'a stream
+
+	exception Closed
+
+	fun stream () =
+	    let
+		val p = Promise.promise ()
+	    in
+		(ref p, Promise.future p)
+	    end
+
+	fun send (stream, x) =
+	    let
+		val new = Promise.promise ()
+		val old = Ref.exchange (stream, new)
+	    in
+		Promise.fulfill (old, x::Promise.future new)
+		handle Promise.Promise =>
+			(Promise.fulfill (new, nil); raise Closed)
+			(*FIXME: this is not thread-safe! *)
+	    end
+
+	fun close stream =
+	    let
+		val new = Promise.promise ()
+		val _   = Promise.fulfill (new, nil)
+		val old = Ref.exchange (stream, new)
+	    in
+		Promise.fulfill (old, nil) handle Promise.Promise => ()
+	    end
+
+	fun isClosed stream =
+	    let
+		val xs = Promise.future (!stream)
+	    in
+		Future.isDetermined xs andalso List.null xs
+	    end
+    end
+*)

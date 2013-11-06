@@ -1,0 +1,241 @@
+<?php include("macros.php3"); ?>
+<?php heading("The List structure", "The <TT>List</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature LIST
+    structure List : LIST
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/list.html"><TT>List</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="list-pair.html"><TT>ListPair</TT></A>,
+    <A href="vector.html"><TT>Vector</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature LIST =
+    sig
+	datatype 'a list = nil | op:: of 'a * 'a list
+	type     'a t    = 'a list						(**)
+
+	exception Empty
+
+	val null :        'a list -> bool
+	val length :      'a list -> int
+
+	val hd :          'a list -> 'a
+	val tl :          'a list -> 'a list
+	val last :        'a list -> 'a
+	val getItem :     'a list -> ('a * 'a list) option
+	val nth :         'a list * int -> 'a
+	val sub :         'a list * int -> 'a
+	val take :        'a list * int -> 'a list
+	val drop :        'a list * int -> 'a list
+	val split :       'a list * int -> 'a list * 'a list
+
+	val rev :         'a list -> 'a list
+	val op @ :        'a list * 'a list -> 'a list
+	val revAppend :   'a list * 'a list -> 'a list
+	val concat :      'a list list -> 'a list
+	val tabulate :    int * (int -> 'a) -> 'a list
+	val index :       'a list -> (int * 'a) list
+
+	val app :         ('a -> unit) -> 'a list -> unit
+	val appr :        ('a -> unit) -> 'a list -> unit
+	val map :         ('a -> 'b) -> 'a list -> 'b list
+	val mapPartial :  ('a -> 'b option) -> 'a list -> 'b list
+	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val all :         ('a -> bool) -> 'a list -> bool
+	val exists :      ('a -> bool) -> 'a list -> bool
+	val find :        ('a -> bool) -> 'a list -> 'a option
+	val filter :      ('a -> bool) -> 'a list -> 'a list
+	val partition :   ('a -> bool) -> 'a list -> 'a list * 'a list
+
+	val appi :        (int * 'a -> unit) -> 'a list -> unit
+	val appri :       (int * 'a -> unit) -> 'a list -> unit
+	val mapi :        (int * 'a -> 'b) -> 'a list -> 'b list
+	val mapiPartial : (int * 'a -> 'b option) -> 'a list -> 'b list
+	val foldli :      (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val foldri :      (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val alli :        (int * 'a -> bool) -> 'a list -> bool
+	val existsi :     (int * 'a -> bool) -> 'a list -> bool
+	val findi :       (int * 'a -> bool) -> 'a list -> (int * 'a) option
+	val filteri :     (int * 'a -> bool) -> 'a list -> (int * 'a) list
+	val partitioni :  (int * 'a -> bool) -> 'a list -> (int * 'a) list * (int * 'a) list
+
+	val contains :    ''a list -> ''a -> bool
+	val notContains : ''a list -> ''a -> bool
+
+	val equal :       ('a * 'a -> bool) -> 'a list * 'a list -> bool
+	val collate :     ('a * 'a -> order) -> 'a list * 'a list -> order
+
+	val isSorted :    ('a * 'a -> order) -> 'a list -> bool
+	val sort :        ('a * 'a -> order) -> 'a list -> 'a list
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/list.html"><TT>List</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = list</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>list</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>sub (<I>l</I>, <I>i</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns the <I>i</I>th element of the list <TT><I>l</I></TT>, counting from 0.
+      Raises <TT>Subscript</TT> if <TT><I>i</I></TT> &lt; 0 or
+      <TT><I>i</I></TT> &gt;= <TT>length <I>l</I></TT>. This function is a
+      synonym for <TT>nth</TT>, for consistency with other collection types
+      like <A href="vector.html">vectors</A> and <A
+      href="array.html">arrays</A>.</P>
+    </DD>
+
+    <DT>
+      <TT>split (<I>l</I>, <I>i</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns a pair <TT>(<I>l1</I>,<I>l2</I>)</TT> of lists, where
+      <TT><I>l1</I></TT> contains the first <TT><I>i</I></TT> elements of
+      <TT><I>l</I></TT> and <TT><I>l2</I></TT> the remaining ones. Raises
+      <TT>Subscript</TT> if <TT><I>i</I></TT> &lt; 0 or
+      <TT><I>i</I></TT> &gt;= <TT>length <I>l</I></TT>. Equivalent to
+      <TT>(take (<I>l</I>,<I>i</I>), drop (<I>l</I>,<I>i</I>))</TT>.
+    </DD>
+
+    <DT>
+      <TT>index <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Pairs each element of the list <TT><I>l</I></TT> with its index in
+      <TT><I>l</I></TT>, counting from 0, and returns the list of pairs.</P>
+    </DD>
+
+    <DT>
+      <TT>appr <I>f</I> <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>app</TT>, but applies <TT><I>f</I></TT> in
+      right to left order.</P>
+    </DD>
+
+    <DT>
+      <TT>appi <I>f</I> <I>l</I></TT> <BR>
+      <TT>appri <I>f</I> <I>l</I></TT> <BR>
+      <TT>mapi <I>f</I> <I>l</I></TT> <BR>
+      <TT>mapiPartial <I>f</I> <I>l</I></TT> <BR>
+      <TT>foldli <I>f</I> <I>b</I> <I>l</I></TT> <BR>
+      <TT>foldri <I>f</I> <I>b</I> <I>l</I></TT> <BR>
+      <TT>alli <I>f</I> <I>l</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>l</I></TT> <BR>
+      <TT>findi <I>f</I> <I>l</I></TT> <BR>
+      <TT>filteri <I>f</I> <I>l</I></TT> <BR>
+      <TT>partitioni <I>f</I> <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>app</TT>, <TT>appr</TT>,
+      <TT>map</TT>, <TT>mapPartial</TT>, <TT>foldl</TT>, <TT>foldr</TT>, <TT>all</TT>,
+      <TT>exists</TT>, <TT>find</TT>, <TT>filter</TT> and <TT>partition</TT>.
+      The index of each element
+      (starting from 0) is passed to <TT><I>f</I></TT> as an additional
+      argument. For <TT>appri</TT> and <TT>foldri</TT>, processing
+      starts at the highest index. The functions <TT>findi</TT>,
+      <TT>filteri</TT> and <TT>partitioni</TT> return indices along with
+      the corresponding elements.
+      The following equivalences hold:</P>
+      <PRE>
+	appi <I>f l</I>        = app <I>f</I> (index <I>l</I>)
+	appri <I>f l</I>       = appr <I>f</I> (index <I>l</I>)
+	mapi <I>f l</I>        = map <I>f</I> (index <I>l</I>)
+	mapiPartial <I>f l</I> = mapPartial <I>f</I> (index <I>l</I>)
+	foldli <I>f b l</I>    = foldl (fn ((<I>i</I>,<I>a</I>),<I>b</I>) => <I>f</I>(<I>i</I>,<I>a</I>,<I>b</I>)) <I>b</I> (index <I>l</I>)
+	foldri <I>f b l</I>    = foldr (fn ((<I>i</I>,<I>a</I>),<I>b</I>) => <I>f</I>(<I>i</I>,<I>a</I>,<I>b</I>)) <I>b</I> (index <I>l</I>)
+	alli <I>f l</I>        = all <I>f</I> (index <I>l</I>)
+	existsi <I>f l</I>     = exists <I>f</I> (index <I>l</I>)
+	findi <I>f l</I>       = find <I>f</I> (index <I>l</I>)
+	filteri <I>f l</I>     = filter <I>f</I> (index <I>l</I>)
+	partitioni <I>f l</I>  = partition <I>f</I> (index <I>l</I>)
+
+        app <I>f l</I>         = appi (<I>f</I> o #2) <I>l</I>
+        appr <I>f l</I>        = appri (<I>f</I> o #2) <I>l</I>
+        map <I>f l</I>         = mapi (<I>f</I> o #2) <I>l</I>
+        mapPartial <I>f l</I>  = mapiPartial (<I>f</I> o #2) <I>l</I>
+        foldl <I>f b l</I>     = foldli (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) <I>b</I> <I>l</I>
+        foldr <I>f b l</I>     = foldri (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) <I>b</I> <I>l</I>
+        all <I>f l</I>         = alli (<I>f</I> o #2) <I>l</I>
+        exists <I>f l</I>      = existsi (<I>f</I> o #2) <I>l</I>
+        find <I>f l</I>        = Option.map #2 (findi (<I>f</I> o #2) <I>l</I>)
+        filter <I>f l</I>      = map #2 (filteri (<I>f</I> o #2) <I>l</I>)
+        partition <I>f l</I>   = Pair.map (map #2, map #2) (partitioni (<I>f</I> o #2) <I>l</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>contains <I>l</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      list <TT><I>l</I></TT>; otherwise <TT>false</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>notContains <I>l</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      list <TT><I>l</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>l a</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>eq</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates a customized equality function on lists given an equality on the
+      element type.</P>
+    </DD>
+
+    <DT>
+      <TT>isSorted <I>f</I> <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> iff <TT><I>l</I></TT> is sorted with respect
+      to the ordering function <TT><I>f</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>sort <I>f</I> <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a new list that contains the same elements as
+      <TT><I>l</I></TT>, but sorted with respect to the ordering function
+      <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
+      elements.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_CONFIG_COMPONENT =
+    sig
+	structure UnsafeConfig:
+	    sig
+		val platform: 'platform
+		val vm: string
+	    end
+end

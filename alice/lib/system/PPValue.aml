@@ -1,0 +1,670 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeValue      from "../system/UnsafeValue"
+import structure Reflect          from "../system/Reflect"
+
+import structure Name             from "../rtt/Name"
+import structure Label            from "../rtt/Label"
+import structure PathMap          from "../rtt/PathMap"
+import structure Type             from "../rtt/Type"
+import structure PervasiveType    from "../rtt/PervasiveType"
+
+import structure Atom             from "../data/Atom"
+
+import structure PrettyPrint      from "../utility/PrettyPrint"
+import structure PPMisc           from "../rtt/PPMisc"
+import signature PP_VALUE         from "PP_VALUE-sig"
+import structure IO               from "IO"
+import structure OS               from "OS"
+import structure Component        from "Component"
+import structure Sandbox          from "Sandbox"
+
+
+structure PPValue (*: PP_VALUE*) =
+struct
+    type doc    = PrettyPrint.doc
+    type typ    = Type.t
+    type format = {depth : int, width : int, prec : int}
+
+local
+    open Type
+    open PervasiveType
+    open PrettyPrint
+    open PPMisc
+    infixr ^^ ^/^
+
+
+  (* Type inspection helpers *)
+
+    datatype tag_desc = Nullary | Unary of typ | Nary of Type.row
+
+    fun unapply  t     = unapply'(t,[])
+    and unapply'(t,ts) =
+	case inspect t
+	 of Apply(t1,t2) => unapply'(t1,t2::ts)
+	  | _            => (t,ts)
+
+    fun unarg t =
+	case inspect t
+	 of Apply(t1,t2) =>
+	    if not(equal(t1, typ_strict)) then Unary t else
+	    (case inspect t2
+	     of Prod r =>
+		if isEmptyRow r
+		then Nullary
+		else Nary r
+	      | _ => raise Type.Type
+	    )
+	  | _ => Unary t
+
+    fun rowToLabs r = Vector.fromList(rowToLabs' r)
+    and rowToLabs' r =
+	case inspectRow r
+	 of (UnknownRow _ | EmptyRow) => []
+	  | FieldRow(l,_,r')          => l :: rowToLabs' r'
+
+    fun rowToTyps r = Vector.fromList(rowToTyps' r)
+    and rowToTyps' r =
+	case inspectRow r
+	 of (UnknownRow _ | EmptyRow) => []
+	  | FieldRow(_,t,r')          => t :: rowToTyps' r'
+
+
+  (* Type registration *)
+
+    type 'a printer = typ -> format -> 'a -> doc option
+
+    val registry = PathMap.map() : Reflect.value printer list PathMap.t
+
+    val typ_value = ref NONE
+    fun getValueTyp' t _ = typ_value := SOME t
+    __overload 'a getValueTyp : 'a -> unit = getValueTyp'
+    val _ = getValueTyp (spawn (raise Domain) : Reflect.value)
+
+    fun registerTyp' t (f : 'a printer) =
+	let
+	    val (t',ts) = unapply t
+	    val  p      = Type.asCon t'
+	in
+	    (* enforce polymorphic arguments (for soundness) *)
+  	    List.app (fn t => Type.unify(t, Option.valOf(!typ_value))) ts
+	    handle Type.Mismatch _ => raise Type.Type;
+	    PathMap.insertWith (Fn.flip op@) (registry, p, [UnsafeValue.cast f])
+	end
+
+    fun unregisterTyp' t _ =
+	let
+	    val (t',ts) = unapply t
+	    val  p      = Type.asCon t'
+	in
+	    PathMap.remove(registry, p)
+	end
+
+    fun tryRegistry(p,t,fm,x) =
+	case PathMap.lookup(registry, p)
+	 of NONE		=> NONE
+	  | SOME fs		=> tryRegistry'(fs,t,fm,x)
+    and tryRegistry'(fs,t,fm,x) =
+	case fs
+	 of []     => NONE
+	  | f::fs' =>
+	case f t fm (UnsafeValue.cast x)
+	  of NONE => tryRegistry'(fs',t,fm,x)
+	   | some => some
+
+
+  (* Special handling of lists *)
+
+    val typ_list =
+	let structure T = Reflect.ReflectType(type t = unit list)
+	in #1(Type.asApply T.x) end
+
+    datatype 'a list_desc = Det of 'a list * bool | Indet of 'a list * 'a list
+
+    fun inspectList(n,x) = inspectList'(n,x,[])
+    and inspectList'(n,x,xs) =
+	if Hole.isHole x orelse not(Future.isDetermined x)
+	then Indet(List.rev xs, x) else
+	if List.null x then Det(List.rev xs, false) else
+	if n = 0 then Det(List.rev xs, true) else
+	inspectList'(n-1, List.tl x, List.hd x :: xs)
+
+
+  (* Limits and precedences *)
+
+    val rootPrec	= 0
+    val keywordPrec	= 10
+    val applyPrec	= 10
+    val atomPrec	= 11
+
+    val defaultDepth	= ref 16
+    val defaultWidth	= ref 32
+
+    fun default()	= {depth = !defaultDepth, width = !defaultWidth,
+			   prec = rootPrec}
+    fun inner fm	= {(fm : format) where depth = #depth fm - 1}
+    fun prec n fm	= {(fm : format) where prec = n}
+    fun atomic fm	= prec atomPrec fm
+    fun root fm		= prec rootPrec fm
+    fun arg fm		= atomic(inner fm)
+    fun elem fm		= root(inner fm)
+
+
+  (* PP helpers *)
+
+    fun parenPrec p (p',doc) =
+	if p > p'
+	then paren doc
+	else doc
+
+
+    fun ppApply (fm : format) args =
+	parenPrec (#prec fm) (applyPrec, apply args)
+
+    fun ppApplyShort (fm : format) args =
+	parenPrec (#prec fm) (applyPrec, applyShort args)
+
+    fun ppKeyword (fm : format) doc =
+	parenPrec (#prec fm) (keywordPrec, doc)
+
+    fun ppCustom fm (doc, docs) =
+	ppKeyword fm (
+	    abox(doc ^^
+		nest(ebreak ^^
+		     List.foldr (op ^/^) empty
+			[contain ("{|", "|}") (ppCommaList Fn.id docs)]
+		)
+	    )
+	)
+
+  (* Values *)
+
+    val absDoc = text "_val"
+    val ellDoc = text "..."
+
+    fun ppLab l = text(Label.toString l)
+
+    fun ppVal  t x = ppVal' t (default()) x
+    and ppVal' t fm x =
+	if #depth fm <= 0 then text "_" else
+	if Hole.isHole x then text "_hole" else
+	case Future.status x
+	 of Future.FUTURE =>
+	    ppKeyword fm (text(if Future.isLazy x then "_lazy" else "_future"))
+	  | Future.FAILED =>
+	    let
+		val e = Future.await x handle e => UnsafeValue.cast e
+	    in
+		ppCustom fm (text "_failed", [ppVal' typ_exn (elem fm) e])
+	    end
+	  | Future.DETERMINED =>
+	case inspect t
+	 of (Unknown _ | Var _) =>
+		ppKeyword fm absDoc
+	  | Con p =>
+		ppCon p t fm x
+	  | Arrow _ =>
+		ppKeyword fm (text "_fn")
+	  | Prod r =>
+		ppProd (UnsafeValue.proj,UnsafeValue.projTuple) r fm x
+	  | Sum r =>
+	    let
+		val ls   = rowToLabs r
+		val i    = UnsafeValue.tag(x,ls)
+		val l    = Vector.sub(ls,i)
+		val s    = Label.toString l
+		val ppApply = if isShort s then ppApplyShort else ppApply
+		val doc0 = text s
+		val fm'  = arg fm
+	    in
+		case unarg(lookupRow(r,l))
+		 of Nullary  => doc0
+		  | Unary t' =>
+		    let
+			val x' = UnsafeValue.projTaggedTuple(x,1,0)
+		    in
+			ppApply fm (doc0, [ppVal' t' fm' x'])
+		    end
+		  | Nary r' =>
+		    let
+			val doc' = ppProd (UnsafeValue.projTagged,
+					   UnsafeValue.projTaggedTuple) r' fm' x
+		    in
+			ppApply fm (doc0, [doc'])
+		    end
+	    end
+	  | (All(a,t') | Exist(a,t')) =>
+		ppVal' t' fm x
+	  | Lambda(a,t') =>
+		raise Type.Type
+	  | Apply _ =>
+	    let
+		val (t',ts) = unapply t
+	    in
+		if Type.equal(t', typ_list) then ppList t fm x else
+		case inspect t'
+		 of Mu _  => ppVal' (unroll t) fm x
+		  | Con p => ppCon p t fm x
+		  | _     => raise Type.Type
+	    end
+	  | Mu t' =>
+		ppVal' (unroll t) fm x
+
+    and ppCon p t fm x =
+	case tryRegistry(p,t,fm,x)
+	 of SOME doc => doc
+	  | NONE     =>
+	if not(isExtKind(kind t)) then ppKeyword fm absDoc else
+	let
+	    val con  = UnsafeValue.con x
+	    val doc0 = text(Name.toString(UnsafeValue.conName con))
+	in
+	    if UnsafeValue.same(con,x)
+	    then doc0
+	    else apply(doc0, [ppKeyword (arg fm) absDoc])
+	end
+
+    and ppProd (unsafe_proj, unsafe_projTuple) r fm x =
+	if isTupleRow r andalso Vector.length(asTupleRow r) <> 1 then
+	    let
+		val ts      = asTupleRow r
+		val n       = Vector.length ts
+		val w       = #width fm
+		val (n',ds) = if n <= w then (n,[]) else (w,[ellDoc])
+		val fm'     = elem fm
+		val docs'   = VectorSlice.foldri
+				(fn(i,t',docs) =>
+				    ppVal' t' fm' (unsafe_projTuple(x,n,i))
+				    :: docs
+				) ds (VectorSlice.slice(ts,0,SOME n'))
+	    in
+		paren(
+		    ppCommaList Fn.id docs'
+		)
+	    end
+	else
+	    let
+		val ls      = rowToLabs r
+		val ts      = rowToTyps r
+		val n       = Vector.length ls
+		val w       = #width fm
+		val (n',ds) = if n <= w then (n,[]) else (w,[ellDoc])
+		val fm'     = elem fm
+		val docs'   = VectorSlice.foldri
+				(fn(i,t',docs) =>
+				 let
+				    val l    = Vector.sub(ls,i)
+				    val doc' =
+					ppVal' t' fm' (unsafe_proj(x,ls,i))
+				 in
+				    abox(nest(
+					text(Label.toString l) ^^
+					text " =" ^/^
+					doc'
+				    )) :: docs
+				 end) ds (VectorSlice.slice(ts,0,SOME n'))
+	    in
+		brace(
+		    ppCommaList Fn.id docs'
+		)
+	    end
+
+    and ppList t fm x =
+	let
+	    val (_,t') = Type.asApply t
+	in
+	    case inspectList(#width fm, UnsafeValue.cast x)
+	     of Det(xs,ell) =>
+		let
+		    val ppElem = ppVal' t' (elem fm)
+		in
+		    contain ("[", "]") (
+			ppCommaList ppElem xs ^^
+			(if ell then text "," ^/^ ellDoc else empty)
+		    )
+		end
+	      | Indet(xs,x') =>
+		let
+		    val fm'    = prec 6 (inner fm)
+		    val ppElem = ppVal' t' fm'
+		    val doc = List.foldr
+				(fn(x,doc) => ppElem x ^^ text " ::" ^/^ doc)
+				(ppVal' t fm' (UnsafeValue.cast x')) xs
+		in
+		    parenPrec (#prec fm) (5, abox doc)
+		end
+	end
+	
+
+  (* Pervasive types *)
+
+    fun ppInt t fm x	= SOME(text(Int.toString x))
+    fun ppIntInf t fm x	= SOME(text(IntInf.toString x))
+    fun ppWord t fm x	= SOME(text("0wx" ^ Word.toString x))
+    fun ppWord8 t fm x	= SOME(text("0wx" ^ Word8.toString x))
+    fun ppWord32 t fm x	= SOME(text("0wx" ^ Word32.toString x))
+    fun ppReal t fm x	= SOME(text(Real.toString x))
+    fun ppChar t fm x	= SOME(text("#\"" ^ Char.toString x ^ "\""))
+    fun ppString t (fm : format) x =
+	if String.size x <= 4 * #width fm
+	then SOME(text("\"" ^ String.toString x ^ "\""))
+	else SOME(text("\"" ^ String.toString(String.substring(x,0,4* #width fm))
+			    ^ "\\...\""))
+
+    fun ppExnWithArg' t fm exn a  =
+	let
+	    val s = Exn.name exn
+	    val ppApply = if isShort s then ppApplyShort else ppApply
+	in
+	    SOME (ppApply fm (text s, [ppVal' t (arg fm) a]))
+	end
+
+    __overload 'a ppExnWithArg : format -> exn -> 'a -> doc option
+        = ppExnWithArg'
+
+    (* pretty printing of exceptions of the fundamental library,
+       and those of the system library which we cannot handle
+       in their own component. 
+     *)
+
+    fun ppExn t fm x =
+	case x
+	 of ( Bind | Chr | Div | Domain | Match | Overflow
+	    | Size | Span | Subscript | IEEEReal.Unordered
+	    | Alt.Alt | Option.Option | Time.Time
+	    | Future.Cyclic | Promise.Promise
+	    | Thread.Terminate | Thread.Terminated ) =>
+	    SOME(
+		text(General.exnName x)
+	    )
+	  | Fail x' =>
+            ppExnWithArg fm x x'
+          | Assert e =>
+            ppExnWithArg fm x e
+          | OS.SysErr err =>
+            ppExnWithArg fm x err
+	  | Package.Mismatch m =>
+            ppExnWithArg fm x m
+          | Component.Eval e =>
+            ppExnWithArg fm x e
+          | Component.Failure e =>
+            ppExnWithArg fm x e
+          | Component.Internal e =>
+            ppExnWithArg fm x e
+          | Component.Mismatch i =>
+            ppExnWithArg fm x i
+          | Sandbox.Security s =>
+            ppExnWithArg fm x s
+          | IO.Io a =>
+            ppExnWithArg fm x a
+	  | _ => NONE
+
+    fun ppRef t fm x =
+	let
+	    val (_,t')  = Type.asApply t
+	    val ppElem  = ppVal' t' (arg fm)
+	    val ppApply = if isShort "ref" then ppApplyShort else ppApply
+	in
+	    SOME(
+		ppApply fm (text "ref", [ppElem(!x)])
+	    )
+	end
+
+    fun ppVector t fm =
+	let
+	    val (_,t') = Type.asApply t
+	    val ppElem = ppVal' t' (elem fm)
+	in
+	    fn x =>
+	    let
+		val (n,doc0) = if Vector.length x <= #width fm
+				then (Vector.length x, empty)
+				else (#width fm, text "," ^/^ ellDoc)
+		val xs = VectorSlice.toList(VectorSlice.slice(x,0,SOME n))
+	    in
+		SOME(
+		    contain ("#[", "]") (
+			ppCommaList ppElem xs ^^ doc0
+		    )
+		)
+	    end
+	end
+
+    fun ppArray t fm =
+	let
+	    val (_,t') = Type.asApply t
+	    val ppElem = ppVal' t' (elem fm)
+	in
+	    fn x =>
+	    let
+		val (n,doc0) = if Array.length x <= #width fm
+				then (Array.length x, [])
+				else (#width fm, [ellDoc])
+		val xs = ArraySlice.toList(ArraySlice.slice(x,0,SOME n))
+	    in
+		SOME(ppCustom fm (text "array", List.map ppElem xs @ doc0))
+		(*SOME(
+		    contain ("[|", "|]") (
+			ppCommaList ppElem xs ^^ doc0
+		    )
+		)*)
+	    end
+	end
+
+
+  (* Other types in lib/fundamental *)
+
+    fun ppPromise t fm x =
+	let
+	    val (_,t') = Type.asApply t
+	    val ppElem = ppVal' t' (elem fm)
+	in
+	    SOME(ppCustom fm (text "promise", [ppElem(Promise.future x)]))
+	end
+
+    fun ppMonoRow (t',s,length,sliceList) t fm =
+	let
+	    val ppElem = ppVal' t' (elem fm)
+	in
+	    fn x =>
+	    let
+		val (n,doc0) = if length x <= #width fm
+				then (length x, [])
+				else (#width fm, [ellDoc])
+		val xs = sliceList(x,n)
+	    in
+		SOME(ppCustom fm (text s, List.map ppElem xs @ doc0))
+	    end
+	end
+
+    fun ppWord8Vector'' t _ =
+	ppMonoRow(t, "vector", Word8Vector.length,
+		  fn(x,n) => Word8VectorSlice.toList
+			     (Word8VectorSlice.slice(x,0,SOME n)))
+    __overload 'a ppWord8Vector' : 'a -> Word8Vector.t printer = ppWord8Vector''
+    val ppWord8Vector = ppWord8Vector'(Word8.fromInt 0)
+    fun ppWord8Array'' t _ =
+	ppMonoRow(t, "array", Word8Array.length,
+		  fn(x,n) => Word8ArraySlice.toList
+			     (Word8ArraySlice.slice(x,0,SOME n)))
+    __overload 'a ppWord8Array' : 'a -> Word8Array.t printer = ppWord8Array''
+    val ppWord8Array = ppWord8Array'(Word8.fromInt 0)
+    fun ppCharArray'' t _ =
+	ppMonoRow(t, "array", CharArray.length,
+		  fn(x,n) => CharArraySlice.toList
+			     (CharArraySlice.slice(x,0,SOME n)))
+    __overload 'a ppCharArray' : 'a -> CharArray.t printer = ppCharArray''
+    val ppCharArray = ppCharArray' #" "
+
+    fun ppMonoSlice (t',base) t fm x =
+	let
+	    val (s,i,n) = base x
+	    val  docs'  = [ppVal' t' (elem fm) s,
+			   text(Int.toString i),
+			   text(Int.toString n)]
+	in
+	    SOME(ppCustom fm (text "slice", docs'))
+	end
+
+    fun ppWord8VectorSlice'' t _ = ppMonoSlice(t, Word8VectorSlice.base)
+    __overload 'a ppWord8VectorSlice' : 'a -> Word8VectorSlice.t printer =
+	ppWord8VectorSlice''
+    val ppWord8VectorSlice = ppWord8VectorSlice'(Word8Vector.fromList [])
+    fun ppWord8ArraySlice'' t _ = ppMonoSlice(t, Word8ArraySlice.base)
+    __overload 'a ppWord8ArraySlice' : 'a -> Word8ArraySlice.t printer =
+	ppWord8ArraySlice''
+    val ppWord8ArraySlice = ppWord8ArraySlice'(Word8Array.fromList [])
+    fun ppCharVectorSlice'' t _ = ppMonoSlice(t, CharVectorSlice.base)
+    __overload 'a ppCharVectorSlice' : 'a -> CharVectorSlice.t printer =
+	ppCharVectorSlice''
+    val ppCharVectorSlice = ppCharVectorSlice' ""
+    fun ppCharArraySlice'' t _ = ppMonoSlice(t, CharArraySlice.base)
+    __overload 'a ppCharArraySlice' : 'a -> CharArraySlice.t printer =
+	ppCharArraySlice''
+    val ppCharArraySlice = ppCharArraySlice'(CharArray.fromList [])
+
+    fun ppVectorSlice t fm x =
+	let
+	    val  t'     = Type.apply(typ_vec, #2(Type.asApply t))
+	    val (v,i,n) = VectorSlice.base x
+	    val  docs'  = [ppVal' t' (elem fm) v,
+			   text(Int.toString i),
+			   text(Int.toString n)]
+	in
+	    SOME(ppCustom fm (text "slice", docs'))
+	end
+
+    fun ppArraySlice t fm x =
+	let
+	    val  t'     = Type.apply(typ_array, #2(Type.asApply t))
+	    val (a,i,n) = ArraySlice.base x
+	    val  docs'  = [ppVal' t' (elem fm) a,
+			   text(Int.toString i),
+			   text(Int.toString n)]
+	in
+	    SOME(ppCustom fm (text "slice", docs'))
+	end
+
+    fun ppArray2 t fm = 
+	let 
+	    val (_, t')   = Type.asApply t
+	    val ppElem    = ppVal' t' (elem fm)
+	    fun ppRow doc = contain ("|", "|") doc
+	in
+	    fn x =>
+	    let
+		val (r,c)      = Array2.dimensions x
+		val (nc,docC0) = if c <= #width fm
+				 then (c, [])
+				 else (#width fm, [ellDoc])
+		val (nr,docR0) = if r <= #width fm
+				 then (r, empty)
+				 else (#width fm, text "," ^/^ ppRow ellDoc)
+
+		fun ppRows i =
+		    if i = nr then docR0 else
+		    let
+			val xs = VectorSlice.toList(VectorSlice.slice(
+					Array2.row(x,i), 0, SOME nc))
+		    in
+			(if i = 0 then empty else text "," ^^ break ) ^^
+			ppRow(ppCommaList Fn.id (List.map ppElem xs @ docC0)) ^^
+			ppRows(i+1)
+		    end
+	    in
+		SOME(ppKeyword fm (
+		    abox(text "array2"  ^^
+			contain ("{", "}") (below(
+			    if c*r > 0
+			    then vbox(ppRows 0)
+			    else ppRow(text(Int.toString r^"*"^Int.toString c))
+			))
+		    )
+		))
+	    end
+	end
+
+    fun ppAtom t fm x =
+	let
+	    val doc' = ppVal' typ_string (elem fm) (Atom.toString x)
+	in
+	    SOME(ppCustom fm (text "atom", [doc']))
+	end
+
+    fun ppTime t fm x =
+	SOME(ppCustom fm (text "time",
+		[text(LargeInt.toString(Time.toMicroseconds x) ^ "us")]))
+
+    fun ppThread t fm x =
+	let
+	    structure T = Reflect.ReflectType(type t = Thread.state)
+	in
+	    SOME(ppCustom fm (text "thread",
+			      [ppVal T.x (Thread.state x)]))
+	end
+
+    fun ppLock t fm (x : Lock.lock) =
+	SOME(ppCustom fm (text "lock", []))
+
+    fun ppPackage t fm (x : Package.package) =
+	let
+	    (* TODO: what do we display here? *)
+	in
+	    SOME(ppCustom fm (text "package", [text "..."]))
+	end
+in
+    val defaultDepth = defaultDepth
+    val defaultWidth = defaultWidth
+    val ppVal  = ppVal
+    val ppVal' = ppVal'
+
+    val registerTyp' = registerTyp'
+    __overload 'a registerTyp   : 'a printer -> unit = registerTyp'
+    __overload 'a unregisterTyp : 'a -> unit = unregisterTyp'
+
+
+    __overload 'a ppExnWithArg : format -> exn -> 'a -> doc option = 
+            ppExnWithArg'
+
+  (* Register *)
+
+    val _ = registerTyp ppInt
+    val _ = registerTyp ppIntInf
+    val _ = registerTyp ppWord
+    val _ = registerTyp ppWord8
+    val _ = registerTyp ppWord32
+    val _ = registerTyp ppReal
+    val _ = registerTyp ppChar
+    val _ = registerTyp ppString
+    val _ = registerTyp ppExn
+    val _ = registerTyp ppRef
+    val _ = registerTyp ppPromise
+    val _ = registerTyp ppVector
+    val _ = registerTyp ppArray
+    val _ = registerTyp ppArray2
+    val _ = registerTyp ppVectorSlice
+    val _ = registerTyp ppArraySlice
+    val _ = registerTyp ppAtom
+    val _ = registerTyp ppTime
+    val _ = registerTyp ppThread
+    val _ = registerTyp ppLock
+    val _ = registerTyp ppPackage
+    val _ = registerTyp ppWord8Vector
+    val _ = registerTyp ppWord8Array
+    val _ = registerTyp ppCharArray
+    val _ = registerTyp ppWord8VectorSlice
+    val _ = registerTyp ppWord8ArraySlice
+    val _ = registerTyp ppCharVectorSlice
+    val _ = registerTyp ppCharArraySlice
+end
+end

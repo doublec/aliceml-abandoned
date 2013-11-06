@@ -1,0 +1,117 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Date structure", "The <TT>Date</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature DATE
+    structure Date : DATE
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/date.html"><TT>Date</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="time.html"><TT>Time</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature DATE =
+    sig
+	datatype weekday = Sun | Mon | Tue | Wed | Thu | Fri | Sat
+	datatype month = Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
+	type date
+	type t = date
+
+	exception Date
+    
+	val date :          {year :   int,
+			     month :  month,
+			     day :    int,
+			     hour :   int,
+			     minute : int,
+			     second : int,
+			     offset : Time.time option} -> date
+
+	val year :          date -> int
+	val month :         date -> month
+	val day :           date -> int
+	val hour :          date -> int
+	val minute :        date -> int
+	val second :        date -> int
+	val weekDay :       date -> weekday
+	val yearDay :       date -> int
+	val offset :        date -> Time.time option
+	val isDst :         date -> bool option
+
+	val localOffset :   unit -> Time.time
+
+	val fromTimeLocal : Time.time -> date
+	val fromTimeUniv :  Time.time -> date
+	val toTime :        date -> Time.time
+
+	val fmt :           string -> date -> string
+	val toString :      date -> string
+	val scan :          (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
+	val fromString :    string -> date option
+
+	val toISO :	    date -> string
+	val scanISO :	    (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
+	val fromISO :	    string -> date option
+
+	val compare :       date * date -> order
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/date.html"><TT>Date</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type <A name="#t">t</A> = date</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>date</TT>.</P>
+    </DD>
+    
+    <DT>
+      <TT>toISO <I>date</I></TT>
+    </DT>
+    <DD>
+      <P>Return a string representation of the date <I>date</I> conforming to the
+      ISO 8601 format.
+    </DD>
+
+    <DT>
+      <TT>fromISO <I>repr</I></TT>
+    </DT>
+    <DD>
+      <P>Convert a string representation conforming to the ISO 8601 format into a date.
+      Returns NONE if the string could not be converted.
+    </DD>
+
+    <DT>
+      <TT>scanISO <I>getc</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Scan a string representation conforming to the ISO 8601 format into a date.
+      Returns NONE if the scanned representation could not be converted.
+    </DD>
+
+  </DL>
+
+<?php footing() ?>

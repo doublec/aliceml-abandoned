@@ -1,0 +1,60 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature GUISIGNALS_SIG from "GuiSignals"
+import structure GuiMain from "GuiMain"
+import structure TipDialog from "TipDialog"
+import structure AboutDialog from "AboutDialog"
+
+structure EventHandler : GUISIGNALS_SIG =
+    struct
+        fun on_new1_activate _ = GuiMain.new()
+        fun on_open1_activate _ = GuiMain.openFile()
+        fun on_revert1_activate _ = GuiMain.revertFile()
+        fun on_save1_activate _ = GuiMain.saveFile()
+        fun on_save_as1_activate _ = GuiMain.saveFileAs()
+        fun on_close1_activate _ = GuiMain.close()
+        fun on_compilefile_activate _ = GuiMain.compile ()
+        fun on_quit1_activate _ = GuiMain.quit()
+        fun on_undo_activate _ = GuiMain.undo()
+        fun on_cut1_activate _ = GuiMain.cut()
+        fun on_copy1_activate _ = GuiMain.copy()
+        fun on_paste1_activate _ = GuiMain.paste()
+        fun on_delete1_activate _ = GuiMain.delete()
+        fun on_syntax_colouring_activate _ = GuiMain.syntax()
+        fun on_find_activate _ = GuiMain.search()
+        fun on_replace_activate _ = GuiMain.replaceSearch()
+	fun on_find_again_activate arg = GuiMain.searchAgain arg
+        fun on_feedregion_activate _ = GuiMain.feedRegion()
+        fun on_feedfile_activate _ = GuiMain.feedFile()
+	fun on_jump_to_last_error_activate _ = GuiMain.jumpToLastError()
+        fun on_interrupt_activate _ = GuiMain.interruptEval()
+        fun on_background_activate _ = GuiMain.backgroundEval()
+        fun on_tip1_activate _ = TipDialog.openDialog()
+        fun on_about1_activate _ = AboutDialog.openDialog()
+        fun on_notebook1_switch_page (notebook,_) = GuiMain.switchPage notebook
+	fun on_forward_in_history_activate _ = GuiMain.forwardHistory ()
+	fun on_back_in_history_activate _ = GuiMain.backwardHistory ()
+	fun on_go_to_line_activate _ = GuiMain.gotoLine()
+	fun on_indent_region_activate _ = GuiMain.indentSelection true
+	fun on_outdent_region_activate _ = GuiMain.indentSelection false
+	fun on_reset_activate _ = GuiMain.reset()
+	fun on_switch_to_editor_activate _ = GuiMain.switchTo 0
+	fun on_switch_to_compiler_activate _ = GuiMain.switchTo 1
+	fun on_switch_to_io_activate _ = GuiMain.switchTo 2
+	fun on_clear_io_activate _ = GuiMain.clearIO ()
+	fun on_syntax_colouring_activate _ = GuiMain.activateSyntax()
+	fun on_preferences_activate _ = GuiMain.preferences()
+	fun on_previous_file_activate _ = GuiMain.switchFile false
+	fun on_next_file_activate _ = GuiMain.switchFile true
+    end

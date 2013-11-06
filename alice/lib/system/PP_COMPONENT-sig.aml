@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure Reflect     from "../system/Reflect"
+import structure Inf         from "../rtt/Inf"
+
+signature PP_COMPONENT =
+sig
+    type doc    = PrettyPrint.doc
+    type module = Reflect.module
+    type inf    = Inf.t
+
+    val ppComp : module * inf -> doc
+end

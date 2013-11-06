@@ -1,0 +1,63 @@
+import structure Instructions from "Instructions"
+
+structure InstructionsParser :>
+sig
+    exception Error of string
+
+    val parseFile : string -> unit Instructions.ant
+end
+=
+struct
+    structure I = Instructions
+
+    exception Error of string
+
+    fun parseInt s = valOf (Int.fromString s) handle Option => raise Error "int"
+
+    fun parseDir "here"		= I.Here
+      | parseDir "ahead"	= I.Ahead
+      | parseDir "leftahead"	= I.LeftAhead
+      | parseDir "rightahead"	= I.RightAhead
+      | parseDir _		= raise Error "sensedir"
+
+    fun parseLr "left"		= I.Left
+      | parseLr "right"		= I.Right
+      | parseLr _		= raise Error "leftright"
+
+    fun parseCond ("friend"::_)		= I.Friend
+      | parseCond ("foe"::_)		= I.Foe
+      | parseCond ("friendwithfood"::_)	= I.FriendWithFood
+      | parseCond ("foewithfood"::_)	= I.FoeWithFood
+      | parseCond ("food"::_)		= I.Food
+      | parseCond ("rock"::_)		= I.Rock
+      | parseCond ("marker"::i::_)	= I.Marker(parseInt i)
+      | parseCond ("foemarker"::_)	= I.FoeMarker
+      | parseCond ("home"::_)		= I.Home
+      | parseCond ("foehome"::_)	= I.FoeHome
+      | parseCond _			= raise Error "condition"
+
+    fun parseLine s =
+	case String.tokens Char.isSpace (String.map Char.toLower s)
+	 of "sense"::dir::st1::st2::cond => I.Sense(parseDir dir, parseInt st1, parseInt st2, parseCond cond, ())
+	  | "mark"::i::st::_ => I.Mark(parseInt i, parseInt st, ())
+	  | "unmark"::i::st::_ => I.Unmark(parseInt i, parseInt st, ())
+	  | "pickup"::st1::st2::_ => I.PickUp(parseInt st1, parseInt st2, ())
+	  | "drop"::st::_ => I.Drop(parseInt st, ())
+	  | "turn"::lr::st::_ => I.Turn(parseLr lr, parseInt st, ())
+	  | "move"::st1::st2::_ => I.Move(parseInt st1, parseInt st2, ())
+	  | "flip"::p::st1::st2::_ => I.Flip(parseInt p, parseInt st1, parseInt st2, ())
+	  | _ => raise Error "instruction"
+
+    fun parseFile' f =
+	case TextIO.inputLine f
+	 of NONE   => nil
+	  | SOME s => parseLine s :: parseFile' f
+
+    fun parseFile filename =
+	let
+	    val f = TextIO.openIn filename
+	in
+	    Vector.fromList (parseFile' f)
+	    before TextIO.closeIn f
+	end
+end

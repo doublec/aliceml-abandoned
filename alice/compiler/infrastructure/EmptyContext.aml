@@ -1,0 +1,19 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature CONTEXT from "CONTEXT-sig"
+
+structure EmptyContext : CONTEXT =
+struct
+    type t    = unit
+    val empty = ()
+end

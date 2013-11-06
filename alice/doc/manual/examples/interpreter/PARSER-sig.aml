@@ -1,0 +1,14 @@
+(*
+ * Interpreter for F - Parser
+ *
+ * 2000/02/02 Andreas Rossberg
+ *)
+
+import structure Token  from "Token"
+import structure Syntax from "Syntax"
+
+signature PARSER =
+sig
+    exception Error
+    val parse : Token.token list -> Syntax.exp	(* [Error] *)
+end

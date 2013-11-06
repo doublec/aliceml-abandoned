@@ -1,0 +1,20 @@
+open Promise
+
+fun pipe(xs, l, h, f) = if l <= h then pipe(f(xs, l), l+1, h, f) else xs
+
+fun josephus(n, k) =
+    let
+	val last = promise()
+	fun victim(nil, i) = nil
+	  | victim((x,s)::xr, i) =
+	    if s = 1 then (fulfill(last, i); nil)
+	    else if x mod k = 0 then (x+1,s-1)::xr
+	    else (x+1,s)::(spawn victim(xr, i))
+	val zs = promise()
+    in
+	fulfill(zs, pipe((1,n)::future(zs), 1, n,
+			 fn(is, i) => spawn victim(is, i)));
+	future last
+    end
+
+val n = await(josephus(8,3))

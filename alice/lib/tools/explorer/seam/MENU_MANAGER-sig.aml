@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature MENU_MANAGER =
+    sig
+	type tree
+	type explorer_state
+
+	val switchItems : Gtk.object list * Gtk.object list * bool -> unit
+	val updateMenus : tree -> unit
+	val startSearch : unit -> unit
+	val finishSearch : unit -> unit
+	val refreshStatusbar : explorer_state option ref -> unit
+    end

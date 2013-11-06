@@ -1,0 +1,7 @@
+[submission]
+team: Helikopter
+contact-email: helikopter@ps.uni-sb.de
+address1: Universität des Saarlandes, Postfach 15 11 50
+address2: 66041 Saarbrücken, Germany
+phone: +49 681 302 5609
+md5sum: eff800793f8439c91cf56f286ee59af1

@@ -1,0 +1,53 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature HASHABLE             from "../../lib/data/HASHABLE-sig"
+import signature IMP_SET              from "../../lib/data/IMP_SET-sig"
+import structure Label                from "../../lib/rtt/Label"
+import structure Type                 from "../../lib/rtt/Type"
+import structure Stamp                from "../common/Stamp"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
+import structure Arity                from "Arity"
+import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar          from "FlatGrammar"
+
+signature INTERMEDIATE_AUX =
+    sig
+	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
+
+	val freshIntermediateId: I.id_info -> I.id
+
+	val litEq: I.lit * I.lit -> bool
+	val translateLit: O.lit_info * I.lit -> O.lit
+
+	type subst = (Stamp.t * Stamp.t) list
+
+	val substDec: I.dec * subst -> I.dec
+	val substExp: I.exp * subst -> I.exp
+
+	val separateAlt: I.pat -> I.pat
+
+	val idEq: O.id * O.id -> bool
+
+	structure IdKey: HASHABLE where type t = O.id
+	structure IdSet: IMP_SET where type item = O.id
+
+	val getUsedVars: O.exp * IdSet.t -> IdSet.t
+
+	val typToArity: Type.t -> Arity.t
+	val labelToIndex: Type.t * Label.t -> O.prod * int
+	val prodToLabels: O.prod -> Label.t vector
+
+	val reset: unit -> unit
+    end

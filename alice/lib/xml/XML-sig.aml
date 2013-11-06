@@ -1,0 +1,60 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ * 
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature XML =
+    sig
+	type xml_node
+
+	exception XMLError of string
+
+	datatype xml_node_type =
+	    ATTRIBUTE_DECL
+	  | ATTRIBUTE_NODE
+	  | CDATA_SECTION_NODE
+	  | COMMENT_NODE
+	  | DOCB_DOCUMENT_NODE
+	  | DOCUMENT_FRAG_NODE
+	  | DOCUMENT_NODE
+	  | DOCUMENT_TYPE_NODE
+	  | DTD_NODE
+	  | ELEMENT_DECL
+	  | ELEMENT_NODE
+	  | ENTITY_DECL
+	  | ENTITY_NODE
+	  | ENTITY_REF_NODE
+	  | HTML_DOCUMENT_NODE
+	  | NAMESPACE_DECL
+	  | NOTATION_NODE
+	  | PI_NODE
+	  | TEXT_NODE
+	  | XINCLUDE_END
+	  | XINCLUDE_START
+
+	infix />
+	fun /> : xml_node * (xml_node -> 'a) -> 'a
+
+	val parse : string -> xml_node
+	val parseString : string -> xml_node
+	fun name : xml_node -> string
+	fun children : xml_node -> xml_node list
+	fun null : xml_node -> bool
+	fun parent : xml_node -> xml_node
+	fun properties : xml_node -> xml_node list
+	fun getType : xml_node -> xml_node_type
+	fun getProp : xml_node -> string -> string option
+	fun getContent : xml_node -> bool -> string option
+    end

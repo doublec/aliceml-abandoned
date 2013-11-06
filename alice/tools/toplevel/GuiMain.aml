@@ -1,0 +1,1019 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Store from "x-alice:/lib/system/Store"
+import structure Stream from "x-alice:/lib/data/Stream"
+import structure Gui from "Gui"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure Channel from "x-alice:/lib/data/Channel"
+import structure OutputWriters from "OutputWriters"
+import structure Evaluator from "Evaluator"
+import structure Buffer from "Buffer"
+import structure Config from "Config"
+import structure History from "History"
+import structure TipDialog from "TipDialog"
+import structure FileDialog from "FileDialog"
+import structure SearchDialog from "SearchDialog"
+import structure BufferHighlight from "BufferHighlight"
+import structure BufferAnnotate from "BufferAnnotate"
+import structure Preferences from "Preferences"
+
+structure GuiMain =
+    struct
+	val reallyQuit = ref false
+
+        (* Buffers *)
+
+        val clipboard = Gtk.Clipboard.get(Gdk.Atom.intern("CLIPBOARD", false))
+        datatype active_view = COMPILER | STDSTREAMS | BUFFER of Gtk.object
+        val curtextview = ref COMPILER
+
+        val numberOfPages = ref 0
+        val currentPage = ref ~1
+
+        val pages = ref nil
+        fun removePage i =
+            let
+                val (pre,post) = List.split(!pages, i+1)
+                val (pre,p) = case List.split(pre,i) of
+                                  (pre, [p]) => (pre,p)
+                                | _ => raise Match
+                                             (* to make compiler happy *)
+            in
+                (pages := (List.take(pre,i)@post));
+                p
+            end
+        fun addPage p = pages := (!pages)@[p]
+        fun getPage i = List.nth (!pages, i)
+        fun getCurrentPage () =
+            case !currentPage of ~1 => NONE
+                               | i => SOME (getPage i)
+	fun findPage id = Option.map #1 (List.findi (fn (_,i) => i=id) (!pages))
+            
+        fun undo() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => Buffer.undo id
+
+        fun getCurViewBuf () =
+            let
+                val view = case (!curtextview) of
+                               BUFFER view => view
+                             | COMPILER => Gui.compilerout
+                             | STDSTREAMS => Gui.progout
+            in
+                (view, Gtk.TextView.getBuffer view)
+            end
+
+        fun getCurBuf () = #2 (getCurViewBuf ())
+
+        fun copy() = Gtk.TextBuffer.copyClipboard(getCurBuf(), clipboard)
+
+        fun paste() =
+            let
+		val txt = Gtk.Clipboard.waitForText clipboard
+		val (view, buf) = getCurViewBuf()
+	    in
+		Gtk.TextBuffer.beginUserAction buf;
+		Gtk.TextBuffer.deleteSelection(buf, true, true);
+		Gtk.TextBuffer.insertInteractiveAtCursor(buf,txt,~1,true);
+		Gtk.TextBuffer.endUserAction buf;
+		Gtk.TextView.scrollToMark(view, Gtk.TextBuffer.getInsert buf,
+					 0.0, false, 0.0, 0.0);
+		()
+	    end
+
+        fun cut() =
+            Gtk.TextBuffer.cutClipboard(getCurBuf(), clipboard, true)
+
+        fun delete() =
+            ignore (Gtk.TextBuffer.deleteSelection(getCurBuf(), true, true))
+
+        fun syntax() =
+            case (!curtextview) of BUFFER view =>
+                BufferHighlight.highlightAll(Gtk.TextView.getBuffer view, ref false)
+              | _ => ()
+
+        fun search() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => SearchDialog.search id
+
+	fun searchAgain arg =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => SearchDialog.searchAgain(id, arg)
+
+        fun replaceSearch() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => SearchDialog.replace id
+
+	fun gotoLine() =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id => SearchDialog.gotoLine id
+
+	fun bufferMenus activate =
+	    (app (fn w => Gtk.Widget.setSensitive(w,activate))
+	     [Gui.revert1,Gui.save1,Gui.save_as1,Gui.go_to_line,
+	      Gui.undo,Gui.find,Gui.replace,Gui.find_again,
+	      Gui.feedfile,Gui.syntax_colouring,
+	      Gui.compilefile,Gui.indent_region, Gui.outdent_region];
+	     app (fn w => Gtk.Widget.setSensitive(w,not activate))
+	     [Gui.back_in_history,Gui.forward_in_history])
+
+        fun changeFocus view _ =
+	    let
+		val _ = curtextview := view
+		val _ = case view of
+		    BUFFER _ => (bufferMenus true;
+				 Gtk.Widget.setSensitive(Gui.feedregion,true))
+		  | COMPILER => (bufferMenus false;
+				 Gtk.Widget.setSensitive(Gui.feedregion,true))
+		  | STDSTREAMS => (bufferMenus false;
+				   Gtk.Widget.setSensitive(Gui.feedregion,false))
+		val _ = case getCurrentPage() of
+		    NONE =>
+			(Gtk.Widget.setSensitive(Gui.revert1,false);
+			 Gtk.Widget.setSensitive(Gui.compilefile,false))
+		  | SOME id =>
+			let val named = Option.isSome (Buffer.getFileName id) in
+			    Gtk.Widget.setSensitive(Gui.revert1,named);
+			    Gtk.Widget.setSensitive(Gui.compilefile,named);
+			    Gtk.CheckMenuItem.setActive(Gui.syntax_colouring,
+					     Buffer.getSyntaxHighlighting id)
+			end
+		val pages = List.length (!pages) > 0
+		val _ = Gtk.Widget.setSensitive(Gui.previous_file, pages)
+		val _ = Gtk.Widget.setSensitive(Gui.next_file, pages)
+	    in ()
+	    end
+
+        fun markSet id (buf,_) =
+            let
+                val cursor = Gtk.TextBuffer.getInsert buf
+		val (line, col, annot) = Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+			 val iter = Gtk.TextIter.new()
+			 val _ = Gtk.TextBuffer.getIterAtMark(buf,iter,cursor)
+                         val annot = ref NONE
+		     in
+			 List.app (fn tag =>
+			    let val name = Gtk.Prop.get Gtk.TextTag.name tag
+			    in
+				if BufferAnnotate.isAnnotationTagName name
+				then
+				    let
+					val i = BufferAnnotate.annotationIndex name
+					val annotTags = Buffer.getAnnotTags id
+				    in
+					annot := SOME(#2(Vector.sub(!annotTags, i)))
+				    end
+				else ()
+			    end
+			 ) (Gtk.TextIter.getTags iter);
+			 (Buffer.getLine iter, Buffer.getColumn iter, !annot)
+		     end) ()
+            in
+                Stream.send(OutputWriters.rowCol, (line, col, annot))
+            end
+
+	(* Do not allow cursor in first two columns of compiler output *)
+	fun compilerOutMarkSet (buf,[_,Gtk.OBJECT mark]) =
+	    let
+		val markName = Gtk.TextMark.getName mark
+	    in
+		if markName="insert" orelse markName="selection_bound" then
+		Lock.sync Gtk.lock
+		(fn () =>
+		 let
+		     val iter = Gtk.TextIter.new ()
+		     val _ = Gtk.TextBuffer.getIterAtMark(buf,iter,mark)
+		     val line = Gtk.TextIter.getLine iter
+		     val off = Gtk.TextIter.getLineOffset iter
+		     val iter' = Gtk.TextIter.copy iter
+		     val _ = Gtk.TextIter.forwardChars(iter', 2)
+		     val forbidden = off<2 andalso
+			 (Gtk.TextIter.setLineOffset(iter, 0);
+			  Gtk.TextBuffer.getText(buf,iter,iter',true)="> ")
+		 in
+		     if forbidden then
+			 (if off=1 andalso Gtk.TextIter.backwardLine iter' then
+			      (Gtk.TextIter.forwardToLineEnd iter'; ())
+			  else (* off=0 *) ();
+			  Gtk.TextBuffer.moveMark(buf,mark,iter'))
+		     else ()
+		 end
+		 ) ()
+		else ()
+	    end
+	  | compilerOutMarkSet (_, _) = assert(false)
+
+	val notebookSwitchEventIdP = Promise.promise()
+	val notebookSwitchEventId = Promise.future notebookSwitchEventIdP
+        fun switchPage notebook =
+            let
+                val curPage = Gtk.Notebook.getCurrentPage notebook
+                val scrWin = Gtk.Notebook.getNthPage(notebook, curPage)
+                val textView = Gtk.Bin.getChild scrWin
+            in
+		currentPage := curPage;
+		markSet curPage (Gtk.TextView.getBuffer textView, ());
+		case !curtextview of
+		    BUFFER _ => (curtextview := BUFFER textView;
+				 Option.app SearchDialog.reconnect (getCurrentPage()))
+		  | _ => ()                
+            end
+
+        fun checkNotebookSize() =
+            let
+		 val rq1 = Gdk.Rectangle.new { width = 0, height = 0, x = 0, y = 0 }
+		 val _ = Gtk.TextView.getVisibleRect(Gui.compilerout,rq1)
+		 val rq2 = Gdk.Rectangle.new { width = 0, height = 0, x = 0, y = 0 }
+		 val _ = Gtk.TextView.getVisibleRect(Gui.progout,rq2)
+
+		 val buf = Gtk.TextView.getBuffer Gui.compilerout
+		 val progBuf = Gtk.TextView.getBuffer Gui.progout
+
+		 (* Hack alert: The scrollbar between the two panes *)
+		 (* seems to be about 18 pixels high...*)
+		 val h1 = Gdk.Rectangle.getFieldHeight rq1 + 18
+		 val h2 = Gdk.Rectangle.getFieldHeight rq2
+		 val ratio = Real.fromInt h1 / Real.fromInt (h1+h2)
+	     in
+		 if Gtk.Notebook.getNPages Gui.notebook1 > 0
+		     then (if Gtk.Paned.getPosition Gui.vpaned1 = 0 then
+			   let
+			       val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
+			   in
+			       Gtk.Paned.setPosition(Gui.vpaned2,Real.round newPos);
+			       Gtk.Paned.setPosition(Gui.vpaned1,Config.editorHeight)
+			   end
+			   else ();
+			   Gtk.Widget.setSensitive(Gui.switch_to_editor, true))
+		 else
+		     let
+			 val editorHeight = Gtk.Paned.getPosition Gui.vpaned1
+			 val newHeight = editorHeight+h1+h2
+			 val newPos = Real.fromInt newHeight * ratio
+		     in
+			 Gtk.Paned.setPosition(Gui.vpaned1,0);
+			 Gtk.Paned.setPosition(Gui.vpaned2,Real.round newPos);
+			 Gtk.Widget.grabFocus Gui.compilerout;
+			 Gtk.Widget.setSensitive(Gui.switch_to_editor, false)
+		     end;
+		 (* Hack alert: scroll to end mark seems to have no effect if
+		  * performed immediately... so wait for a moment... *)
+		 spawn (
+		     await(Future.alarm(Time.fromMilliseconds(Int.toLarge 300)));
+		     Gtk.TextView.scrollToMark(Gui.compilerout,
+					      Gtk.TextBuffer.getInsert buf,
+					      0.0, false, 0.0, 0.0);
+		     Gtk.TextView.scrollToMark(Gui.progout,
+					      Gtk.TextBuffer.getInsert progBuf,
+					      0.0, false, 0.0, 0.0)
+		 );
+		 ()
+	     end
+
+	fun saveSettings () =
+	    let
+		val (x,y) = Gtk.Window.getPosition (Gui.mainwidget, 0, 0) (* dummy arguments, thanks to interface bug *)
+		val (w,h) = Gtk.Window.getSize (Gui.mainwidget, 0, 0) (* dummy arguments, thanks to interface bug *)
+		val bufferPane = Gtk.Paned.getPosition Gui.vpaned1
+		val ioPane = Gtk.Paned.getPosition Gui.vpaned2
+	    in
+		Config.saveHistory (History.get(), Buffer.getFileNames());
+		Config.saveGeometry {x, y, w, h, bufferPane, ioPane}
+	    end
+
+	datatype open_mode = datatype Buffer.load_mode
+
+        fun new' file =
+            let
+		val _ = Gtk.signalHandlerBlock(Gui.notebook1,
+						notebookSwitchEventId)
+                val id = !numberOfPages
+		val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
+                                                    id, file, mode=NEW}
+            in
+                Gtk.Widget.grabFocus (view);
+                Gtk.signalConnect(buf, "mark-set", markSet id);
+                Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
+                markSet id (buf, nil);
+                addPage(!numberOfPages);
+                numberOfPages := (!numberOfPages) + 1;
+		switchPage Gui.notebook1;
+		Gtk.signalHandlerUnblock(Gui.notebook1,
+					 notebookSwitchEventId);
+                changeFocus (BUFFER view) ();
+                checkNotebookSize()
+            end
+        fun new() = new' NONE
+
+        fun openGivenFile mode f =
+	    let
+	        val f = OS.Path.mkCanonical f
+		val (buf,id) = Buffer.getBufferByName
+		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
+	    in
+	        Gtk.Window.present Gui.mainwidget;
+		case buf of
+		    SOME buf =>
+		    Gtk.Notebook.setCurrentPage(Gui.notebook1, valOf (findPage id))
+		  | NONE =>
+                let
+		    val file = OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()}
+		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
+						    notebookSwitchEventId)
+                    val id = !numberOfPages
+		    val {buf,view,highlight,...} =
+                        Buffer.buffer {notebook=Gui.notebook1, mode, id,
+                                       file=SOME file}
+                in
+                    Gtk.signalConnect(buf, "mark-set", markSet id);
+                    Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
+                    Gtk.Widget.grabFocus (view);
+                    markSet id (buf, nil);
+                    addPage(!numberOfPages);
+                    numberOfPages := (!numberOfPages) + 1;
+		    switchPage Gui.notebook1;
+		    Channel.put(highlight, SOME 0);
+                    checkNotebookSize()
+                end
+		handle Buffer.Abort{quit} =>
+		    if quit then (reallyQuit := true;
+				  OS.Process.exit OS.Process.success) else ()
+	    end
+	    finally Gtk.signalHandlerUnblock(Gui.notebook1, notebookSwitchEventId)
+
+	fun openFile () =
+	    let
+		val file =
+		    case getCurrentPage() of
+			NONE => !Config.workDir
+		      | SOME id =>
+		    case Buffer.getFileName id of
+			NONE => !Config.workDir
+		      | SOME f => OS.Path.getParent f
+	    in
+		case FileDialog.openFile("Open file", file ^ "/") of
+		    NONE => ()
+		  | SOME f => (Config.workDir := OS.Path.dir f;
+			       openGivenFile EXPLICIT f);
+		saveSettings ()
+	    end
+       
+	fun saveGivenFileAs id =
+	    let
+		val file =
+		    Option.getOpt(Buffer.getFileName id, !Config.workDir^"/")
+	    in
+		case FileDialog.openFile("Save file",file) of
+		    NONE => ()
+		  | SOME f => (Config.workDir := OS.Path.dir f;
+			       Buffer.saveAs (id, f))
+	    end
+        fun saveFileAs () =
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id => saveGivenFileAs id;
+	     saveSettings ())
+
+        fun saveFile () =
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+                                     if Buffer.save id then ()
+                                     else saveGivenFileAs id;
+	     saveSettings ())
+
+        fun reallyRevert id _ = Buffer.revert id
+
+        fun revertFile () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            if Buffer.canClose id then
+		 reallyRevert id ()
+	    else FileDialog.modifiedWarning
+		 ("Buffer modified.", "Discard changes and proceed, or cancel?",
+		  reallyRevert id, !currentPage)
+
+
+        (* Evaluation *)
+
+        val evalSignal = ref NONE
+
+        fun eval (echo,withDir) "" = NONE
+	  | eval (echo,withDir) text =
+            (* FIXME: race condition, use promises and Ref.exchange! *)
+	    case (!evalSignal) of NONE =>
+	    let
+                val signalP = Promise.promise()
+		val signal = Promise.future signalP
+		val text = if String.sub (text, String.size text - 1) = #"\n"
+			   then text else text ^ "\n"
+                fun find(i ,str) =
+                    if i=String.size str then "\n"
+                    else if Char.isSpace (String.sub(str,i)) then
+                        find(i+1, str)
+                    else String.extract(str, i, NONE)
+		val dir = OS.FileSys.getDir()
+		val srcDir = if not withDir then NONE else
+			     case getCurrentPage()
+			       of NONE => NONE
+			        | SOME id =>
+			     case !(#file(Buffer.Map.lookupExistent(Buffer.bufferMap, id)))
+			       of NONE => NONE
+				| SOME p => SOME(OS.Path.getParent p)
+					    handle OS.Path.Path => NONE
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
+	    in
+                evalSignal := SOME signalP;
+		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
+                else ();
+		spawn (Option.app OS.FileSys.chDir srcDir;
+		       Evaluator.eval (text, signal);
+                       (* Hack: this fails when the feeded code cd'ed to
+		        * its own directory... *)
+		       Option.app (fn dir' => if dir' <> OS.FileSys.getDir() then ()
+					      else OS.FileSys.chDir dir) srcDir;
+		       let
+			   val (annotStream',entries) =
+		               BufferAnnotate.parseAnnotations annotStream
+			       handle BufferAnnotate.Malformed =>
+				   (TextIO.StreamIO.output(OutputWriters.compilerErr,
+					   "\nerror processing annotations\n");
+				    (["##\n"], #[]))
+		       in
+			   Promise.fulfill(p, annotStream'); SOME entries
+		       end
+		       before evalSignal := NONE
+		      )
+	    end
+          | SOME _ => (FileDialog.message "Still evaluating."; NONE)
+
+        fun feedFile() =
+            (* FIXME: race condition, use promises and Ref.exchange! *)
+            case (!evalSignal) of
+	        SOME _ => FileDialog.message "Still evaluating."
+	      | NONE =>
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val _ = saveFile ()
+		val file = Buffer.getFileName id
+            in
+		case file of
+                    NONE => ()
+                  | SOME f =>
+		    let
+			val p = Promise.promise()
+			val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
+                	val signalP = Promise.promise()
+			val signal = Promise.future signalP
+		    in
+                	evalSignal := SOME signalP;
+			spawn (Evaluator.evalFile (f, signal);
+                	       evalSignal := NONE);
+			let
+			    val (annotStream',entries) =
+		        	BufferAnnotate.parseAnnotations annotStream
+			        handle BufferAnnotate.Malformed =>
+				   (TextIO.StreamIO.output(OutputWriters.compilerErr,
+					   "\nerror processing annotations\n");
+				    (["##\n"], #[]))
+			in
+			    Promise.fulfill(p, annotStream');
+			    Buffer.annotate(id, entries)
+			end
+		    end
+            end
+(*
+            case (!curtextview) of BUFFER view =>
+            let
+                val buf = Gtk.TextView.getBuffer view
+		val str = Lock.sync Gtk.lock
+		    (fn () => let
+		     val startiter = Gtk.TextIter.new()
+		     val _ = Gtk.TextBuffer.getStartIter(buf,startiter)
+		     val enditer = Gtk.TextIter.new()
+		     val _ = Gtk.TextBuffer.getEndIter(buf,enditer)
+		     in Gtk.TextBuffer.getText(buf, startiter, enditer, false)
+		     end) ()
+                val str = Gtk.utf8ToLatin1 str
+            in
+                eval (true,true) str
+            end
+                                 | _ => ()
+*)
+        fun addSpace(line, col, str) =
+            String.tabulate(line-1, fn _ => #"\n") ^
+	    String.tabulate(col, fn _ => #" ") ^ str
+
+        fun feedSelection() =
+            case (!curtextview) of BUFFER view =>
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val buf = Gtk.TextView.getBuffer view
+		val (sel, txt, line, col) =
+		    Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+		     val startiter = Gtk.TextIter.new()
+		     val enditer = Gtk.TextIter.new()
+		     in
+			 (Gtk.TextBuffer.getSelectionBounds(buf,
+                                                           startiter,enditer),
+			  Gtk.TextBuffer.getText(buf, startiter, enditer, false),
+			  Buffer.getLine startiter,
+			  Buffer.getColumn startiter)
+		     end) ()
+            in
+                if not sel then () else
+		case eval (true,true) (addSpace(line, col, Gtk.utf8ToLatin1 txt))
+		 of NONE => ()
+		  | SOME entries => Buffer.annotate(id, entries)
+            end)
+           | _ => ()
+
+        fun feedLine() =
+            case (!curtextview) of BUFFER view =>
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val buf = Gtk.TextView.getBuffer view
+		val (startline, str) = Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+			 val startiter = Buffer.getCursorIter buf
+			 val enditer = Gtk.TextIter.copy(startiter)
+		     in
+			 Gtk.TextIter.setLineOffset(startiter, 0);
+			 Gtk.TextIter.forwardToLineEnd(enditer);
+			 (Buffer.getLine startiter,
+			  Gtk.TextBuffer.getText(buf,
+						startiter, enditer, false))
+		     end) ()
+                val str = addSpace(startline, 0, Gtk.utf8ToLatin1 str)
+            in
+		case eval (true, true) str
+		 of NONE => ()
+		  | SOME entries => Buffer.annotate(id, entries)
+            end)
+           | _ => ()
+
+        fun findNextEOL iter next =
+            if next iter then
+                let
+                    val c = chr (Gtk.TextIter.getChar iter)
+                in
+                    if c = #"\n" then ()
+                    else if Char.isSpace c then findNextEOL iter next
+                    else findEOP iter next
+                end
+            else ()
+        and findEOP iter next =
+            let
+                val c = Gtk.TextIter.getChar iter
+            in
+                if c=0 then ()
+                else
+                    if c=ord #"\n" then
+                        findNextEOL iter next
+                    else if next iter then
+                        findEOP iter next
+                    else ()
+            end
+
+        fun findNonWS iter next =
+            let
+                val c = Gtk.TextIter.getChar iter
+            in
+                if c=0 then ()
+                else if Char.isSpace (chr c) then
+                    (next iter; findNonWS iter next)
+                else ()
+            end
+
+        fun eolBeforeNonWS acc iter next =
+            let
+                val c = Gtk.TextIter.getChar iter
+            in
+                if c=0 then acc
+                else if Char.isSpace (chr c) then
+                    (next iter;
+                     eolBeforeNonWS (acc + (if c = ord #"\n" then 1 else 0)) iter next)
+                else acc
+            end
+
+        fun paragraphIters(buf) =
+            let
+                val startiter = Buffer.getCursorIter buf
+                val c = Gtk.TextIter.getChar startiter
+                val _ = if c = ord #"\n" orelse c=0 then
+                            Gtk.TextIter.backwardChar startiter else false
+                val enditer = Gtk.TextIter.copy(startiter)
+                val _ = findEOP startiter Gtk.TextIter.backwardChar
+                val _ = findEOP enditer Gtk.TextIter.forwardChar
+                val _ = findNonWS startiter Gtk.TextIter.forwardChar
+                val _ = findNonWS enditer Gtk.TextIter.backwardChar
+                val _ = Gtk.TextIter.forwardChar enditer (* end is exclusive! *)
+		val _ = Gtk.TextIter.setLineOffset(startiter, 0)
+            in
+                (startiter, enditer)
+            end
+
+        fun feedRegion() =
+            case (!curtextview) of BUFFER view =>
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val buf = Gtk.TextView.getBuffer view
+		val (str, line, col) = Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+		     val startiter = Gtk.TextIter.new()
+		     val enditer = Gtk.TextIter.new()
+		     val (startiter, enditer) = 
+			 if Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer)
+			     then (startiter, enditer)
+			 else let val (start,endd) = paragraphIters(buf)
+			      in Buffer.selectRange(buf, start, endd);
+				  (start,endd)
+			      end
+		     in
+			 (Gtk.TextBuffer.getText(buf, startiter, enditer, false),
+			  Buffer.getLine startiter,
+			  Buffer.getColumn startiter)
+		     end) ()
+
+                val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
+            in
+                case eval (true,true) (str^"\n")
+		 of NONE => ()
+		  | SOME entries => Buffer.annotate(id, entries)
+            end)
+	  | COMPILER => OutputWriters.feedCurrentInput ()
+	  | _ => ()
+
+        fun compile () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val _ = saveFile ()
+		val file = Buffer.getFileName id
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
+            in
+                case file of
+                    NONE => Promise.fulfill(p, annotStream)
+                  | SOME f => Evaluator.compileFile f;
+		let
+		    val (annotStream',entries) =
+		        BufferAnnotate.parseAnnotations annotStream
+		in
+		    Promise.fulfill(p, annotStream');
+		    Buffer.annotate(id, entries)
+		end handle BufferAnnotate.Malformed =>
+		    (Promise.fulfill(p, annotStream);
+		     TextIO.StreamIO.output(OutputWriters.compilerErr,
+					    "\nerror processing annotations\n"))
+            end
+
+        fun reallyClose p =
+            (Buffer.close (getPage p);
+	     removePage p;
+             Gtk.Notebook.removePage(Gui.notebook1, p);
+             currentPage := Gtk.Notebook.getCurrentPage Gui.notebook1)
+
+        fun close () = 
+	     case getCurrentPage() of NONE => ()
+	     			    | SOME id =>
+            (if Buffer.canClose id then
+		 reallyClose (!currentPage)
+             else FileDialog.modifiedWarning
+		 ("File modified.", "Discard changes and close anyway, or cancel?",
+		  reallyClose, !currentPage);
+	     saveSettings ();
+             checkNotebookSize())
+
+        fun interruptEval() =
+            case (!evalSignal) of
+                NONE => ()
+              | SOME s => Promise.fulfill(s,Evaluator.INTERRUPT)
+        fun backgroundEval() =
+            case (!evalSignal) of
+                NONE => ()
+              | SOME s => Promise.fulfill(s,Evaluator.STOP)
+
+        fun jumpToError (file, row, col, row', col') _ =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val (buf,id) =
+		    if file = ""
+		    then (SOME (Buffer.getBuffer id), id)
+		    else Buffer.getBufferByName
+			 (OS.Path.mkAbsolute {path=file,relativeTo=OS.FileSys.getDir()})
+	    in
+		case buf of
+		    NONE => ()
+		  | SOME buf =>
+	    Lock.sync Gtk.lock
+	    (fn () =>
+	    let
+                val lineCount = Gtk.TextBuffer.getLineCount buf
+                val startiter = Gtk.TextIter.new()
+                val _ = Gtk.TextBuffer.getStartIter(buf, startiter)
+                val enditer = Gtk.TextIter.copy startiter
+            in
+                if row <= lineCount andalso
+                   row' <= lineCount
+                then
+                    (Gtk.TextIter.setLine(startiter, row-1);
+                     Gtk.TextIter.setLine(enditer, row'-1);
+                     Buffer.moveToCol(startiter, col, 0);
+                     Buffer.moveToCol(enditer, col', 0);
+                     Buffer.selectRange(buf, enditer, startiter);
+		     Buffer.scrollToCursor id;
+		     Gtk.Notebook.setCurrentPage(Gui.notebook1,
+						valOf (findPage id));
+                     Gtk.Widget.grabFocus (Buffer.getView id))
+                    handle Buffer.Off => ()
+                else ()
+            end) ()
+	    end
+
+        fun findErrorStart' (iter, tag) =
+            if Gtk.TextIter.hasTag(iter, tag) then
+                (Gtk.TextIter.backwardChar iter; findErrorStart' (iter, tag))
+            else
+                ignore (Gtk.TextIter.forwardChar iter)
+		
+        fun findErrorStart (iter, tag) =
+            if Gtk.TextIter.hasTag(iter, tag) then
+		findErrorStart'(iter,tag)
+            else
+                if Gtk.TextIter.backwardChar iter then findErrorStart(iter, tag)
+		else ()
+
+	exception ParseError
+
+	fun findCoords([], fs) = raise ParseError
+	  | findCoords(s::ss, fs) =
+	    if CharVector.all (fn (#"." | #"-") => true | c => Char.isDigit c) s
+	    then (String.concatWith ":" (List.rev fs), s)
+	    else findCoords(ss, s::fs)
+
+	fun parseInt s =
+	    case Int.fromString s
+	     of SOME n => n
+	      | NONE => raise ParseError
+
+        fun parseErrorCoords s =
+            let
+		val (file, pos) = findCoords(String.tokens (fn c => c = #":") s, [])
+                val (s1,s2,s3,s4) =
+                    case String.tokens (fn c => c = #"-" orelse c = #".") pos
+                    of [s1,s2,s3,s4] => (s1,s2,s3,s4)
+                     | _ => raise ParseError
+            in
+                SOME (file, parseInt s1, parseInt s2, parseInt s3, parseInt s4)
+            end handle ParseError => NONE
+
+        fun populatePopup (view, [Gtk.OBJECT menu]) =
+            let
+                val separator= Gtk.MenuItem.new()
+                val showError = Gtk.MenuItem.newWithMnemonic("Jump to error location")
+                val buf = Gtk.TextView.getBuffer view
+                val cursor = Gtk.TextBuffer.getInsert(buf)
+	    in
+		Lock.sync Gtk.lock
+		(fn () =>
+		 let
+		     val iter = Gtk.TextIter.new()
+		     val _ = Gtk.TextBuffer.getIterAtMark(buf,iter,cursor)
+		     val errorTag =
+			 Gtk.TextTagTable.lookup(Gtk.TextBuffer.getTagTable buf,
+						"error")
+		     val onErrorLine = Gtk.TextIter.hasTag(iter, errorTag)
+		 in
+		     Gtk.Widget.setSensitive(showError,
+					    onErrorLine);
+		     if onErrorLine then
+			 let
+			     val _ = findErrorStart (iter, errorTag)
+			     val iter2 = Gtk.TextIter.copy iter
+			     val _ = Gtk.TextIter.forwardLine iter2
+			     val str = Gtk.utf8ToLatin1 (Gtk.TextIter.getText(iter, iter2))
+			     val coords = parseErrorCoords str
+			 in
+			     case coords of NONE => Gtk.Widget.setSensitive(showError,
+									   false)
+				 
+			   | SOME coords =>
+				 (Gtk.signalConnect(showError, "activate", jumpToError coords);
+				  ())
+			 end
+		     else ()
+		 end) ();
+                Gtk.Widget.show separator;
+                Gtk.Widget.show showError;
+                Gtk.Container.add(menu, separator);
+                Gtk.Container.add(menu, showError)
+            end
+          | populatePopup _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: popup\n")
+
+	fun jumpToLastError () =
+	    Lock.sync Gtk.lock
+	    (fn () =>
+	     let
+		 val buf = Gtk.TextView.getBuffer Gui.compilerout
+		 val iter = Gtk.TextIter.new()
+		 val _ = Gtk.TextBuffer.getEndIter(buf, iter)
+		 val errorTag =
+		     Gtk.TextTagTable.lookup(Gtk.TextBuffer.getTagTable buf,
+					    "error")
+		 val _ = findErrorStart (iter, errorTag)
+		 val iter2 = Gtk.TextIter.copy iter
+		 val _ = Gtk.TextIter.forwardLine iter2
+		 val str = Gtk.utf8ToLatin1 (Gtk.TextIter.getText(iter, iter2))
+		 val coords = parseErrorCoords str
+	     in
+		 case coords of
+		     NONE => ()
+		   | SOME coords => jumpToError coords ()
+	     end) ()
+
+	fun indentSelection indent =
+	    case getCurrentPage() of NONE => ()
+	  | SOME id => Buffer.indentSelection(id, indent)
+
+	fun reset () = Evaluator.reset()
+	    
+	val forwardHistory = OutputWriters.historyNext
+	val backwardHistory = OutputWriters.historyPrev
+
+	fun switchFile direction =
+	    let
+		val cp = !currentPage
+		val np = if direction then cp+1 else cp-1
+		val hi = List.length(!pages)-1
+		val np = if np < 0 then hi else if np > hi then 0 else np
+	    in
+		Gtk.Notebook.setCurrentPage(Gui.notebook1, np)
+	    end
+
+	fun switchTo 0 =
+	    (case getCurrentPage() of
+		 NONE => ()
+	       | SOME id => Gtk.Widget.grabFocus (Buffer.getView id))
+	  | switchTo 1 =
+		Gtk.Widget.grabFocus Gui.compilerout
+	  | switchTo 2 =
+		Gtk.Widget.grabFocus Gui.progout
+	  | switchTo _ = ()
+
+	fun clearIO () =
+	    Lock.sync Gtk.lock
+	    (fn () =>
+	        Gtk.TextBuffer.setText(Gtk.TextView.getBuffer Gui.progout, "", ~1)
+	    ) ()
+
+	fun activateSyntax () =
+	    case getCurrentPage() of
+		NONE => ()
+	      | SOME id =>
+		    Buffer.setSyntaxHighlighting
+		    (id, Gtk.CheckMenuItem.getActive Gui.syntax_colouring)
+
+
+	fun doQuit () = (saveSettings ();
+			 reallyQuit := true;
+			 OS.Process.exit OS.Process.success)
+
+	exception DiscardAll
+	fun quitCloseOpenFiles interactive (buffer as {id,buf,file,...} : Buffer.buffer) =
+	    if Gtk.TextBuffer.getModified buf then
+		case Gtk.ResponseType.fromInt 
+        (FileDialog.quitWarning(interactive,Option.getOpt(!file,"New File "^Int.toString id))) of
+		    Gtk.ResponseType.CANCEL => false
+		  | Gtk.ResponseType.OK => (* save *) if Buffer.save id then true
+						  else (saveGivenFileAs id; true)
+		  | Gtk.ResponseType.ACCEPT => (* save as *) (saveGivenFileAs id; true)
+		  | Gtk.ResponseType.REJECT => (* discard all *) raise DiscardAll
+		  | Gtk.ResponseType.CLOSE => (* discard *) true
+		  | Gtk.ResponseType.DELETE_EVENT => if interactive then false
+						 else quitCloseOpenFiles interactive buffer
+		  | _ => raise Match (* make compiler happy *)
+	    else true
+	    
+        fun quit' interactive = if !reallyQuit then ()
+		      else if Buffer.haveModified ()
+			       then if (Buffer.forallBuffers (quitCloseOpenFiles interactive)
+					handle DiscardAll => true) then
+				   doQuit ()
+				    else ()
+			   else doQuit ()
+
+	fun quit () = quit' true
+
+	fun heapLimitHandler limit =
+            let
+                val dialog =
+                    Gtk.MessageDialog.new(Gui.mainwidget,
+                                         [Gtk.DialogFlags.MODAL],
+                                         Gtk.MessageType.WARNING,
+                                         Gtk.ButtonsType.NONE,
+                                         "Configured heap limit of " ^
+					 Int.toString(!Config.heapLimit) ^
+					 "MB exceeded!\n\n\
+					 \Note: interrupting evaluation will \
+					 \only kill the main thread. If \
+					 \memory is consumed by concurrent \
+					 \computations you may need to \
+					 \exit and restart. Also, due to \
+					 \memory fragmentation, the limiter \
+					 \may become ineffective after \
+					 \multiple interruptions.")
+	        val _ = Gtk.Dialog.addButton(dialog, "Double Limit", 0)
+	        val _ = Gtk.Dialog.addButton(dialog, "Interrupt", 1)
+	        val _ = Gtk.Dialog.addButton(dialog, "Save & Exit", 2)
+		val response = Gtk.Dialog.run dialog
+            in
+                Gtk.Widget.destroy dialog;
+		case response of
+		    0 => (Config.heapLimit := !Config.heapLimit*2;
+		          Config.initHeapHandler ())
+		  | 1 => (interruptEval();
+			  Thread.yield (Thread.current ());
+			  (*) Collect twice to propagate all
+		          Store.collect 10; Store.collect 10;
+			  (*) Grant 10% more memory to proceed
+			  let val limit = !Config.heapLimit in
+			  Config.heapLimit := limit * 11 div 10;
+			  Config.initHeapHandler ();
+			  Config.heapLimit := limit end)
+		  | 2 => ((*)interruptEval();
+			  (*)Thread.yield (Thread.current ());
+		          (*)Store.collect 10; Store.collect 10;
+			  quit())
+		  | _ => OS.Process.exit OS.Process.failure
+            end
+
+        fun init notebookSwitchEventId =
+            ((* Gtk.setLogMode("GLib", Core.LOG_MODE_NULL);
+             Gtk.setLogMode("Gtk", Core.LOG_MODE_NULL); 
+             *)
+	     Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
+             Gtk.signalConnect(Gui.compilerout, "focus-in-event",
+                               changeFocus COMPILER);
+             Gtk.signalConnect(Gui.progout, "focus-in-event",
+                               changeFocus STDSTREAMS);
+	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
+	     OutputWriters.makeWriters (ignore o eval (false, false));
+	     History.set (Config.loadHistory());
+	     Gtk.TextView.setEditable(Gui.compilerout, false);
+	     case Config.loadGeometry () of
+		 NONE => 
+		 (Gtk.Paned.setPosition(Gui.vpaned1,0);
+	          (* workaround: Glade refuses to set pane position to 0,
+		   * but with 1 the statusbar appears over the menu when
+		   * using an eventbox... 8-} *)
+		  Gtk.Window.setDefaultSize(Gui.mainwidget,
+					    Config.sizeX, Config.sizeY))
+	       | SOME {x,y,w,h,bufferPane,ioPane} =>
+		 (Gtk.Paned.setPosition(Gui.vpaned1, bufferPane);
+		  Gtk.Paned.setPosition(Gui.vpaned2, ioPane);
+		  Gtk.Window.resize(Gui.mainwidget, w, h);
+		  Gtk.Window.move(Gui.mainwidget, x, y)
+	         );
+	     Gtk.Widget.showAll Gui.mainwidget;
+             Gtk.Widget.grabFocus (Gui.compilerout);
+	     OS.Process.atExit (fn () => quit' false))
+
+	fun initDone loadSession =
+	    (Gtk.TextView.setEditable(Gui.compilerout, true);
+	     Gtk.signalConnect(Gtk.TextView.getBuffer Gui.compilerout,
+			       "mark-set",
+			       compilerOutMarkSet);
+	     Gtk.Widget.setSensitive(Gui.feed1, true);
+	     Evaluator.setAnnotActive true;
+	     TipDialog.startup();
+	     if not loadSession then () else
+	     app (openGivenFile SESSION) (Config.loadOpenFiles ());
+	     Config.heapHandler := heapLimitHandler;
+	     Config.initHeapHandler())
+
+	fun preferences () = 
+	    Preferences.showDialog()
+    end

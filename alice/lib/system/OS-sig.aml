@@ -1,0 +1,31 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature OS_FILE_SYS from "OS_FILE_SYS-sig"
+import signature OS_PATH     from "OS_PATH-sig"
+import signature OS_PROCESS  from "OS_PROCESS-sig"
+import signature OS_IO       from "OS_IO-sig"
+
+signature OS =
+sig
+    eqtype syserror
+    exception SysErr of string * syserror option
+
+    val errorMsg :	syserror -> string
+    val errorName :	syserror -> string
+    val syserror :	string -> syserror option
+
+    structure Process :	OS_PROCESS
+    structure FileSys :	OS_FILE_SYS
+    structure Path :	OS_PATH
+    structure IO :	OS_IO
+end

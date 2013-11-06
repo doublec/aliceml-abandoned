@@ -1,0 +1,29 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive             from "Pervasive"
+import __primitive type int and bool     from "ToplevelTypes"
+import __primitive structure Word8Vector from "Word8Vector"
+
+signature PACK_REAL =
+sig
+    type real
+    val bytesPerElem: int
+    val isBigEndian: bool
+    val toBytes: real -> Word8Vector.vector
+(*MISSING
+    val fromBytes: Word8Vector.vector -> real
+    val subVec: Word8Vector.vector * int -> real
+    val subArr: Word8Array.array * int -> real
+    val update: Word8Array.array * int * real -> unit
+*)
+end

@@ -1,0 +1,70 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * A stateful scoped map (a stateful stack of stateful maps).
+ *)
+
+signature SCOPED_IMP_SET =
+sig
+    type item
+    type set
+    type t = set
+
+    exception Unknown   of item
+    exception Collision of item
+
+    val set :			unit -> set
+
+    val clone :			set -> set
+    val cloneScope :		set -> set
+
+    val insertScope :		set -> unit
+    val inheritScope :		set * set -> unit
+    val removeScope :		set -> unit
+    val removeAll :		set -> unit
+    val splitScope :		set -> set
+
+    val mergeScope :		set -> unit
+    val mergeDisjointScope :	set -> unit			(* Collision *)
+    val mergeScopeWith :	(item -> unit) -> set -> unit
+
+    val remove :		set * item -> unit
+    val removeExistent :	set * item -> unit		(* Unknown *)
+    val removeWith :		(item -> unit) -> set * item -> unit
+
+    val insert :		set * item -> unit
+    val insertDisjoint :	set * item -> unit		(* Collision *)
+    val insertWith :		(item -> unit) -> set * item -> unit
+
+    val union :			set * set  -> unit
+    val unionDisjoint :		set * set  -> unit		(* Collision *)
+    val unionWith :		(item -> unit) -> set * set -> unit
+
+    val member :		set * item -> bool
+    val memberScope :		set * item -> bool
+
+    val size :			set -> int
+    val sizeScope :		set -> int
+
+    val isEmpty :		set -> bool
+    val isEmptyScope :		set -> bool
+
+    val app :			(item -> unit) -> set -> unit
+    val appScope :		(item -> unit) -> set -> unit
+
+    val fold :			(item * 'a -> 'a) -> 'a -> set -> 'a
+    val foldScope :		(item * 'a -> 'a) -> 'a -> set -> 'a
+
+    val find :			(item -> bool) -> set -> item option
+    val findScope :		(item -> bool) -> set -> item option
+end

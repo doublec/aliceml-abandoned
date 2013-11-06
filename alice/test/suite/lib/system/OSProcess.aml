@@ -1,0 +1,89 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestOSProcess :> TESTSUITE = (* the osprocess test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    structure O = OS.Process
+
+    fun testSuccess () = 
+	Test.test (fn x => true) O.success
+
+    fun testFailure () = 
+	Test.test (fn x => true) O.failure
+
+    fun testIsSuccess () =
+	(Test.test (fn x => O.isSuccess x = false) O.failure;
+	 Test.test (fn x => O.isSuccess x = true) O.success)
+
+    fun testSystem () =
+	(Test.test (fn s => O.isSuccess (O.system s) = true) "true";
+	 Test.test (fn s => O.isSuccess (O.system s) = false) "false")
+
+    fun testAtExit () = 
+	let
+	    val x = ref ""
+		    
+	    fun f () = x := "Alice"
+
+	in
+	    (Test.test (fn f => (O.atExit f; !x = "")) f)
+	end
+
+    fun testAtExn () = 
+	(*
+	let
+	    val x = ref ""
+		    
+	    fun f Subscript = x := "Alice"
+
+	    fun t a = (O.atExn a;
+		       raise Subscript;
+		       !x = "Alice")
+
+	in
+	    (Test.test t f)
+	end*)
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testGetEnv () =
+	(Test.test (fn s => Option.isSome (O.getEnv s)) "ALICE_HOME")
+
+    fun testSleep () =
+	let
+	    val time = Time.fromSeconds (IntInf.fromInt 1)
+
+	    val time1 = Time.now ()
+	    val _ = O.sleep time
+	    val time2 = Time.now ()
+
+	in 
+	    Test.test (fn _ => Time.<= (time, Time.-(time2, time1))) ()
+	end
+
+
+    val suite = ("OSProcess", [("success", testSuccess),
+			       ("failure", testFailure),
+			       ("isSuccess", testIsSuccess),
+			       ("system", testSystem),
+			       ("atExit", testAtExit),
+			       ("atExn", testAtExn),
+			       ("getEnv", testGetEnv),
+			       ("sleep", testSleep)])
+end

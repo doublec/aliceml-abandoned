@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Date from "Date"
+
+signature CONFIG =
+sig
+    datatype platform = WIN32 | UNIX
+
+    val platform : platform
+    val vm : string
+
+    val homeDir : unit -> string
+
+    val pathEscape : char option
+    val pathSeparator : char
+
+    val version : {major : int, minor : int, revision : int}
+    val codename : string
+    val buildDate : Date.t
+end

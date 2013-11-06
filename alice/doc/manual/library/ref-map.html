@@ -1,0 +1,491 @@
+<?php include("macros.php3"); ?>
+<?php heading("The RefMap structure", "The <TT>RefMap</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature REF_MAP
+    structure RefMap : REF_MAP
+  </PRE>
+
+  <P>
+    The <TT>RefMap</TT> structure provides polymorphic hash tables using
+    references as keys. The content of a reference is
+    <EM>not</EM> relevant, only the identity of the reference is taken into
+    account. References hence can safely be updated without rendering the
+    table inconsistent.
+  </P>
+
+  <P>
+    Note that imperative maps are not thread-safe. Explicit locking has to be
+    used if they need to be accessed concurrently. Also note that the behaviour
+    of iterator functionals is unspecified if the passed argument function
+    tries to modify the map.
+  </P>
+
+  <P>See also:
+    <A href="imp-map.html"><TT>IMP_MAP</TT></A>,
+    <A href="imp-set.html"><TT>IMP_SET</TT></A>,
+    <A href="hashable.html"><TT>HASHABLE</TT></A>,
+    <A href="ordered.html"><TT>ORDERED</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature REF_MAP from "x-alice:/lib/data/REF_MAP-sig"
+    import structure RefMap from "x-alice:/lib/data/RefMap"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature REF_MAP =
+    sig
+	eqtype ('a,'b) map
+	type ('a,'b) t = ('a,'b) map
+
+	exception Unknown
+	exception Collision
+
+	val map :            unit -> ('a,'b) map
+	val clone :          ('a,'b) map -> ('a,'b) map
+	val fromList :       ('a ref * 'b) list -> ('a,'b) map
+	val fromVector :     ('a ref * 'b) vector -> ('a,'b) map
+	val toList :         ('a,'b) map -> ('a ref * 'b) list
+	val toVector :       ('a,'b) map -> ('a ref * 'b) vector
+
+	val insert :         ('a,'b) map * 'a ref * 'b -> unit
+	val insertDisjoint : ('a,'b) map * 'a ref * 'b -> unit
+	val insertWith :     ('b * 'b -> 'b) -> ('a,'b) map * 'a ref * 'b -> unit
+	val insertWithi :    ('a ref * 'b * 'b -> 'b) -> ('a,'b) map * 'a ref * 'b -> unit
+
+	val remove :         ('a,'b) map * 'a ref -> unit
+	val removeExistent : ('a,'b) map * 'a ref -> unit		(* Unknown *)
+	val removeWith :     ('a ref -> unit) -> ('a,'b) map * 'a ref -> unit
+	val removeAll :      ('a,'b) map -> unit
+
+	val union :          ('a,'b) map * ('a,'b) map -> unit
+	val unionDisjoint :  ('a,'b) map * ('a,'b) map -> unit		(* Collision *)
+	val unionWith :      ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+	val unionWithi :     ('a ref * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+	val intersect :      ('a,'b) map * ('a,'b) map -> unit
+	val intersectWith :  ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+	val intersectWithi : ('a ref * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+	val difference :     ('a,'b) map * ('a,'b) map -> unit
+
+	val size :           ('a,'b) map -> int
+	val isEmpty :        ('a,'b) map -> bool
+
+	val member :         ('a,'b) map * 'a ref -> bool
+	val lookup :         ('a,'b) map * 'a ref -> 'b option
+	val lookupExistent : ('a,'b) map * 'a ref -> 'b
+	val choose :         ('a,'b) map -> 'b option
+	val choosei :        ('a,'b) map -> ('a ref * 'b) option
+
+	val equal :          ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+	val submap :         ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+	val disjoint :       ('a,'b) map * ('a,'b) map -> bool
+
+	val app :            ('b -> unit) -> ('a,'b) map -> unit
+	val modify :         ('b -> 'b) -> ('a,'b) map -> unit
+	val fold :           ('b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+	val all :            ('b -> bool) -> ('a,'b) map -> bool
+	val exists :         ('b -> bool) -> ('a,'b) map -> bool
+	val find :           ('b -> bool) -> ('a,'b) map -> 'b option
+	val filter :         ('b -> bool) -> ('a,'b) map -> unit
+
+	val appi :           ('a ref * 'b -> unit) -> ('a,'b) map -> unit
+	val modifyi :        ('a ref * 'b -> 'b) -> ('a,'b) map -> unit
+	val foldi :          ('a ref * 'b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+	val alli :           ('a ref * 'b -> bool) -> ('a,'b) map -> bool
+	val existsi :        ('a ref * 'b -> bool) -> ('a,'b) map -> bool
+	val findi :          ('a ref * 'b -> bool) -> ('a,'b) map -> ('a ref * 'b) option
+	val filteri :        ('a ref * 'b -> bool) -> ('a,'b) map -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>eqtype ('a,'b) map</TT> <BR>
+      <TT>type ('a,'b) t = ('a,'b) map</TT>
+    </DT>
+    <DD>
+      <P>The type of finite maps from references of <TT>'a</TT> to values
+      of type <TT>'b</TT>. Only maps created by the same function application
+      are equal. Like <TT>ref</TT> and <TT>array</TT>,
+      the map type always admits equality, independently from its
+      arguments.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Unknown</TT>
+    </DT>
+    <DD>
+      <P>Indicates that a key could not be found in the map.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Collision</TT>
+    </DT>
+    <DD>
+      <P>Indicates an attempt to add a key that already is in the map
+      when using functions that disallow replacement.</P>
+    </DD>
+
+    <DT>
+      <TT>map ()</TT>
+    </DT>
+    <DD>
+      <P>Creates an empty map.</P>
+    </DD>
+
+    <DT>
+      <TT>clone <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a copy of the map <TT><I>m</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fromList <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Constructs a map from a list of key/value pairs.
+      Raises <TT>Collision</TT> <TT><I>k</I></TT> is a key in
+      the list that is followed by at least one other key equal to
+      <TT><I>k</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fromVector <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>Constructs a map from a vector of key/value pairs.
+      Raises <TT>Collision</TT> <TT><I>k</I></TT> if <TT><I>k</I></TT> is a key
+      in the vector that is followed by at least one other entry with a key equal to
+      <TT><I>k</I></TT>. Equivalent to
+      <TT>fromList(Vector.toList <I>v</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toList <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the list of key/value pairs from map <TT><I>m</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toVector <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the vector of key/value pairs from map <TT><I>m</I></TT>.
+      Equivalent to <TT>Vector.fromList(toList <I>m</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>insert (<I>m</I>, <I>k</I>, <I>x</I>)</TT> <BR>
+      <TT>insertDisjoint (<I>m</I>, <I>k</I>, <I>x</I>)</TT> <BR>
+      <TT>insertWith <I>f</I> (<I>m</I>, <I>k</I>, <I>x</I>)</TT> <BR>
+      <TT>insertWithi <I>f</I> (<I>m</I>, <I>k</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>Extends the map <TT><I>m</I></TT> with the entry
+      <TT><I>k</I></TT>-><TT><I>x</I></TT>. In the first form, if
+      <TT><I>m</I></TT> already contains <TT><I>k</I></TT>,
+      then the corresponding entry
+      gets replaced by <TT><I>k</I></TT>-><TT><I>x</I></TT>. In the second form,
+      <TT>Collision</TT> will be raised. In the third form,
+      the entry is replaced by <TT><I>k</I></TT>-><TT><I>f</I>(<I>x'</I>,
+      <I>x</I>)</TT>, where <TT><I>x'</I></TT> is the value <TT><I>k</I></TT>
+      maps to. In the forth form,
+      <TT><I>k</I></TT> is additionally passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      insert         = insertWith #2
+      insertDisjoint = insertWithi (fn (k,_,_) => raise Collision k)
+      insertWith <I>f</I>   = insertWithi (fn (_,x,y) => <I>f</I>(x, y))</PRE>
+    </DD>
+
+    <DT>
+      <TT>remove (<I>m</I>, <I>k</I>)</TT> <BR>
+      <TT>removeExistent (<I>m</I>, <I>k</I>)</TT> <BR>
+      <TT>removeWith <I>f</I> (<I>m</I>, <I>k</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes the entry corresponding to key <TT><I>k</I></TT> from the map
+      <TT><I>m</I></TT>. In the first form, if
+      <TT><I>k</I></TT> is not contained in <TT><I>m</I></TT>, then the map is
+      left unchanged. In the second form, <TT>Unknown</TT>
+      will be raised. In the third form, <TT><I>f</I></TT> is
+      applied to <TT><I>k</I></TT> before the map is modified.
+      The following equivalences hold:</P>
+      <PRE>
+      remove         = removeWith ignore
+      removeExistent = removeWith (fn k => raise Unknown k)</PRE>
+    </DD>
+
+    <DT>
+      <TT>removeAll <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>Removes all entries from the map <TT><I>m</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>union (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>unionDisjoint (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>unionWith <I>f</I> (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>unionWithi <I>f</I> (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Inserts all entries from map <TT><I>m2</I></TT> into map
+      <TT><I>m1</I></TT>.
+      In the first form, if <TT><I>m1</I></TT> and <TT><I>m2</I></TT> contain
+      entries <TT><I>k</I></TT>-><TT><I>x1</I></TT> and
+      <TT><I>k</I></TT>-><TT><I>x2</I></TT>,
+      respectively, then the entry in <TT><I>m1</I></TT> will get replaced by
+      <TT><I>k</I></TT>-><TT><I>x2</I></TT>. In the second form,
+      <TT>Collision</TT> will be raised. In the third form,
+      the entry will get replaced by
+      <TT><I>k</I></TT>-><TT><I>f</I>(<I>x1</I>,<I>x2</I>)</TT>. In the forth
+      form, <TT><I>k</I></TT> is additionally passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      union         = unionWith #2
+      unionDisjoint = unionWithi (fn (k,_,_) => raise Collision k)
+      unionWith <I>f</I>   = unionWithi (fn (_,x,y) => <I>f</I>(x, y))</PRE>
+    </DD>
+
+    <DT>
+      <TT>intersect (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>intersectWith <I>f</I> (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>intersectWithi <I>f</I> (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes all entries <TT><I>k</I></TT>-><TT><I>x1</I></TT> from map
+      <TT><I>m1</I></TT> for which <TT><I>k</I></TT>
+      is not in the domain of <TT><I>m2</I></TT>.
+      In the first form, if <TT><I>m2</I></TT> contains
+      a corresponding entry <TT><I>k</I></TT>-><TT><I>x2</I></TT>, respectively,
+      then the entry in <TT><I>m1</I></TT>
+      will get replaced by <TT><I>k</I></TT>-><TT><I>x2</I></TT>. In the second form,
+      the entry will get replaced by
+      <TT><I>k</I></TT>-><TT><I>f</I>(<I>x1</I>,<I>x2</I>)</TT>. In the third
+      form, <TT><I>k</I></TT> is additionally passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      intersect         = intersectWith #2
+      intersectWith <I>f</I>   = intersectWithi (fn (_,x,y) => <I>f</I>(x, y))</PRE>
+    </DD>
+
+    <DT>
+      <TT>difference (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes all entries <TT><I>k</I></TT>-><TT><I>x1</I></TT> from map
+      <TT><I>m1</I></TT> for which <TT><I>k</I></TT>
+      is in the domain of <TT><I>m2</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>size <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the cardinality of the map <TT><I>m</I></TT>, i.e. the number
+      of entries it contains.</P>
+    </DD>
+
+    <DT>
+      <TT>isEmpty <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>m</I></TT> is an empty map,
+      <TT>false</TT> otherwise. Equivalent to <TT>size <I>m</I> = 0</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>member (<I>m</I>, <I>k</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the map <TT><I>m</I></TT> contains the key
+      <TT><I>k</I></TT>, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>lookup (<I>m</I>, <I>k</I>)</TT> <BR>
+      <TT>lookupExistent (<I>m</I>, <I>k</I>)</TT>
+    </DT>
+    <DD>
+      <P>In the first form, returns <TT>SOME</TT> <TT><I>x</I></TT> if the
+      map <TT><I>m</I></TT>
+      contains an entry <TT><I>k</I></TT>-><TT><I>x</I></TT>, <TT>NONE</TT>
+      otherwise. In the second form, returns <TT><I>x</I></TT> unwrapped,
+      or raises <TT>Unknown</TT> if no such entry exists.</P>
+    </DD>
+
+    <DT>
+      <TT>choose <I>m</I></TT> <BR>
+      <TT>choosei <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the first form, returns <TT>SOME</TT> <TT><I>x</I></TT>, such that
+      <TT><I>k</I></TT>-><TT><I>x</I></TT> is an entry
+      of the map <TT><I>m</I></TT>. In the second form, returns
+      <TT>SOME(<I>k</I>,<I>x</I>)</TT>.
+      Returns <TT>NONE</TT> if <TT><I>m</I></TT>
+      is the empty map.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>f</I> (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>m1</I></TT> and <TT><I>m2</I></TT>
+      are maps with equal entries, <TT>false</TT> otherwise. Two entries
+      <TT><I>k</I></TT>-><TT><I>x1</I></TT> and
+      <TT><I>k</I></TT>-><TT><I>x2</I></TT> are considered equal if
+      <I>f</I>(<I>x1</I>, <I>x2</I>)</TT>
+      evaluates to <TT>true</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>submap <I>f</I> (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>m1</I></TT> contains an entry
+      <TT><I>k</I></TT>-><TT><I>x1</I></TT> for every entry
+      <TT><I>k</I></TT>-><TT><I>x2</I></TT> in <TT><I>m2</I></TT>, such that
+      <I>f</I>(<I>x1</I>, <I>x2</I>)</TT>
+      evaluates to <TT>true</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>disjoint (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>m1</I></TT> and <TT><I>m2</I></TT>
+      are maps with disjoint domains, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>app <I>f</I> <I>m</I></TT> <BR>
+      <TT>appi <I>f</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, applies <TT><I>f</I></TT> to each entry in
+      the map <TT><I>m</I></TT>. In the first form, applies <TT><I>f</I></TT> to
+      the value in the entry only.
+      The following equivalences hold:</P>
+      <PRE>
+      app  <I>f</I> <I>m</I> = appi (<I>f</I> o #2) <I>m</I>
+      appi <I>f</I> <I>m</I> = List.app <I>f</I> (toList <I>m</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>modify <I>f</I> <I>m</I></TT> <BR>
+      <TT>modifyi <I>f</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, modifies the map by replacing each entry
+      <TT><I>k</I></TT>-><TT><I>x</I></TT> by 
+      <TT><I>k</I></TT>-><TT><I>f</I>(<I>k</I>, <I>x</I>)</TT>.
+      In the first form, only <TT><I>x</I></TT> is passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      modify  <I>f</I> <I>m</I> = modifyi (<I>f</I> o #2) <I>m</I>
+      modifyi <I>f</I> <I>m</I> = List.app (fn (k, x) => insert(k, <I>f</I> (k, x))) (toList <I>m</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>fold <I>f</I> <I>a</I> <I>m</I></TT> <BR>
+      <TT>foldi <I>f</I> <I>a</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, sequentially applies <TT><I>f</I></TT> to the
+      triple of each map entry's key and value and
+      the result of the previous application, starting with initial value
+      <TT><I>a</I></TT>. In the first form, only an entry's value and the
+      previous result are passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      fold  <I>f</I> <I>a</I> <I>m</I> = fold (fn (_,x,y) => <I>f</I> (x,y)) <I>a</I> <I>m</I>
+      foldi <I>f</I> <I>a</I> <I>m</I> = List.foldl <I>f</I> <I>a</I> (toList <I>m</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>all <I>f</I> <I>m</I></TT> <BR>
+      <TT>alli <I>f</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, applies <TT><I>f</I></TT> to each entry
+      <TT>(<I>k</I>, <I>x</I>)</TT> of map
+      <TT><I>ms</I></TT> until <TT><I>f</I>(<I>k</I>, <I>x</I>)</TT> delivers <TT>false</TT>.
+      Returns <TT>false</TT> if such an entry exists, <TT>true</TT>
+      otherwise. In the first form, only <TT><I>x</I></TT> is passed to
+      <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      all  <I>f</I> <I>m</I> = alli (<I>f</I> o #2) <I>m</I>
+      alli <I>f</I> <I>m</I> = List.all <I>f</I> (toList <I>m</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>exists <I>f</I> <I>m</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, applies <TT><I>f</I></TT> to each entry
+      <TT>(<I>k</I>, <I>x</I>)</TT> of map
+      <TT><I>ms</I></TT> until <TT><I>f</I>(<I>k</I>, <I>x</I>)</TT> delivers
+      <TT>true</TT>.
+      Returns <TT>true</TT> if such an entry exists, <TT>false</TT>
+      otherwise. In the first form, only <TT><I>x</I></TT> is passed to
+      <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      exists  <I>f</I> <I>m</I> = existsi (<I>f</I> o #2) <I>m</I>
+      existsi <I>f</I> <I>m</I> = List.exists <I>f</I> (toList <I>m</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>find <I>f</I> <I>m</I></TT> <BR>
+      <TT>findi <I>f</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, applies <TT><I>f</I></TT> to each entry
+      <TT>(<I>k</I>, <I>x</I>)</TT> of map
+      <TT><I>m</I></TT> until <TT><I>f</I>(<I>k</I>, <I>x</I>)</TT> delivers
+      <TT>true</TT>.
+      Returns <TT>SOME(<I>k</I>, <I>x</I>)</TT> if such an entry exists,
+      <TT>NONE</TT>
+      otherwise. In the first form, only <TT><I>x</I></TT> is passed to
+      <TT><I>f</I></TT>, and on success <TT>SOME</TT> <TT><I>x</I></TT> is
+      returned.
+      The following equivalences hold:</P>
+      <PRE>
+      find  <I>f</I> <I>m</I> = Option.map #2 (findi (<I>f</I> o #2) <I>m</I>)
+      findi <I>f</I> <I>m</I> = List.find <I>f</I> (toList <I>m</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>filter <I>f</I> <I>m</I></TT> <BR>
+      <TT>filteri <I>f</I> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>In the second form, applies <TT><I>f</I></TT> to each entry
+      <TT>(<I>k</I>, <I>x</I>)</TT> of map
+      <TT><I>m</I></TT> and removes all entries from the map for which
+      <TT><I>f</I>(<I>k</I>, <I>x</I>)</I></TT> delivered <TT>false</TT>.
+      In the first form, only <TT><I>x</I></TT> is passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      filter  <I>f</I> <I>m</I> = filteri (<I>f</I> o #2) <I>m</I>
+      filteri <I>f</I> <I>m</I> = fromList (List.filter <I>f</I> (toList <I>m</I>))</PRE>
+    </DD>
+  </DL>
+
+<?php footing() ?>

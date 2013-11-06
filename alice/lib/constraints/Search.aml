@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeSearch from "UnsafeSearch"
+import signature SEARCH       from "SEARCH-sig"
+
+structure Search :> SEARCH =
+    struct
+	type 'a order = 'a * 'a -> unit
+
+	datatype 'a bound_solution =
+	    BOUND_NONE
+	  | BOUND_SOME of 'a
+	  | BOUND_CUT
+
+	open UnsafeSearch
+    end

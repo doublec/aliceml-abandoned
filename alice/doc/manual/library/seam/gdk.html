@@ -1,0 +1,1588 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Gdk structure", "The <TT>Gdk</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature GDK
+    structure Gdk : GDK</PRE>
+
+ <P>
+   The <TT>Gdk</TT> structure is the platform abstraction layer of Gtk.
+   It provides access to a number of supplementary functions used by
+   Gtk and the Canvas.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="glib.html"><TT>GLib</TT></A>,
+   <A href="pango.html"><TT>Pango</TT></A>,
+   <A href="atk.html"><TT>Atk</TT></A>,
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+   <A href="gtkbuilder.html"><TT>GtkBuilder</TT></A>
+ </P>
+
+ <?php section("import", "import"); ?>
+
+  <PRE>
+    import signature GDK from "x-alice:/lib/gtk/GDK-sig"
+    import structure Gdk from "x-alice:/lib/gtk/Gdk"
+  </PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature GDK =
+sig
+    type object = Core.object
+    type gtype = Core.gtype
+    type gvalue = Core.gvalue
+    type prop   = Core.prop
+    type prop_initializer = Core.prop_initializer
+(* begin of CORE-sig.aml *)
+
+
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+
+    type callback_function = object * arg list -> unit
+    val signalConnect        : object * string * callback_function -> int
+    val signalConnectAfter   : object * string * callback_function -> int
+    val signalDisconnect     : object * int -> unit
+    val signalHandlerBlock   : object * int -> unit
+    val signalHandlerUnblock : object * int -> unit
+
+    val latin1ToUtf8 : string -> string
+    val utf8ToLatin1 : string -> string
+
+    val lock : Lock.lock
+
+
+    structure Types :
+    sig
+        val string : gtype
+        val int    : gtype
+        val float  : gtype
+        val double : gtype
+        val pixbuf : gtype
+    end
+
+    structure Value :
+    sig
+        (* exception TypeError *)
+
+        val undefined : unit -> gvalue
+
+        val int : int -> gvalue
+        val enum : int * gtype -> gvalue
+        val string : string -> gvalue
+        val float : real -> gvalue
+        val double : real -> gvalue
+        val bool : bool -> gvalue
+        val object : object -> gvalue
+            
+        val toInt : gvalue -> int
+        val toString : gvalue -> string
+        val toReal : gvalue -> real
+        val toBool : gvalue -> bool
+        val toObject : gvalue -> object
+
+        val getType : gvalue -> gtype
+    end
+
+    structure Prop :
+    sig
+        val setL : object -> prop_initializer list -> unit
+
+        val set : 'a prop -> object * 'a -> unit
+        val get : 'a prop -> object -> 'a 
+
+        val rawSet : object * string * gvalue -> unit
+        val rawGet : object * string -> gvalue
+
+        val name : 'a prop -> string
+
+        val prop : 'a prop * 'a -> prop_initializer
+
+        (* creation *)
+        val newProp : string * ('a -> gvalue) * (gvalue -> 'a) -> 'a prop
+    end
+(* end of CORE-sig.aml *)
+
+    structure InterpType :
+    sig
+        datatype t =
+            BILINEAR
+          | HYPER
+          | NEAREST
+          | TILES
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PixbufError :
+    sig
+        datatype t =
+            CORRUPT_IMAGE
+          | FAILED
+          | INSUFFICIENT_MEMORY
+          | UNKNOWN_TYPE
+          | UNSUPPORTED_OPERATION
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Colorspace :
+    sig
+        datatype t =
+            B
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PixbufAlphaMode :
+    sig
+        datatype t =
+            BILEVEL
+          | FULL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowEdge :
+    sig
+        datatype t =
+            EAST
+          | NORTH
+          | NORTH_EAST
+          | NORTH_WEST
+          | SOUTH
+          | SOUTH_EAST
+          | SOUTH_WEST
+          | WEST
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Gravity :
+    sig
+        datatype t =
+            CENTER
+          | EAST
+          | NORTH
+          | NORTH_EAST
+          | NORTH_WEST
+          | SOUTH
+          | SOUTH_EAST
+          | SOUTH_WEST
+          | STATIC
+          | WEST
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WMFunction :
+    sig
+        datatype flag =
+            ALL
+          | CLOSE
+          | MAXIMIZE
+          | MINIMIZE
+          | MOVE
+          | RESIZE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WMDecoration :
+    sig
+        datatype flag =
+            ALL
+          | BORDER
+          | MAXIMIZE
+          | MENU
+          | MINIMIZE
+          | RESIZEH
+          | TITLE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowTypeHint :
+    sig
+        datatype t =
+            DESKTOP
+          | DIALOG
+          | DOCK
+          | MENU
+          | NORMAL
+          | SPLASHSCREEN
+          | TOOLBAR
+          | UTILITY
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowHints :
+    sig
+        datatype flag =
+            ASPECT
+          | BASE_SIZE
+          | MAX_SIZE
+          | MIN_SIZE
+          | POS
+          | RESIZE_INC
+          | USER_POS
+          | USER_SIZE
+          | WIN_GRAVITY
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowAttributesType :
+    sig
+        datatype flag =
+            COLORMAP
+          | CURSOR
+          | NOREDIR
+          | TITLE
+          | VISUAL
+          | WMCLASS
+          | X
+          | Y
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowType :
+    sig
+        datatype t =
+            CHILD
+          | DIALOG
+          | FOREIGN
+          | ROOT
+          | TEMP
+          | TOPLEVEL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowClass :
+    sig
+        datatype t =
+            NLY
+          | UTPUT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure VisualType :
+    sig
+        datatype t =
+            DIRECT_COLOR
+          | GRAYSCALE
+          | PSEUDO_COLOR
+          | STATIC_COLOR
+          | STATIC_GRAY
+          | TRUE_COLOR
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure GrabStatus :
+    sig
+        datatype t =
+            ALREADY_GRABBED
+          | FROZEN
+          | INVALID_TIME
+          | NOT_VIEWABLE
+          | SUCCESS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Status :
+    sig
+        datatype t =
+            ERROR
+          | ERROR_FILE
+          | ERROR_MEM
+          | ERROR_PARAM
+          | OK
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure InputCondition :
+    sig
+        datatype flag =
+            EXCEPTION
+          | READ
+          | WRITE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ModifierType :
+    sig
+        datatype flag =
+            BUTTON1_MASK
+          | BUTTON2_MASK
+          | BUTTON3_MASK
+          | BUTTON4_MASK
+          | BUTTON5_MASK
+          | CONTROL_MASK
+          | LOCK_MASK
+          | MOD1_MASK
+          | MOD2_MASK
+          | MOD3_MASK
+          | MOD4_MASK
+          | MOD5_MASK
+          | MODIFIER_MASK
+          | RELEASE_MASK
+          | SHIFT_MASK
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ByteOrder :
+    sig
+        datatype t =
+            LSB_FIRST
+          | MSB_FIRST
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure RgbDither :
+    sig
+        datatype t =
+            MAX
+          | NONE
+          | NORMAL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure OverlapType :
+    sig
+        datatype t =
+            IN
+          | OUT
+          | PART
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FillRule :
+    sig
+        datatype t =
+            EVEN_ODD_RULE
+          | WINDING_RULE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PropMode :
+    sig
+        datatype t =
+            APPEND
+          | PREPEND
+          | REPLACE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure AxisUse :
+    sig
+        datatype t =
+            IGNORE
+          | LAST
+          | PRESSURE
+          | WHEEL
+          | X
+          | XTILT
+          | Y
+          | YTILT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure InputMode :
+    sig
+        datatype t =
+            DISABLED
+          | SCREEN
+          | WINDOW
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure InputSource :
+    sig
+        datatype t =
+            CURSOR
+          | ERASER
+          | MOUSE
+          | PEN
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ExtensionMode :
+    sig
+        datatype t =
+            ALL
+          | CURSOR
+          | NONE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ImageType :
+    sig
+        datatype t =
+            FASTEST
+          | NORMAL
+          | SHARED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure GCValuesMask :
+    sig
+        datatype flag =
+            BACKGROUND
+          | CAP_STYLE
+          | CLIP_MASK
+          | CLIP_X_ORIGIN
+          | CLIP_Y_ORIGIN
+          | EXPOSURES
+          | FILL
+          | FONT
+          | FOREGROUND
+          | FUNCTION
+          | JOIN_STYLE
+          | LINE_STYLE
+          | LINE_WIDTH
+          | STIPPLE
+          | SUBWINDOW
+          | TILE
+          | TS_X_ORIGIN
+          | TS_Y_ORIGIN
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SubwindowMode :
+    sig
+        datatype t =
+            CLIP_BY_CHILDREN
+          | INCLUDE_INFERIORS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure LineStyle :
+    sig
+        datatype t =
+            DOUBLE_DASH
+          | ON_OFF_DASH
+          | SOLID
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure JoinStyle :
+    sig
+        datatype t =
+            BEVEL
+          | MITER
+          | ROUND
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Function :
+    sig
+        datatype t =
+            AND
+          | AND_INVERT
+          | AND_REVERSE
+          | CLEAR
+          | COPY
+          | COPY_INVERT
+          | EQUIV
+          | INVERT
+          | NAND
+          | NOOP
+          | NOR
+          | OR
+          | OR_INVERT
+          | OR_REVERSE
+          | SET
+          | XOR
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Fill :
+    sig
+        datatype t =
+            OPAQUE_STIPPLED
+          | SOLID
+          | STIPPLED
+          | TILED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CapStyle :
+    sig
+        datatype t =
+            BUTT
+          | NOT_LAST
+          | PROJECTING
+          | ROUND
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FontType :
+    sig
+        datatype t =
+            FONT
+          | FONTSET
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SettingAction :
+    sig
+        datatype t =
+            CHANGED
+          | DELETED
+          | NEW
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowState :
+    sig
+        datatype flag =
+            ABOVE
+          | BELOW
+          | FULLSCREEN
+          | ICONIFIED
+          | MAXIMIZED
+          | STICKY
+          | WITHDRAWN
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PropertyState :
+    sig
+        datatype t =
+            DELETE
+          | NEW_VALUE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CrossingMode :
+    sig
+        datatype t =
+            GRAB
+          | NORMAL
+          | UNGRAB
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure NotifyType :
+    sig
+        datatype t =
+            ANCESTOR
+          | INFERIOR
+          | NONLINEAR
+          | NONLINEAR_VIRTUAL
+          | UNKNOWN
+          | VIRTUAL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ScrollDirection :
+    sig
+        datatype t =
+            DOWN
+          | LEFT
+          | RIGHT
+          | UP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure VisibilityState :
+    sig
+        datatype t =
+            FULLY_OBSCURED
+          | PARTIAL
+          | UNOBSCURED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure EventMask :
+    sig
+        datatype flag =
+            ALL_EVENTS_MASK
+          | BUTTON1_MOTION_MASK
+          | BUTTON2_MOTION_MASK
+          | BUTTON3_MOTION_MASK
+          | BUTTON_MOTION_MASK
+          | BUTTON_PRESS_MASK
+          | BUTTON_RELEASE_MASK
+          | ENTER_NOTIFY_MASK
+          | EXPOSURE_MASK
+          | FOCUS_CHANGE_MASK
+          | KEY_PRESS_MASK
+          | KEY_RELEASE_MASK
+          | LEAVE_NOTIFY_MASK
+          | POINTER_MOTION_HINT_MASK
+          | POINTER_MOTION_MASK
+          | PROPERTY_CHANGE_MASK
+          | PROXIMITY_IN_MASK
+          | PROXIMITY_OUT_MASK
+          | SCROLL_MASK
+          | STRUCTURE_MASK
+          | SUBSTRUCTURE_MASK
+          | VISIBILITY_NOTIFY_MASK
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure EventType :
+    sig
+        datatype t =
+            BUTTON2_PRESS
+          | BUTTON3_PRESS
+          | BUTTON_PRESS
+          | BUTTON_RELEASE
+          | CLIENT_EVENT
+          | CONFIGURE
+          | DELETE
+          | DESTROY
+          | DRAG_ENTER
+          | DRAG_LEAVE
+          | DRAG_MOTION
+          | DRAG_STATUS
+          | DROP_FINISHED
+          | DROP_START
+          | ENTER_NOTIFY
+          | EXPOSE
+          | FOCUS_CHANGE
+          | KEY_PRESS
+          | KEY_RELEASE
+          | LEAVE_NOTIFY
+          | MAP
+          | MOTION_NOTIFY
+          | NOTHING
+          | NO_EXPOSE
+          | PROPERTY_NOTIFY
+          | PROXIMITY_IN
+          | PROXIMITY_OUT
+          | SCROLL
+          | SELECTION_CLEAR
+          | SELECTION_NOTIFY
+          | SELECTION_REQUEST
+          | SETTING
+          | UNMAP
+          | VISIBILITY_NOTIFY
+          | WINDOW_STATE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FilterReturn :
+    sig
+        datatype t =
+            CONTINUE
+          | REMOVE
+          | TRANSLATE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DragProtocol :
+    sig
+        datatype t =
+            LOCAL
+          | MOTIF
+          | NONE
+          | OLE2
+          | ROOTWIN
+          | WIN32_DROPFILES
+          | XDND
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DragAction :
+    sig
+        datatype flag =
+            ASK
+          | COPY
+          | DEFAULT
+          | LINK
+          | MOVE
+          | PRIVATE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CursorType :
+    sig
+        datatype t =
+            GDK_CURSOR_IS_PIXMAP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Rectangle :
+    sig
+        (* constructors *)
+        val new : { height : int, width : int, x : int, y : int } -> object
+        (* methods *)
+        val union : object * object * object -> unit
+        val intersect : object * object * object -> bool
+        val getFieldY : object -> int
+        val setFieldY : object * int -> unit
+        val getFieldX : object -> int
+        val setFieldX : object * int -> unit
+        val getFieldWidth : object -> int
+        val setFieldWidth : object * int -> unit
+        val getFieldHeight : object -> int
+        val setFieldHeight : object * int -> unit
+    end
+    structure Cursor :
+    sig
+        (* constructors *)
+        val newFromPixbuf : object * object * int * int -> object
+        val newFromPixmap : object * object * object * object * int * int -> object
+        val newForDisplay : object * CursorType.t -> object
+        val new : CursorType.t -> object
+        (* methods *)
+        val getDisplay : object -> object
+        val getFieldType : object -> CursorType.t
+        val setFieldType : object * CursorType.t -> unit
+    end
+    structure Color :
+    sig
+        (* constructors *)
+        val new : { blue : int, green : int, red : int } -> object
+        (* methods *)
+        val parse : string * object -> int
+        val getFieldRed : object -> int
+        val setFieldRed : object * int -> unit
+        val getFieldGreen : object -> int
+        val setFieldGreen : object * int -> unit
+        val getFieldBlue : object -> int
+        val setFieldBlue : object * int -> unit
+    end
+    structure Font :
+    sig
+        (* constructors *)
+        val load : string -> object
+        (* methods *)
+        val stringExtents : object * string * int * int * int * int * int -> int * int * int * int * int
+        val extents : object * string * int * int * int * int * int * int -> int * int * int * int * int
+        val charHeight : object * char -> int
+        val height : object * string * int -> int
+        val stringHeight : object * string -> int
+        val charMeasure : object * char -> int
+        val measure : object * string * int -> int
+        val stringMeasure : object * string -> int
+        val charWidth : object * char -> int
+        val width : object * string * int -> int
+        val stringWidth : object * string -> int
+        val fromDescription : object -> object
+        val fromDescriptionForDisplay : object * object -> object
+        val loadForDisplay : object * string -> object
+        val id : object -> int
+        val getFieldType : object -> FontType.t
+        val setFieldType : object * FontType.t -> unit
+        val getFieldDescent : object -> int
+        val setFieldDescent : object * int -> unit
+        val getFieldAscent : object -> int
+        val setFieldAscent : object * int -> unit
+    end
+    structure Event :
+    sig
+        (* constructors *)
+        val new : EventType.t -> object
+        (* methods *)
+        val getScreen : object -> object
+        val setScreen : object * object -> unit
+        val getAxis : object * AxisUse.t * real -> bool * real
+        val getRootCoords : object * real * real -> bool * real * real
+        val getCoords : object * real * real -> bool * real * real
+        val getState : object * ModifierType.t -> bool * ModifierType.t
+        val getTime : object -> int
+        val free : object -> unit
+        val copy : object -> object
+        val put : object -> unit
+        val getGraphicsExpose : object -> object
+        val peek : unit -> object
+        val get : unit -> object
+        val getType : unit -> gtype
+    end
+    structure PixbufFormat :
+    sig
+        (* constructors *)
+        (* methods *)
+        val isWritable : object -> bool
+        val getExtensions : object -> object
+        val getMimeTypes : object -> object
+        val getDescription : object -> string
+        val getName : object -> string
+    end
+    structure Region :
+    sig
+        (* constructors *)
+        (* methods *)
+    end
+    structure Point :
+    sig
+        (* constructors *)
+        (* methods *)
+    end
+    structure Bitmap :
+    sig
+        (* constructors *)
+        (* methods *)
+        val createFromData : object * string * int * int -> object
+    end
+    structure Visual :
+    sig
+        (* constructors *)
+        val getBestWithBoth : int * VisualType.t -> object
+        (* methods *)
+        val getScreen : object -> object
+        val getBestWithType : VisualType.t -> object
+        val getBestWithDepth : int -> object
+        val getBest : unit -> object
+        val getSystem : unit -> object
+        val getBestType : unit -> VisualType.t
+        val getBestDepth : unit -> int
+        val getFieldType : object -> VisualType.t
+        val setFieldType : object * VisualType.t -> unit
+        val getFieldRedShift : object -> int
+        val setFieldRedShift : object * int -> unit
+        val getFieldRedPrec : object -> int
+        val setFieldRedPrec : object * int -> unit
+        val getFieldRedMask : object -> int
+        val setFieldRedMask : object * int -> unit
+        val getFieldGreenShift : object -> int
+        val setFieldGreenShift : object * int -> unit
+        val getFieldGreenPrec : object -> int
+        val setFieldGreenPrec : object * int -> unit
+        val getFieldGreenMask : object -> int
+        val setFieldGreenMask : object * int -> unit
+        val getFieldDepth : object -> int
+        val setFieldDepth : object * int -> unit
+        val getFieldColormapSize : object -> int
+        val setFieldColormapSize : object * int -> unit
+        val getFieldByteOrder : object -> ByteOrder.t
+        val setFieldByteOrder : object * ByteOrder.t -> unit
+        val getFieldBlueShift : object -> int
+        val setFieldBlueShift : object * int -> unit
+        val getFieldBluePrec : object -> int
+        val setFieldBluePrec : object * int -> unit
+        val getFieldBlueMask : object -> int
+        val setFieldBlueMask : object * int -> unit
+        val getFieldBitsPerRgb : object -> int
+        val setFieldBitsPerRgb : object * int -> unit
+        (* properties *)
+    end
+    structure Screen :
+    sig
+        (* constructors *)
+        (* methods *)
+        val alternativeDialogButtonOrder : object -> bool
+        val getSetting : object * string -> bool * gvalue
+        val getDefault : unit -> object
+        val broadcastClientMessage : object * object -> unit
+        val getMonitorAtWindow : object * object -> int
+        val getMonitorAtPoint : object * int * int -> int
+        val getMonitorGeometry : object * int * object -> unit
+        val getNMonitors : object -> int
+        val makeDisplayName : object -> string
+        val getToplevelWindows : object -> object list
+        val listVisuals : object -> object list
+        val getHeightMm : object -> int
+        val getWidthMm : object -> int
+        val getHeight : object -> int
+        val getWidth : object -> int
+        val getNumber : object -> int
+        val getDisplay : object -> object
+        val getRootWindow : object -> object
+        val getRgbVisual : object -> object
+        val getRgbColormap : object -> object
+        val getSystemVisual : object -> object
+        val getSystemColormap : object -> object
+        val setDefaultColormap : object * object -> unit
+        val getDefaultColormap : object -> object
+        val getType : unit -> gtype
+        val heightMm : unit -> int
+        val widthMm : unit -> int
+        val height : unit -> int
+        val width : unit -> int
+        (* properties *)
+    end
+    structure PixbufLoader :
+    sig
+        (* constructors *)
+        val newWithType : string -> object
+        (* methods *)
+        val getFormat : object -> object
+        val setSize : object * int * int -> unit
+        val close : object -> bool
+        val getAnimation : object -> object
+        val getPixbuf : object -> object
+        val write : object * string * int -> bool
+        val newWithMimeType : string -> object
+        val new : unit -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure PixbufAnimationIter :
+    sig
+        (* constructors *)
+        (* methods *)
+        val advance : object * object -> bool
+        val onCurrentlyLoadingFrame : object -> bool
+        val getPixbuf : object -> object
+        val getDelayTime : object -> int
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure PixbufAnimation :
+    sig
+        (* constructors *)
+        val newFromFile : string -> object
+        (* methods *)
+        val getIter : object * object -> object
+        val getStaticImage : object -> object
+        val isStaticImage : object -> bool
+        val getHeight : object -> int
+        val getWidth : object -> int
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Pixbuf :
+    sig
+        (* constructors *)
+        val new : Colorspace.t * bool * int * int * int -> object
+        (* methods *)
+        val getFileInfo : string * int * int -> object * int * int
+        val getFormats : unit -> object list
+        val getOption : object * string -> string
+        val compositeColorSimple : object * int * int * InterpType.t * int * int * int * int -> object
+        val scaleSimple : object * int * int * InterpType.t -> object
+        val compositeColor : object * object * int * int * int * int * real * real * real * real * InterpType.t * int * int * int * int * int * int -> unit
+        val composite : object * object * int * int * int * int * real * real * real * real * InterpType.t * int -> unit
+        val scale : object * object * int * int * int * int * real * real * real * real * InterpType.t -> unit
+        val saturateAndPixelate : object * object * real * bool -> unit
+        val copyArea : object * int * int * int * int * object * int * int -> unit
+        val addAlpha : object * bool * char * char * char -> object
+        val savev : object * string * string * (string vector) * (string vector) -> bool
+        val save : object * string * string -> bool
+        val fill : object * int -> unit
+        val subpixbuf : object * int * int * int * int -> object
+        val newFromInline : int * string * bool -> object
+        val newFromXpmData : (string vector) -> object
+        val newFromData : string * Colorspace.t * bool * int * int * int * int * object * object -> object
+        val newFromFileAtSize : string * int * int -> object
+        val newFromFile : string -> object
+        val copy : object -> object
+        val getRowstride : object -> int
+        val getHeight : object -> int
+        val getWidth : object -> int
+        val getPixels : object -> string
+        val getBitsPerSample : object -> int
+        val getHasAlpha : object -> bool
+        val getNChannels : object -> int
+        val getColorspace : object -> Colorspace.t
+        val getFromImage : object * object * object * int * int * int * int * int * int -> object
+        val getFromDrawable : object * object * object * int * int * int * int * int * int -> object
+        val renderPixmapAndMask : object * int -> object * object
+        val renderToDrawableAlpha : object * object * int * int * int * int * int * int * PixbufAlphaMode.t * int * RgbDither.t * int * int -> unit
+        val renderToDrawable : object * object * object * int * int * int * int * int * int * RgbDither.t * int * int -> unit
+        (* properties *)
+    end
+    structure Keymap :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getDirection : object -> Pango.Direction.t
+        val translateKeyboardState : object * int * ModifierType.t * int * int * int * int * ModifierType.t -> bool * int * int * int * ModifierType.t
+        val getForDisplay : object -> object
+        val getDefault : unit -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Image :
+    sig
+        (* constructors *)
+        val new : ImageType.t * object * int * int -> object
+        (* methods *)
+        val getColormap : object -> object
+        val setColormap : object * object -> unit
+        val getPixel : object * int * int -> int
+        val putPixel : object * int * int * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure GC :
+    sig
+        (* constructors *)
+        val gdkGcNew : object -> object
+        (* methods *)
+        val setRgbBgColor : object * object -> unit
+        val setRgbFgColor : object * object -> unit
+        val getColormap : object -> object
+        val setColormap : object * object -> unit
+        val copy : object * object -> unit
+        val offset : object * int * int -> unit
+        val setLineAttributes : object * int * LineStyle.t * CapStyle.t * JoinStyle.t -> unit
+        val setExposures : object * bool -> unit
+        val setSubwindow : object * SubwindowMode.t -> unit
+        val setClipRegion : object * object -> unit
+        val setClipRectangle : object * object -> unit
+        val setClipMask : object * object -> unit
+        val setClipOrigin : object * int * int -> unit
+        val setTsOrigin : object * int * int -> unit
+        val setStipple : object * object -> unit
+        val setTile : object * object -> unit
+        val setFill : object * Fill.t -> unit
+        val setFont : object * object -> unit
+        val setBackground : object * object -> unit
+        val setForeground : object * object -> unit
+        (* properties *)
+    end
+    structure Pixmap :
+    sig
+        (* constructors *)
+        val new : object * int * int * int -> object
+        (* methods *)
+        val colormapCreateFromXpmD : object * object * object * (string vector) -> object * object
+        val createFromXpmD : object * object * (string vector) -> object * object
+        val colormapCreateFromXpm : object * object * object * string -> object * object
+        val createFromXpm : object * object * string -> object * object
+        val createFromData : object * string * int * int * int * object * object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Window :
+    sig
+        (* constructors *)
+        (* methods *)
+        val configureFinished : object -> unit
+        val enableSynchronizedConfigure : object -> unit
+        val setFocusOnMap : object * bool -> unit
+        val setAcceptFocus : object * bool -> unit
+        val getInternalPaintInfo : object * int * int -> object * int * int
+        val setDebugUpdates : bool -> unit
+        val processUpdates : object * bool -> unit
+        val processAllUpdates : unit -> unit
+        val thawUpdates : object -> unit
+        val freezeUpdates : object -> unit
+        val getUpdateArea : object -> object
+        val invalidateRegion : object * object * bool -> unit
+        val invalidateRect : object * object * bool -> unit
+        val beginMoveDrag : object * int * int * int * int -> unit
+        val beginResizeDrag : object * WindowEdge.t * int * int * int * int -> unit
+        val registerDnd : object -> unit
+        val unfullscreen : object -> unit
+        val fullscreen : object -> unit
+        val unmaximize : object -> unit
+        val maximize : object -> unit
+        val unstick : object -> unit
+        val stick : object -> unit
+        val deiconify : object -> unit
+        val iconify : object -> unit
+        val getToplevels : unit -> object list
+        val getDecorations : object * WMDecoration.t -> bool * WMDecoration.t
+        val setDecorations : object * WMDecoration.t -> unit
+        val getGroup : object -> object
+        val setGroup : object * object -> unit
+        val setIconName : object * string -> unit
+        val setIcon : object * object * object * object -> unit
+        val setIconList : object * (object list) -> unit
+        val setEvents : object * EventMask.t -> unit
+        val getEvents : object -> EventMask.t
+        val peekChildren : object -> object list
+        val getChildren : object -> object list
+        val getToplevel : object -> object
+        val getParent : object -> object
+        val getPointer : object * int * int * ModifierType.t -> object * int * int * ModifierType.t
+        val getFrameExtents : object * object -> unit
+        val getRootOrigin : object * int * int -> int * int
+        val getDeskrelativeOrigin : object * int * int -> bool * int * int
+        val getOrigin : object * int * int -> int * int * int
+        val getPosition : object * int * int -> int * int
+        val getGeometry : object * int * int * int * int * int -> int * int * int * int * int
+        val setCursor : object * object -> unit
+        val setBackPixmap : object * object * bool -> unit
+        val setBackground : object * object -> unit
+        val setTransientFor : object * object -> unit
+        val setRole : object * string -> unit
+        val setTitle : object * string -> unit
+        val endPaint : object -> unit
+        val beginPaintRegion : object * object -> unit
+        val beginPaintRect : object * object -> unit
+        val setSkipPagerHint : object * bool -> unit
+        val setSkipTaskbarHint : object * bool -> unit
+        val setModalHint : object * bool -> unit
+        val setTypeHint : object * WindowTypeHint.t -> unit
+        val setHints : object * int * int * int * int * int * int * int -> unit
+        val setStaticGravities : object * bool -> bool
+        val getState : object -> WindowState.t
+        val isViewable : object -> bool
+        val isVisible : object -> bool
+        val mergeChildShapes : object -> unit
+        val setChildShapes : object -> unit
+        val shapeCombineMask : object * object * int * int -> unit
+        val scroll : object * int * int -> unit
+        val setOverrideRedirect : object * bool -> unit
+        val setUserData : object * object -> unit
+        val focus : object * int -> unit
+        val lowerWindow : object -> unit
+        val raiseWindow : object -> unit
+        val clearAreaE : object * int * int * int * int -> unit
+        val clearArea : object * int * int * int * int -> unit
+        val clear : object -> unit
+        val reparent : object * object * int * int -> unit
+        val moveResize : object * int * int * int * int -> unit
+        val resize : object * int * int -> unit
+        val move : object * int * int -> unit
+        val withdraw : object -> unit
+        val hide : object -> unit
+        val show : object -> unit
+        val atPointer : int * int -> object * int * int
+        val getWindowType : object -> WindowType.t
+        val destroy : object -> unit
+        val setKeepBelow : object * bool -> unit
+        val setKeepAbove : object * bool -> unit
+        val objectGetType : unit -> gtype
+        val selectionConvert : object * Word32.word * Word32.word * int -> unit
+        val propertyDelete : object * Word32.word -> unit
+        val propertyChange : object * Word32.word * Word32.word * int * PropMode.t * string * int -> unit
+        val inputSetExtensionEvents : object * int * ExtensionMode.t -> unit
+        val dragBegin : object * (object list) -> object
+        (* properties *)
+    end
+    structure Drawable :
+    sig
+        (* constructors *)
+        (* methods *)
+        val drawGrayImage : object * object * int * int * int * int * RgbDither.t * string * int -> unit
+        val drawRgb32Image : object * object * int * int * int * int * RgbDither.t * string * int -> unit
+        val drawRgbImageDithalign : object * object * int * int * int * int * RgbDither.t * string * int * int * int -> unit
+        val drawRgbImage : object * object * int * int * int * int * RgbDither.t * string * int -> unit
+        val imageGet : object * int * int * int * int -> object
+        val getVisibleRegion : object -> object
+        val getClipRegion : object -> object
+        val getImage : object * int * int * int * int -> object
+        val drawLayout : object * object * int * int * object -> unit
+        val drawLayoutLine : object * object * int * int * object -> unit
+        val drawGlyphs : object * object * object * int * int * object -> unit
+        val drawPixbuf : object * object * object * int * int * int * int * int * int * RgbDither.t * int * int -> unit
+        val drawLines : object * object * object * int -> unit
+        val drawPoints : object * object * object * int -> unit
+        val drawImage : object * object * object * int * int * int * int * int * int -> unit
+        val drawDrawable : object * object * object * int * int * int * int * int * int -> unit
+        val drawText : object * object * object * int * int * string * int -> unit
+        val drawString : object * object * object * int * int * string -> unit
+        val drawPolygon : object * object * bool * object * int -> unit
+        val drawArc : object * object * bool * int * int * int * int * int * int -> unit
+        val drawRectangle : object * object * bool * int * int * int * int -> unit
+        val drawLine : object * object * int * int * int * int -> unit
+        val drawPoint : object * object * int * int -> unit
+        val unref : object -> unit
+        val reference : object -> object
+        val getDisplay : object -> object
+        val getScreen : object -> object
+        val getDepth : object -> int
+        val getVisual : object -> object
+        val getColormap : object -> object
+        val setColormap : object * object -> unit
+        val getSize : object * int * int -> int * int
+        val getData : object * string -> object
+        val setData : object * string * object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure DragContext :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setIconDefault : object -> unit
+        val setIconStock : object * string * int * int -> unit
+        val setIconPixbuf : object * object * int * int -> unit
+        val setIconPixmap : object * object * object * object * int * int -> unit
+        val setIconWidget : object * object * int * int -> unit
+        val getSourceWidget : object -> object
+        val finish : object * bool * bool * int -> unit
+        val dragDropSucceeded : object -> bool
+        val dragAbort : object * int -> unit
+        val dragDrop : object * int -> unit
+        val dragMotion : object * object * DragProtocol.t * int * int * DragAction.t * DragAction.t * int -> bool
+        val dragFindWindowForScreen : object * object * object * int * int * DragProtocol.t -> object * DragProtocol.t
+        val dragFindWindow : object * object * int * int * DragProtocol.t -> object * DragProtocol.t
+        val dragGetSelection : object -> Word32.word
+        val dropFinish : object * bool * int -> unit
+        val dropReply : object * bool * int -> unit
+        val dragStatus : object * DragAction.t * int -> unit
+        val unref : object -> unit
+        val reference : object -> unit
+        val getType : unit -> gtype
+        val getFieldTargets : object -> object list
+        val setFieldTargets : object * (object list) -> unit
+        val getFieldSuggestedAction : object -> DragAction.t
+        val setFieldSuggestedAction : object * DragAction.t -> unit
+        val getFieldStartTime : object -> int
+        val setFieldStartTime : object * int -> unit
+        val getFieldSourceWindow : object -> object
+        val setFieldSourceWindow : object * object -> unit
+        val getFieldProtocol : object -> DragProtocol.t
+        val setFieldProtocol : object * DragProtocol.t -> unit
+        val getFieldIsSource : object -> bool
+        val setFieldIsSource : object * bool -> unit
+        val getFieldDestWindow : object -> object
+        val setFieldDestWindow : object * object -> unit
+        val getFieldActions : object -> DragAction.t
+        val setFieldActions : object * DragAction.t -> unit
+        val getFieldAction : object -> DragAction.t
+        val setFieldAction : object * DragAction.t -> unit
+        (* properties *)
+    end
+    structure DisplayManager :
+    sig
+        (* constructors *)
+        (* methods *)
+        val listDisplays : object -> object list
+        val setDefaultDisplay : object * object -> unit
+        val getDefaultDisplay : object -> object
+        val get : unit -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Display :
+    sig
+        (* constructors *)
+        val openDisplay : string -> object
+        (* methods *)
+        val getDefaultGroup : object -> object
+        val getMaximalCursorSize : object * int * int -> int * int
+        val getDefaultCursorSize : object -> int
+        val supportsCursorColor : object -> bool
+        val supportsCursorAlpha : object -> bool
+        val setDoubleClickDistance : object * int -> unit
+        val flush : object -> unit
+        val storeClipboard : object * object * int * (Word32.word vector) -> unit
+        val supportsClipboardPersistence : object -> bool
+        val requestSelectionNotification : object * Word32.word -> bool
+        val supportsSelectionNotification : object -> bool
+        val openDefaultLibgtkOnly : unit -> object
+        val getWindowAtPointer : object * int * int -> object * int * int
+        val getCorePointer : object -> object
+        val getDefault : unit -> object
+        val setDoubleClickTime : object * int -> unit
+        val putEvent : object * object -> unit
+        val peekEvent : object -> object
+        val getEvent : object -> object
+        val close : object -> unit
+        val sync : object -> unit
+        val beep : object -> unit
+        val pointerIsGrabbed : object -> bool
+        val keyboardUngrab : object * int -> unit
+        val pointerUngrab : object * int -> unit
+        val getDefaultScreen : object -> object
+        val getScreen : object * int -> object
+        val getNScreens : object -> int
+        val getName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Device :
+    sig
+        (* constructors *)
+        val new : { axes : object, has_cursor : bool, keys : object, mode : InputMode.t, name : string, num_axes : int, num_keys : int, source : InputSource.t } -> object
+        (* methods *)
+        val getCorePointer : unit -> object
+        val getAxis : object * real * AxisUse.t * real -> bool * real * real
+        val getState : object * object * real * ModifierType.t -> real * ModifierType.t
+        val setAxisUse : object * int * AxisUse.t -> unit
+        val setKey : object * int * int * ModifierType.t -> unit
+        val setMode : object * InputMode.t -> bool
+        val setSource : object * InputSource.t -> unit
+        val getType : unit -> gtype
+        val getFieldSource : object -> InputSource.t
+        val setFieldSource : object * InputSource.t -> unit
+        val getFieldNumKeys : object -> int
+        val setFieldNumKeys : object * int -> unit
+        val getFieldNumAxes : object -> int
+        val setFieldNumAxes : object * int -> unit
+        val getFieldName : object -> string
+        val setFieldName : object * string -> unit
+        val getFieldMode : object -> InputMode.t
+        val setFieldMode : object * InputMode.t -> unit
+        val getFieldKeys : object -> object
+        val setFieldKeys : object * object -> unit
+        val getFieldHasCursor : object -> bool
+        val setFieldHasCursor : object * bool -> unit
+        val getFieldAxes : object -> object
+        val setFieldAxes : object * object -> unit
+        (* properties *)
+    end
+    structure Colormap :
+    sig
+        (* constructors *)
+        val new : object * bool -> object
+        (* methods *)
+        val change : object * object -> int
+        val alloc : object * object -> int
+        val black : object * object -> int
+        val white : object * object -> int
+        val getScreen : object -> object
+        val getVisual : object -> object
+        val queryColor : object * int * object -> unit
+        val allocColor : object * object * bool * bool -> bool
+        val getSystem : unit -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Pointer:
+    sig
+        val isGrabbed : unit -> bool
+        val ungrab : int -> unit
+        val grab : object * bool * EventMask.t * object * object * int -> GrabStatus.t
+    end
+    structure Keyval:
+    sig
+        val toUnicode : int -> int
+        val isLower : int -> bool
+        val isUpper : int -> bool
+        val toLower : int -> int
+        val toUpper : int -> int
+        val convertCase : int * int * int -> int * int
+        val fromName : string -> int
+        val name : int -> string
+    end
+    structure List:
+    sig
+        val visuals : unit -> object list
+    end
+    structure Unicode:
+    sig
+        val toKeyval : int -> int
+    end
+    structure Draw:
+    sig
+        val layoutWithColors : object * object * int * int * object * object * object -> unit
+        val layoutLineWithColors : object * object * int * int * object * object * object -> unit
+    end
+    structure Devices:
+    sig
+        val list : unit -> object list
+    end
+    structure Fontset:
+    sig
+        val load : string -> object
+        val loadForDisplay : object * string -> object
+    end
+    structure Events:
+    sig
+        val pending : unit -> bool
+    end
+    structure Rgb:
+    sig
+        val getVisual : unit -> object
+        val getCmap : unit -> object
+        val getColormap : unit -> object
+        val setMinColors : int -> unit
+        val setInstall : bool -> unit
+        val setVerbose : bool -> unit
+        val ditherable : unit -> bool
+        val gcSetBackground : object * int -> unit
+        val gcSetForeground : object * int -> unit
+        val xpixelFromRgb : int -> int
+    end
+    structure Gc:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Threads:
+    sig
+        val init : unit -> unit
+        val leave : unit -> unit
+        val enter : unit -> unit
+    end
+    structure Query:
+    sig
+        val visualTypes : object * int -> int
+        val depths : object * int -> int
+    end
+    structure Drag:
+    sig
+        val getProtocolForDisplay : object * int * DragProtocol.t -> int * DragProtocol.t
+        val getProtocol : int * DragProtocol.t -> int * DragProtocol.t
+    end
+    structure Keyboard:
+    sig
+        val ungrab : int -> unit
+        val grab : object * bool * int -> GrabStatus.t
+    end
+    structure Atom:
+    sig
+        val intern : string * bool -> Word32.word
+    end
+    structure Setting:
+    sig
+        val get : string -> bool * gvalue
+    end
+    structure Set:
+    sig
+        val pointerHooks : object -> object
+        val smClientId : string -> unit
+        val showEvents : bool -> unit
+        val doubleClickTime : int -> unit
+    end
+    structure Get:
+    sig
+        val defaultRootWindow : unit -> object
+        val showEvents : unit -> bool
+    end
+    structure Selection:
+    sig
+        val sendNotifyForDisplay : object * int * Word32.word * Word32.word * Word32.word * int -> unit
+        val sendNotify : int * Word32.word * Word32.word * Word32.word * int -> unit
+        val ownerGetForDisplay : object * Word32.word -> object
+        val ownerSetForDisplay : object * object * Word32.word * int * bool -> bool
+        val ownerGet : Word32.word -> object
+        val ownerSet : object * Word32.word * int * bool -> bool
+    end
+end  
+</PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.html">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>

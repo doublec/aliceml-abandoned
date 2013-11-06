@@ -1,0 +1,59 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature DEBUG from "DEBUG-sig"
+
+structure Debug :> DEBUG =
+struct
+
+    type db_mask = Word31.t
+
+    infix &&
+    infix ||
+    fun a && b = Word31.andb (a,b)  (* AND two masks *)
+    fun a || b = Word31.orb (a,b)   (* OR two masks *)
+
+    val counter = ref 0
+
+    (* Creates a new debug mask. *)
+    fun newDB () =
+	let val mask = Word31.<< (Word.fromInt 1, Word.fromInt (!counter))
+	in
+          if !counter = 31 then raise (Fail "Debug.newDB: counter too big.")
+	  else () ;
+	  counter := !counter + 1 ;
+	  mask
+	end
+
+    val dbExc    = newDB () (* Exceptions. *)
+    val dbRecomp = newDB () (* Recomputation. *)
+    val dbClone  = newDB () (* Clones. *)
+    val dbBaB    = newDB () (* Branch and Bound. *)
+    val dbSearch = newDB () (* Search. *)
+    val dbSlow   = newDB () (* Slow Search. *)
+
+    val dbZero = Word31.fromInt 0 (* Empty mask *)
+    val dbNone = dbZero
+    val dbAll  = Word31.notb dbZero (* Full mask *)
+
+    val localPrint = ref print
+
+    (* Print the debug message according to the masks. *)
+    fun dbPrint (mask1, mask2, message) =
+	if Word31.compare (dbZero, mask1 && mask2) = EQUAL
+	    then () else (!localPrint) message
+
+end

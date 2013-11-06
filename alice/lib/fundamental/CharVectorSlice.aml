@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                             from "Pervasive"
+import __primitive type string and char and int and list from "ToplevelTypes"
+import functor MkMonoVectorSlice                        from "MkMonoVectorSlice"
+
+structure CharVectorSlice = MkMonoVectorSlice(
+    type elem   = char
+    type vector = string
+    __primitive type slice = "CharVectorSlice.slice"
+    __primitive val vlength :   vector -> int = "CharVector.length"
+    __primitive val vsub :      vector * int -> elem = "CharVector.sub"
+    __primitive val vextract :  vector * int * int -> vector = "CharVector.extract"
+    __primitive val vtabulate : int * (int -> elem) -> vector = "CharVector.tabulate"
+    __primitive val vconcat :   vector list -> vector = "CharVector.concat"
+    __primitive val vfromList : elem list -> vector = "CharVector.fromList"
+)

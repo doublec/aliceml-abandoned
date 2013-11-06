@@ -1,0 +1,183 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *   Andreas Rossberg, 2005-2007
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+import signature STORE             from "STORE-sig"
+import structure UnsafeStore      from "UnsafeStore"
+import structure UnsafeValue      from "UnsafeValue"
+
+structure Store : STORE =
+struct
+    exception Stack = UnsafeStore.Stack
+
+    val same = UnsafeValue.same
+
+    fun minimize a = let
+        val b = UnsafeStore.newPartition()
+        val _ = UnsafeStore.loadGraph(b, a)
+    in
+        UnsafeStore.minimize b;
+	a
+    end
+
+    fun equiv(a, b) = same(a, b) orelse same(minimize(a, b))
+
+    val collect = UnsafeStore.collect
+
+    fun size x =
+	let
+	    val {nodes, words, ...} = UnsafeStore.size x
+	in
+	    {nodes, words}
+	end
+    fun sizeQuiet x =
+	let
+	    val {nodes, words, ...} = UnsafeStore.sizeQuiet x
+	in
+	    {nodes, words}
+	end
+
+    fun futures x =
+	let
+	    val {byneeds, futures, transients, ...} =
+		UnsafeStore.sizeQuiet x
+	in
+	    {total = byneeds + futures + transients,
+	     concurrent = futures,
+	     byneed = byneeds}
+	end
+    fun deepWait x =
+	let
+	    val {byneeds, futures, transients, ...} = UnsafeStore.size x
+	in
+	    {total = byneeds + futures + transients,
+	     concurrent = futures,
+	     byneed = byneeds}
+	end
+
+    val mb = Int.toLarge(1024*1024)
+    fun signal NONE = ignore(UnsafeStore.signal' 0)
+      | signal(SOME(limit, handler)) =
+	let
+	    val limit' = Int.max(Int.fromLarge(limit div mb), 64)
+	    val future = UnsafeStore.signal' limit'
+	in
+	    spawn handler(Int.toLarge future * mb); ()
+	end
+
+    structure Map =
+    struct
+	__primitive type ('a,'b) map = "('a,'b) Store.Map.map"
+	type t = map
+
+	__primitive exception Lookup' = "UnsafeMap.IllegalKey"
+
+	__primitive val lookup' : ('a,'b) map * 'a -> 'b = "UnsafeMap.get"
+	__primitive val member : ('a,'b) map * 'a -> bool = "UnsafeMap.isMember"
+	__primitive val map' : int -> ('a,'b) map = "UnsafeMap.new"
+	__primitive val insert : ('a,'b) map * 'a * 'b -> unit = "UnsafeMap.put"
+	__primitive val remove : ('a,'b) map * 'a -> unit = "UnsafeMap.remove"
+	__primitive val removeAll : ('a,'b) map -> unit = "UnsafeMap.clear"
+	__primitive val size : ('a,'b) map -> int = "UnsafeMap.getSize"
+	__primitive val toList : ('a,'b) map -> ('a * 'b) list = "UnsafeMap.toList"
+	__primitive val toVector : ('a,'b) map -> ('a * 'b) vector = "UnsafeMap.toVector"
+
+	exception Unknown
+	exception Collision
+
+	fun map() = map' 19
+
+	fun isEmpty m = size m = 0
+	fun lookup(m,r) = SOME(lookup'(m,r)) handle Lookup' => NONE
+	fun lookupExistent(m,r) = lookup'(m,r) handle Lookup' => raise Unknown
+
+	fun choose m  = case toList m of [] => NONE | (_,a)::_ => SOME a
+	fun choosei m = case toList m of [] => NONE | ra::_ => SOME ra
+
+	fun insertDisjoint(m,r,a) =
+	    if member(m,r) then raise Collision else insert(m,r,a)
+	fun insertWith f (m,r,a) =
+	    insert(m, r, f(lookup'(m,r), a) handle Lookup' => a)
+	fun insertWithi f (m,r,a) =
+	    insert(m, r, f(r, lookup'(m,r), a) handle Lookup' => a)
+
+	fun removeExistent(m,r) =
+	    if member(m,r) then remove(m,r) else raise Unknown
+	fun removeWith f (m,r) =
+	    if member(m,r) then remove(m,r) else f r
+
+	fun fromList l =
+	    let
+		val m' = map'(List.length l * 3 div 2)
+	    in
+		List.app (fn(r,a) => insert(m',r,a)) l;
+		m'
+	    end
+
+	fun fromVector v =
+	    let
+		val m' = map'(Vector.length v * 3 div 2)
+	    in
+		Vector.app (fn(r,a) => insert(m',r,a)) v;
+		m'
+	    end
+
+	fun clone m	= fromVector(toVector m)
+
+	fun app f m	= List.app (fn(_,a) => f a) (toList m)
+	fun appi f m	= List.app f (toList m)
+
+	fun modify f m	= List.app (fn(r,a) => insert(m, r, f a)) (toList m)
+	fun modifyi f m	= List.app (fn(r,a) => insert(m, r, f(r,a))) (toList m)
+
+	fun fold f b m	= List.foldl (fn((_,a),b) => f(a,b)) b (toList m)
+	fun foldi f b m	= List.foldl (fn((r,a),b) => f(r,a,b)) b (toList m)
+
+	fun all f m	= List.all (fn(_,a) => f a) (toList m)
+	fun alli f m	= List.all f (toList m)
+
+	fun exists f m	= List.exists (fn(_,a) => f a) (toList m)
+	fun existsi f m	= List.exists f (toList m)
+
+	fun find f m	= Option.map #2 (List.find (fn(_,a) => f a) (toList m))
+	fun findi f m	= List.find f (toList m)
+
+	fun filter f m =
+	    List.app (fn(r,a) => if f a then () else remove(m,r)) (toList m)
+	fun filteri f m =
+	    List.app (fn(r,a) => if f(r,a) then () else remove(m,r)) (toList m)
+
+	fun union' insert (m1,m2) = List.app (fn(r,a) => insert(m1,r,a)) (toList m2)
+	fun union x		= union' insert x
+	fun unionDisjoint x	= union' insertDisjoint x
+	fun unionWith f		= union'(insertWith f)
+	fun unionWithi f	= union'(insertWithi f)
+
+	fun difference (m1,m2)	= List.app (fn(r,_) => remove(m1,r)) (toList m2)
+
+	fun intersect' insert (m1,m2)
+				= List.app (fn(r,_) =>
+					    insert(m1, r, lookup'(m2,r))
+					    handle Lookup' => remove(m1,r)) (toList m1)
+	fun intersect x		= intersect' insert x
+	fun intersectWith f	= intersect'(insertWith f)
+	fun intersectWithi f	= intersect'(insertWithi f)
+
+	fun disjoint (m1,m2)	= List.all (fn(r,_) => not(member(m2,r))) (toList m1)
+	fun submap eq (m1,m2)	= List.all (fn(r,a) => case lookup(m2,r)
+							 of NONE => false
+							  | SOME a' => eq(a,a')) (toList m1)
+	fun equal eq (m1,m2)	= size m1 = size m2 andalso submap eq (m1,m2)
+    end
+end

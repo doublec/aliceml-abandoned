@@ -1,0 +1,394 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk        from "../Gtk"
+import structure Gdk        from "../Gdk"
+import structure GtkBuilder from "../GtkBuilder"
+import structure Config     from "x-alice:/lib/system/Config"
+
+local
+    open GtkBuilder
+
+    fun newServer () =
+	let
+	    val tail   = Promise.promise ()
+	    val stream = Ref.ref tail
+
+	    fun process s = (case s of
+				 nil   => ()
+			       | p::pr => (p (); process pr))
+	    fun send p =
+		let
+		    val newtail = Promise.promise ()
+		    val tail    = Ref.exchange(stream, newtail)
+		in
+		    Promise.fulfill(tail, p::(Promise.future newtail))
+		end
+	in
+	    (spawn (process(Promise.future tail));
+	     send)
+	end
+
+    val serve = newServer ()
+
+    fun fileToString (file, lines) =
+	(case TextIO.inputLine file of
+	     NONE      => (TextIO.closeIn file; rev lines)
+	   | SOME line => fileToString(file, line::lines))
+
+    val keys = ["abstype", "and", "andalso", "as", "case", "datatype",
+		"do", "else", "end", "exception", "fn", "fun", "handle",
+		"if", "in", "infix", "infixr", "let", "local", "nonfix",
+		"of", "op", "open", "orelse", "raise", "rec", "then",
+		"type", "val", "with", "withtype", "while",
+		"eqtype", "functor", "include", "sharing",
+		"sig", "signature", "structure", "struct", "where",
+                "any", "constructor", "fct", "from", "import", "non",
+                "pack", "unpack", "when", "withfun", "withval"
+	       ]
+
+    fun searchKey(key, nil)   = false
+      | searchKey(key, k::kr) = (key = k) orelse searchKey(key, kr)
+
+    fun isKeyWord key = searchKey(key, keys) 
+
+    val isSep = not o Char.isAlphaNum
+
+    fun isToken c = not (isSep c)
+
+    fun myInsertWithTags (buffer, iter, token, taglist) =
+    let
+	val startOffset = Gtk.textIterGetOffset iter
+	val start = Gtk.textIterNew()
+    in
+	Gtk.textBufferInsert (buffer, iter, token, String.size token) ;
+	Gtk.textBufferGetIterAtOffset (buffer, start, startOffset) ;
+        List.app (fn t => Gtk.textBufferApplyTag(buffer,t,start,iter)) taglist
+    end
+
+    fun insertTokens(pars as (text, iter, tc, nc, bg, ft), nil)       = ()
+      | insertTokens(pars as (text, iter, tc, nc, bg, ft), token::tr) =
+	let
+	    val fg = if isKeyWord token then tc else nc
+	in
+	    (Gtk.textBufferGetEndIter(text, iter);
+	     myInsertWithTags(text, iter, token, [ft, fg, bg]);
+	     insertTokens(pars, tr))
+	end
+
+    fun collectSeps(ts, nil)         = (String.implode (rev ts), nil)
+      | collectSeps(ts, cs as c::cr) =
+	if isSep c then collectSeps(c::ts, cr)
+	else (String.implode (rev ts), cs)
+
+    fun collectTokens(ts, nil)         = (String.implode (rev ts), nil)
+      | collectTokens(ts, cs as c::cr) =
+	if isToken c then collectTokens(c::ts, cr)
+	else (String.implode (rev ts), cs)
+
+    fun lineToTokens(nil)         = nil
+      | lineToTokens(cs as c::cr) =
+	(case isSep c of
+	     true  =>
+		 let
+		     val (str, cr) = collectSeps(nil, cs)
+		 in
+		     [str] @ lineToTokens(cr)
+		 end
+	   | false =>
+		 let
+		     val (str, cr) = collectTokens(nil, cs)
+		 in
+		     [str] @ lineToTokens(cr)
+		 end)
+
+    fun insertLines(pars, nil)      = ()
+      | insertLines(pars, line::lr) =
+	(insertTokens(pars, lineToTokens (String.explode line));
+	 insertLines(pars, lr))
+
+    val textcolor = ref (Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0))
+    val curwin    = ref NONE : Gtk.object option ref
+    val curtext   = ref NONE : Gtk.object option ref
+    val curfile   = ref ""
+
+    val font = Gdk.fontLoad "8x13"
+
+    fun fileToWindow file =
+	let
+	    val xdim    = 550.0
+	    val ydim    = 350.0
+	    val lines   = if file = "" then nil
+			  else fileToString(TextIO.openIn file, nil)
+
+	    val textv   = MakeWidget (Text {xdim=xdim, ydim=ydim, text=nil})
+            val text    = Gtk.textViewGetBuffer textv
+	    val xa      = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
+	    val ya      = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
+	    val vs      = Gtk.vscrollbarNew(ya)
+	    val entries = [TableSimple {x=0, y=0, item=Window textv},
+			   TableSimple {x=1, y=0, item=Window vs}]
+
+	    val map = Gdk.colormapGetSystem ()
+	    val black = Gdk.colorNew(0, 0, 0)
+	    val white = Gdk.colorNew(65535, 65535, 65535)
+	    val kcol  = !textcolor
+	    fun createTag(name, prop, value) =
+		Gtk.textBufferCreateTag(text, name, prop, value)
+	in
+	    (Gtk.widgetSetSizeRequest(textv, Real.round xdim, Real.round ydim);
+	     Gtk.widgetSetScrollAdjustments(textv, xa, ya);
+	     Gtk.textViewSetEditable(textv, false);
+	     curtext := SOME text;
+	     Gdk.colormapAllocColor(map, black, false, true);
+	     Gdk.colormapAllocColor(map, white, false, true);
+	     Gdk.colormapAllocColor(map, kcol, false, true);
+	     insertLines((text, Gtk.textIterNew(),
+			  createTag("kc", "foreground-gdk", Gtk.OBJECT kcol),
+			  createTag("bl", "foreground-gdk", Gtk.OBJECT black),
+			  createTag("wh", "background-gdk", Gtk.OBJECT white),
+			  createTag("fn", "font", Gtk.STRING "Courier 14")), 
+			 lines);
+	     Table {rows=1, columns=2, homogeneous=false, entries=entries})
+	end
+
+    fun displayFile () =
+	let
+	    val _ = TextIO.flushOut TextIO.stdOut
+	    val note   = valOf(!curwin)
+	    val window = fileToWindow (!curfile)
+	    val align  = MakeWidget(Alignment {xalign=0.0,
+					       yalign=0.0, xscale=1.0,
+					       yscale=1.0, inner=window})
+	    val label  = MakeWidget(Label "")
+	in
+	    (Gtk.notebookRemovePage(note, 0);
+	     Gtk.widgetShowAll(align);
+	     Gtk.notebookAppendPage(note, align, label);
+             ()
+	    )
+	end
+
+    local
+	val xdim = 550.0
+	val ydim = 150.0
+
+	val map   = Gdk.colormapGetSystem ()
+	val white = Gdk.colorNew(65535, 65535, 65535)
+	val black = Gdk.colorNew(0, 0, 0)
+
+	val textv = MakeWidget (Text {xdim=xdim, ydim=ydim, text=nil})
+	val text = Gtk.textViewGetBuffer textv
+	val iter = Gtk.textIterNew()
+    in
+	fun resultWindow () =
+	    let
+		val xa = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
+		val ya = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
+		val vs = Gtk.vscrollbarNew ya
+		val entries = [TableSimple {x=0, y=0, item=Window textv},
+			       TableSimple {x=1, y=0, item=Window vs}]
+	    in
+		(Gtk.widgetSetSizeRequest(textv, 
+					  Real.round xdim, Real.round ydim);
+		 Gtk.widgetSetScrollAdjustments(textv, xa, ya);
+		 Gtk.textViewSetEditable(textv, false);
+		 Gdk.colormapAllocColor(map, black, false, true);
+		 Gdk.colormapAllocColor(map, white, false, true);
+		 Table {rows=1, columns=2, homogeneous=false, entries=entries})
+	    end
+	
+	fun isSep #"\n" = true
+	  | isSep _     = false
+
+	fun filLine s =
+	    (case String.explode s of
+		 #">":: #" ":: _ => false
+	       | #" ":: #" ":: _ => false
+	       | _               => true)
+
+	fun insertLines nil        = ()
+	  | insertLines (line::lr) =
+	    let
+		val nline = (line ^ "\n")
+	    in
+		(Gtk.textBufferGetEndIter(text, iter);
+		 Gtk.textBufferInsert(text, iter, nline, String.size nline);
+		 insertLines lr)
+	    end
+
+	fun showResult s = serve
+	   (fn () => insertLines (List.filter filLine (String.tokens isSep s)))
+    end
+
+(*
+    local
+	val proc =
+	    (case Config.platform of
+		 Config.WIN32 => Unix.execute ("cmd", ["/c", "alice"])
+	       | Config.UNIX  => Unix.execute ("alice", nil))
+	val (instream, outstream) = Unix.streamsOf proc
+
+	fun printResult () =
+	    (case TextIO.inputLine instream of
+		 NONE   => showResult "interpreter terminated."
+	       | SOME s => (showResult s; printResult ()))
+    in
+	fun listenToShell () = spawn (printResult ())
+
+	fun textToShell () =
+	    let
+		val text  = valOf(!curtext)
+		val iters = Gtk.textIterNew()
+		val _     = Gtk.textBufferGetStartIter(text,iters)
+		val itere = Gtk.textIterNew()
+		val _     = Gtk.textBufferGetEndIter(text,itere)
+		val lines = Gtk.textBufferGetText(text, iters, itere, true)
+		val newlines = String.translate 
+		                    (fn #"\n" => " \n" | c => str c) lines
+	    in
+		(TextIO.output(outstream, newlines);
+		 TextIO.output(outstream, ";\n"))
+	    end
+    end
+*)
+    fun listenToShell () = ()
+    fun textToShell () = ()
+
+    local
+	datatype entercase = FRESH | TRUE | FALSE
+
+	val enter = ref FRESH
+
+	val colorSel = Gtk.colorSelectionNew ()
+	val dialog   = Hole.hole ()
+	    
+	exception Error
+
+	fun okHandler _ = serve
+	    (fn () =>
+	     let
+		 val color        = Gdk.colorNew(0, 0, 0)
+	     in
+		 (Gtk.colorSelectionGetCurrentColor(colorSel,color);
+		  textcolor := color;
+		  displayFile ();
+		  enter := TRUE;
+		  Gtk.widgetUnmap dialog)
+	     end)
+	    
+	fun cancelHandler _ = serve
+	    (fn () => (enter := TRUE;
+		       Gtk.widgetUnmap dialog))
+	    
+	val okButton     = Button("Ok", [Handler("clicked", okHandler)])
+	val cancelButton = Button("Cancel", [Handler("clicked",cancelHandler)])
+	val bBox         = HButtonBox(EndStyle, [okButton, cancelButton])
+	val vBox         = VBox {homogeneous=false, spacing=4,
+				 entries=[BoxSimple (Window colorSel), 
+					  BoxSimple bBox]}
+	val toplevel     = Toplevel {title="Select keyword color",
+				     border=4, handler=nil, inner=vBox}
+    in
+	fun getKeywordColor () =
+	    (case !enter of
+		 FRESH => (Hole.fill(dialog, MakeWidget toplevel);
+			   enter := TRUE;
+			   getKeywordColor ())
+	       | FALSE => ()
+	       | TRUE  =>
+		     (enter := FALSE;
+		      Gtk.widgetMap dialog))
+    end
+
+    fun tourAliceHandler _ = ()
+    fun tourColorHandler _ = getKeywordColor ()
+    fun tourExitHandler _  = OS.Process.exit OS.Process.success
+
+    val tourMenu  = [MenuItem("About Alice...",
+			      [Handler ("activate", tourAliceHandler)]),
+		     MenuItem("Keyword color...",
+			      [Handler ("activate", tourColorHandler)]),
+		     MenuItem("Exit", [Handler("activate", tourExitHandler)])]
+    val menuBar   = MenuBar([{label="Tour", submenu=tourMenu}])
+    val menuAlign = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=0.0,
+			       inner=menuBar}
+
+    val codeWin    = (curfile := ""; fileToWindow "")
+    val codeAalign = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=1.0,
+				inner=codeWin}
+    val codeNote   = MakeWidget (Notebook(false,[{label="", note=codeAalign}]))
+    val codeFrame  = Frame {title=" Demo Source ",
+			    ftype=ShadowIn,
+			    inner=Window codeNote}
+
+    val resWin   = resultWindow ()
+    val resAlign = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=1.0, 
+			      inner=resWin}
+    val resFrame = Frame {title=" System Answer ",
+			  ftype=ShadowIn,
+			  inner=resWin}
+
+    val codeResEntries = [BoxSimple codeFrame,
+			  BoxSimple resFrame]
+    val codeResBox     = VBox {homogeneous=false, spacing=4, 
+			       entries=codeResEntries}
+	
+    val demoTree  = [SubTree("Constraints",
+			     [TreeItem "SEND+MORE=MONEY",
+			      TreeItem "Photo Alignment"]),
+		     SubTree("Gtk",
+			     [TreeItem "Hello, World!",
+			      TreeItem "Fifteen"])
+		     ]
+
+    fun treeHandler (item, "select") = serve
+	(fn () =>
+	 (case item of
+	      "SEND+MORE=MONEY" => (curfile:="data/money.aml"; displayFile ())
+	    | "Photo Alignment" => (curfile:="data/photo.aml"; displayFile ())
+	    | "Hello, World!"   => (curfile:="data/hello.aml"; displayFile ())
+	    | "Fifteen"         => (curfile:="data/fifteen.aml"; displayFile())
+	    | _                 => ()))
+      | treeHandler (item, _)        = ()
+
+    val treeWin   = Tree(demoTree, treeHandler)
+    val treeFrame = Frame {title=" Select Demo ",
+			   ftype=ShadowIn,
+			   inner=treeWin}
+
+    val conentEntries = [BoxSimple treeFrame,
+			 BoxSimple codeResBox]
+
+    val contentBox = HBox {homogeneous=false, spacing=4, entries=conentEntries}
+
+    fun launchHandler _ = serve
+	(fn () => (textToShell ()))
+
+    val launchButton    = Button("Execute Source Code", 
+				 [Handler("clicked", launchHandler)])
+    val launchAlignment = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, 
+				     yscale=0.0, inner=launchButton}
+
+    val topEntries        = [BoxSimple menuAlign,
+			     BoxSimple contentBox,
+			     BoxSimple launchAlignment]
+    val topBox            = VBox {homogeneous=false, spacing=4,  
+				  entries=topEntries}
+    val topDestroyHandler = Handler("delete-event", tourExitHandler)
+    val topWin            = Toplevel {title="Alice Tour", border=2,
+				      handler=[topDestroyHandler],inner=topBox}
+
+in
+    val _ = (curwin := SOME codeNote; listenToShell (); MakeWidget topWin)
+end

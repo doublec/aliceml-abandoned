@@ -1,0 +1,111 @@
+<?php include("macros.php3"); ?>
+<?php heading("The General structure", "The <TT>General</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature GENERAL
+    structure General : GENERAL
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/general.html"><TT>General</TT></A> structure.
+  </P>
+
+  <P>
+    All of the types and values defined in General are available unqualified
+    in the <A href="toplevel.html">top-level environment</A>.
+  </P>
+
+  <P>See also:
+    <A href="fn.html"><TT>Fn</TT></A>,
+    <A href="exn.html"><TT>Exn</TT></A>,
+    <A href="ref.html"><TT>Ref</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature GENERAL =
+    sig
+	eqtype unit
+	exttype exn
+
+	datatype order = LESS | EQUAL | GREATER
+
+	exception Assert of string * int
+	exception Bind
+	exception Chr
+	exception Div
+	exception Domain
+	exception Fail of string
+	exception Match
+	exception Overflow
+	exception Size
+	exception Span
+	exception Subscript
+	exception Unordered
+
+	val exnName :    exn -> string
+	val exnMessage : exn -> string
+
+	val inverse :    order -> order
+
+	val ! :          'a ref -> 'a
+	val op := :      'a ref * 'a -> unit
+	val op :=: :     'a ref * 'a ref -> unit
+
+	val ignore :     'a -> unit
+	val before :     'a * unit -> 'a
+	val op o :       ('b -> 'c) * ('a -> 'b) -> 'a -> 'c
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/general.html"><TT>General</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>exception Assert of string * int</TT>
+    </DT>
+    <DD>
+      <P>Indicates an assertion failes. The arguments are the file name
+      and the line number of the respective <TT>assert</TT> expression.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Unordered</TT>
+    </DT>
+    <DD>
+      <P>Indicates that two values are incomparable with respect to a partial
+      ordering.</P>
+    </DD>
+
+    <DT>
+      <TT>inverse <I>order</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the inverse of the argument <TT>order</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><I>re1</I> :=: <I>re2</I></TT>
+    </DT>
+    <DD>
+      <P>Swaps the values referred to by the references <TT><I>re1</I></TT> and
+      <TT><I>re2</I></TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

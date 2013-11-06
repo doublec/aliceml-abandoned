@@ -1,0 +1,71 @@
+(* Alice Snake 2.0 - QuestionWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature QUESTION from "QUESTION-sig"
+
+import structure Gtk      from "GtkSupport"
+
+
+structure Question :> QUESTION =
+struct
+
+    type answers = {yes    : unit -> unit,
+		    no     : unit -> unit,
+		    cancel : unit -> unit }
+
+    fun mkQuestionBox (parent, title, quest, {yes, no, cancel}) =
+	let
+
+	    val questionWindow = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val yesButton      = Gtk.Button.newWithLabel "Yes"
+	    val noButton       = Gtk.Button.newWithLabel "No"
+	    val buttonBox      = Gtk.HButtonBox.new ()
+	    val dialogBox      = Gtk.VBox.new (false, 5)
+	    val label          = Gtk.Label.new ""
+		
+	    fun question q = Gtk.Label.setText (label, q)
+
+
+	    fun mainQuit ans = (Gtk.Widget.destroy questionWindow;
+			        ans ())
+
+	in
+
+	    question quest;
+	    Gtk.Window.setModal (questionWindow, true);
+	    Gtk.Container.setBorderWidth (questionWindow, 10);
+	    Gtk.Window.setTitle (questionWindow, title);
+	    Gtk.Window.setPosition (questionWindow,
+				   Gtk.WindowPosition.CENTER);
+	    
+	    Gtk.signalConnect (questionWindow, 
+			       "delete-event",
+			       fn _ => mainQuit cancel);
+	    Gtk.signalConnect (yesButton, "clicked", 
+			       fn _ => mainQuit yes);
+	    Gtk.signalConnect (noButton, "clicked", 
+			       fn _ => mainQuit no);
+	    
+	    Gtk.Box.packStart (buttonBox,
+			      yesButton, true, true, 5);
+	    Gtk.Box.packStart (buttonBox,
+			      noButton, true, true, 5);
+	    Gtk.Box.packStart (dialogBox,
+			      label, false, false, 5);
+	    Gtk.Box.packStart (dialogBox,
+			      buttonBox, false, false, 5);
+
+	    Gtk.Container.add (questionWindow, dialogBox);
+
+	    Gtk.Widget.showAll questionWindow
+	end
+
+end

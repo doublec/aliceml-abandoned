@@ -1,0 +1,26 @@
+val _ = print "100\n"
+val _ = print "100\n"
+
+val _ = Vector.app (fn x => print x) (Vector.tabulate(99,fn _ => "# "))
+val _ = print "#\n"
+
+fun loop 0 _ = ()
+  | loop n f = (f (); loop (n-1) f)
+
+val _ = loop 49 (fn _ =>
+                    let
+                        val _ = print " # "
+                        val _ = Vector.app (fn x => print x) (Vector.tabulate(98,fn _ => ". "))
+                        val _ = print "#"
+                        val _ = print "\n"
+                        val _ = print "# "
+                        val _ = Vector.app (fn x => print x) (Vector.tabulate(98,fn _ => ". "))
+                        val _ = print "#"
+                        val _ = print "\n"
+                    in () end)
+
+val _ = print " "
+val _ = Vector.app (fn x => print x) (Vector.tabulate(99,fn _ => "# "))
+val _ = print "#\n"
+
+val _ = OS.Process.exit OS.Process.success

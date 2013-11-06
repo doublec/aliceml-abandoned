@@ -1,0 +1,307 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestWord32 :> TESTSUITE = (* the word32 test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun wordToIntInf w = valOf (StringCvt.scanString 
+				 (IntInf.scan StringCvt.HEX) 
+				 (LargeWord.toString w))
+
+    (*  p = 2 ^ wordSize *)
+    val p = IntInf.pow (IntInf.fromInt 2, LargeWord.wordSize)
+
+    (* p'  = 2 ^ (wordSize - 1) *)
+    val p' = IntInf.pow (IntInf.fromInt 2, LargeWord.wordSize - 1)
+
+    (* p''  = ~ (2 ^ (wordSize - 1) - 1) *)
+    val p'' = ~ (IntInf.pow (IntInf.fromInt 2, LargeWord.wordSize - 1) - 
+		 IntInf.fromInt 1)
+
+    fun testWordSize () =
+	Test.test (fn x => x = 32) LargeWord.wordSize
+
+    fun testToLarge () =
+	let
+	    fun t w = LargeWord.toLarge w = w
+	in 
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
+
+    fun testToLargeX () =
+	let
+	    fun t w = LargeWord.toLarge w = w
+	in 
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
+
+    fun testFromLarge () =
+	let
+	    fun t w = w = LargeWord.fromLarge (LargeWord.toLarge w)
+	in
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
+
+    fun testToInt () = 
+	let
+	    fun t x = x <= p - (IntInf.fromInt 1) andalso 
+		      x >= IntInf.fromInt 0
+	in
+	    Gen.try 1000 Gen.word32
+		    (Test.test (fn w => t (wordToIntInf w)))
+	end
+
+    fun testToIntX () = 
+	let
+	    fun t x = x <= p - (IntInf.fromInt 1) andalso
+		      x >=  p''
+	in
+	    Gen.try 1000 Gen.word32
+		    (Test.test (fn w => t (wordToIntInf w)))
+	end
+
+    fun testFromInt () =
+	let
+	    fun t w = w = LargeWord.fromInt (LargeWord.toInt w)
+	in
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
+
+    fun testAndB () = 
+	let
+	    fun t' (a, b) = IntInf.andb (a, b)
+			    
+	    fun t (w, x) = LargeWord.toLargeInt (LargeWord.andb (w, x)) =
+			   t' (LargeWord.toLargeInt w, LargeWord.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32)) (Test.test t)
+	end
+
+    fun testOrB () =
+	let
+	    fun t' (a, b) = IntInf.orb (a, b)
+			    
+	    fun t (w, x) = LargeWord.toLargeInt (LargeWord.orb (w, x)) =
+			   t' (LargeWord.toLargeInt w, LargeWord.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32)) (Test.test t)
+	end
+
+    fun testXorB () =
+	let
+	    fun t' (a, b) = IntInf.xorb (a, b)
+			    
+	    fun t (w, x) = LargeWord.toLargeInt (LargeWord.xorb (w, x)) =
+			   t' (LargeWord.toLargeInt w, LargeWord.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32)) (Test.test t)
+	end
+
+    fun testNotB () =
+	let
+	   fun t w = LargeWord.fromLargeInt 
+			 (IntInf.notb (LargeWord.toLargeInt w)) =
+		     LargeWord.notb w
+	in 
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
+
+    fun testLeftShift () =
+	let
+	    (* i << n == (i* 2^(n))(mod (2^(wordSize))) *)
+	    fun t (i, n) = (i * 
+			    IntInf.pow (IntInf.fromInt 2, n)) mod p
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word)) 
+		    (Test.test (fn (i, n) => 
+				   wordToIntInf (LargeWord.<< (i, n)) = 
+					     t (LargeWord.toLargeIntX i, 
+						Word.toInt n)))
+	end
+
+    fun testRightShift () = 
+	let
+	    (* i >> n == floor(i / (2 ^ n)) *)
+	    fun t (i, n) =  IntInf.div (i,
+					IntInf.pow (IntInf.fromInt 2, 
+						    n))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word)) 
+		    (Test.test (fn (i, n) => 
+				   wordToIntInf (LargeWord.>> (i, n)) = 
+				   t (LargeWord.toLargeIntX i, 
+				      Word.toInt n)))
+	end
+
+    fun testNotRightShift () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testArithmetic () =
+	let
+	    fun tPlus (i, j)  = ((i + j) mod p)
+	    fun tMinus (i, j) = ((p + i - j) mod p)
+	    fun tTimes (i, j) = ((i * j) mod p)
+	    fun tDiv (i, j)   = ((i div j) mod p)
+	    fun tMod (i, j)   = ((i - j * (i div j)) mod p)
+
+	    fun t (i, j) =
+		let 
+		    val (a, b) = (wordToIntInf i, wordToIntInf j)
+		in
+		    (wordToIntInf (i + j)   = tPlus  (a, b) andalso
+		     wordToIntInf (i - j)   = tMinus (a, b) andalso
+		     wordToIntInf (i * j)   = tTimes (a, b) andalso
+		     wordToIntInf (i div j) = tDiv   (a, b) andalso
+		     wordToIntInf (i mod j) = tMod   (a, b)) 
+		               handle Div => b = (IntInf.fromInt 0)
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32)) (Test.test t)
+	end
+
+    fun testCompare () = 
+	let
+	    fun t (i, j) = IntInf.compare (wordToIntInf i,
+					   wordToIntInf j)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32))
+	      (Test.test (fn (i, j) => LargeWord.compare (i, j) = t (i, j)))
+	end
+
+    fun testCompare' () = 
+	let
+	    fun t' (i, j) = IntInf.< (wordToIntInf i,
+				      wordToIntInf j)
+
+	    fun t'' (i, j) = IntInf.> (wordToIntInf i,
+				       wordToIntInf j)
+
+	    fun t''' (i, j) = (wordToIntInf i = wordToIntInf j)
+
+	    fun t (i, j) = i < j = t'   (i, j) andalso
+			   i > j = t''  (i, j) andalso
+			   i = j = t''' (i, j)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32))
+	      (Test.test t)
+	end
+
+    fun testToLargeInt () =
+	let
+	    fun t w = wordToIntInf w = LargeWord.toLargeInt w
+	in
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
+	
+    fun testToLargeIntX () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFromLargeInt () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testEqual () = 
+	let
+	    fun t (i, j) = IntInf.equal (wordToIntInf i,
+					 wordToIntInf j)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32))
+	      (Test.test (fn (i, j) => LargeWord.equal (i, j) = t (i, j)))
+	end
+
+    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMin () =
+	let
+	    fun t (i : LargeWord.word, j) = if i < j then i else j
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32))
+	      (Test.test (fn x => LargeWord.min x = t x))
+	end
+
+    fun testMax () =
+	let
+	    fun t (i : LargeWord.word, j) = if i > j then i else j
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32))
+	      (Test.test (fn x => LargeWord.max x = t x))
+	end
+
+    fun testFmt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToString () = 
+	let
+	    fun t i = LargeWord.fmt StringCvt.HEX i
+	in 
+	    Gen.try 1000 Gen.word32 
+	       (Test.test (fn w => LargeWord.toString w = t w))
+	end
+
+    fun testFromString () = 
+	let
+	    fun t s = 
+		SOME (StringCvt.scanString (LargeWord.scan StringCvt.HEX) s)
+		          handle Overflow => NONE
+	in 
+	    Gen.try 1000 Gen.string
+	       (Test.test (fn s => 
+			      let
+				  val r = t s
+			      in 
+				  if Option.isSome r
+				  then LargeWord.fromString s = (valOf r)
+				  else (LargeWord.fromString s; false)
+	                                   handle Overflow => true
+			      end))
+	end
+
+
+    val suite = ("LargeWord", [("wordSize", testWordSize),
+			       ("toLarge", testToLarge),
+			       ("toLargeX", testToLargeX),
+			       ("fromLarge", testFromLarge),
+			       ("toInt", testToInt),
+			       ("toIntX", testToIntX),
+			       ("fromInt", testFromInt),
+			       ("toLargeInt", testToLargeInt),
+			       ("toLargeIntX", testToLargeIntX),
+			       ("fromLargeInt", testFromLargeInt),
+			       ("andb", testAndB),
+			       ("orb", testOrB),
+			       ("xorb", testXorB),
+			       ("notb", testNotB),
+			       ("<<", testLeftShift),
+			       (">>", testRightShift),
+			       ("~>>", testNotRightShift),
+			       ("+", testArithmetic),
+			       ("-", testArithmetic),
+			       ("*", testArithmetic),
+			       ("div", testArithmetic),
+			       ("mod", testArithmetic),
+			       ("compare", testCompare),
+			       ("<", testCompare'),
+			       (">", testCompare'),
+			       ("=", testCompare'),
+			       ("equal", testEqual),
+			       ("min", testMin),
+			       ("max", testMax),
+			       ("fmt", testFmt),
+			       ("toString", testToString),
+			       ("fromString", testFromString),
+			       ("scan", testScan)])
+end

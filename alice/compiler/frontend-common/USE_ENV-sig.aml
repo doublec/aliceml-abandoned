@@ -1,0 +1,45 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label from "../../lib/rtt/Label"
+
+
+signature USE_ENV =
+sig
+    type lab = Label.t
+
+    type env
+    type t = env
+
+    datatype use = FULL | PARTIAL of env
+
+    val isPartial :	use -> bool
+    val inner :		use -> env
+
+    val env :		unit -> env
+    val isEmpty :	env -> bool
+
+    val insertVal :	env * lab -> unit
+    val insertTyp :	env * lab -> unit
+    val insertInf :	env * lab -> unit
+    val insertMod :	env * lab * use -> unit
+
+    val lookupVal :	env * lab -> bool
+    val lookupTyp :	env * lab -> bool
+    val lookupInf :	env * lab -> bool
+    val lookupMod :	env * lab -> use option
+
+    val appVals :	(lab -> unit) -> env -> unit
+    val appTyps :	(lab -> unit) -> env -> unit
+    val appInfs :	(lab -> unit) -> env -> unit
+    val appMods :	(lab * use -> unit) -> env -> unit
+end

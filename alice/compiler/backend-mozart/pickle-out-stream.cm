@@ -1,0 +1,12 @@
+Group
+
+    structure PickleOutStream
+
+is
+
+    ../../lib/utility/sources.cm
+    ../infrastructure/sources.cm
+
+    crc.cm
+    PICKLE_OUT_STREAM-sig.aml
+    PickleOutStream.aml

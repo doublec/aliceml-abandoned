@@ -1,0 +1,42 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Space from "Space"
+
+signature SEARCH =
+    sig
+	type 'a order = 'a * 'a -> unit
+
+	datatype 'a bound_solution =
+	    BOUND_NONE
+	  | BOUND_SOME of 'a
+	  | BOUND_CUT
+
+	val searchOne : (unit -> 'a) -> 'a option
+	val searchOneDepth : (unit -> 'a) * int -> 'a option
+	val searchOneDepthS : (unit -> 'a) * int -> 'a Space.space option
+	val searchOneBound : (unit -> 'a) * int * int -> 'a bound_solution
+	val searchOneBoundS : (unit -> 'a) * int * int -> 'a Space.space bound_solution
+	val searchOneIter : (unit -> 'a) * int -> 'a option
+	val searchOneIterS : (unit -> 'a) * int -> 'a Space.space option
+	val searchOneLDS : (unit -> 'a) * int -> 'a option
+	val searchOneLDSS : (unit -> 'a) * int -> 'a Space.space option
+	val searchAll : (unit -> 'a) -> 'a list
+	val searchAllDepth : (unit -> 'a) * int -> 'a list
+	val searchAllDepthS : (unit -> 'a) * int -> 'a Space.space list
+	val searchBest : (unit -> 'a) * 'a order -> 'a option
+	val searchBestBAB : (unit -> 'a) * 'a order * int -> 'a option
+	val searchBestBABS : (unit -> 'a) * 'a order * int -> 'a Space.space option
+	val searchBestRestart : (unit -> 'a) * 'a order * int -> 'a option
+	val searchBestRestartS : (unit -> 'a) * 'a order * int -> 'a Space.space option
+    end

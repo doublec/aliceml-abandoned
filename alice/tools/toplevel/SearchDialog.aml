@@ -1,0 +1,138 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure DialogUtils from "DialogUtils"
+import structure Buffer from "Buffer"
+import structure Gui from "Gui"
+
+structure SearchDialog =
+    struct
+	val searchDialog = Gui.searchDialog
+
+	val _ = Gtk.Dialog.setDefaultResponse(searchDialog, 
+                        Gtk.ResponseType.toInt Gtk.ResponseType.OK)
+
+        fun closeCallback _ = (Gtk.Window.setModal(searchDialog, false);
+			       Gtk.Widget.hide searchDialog)
+        val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
+        val _ = Gtk.signalConnect(Gui.search_cancel_button, "clicked", closeCallback)
+
+	val isReplace = ref false
+
+        val searchSignal = ref NONE
+        val replaceSignal = ref NONE
+
+	fun doReplace(id, replaceString) arg =
+	    (Buffer.replace(id, replaceString);
+	     doSearch id arg)
+        and doSearch id _ =
+            let
+                val txt = Gtk.Entry.getText Gui.searchString
+                val replacetxt = Gtk.Entry.getText Gui.replaceString
+                val caseSensitive =
+		    Gtk.ToggleButton.getActive Gui.search_case_sensitive
+            in
+		if txt = "" then ()
+		else let
+		    val found = Buffer.find (id, txt, caseSensitive)
+		in
+		    if found andalso !isReplace then
+			(Gtk.Window.setModal(searchDialog, true);
+			 Option.app (fn s => Gtk.signalDisconnect(Gui.search_replace_button, s))
+			 (!replaceSignal);
+			 replaceSignal :=
+                             SOME (Gtk.signalConnect(Gui.search_replace_button,
+						     "clicked",
+						     doReplace(id, replacetxt)));
+			 Gtk.Widget.setSensitive(Gui.search_replace_button,true))
+		    else
+			(Gtk.Window.setModal(searchDialog, false);
+			 Gtk.Widget.setSensitive(Gui.search_replace_button,false))
+		end
+            end
+                
+        fun reconnect id =
+            case !searchSignal of
+                NONE => (searchSignal := SOME (Gtk.signalConnect(Gui.search_ok_button, "clicked", doSearch id)))
+              | SOME s => (searchSignal := SOME (Gtk.signalConnect(Gui.search_ok_button, "clicked", doSearch id));
+                           Gtk.signalDisconnect(Gui.search_ok_button, s))
+
+
+        fun search id =
+            (reconnect id;
+             case Buffer.getSelection id of
+                 NONE => ()
+               | SOME s => Gtk.Entry.setText(Gui.searchString, s);
+	     Gtk.Widget.setSensitive(Gui.replaceString,false);
+	     Gtk.Widget.setSensitive(Gui.label29,false);
+	     Gtk.Widget.setSensitive(Gui.search_replace_button,false);
+	     isReplace := false;
+	     Gtk.Window.setModal(searchDialog, false);
+             Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
+             DialogUtils.moveToMouse searchDialog;
+             Gtk.Widget.showAll searchDialog;
+	     Gtk.Window.present searchDialog;
+	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
+	     Gtk.Widget.grabFocus Gui.searchString)
+
+	fun searchAgain(id, arg) = 
+            (reconnect id;
+             case Buffer.getSelection id of
+                 NONE => ()
+               | SOME s => Gtk.Entry.setText(Gui.searchString, s);
+	     doSearch id arg)
+
+        fun replace id =
+            (reconnect id;
+             case Buffer.getSelection id of
+                 NONE => ()
+               | SOME s => Gtk.Entry.setText(Gui.searchString, s);
+	     Gtk.Widget.setSensitive(Gui.replaceString,true);
+	     Gtk.Widget.setSensitive(Gui.label29,true);
+	     Gtk.Widget.setSensitive(Gui.search_replace_button,false);
+	     isReplace := true;
+	     Gtk.Window.setModal(searchDialog, false);
+             Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
+	     DialogUtils.moveToMouse searchDialog;
+             Gtk.Widget.showAll searchDialog;
+	     Gtk.Window.present searchDialog;
+	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
+	     Gtk.Widget.grabFocus Gui.searchString)
+
+	fun gotoLine id =
+            let
+                val dia = Gui.go_to_line_dialog
+            in
+		Gtk.Window.setModal(dia, true);
+		Gtk.Dialog.setDefaultResponse(dia, ~5);
+                Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll dia;
+		Gtk.Window.present dia;
+                if Gtk.Dialog.run dia = ~5 then
+		    (case Int.fromString (Gtk.Entry.getText Gui.go_to_line_entry) of
+			 NONE => ()
+		       | SOME line =>
+			     let
+				 val buf = Buffer.getBuffer id
+				 val iter = Gtk.TextIter.new()
+				 val _ = Gtk.TextBuffer.getIterAtLine(buf,iter,line-1)
+			     in
+				 Gtk.TextBuffer.placeCursor(buf, iter);
+				 Buffer.scrollToCursor id
+			     end)
+                else ();
+                Gtk.Widget.hide dia;
+		Gtk.Window.setModal(dia, false)
+            end
+    end

@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature FLAT_GRAMMAR from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar  from "FlatGrammar"
+
+signature OUTPUT_FLAT_GRAMMAR =
+    sig
+	structure I: FLAT_GRAMMAR = FlatGrammar
+
+	val idToString: I.id -> string
+	val bodyToString: I.body -> string
+	val componentToString: I.component -> string
+    end

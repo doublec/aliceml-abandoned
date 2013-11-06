@@ -1,0 +1,21 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure String2 : REGRESSION =
+struct
+
+val name = "string2"
+
+val ok = SOME "string2.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val _ = concatResult(concat[Char.toCString #"\000",
+		     String.toCString "\000",
+		     "\n"])
+
+val result = !result
+
+end

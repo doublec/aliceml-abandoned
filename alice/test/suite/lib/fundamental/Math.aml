@@ -1,0 +1,407 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestMath :> TESTSUITE = (* the math test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun impreciseEqual (a, b) =
+	(Real.isNan a andalso Real.isNan b) orelse
+	Real.== (a, b) orelse a = b orelse 
+	Real.abs (a - b) < Real.max (0.001, (Real.max (Real.abs a, Real.abs b) / 1000.0)) orelse
+	Real.== (a*16.0, b*16.0) (*) when one value is infinity, check if the other is nearly infinity
+
+
+    fun testE () = 
+	Test.test (fn x => x > 0.0 andalso x < 2.8) Math.e
+
+    fun testPi () = 
+	Test.test (fn x => x > 0.0 andalso x < 3.2) Math.pi
+
+    fun testSqrt () = 
+	let
+	    fun t x = if x >= 0.0 andalso x <> ~0.0 
+		      then Math.sqrt x >= 0.0
+		      else Real.isNan (Math.sqrt x)
+	in 
+	    Test.test (fn x => Math.sqrt x = x) Real.posInf;
+	    Test.test (fn x => Real.isNan (Math.sqrt x)) Real.negInf;
+	    Test.test (fn x => Real.isNan (Math.sqrt x)) Real.negInf;
+	    Test.test (fn x => Math.sqrt x = x) ~0.0;
+	    Gen.try 10000 Gen.real (Test.test t)
+	end
+
+    fun testExp () = 
+	let
+	    fun t x = impreciseEqual (Math.exp x, Math.pow (Math.e, x))
+	in
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end
+
+    fun testPow () = 
+	let
+	    fun isOdd x = x / 2.0 - (Real.realRound (x / 2.0)) = 0.0
+	    fun isNotInt x = x - (Real.realFloor x) = 0.0
+	in
+	    Gen.try 10000 Gen.realAll
+		    (Test.test (fn x => Math.pow (x, 0.0) = 1.0));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn x => if Real.abs x > 1.0 
+					then Math.pow (x, Real.posInf) = 
+					     Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn x => if Real.abs x < 1.0 
+					then Math.pow (x, Real.posInf) = 
+					     0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn x => if Real.abs x > 1.0 
+					then Math.pow (x, Real.negInf) = 
+					     0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn x => if Real.abs x < 1.0 
+					then Math.pow (x, Real.negInf) = 
+					     Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y > 0.0 
+					then Math.pow (Real.posInf, y) = 
+					     Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y < 0.0 
+					then Math.pow (Real.posInf, y) = 
+					     0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if isOdd y andalso y > 0.0 
+					then Math.pow (Real.negInf, y) = 
+					     Real.negInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if Bool.not (isOdd y) andalso y > 0.0 
+					then Math.pow (Real.negInf, y) = 
+					     Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if isOdd y andalso y < 0.0 
+					then Math.pow (Real.negInf, y) = 
+					     ~0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if Bool.not (isOdd y) andalso y < 0.0 
+					then Math.pow (Real.negInf, y) = 
+					     0.0
+					else true));
+	    Gen.try 10000 Gen.realAll
+	            (Test.test (fn x => Real.isNan (Math.pow (x, 0.0 / 0.0))));
+	    Test.test (fn x => Real.isNan (Math.pow x)) (1.0, 0.0 / 0.0);
+	    Gen.try 10000 Gen.realNan
+	            (Test.test (fn y => if y <> 0.0 andalso y <> ~0.0 
+					then 
+					    Real.isNan (Math.pow (0.0 /0.0, y))
+					else true));
+	    Test.test (fn x => Real.isNan (Math.pow x)) (1.0, Real.posInf);
+	    Test.test (fn x => Real.isNan (Math.pow x)) (~1.0, Real.negInf);
+	    Gen.try 10000 (Gen.pair (Gen.real, Gen.real))
+	            (Test.test (fn (x, y) => if Real.isFinite x andalso 
+						x < 0.0 andalso 
+						Real.isFinite y andalso
+						isNotInt y
+					     then Real.isNan (Math.pow (x, y))
+					     else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y < 0.0 andalso isOdd y
+					then Math.pow (0.0, y) = Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y < 0.0 andalso isOdd y
+					then Math.pow (~0.0, y) = Real.negInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y < 0.0 andalso 
+					   Bool.not (isOdd y) andalso
+					   Real.isFinite y
+					then Math.pow (0.0, y) = Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y < 0.0 andalso 
+					   Bool.not (isOdd y) andalso
+					   Real.isFinite y
+					then Math.pow (~0.0, y) = Real.posInf
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y > 0.0 andalso isOdd y
+					then Math.pow (0.0, y) = 0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y > 0.0 andalso isOdd y
+					then Math.pow (~0.0, y) = ~0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y > 0.0 andalso Bool.not (isOdd y)
+					then Math.pow (~0.0, y) = 0.0
+					else true));
+	    Gen.try 10000 Gen.real
+	            (Test.test (fn y => if y > 0.0 andalso Bool.not (isOdd y)
+					then Math.pow (~0.0, y) = 0.0
+					else true))
+	end
+
+    fun testLn () = 
+	let
+	    fun t x = if x < 0.0 
+		      then Real.isNan (Math.ln x)
+		      else if x = 0.0 orelse x = ~0.0
+		           then Math.ln x = Real.negInf
+		           else if x = Real.posInf orelse x = Real.negInf
+			        then Math.ln x = Real.posInf
+			        else if Real.isNan x 
+				     then Real.isNan (Math.ln x)
+				     else true
+	in 
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end
+
+    fun testLog10 () = 
+	let
+	    fun t' x = Math.ln x / Math.ln 10.0
+	    fun t x = Math.log10 x = t' x
+	in
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end
+
+    fun testSin () = 
+	(Test.test (fn x => Real.isNan (Math.sin x)) Real.posInf;
+	 Test.test (fn x => impreciseEqual (Math.sin x, 0.0)) 0.0;
+	 Test.test (fn x => impreciseEqual (Math.sin x, 1.0)) (0.5 * Math.pi);
+	 Test.test (fn x => impreciseEqual (Math.sin x, 0.0)) Math.pi;
+	 Test.test (fn x => impreciseEqual (Math.sin x, ~1.0)) (1.5 * Math.pi);
+	 Test.test (fn x => impreciseEqual (Math.sin x, 0.0)) (2.0 * Math.pi);
+	 Test.test (fn x => Real.isNan (Math.sin x)) Real.negInf)
+
+    fun testCos () = 
+	(Test.test (fn x => Real.isNan (Math.cos x)) Real.posInf;
+	 Test.test (fn x => impreciseEqual (Math.cos x, 1.0)) 0.0;
+	 Test.test (fn x => impreciseEqual (Math.cos x, 0.0)) (0.5 * Math.pi);
+	 Test.test (fn x => impreciseEqual (Math.cos x, ~1.0)) Math.pi;
+	 Test.test (fn x => impreciseEqual (Math.cos x, 0.0)) (1.5 * Math.pi);
+	 Test.test (fn x => impreciseEqual (Math.cos x, 1.0)) (2.0 * Math.pi);
+	 Test.test (fn x => Real.isNan (Math.cos x)) Real.negInf)
+
+    fun testTan () = 
+	let
+	    fun t' x = Math.sin x / Math.cos x
+	    fun t x = if Real.isNan (Math.tan x)
+		      then Math.tan x = t' x
+		      else impreciseEqual (Math.tan x, t' x)
+	in
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end
+
+    fun testAsin () = 
+	Gen.try 1000 Gen.realAll 
+		(Test.test (fn x => 
+			     if Real.isNan x
+			     then Real.isNan (Math.asin x)
+			     else if Real.abs x > 1.0 
+			          then Real.isNan (Math.asin x)
+			          else Math.asin x >= (~Math.pi / 2.0) andalso 
+				       Math.asin x <= (Math.pi / 2.0)))
+
+    fun testAcos () = 
+	Gen.try 1000 Gen.realAll 
+		(Test.test (fn x => 
+			       if Real.isNan x 
+			       then Real.isNan (Math.acos x)
+			       else if Real.abs x > 1.0 
+			            then Real.isNan (Math.asin x)
+			            else Math.acos x >= 0.0 andalso 
+					 Math.acos x <= Math.pi))
+
+    fun testAtan () = 
+	(Gen.try 1000 Gen.real 
+		 (Test.test (fn x => 
+				if Real.abs x > 1.0 
+			        then Real.isNan (Math.asin x)
+			        else Math.atan x >= (~Math.pi / 2.0) andalso 
+				     Math.atan x <= (Math.pi / 2.0)));
+	Test.test (fn x => Math.atan x = (Math.pi / 2.0)) Real.posInf;
+	Test.test (fn x => Real.isNan (Math.atan x)) (Gen.realNan 0);
+	Test.test (fn x => Math.atan x = (~Math.pi / 2.0)) Real.negInf)
+
+
+    fun testAtan2 () = 
+	(Gen.try 1000 Gen.real 
+		 (Test.test (fn x => if x > 0.0 
+				     then Math.atan2 (0.0, x) = 0.0
+				     else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn x => if x > 0.0 
+				     then Math.atan2 (~0.0, x) = ~0.0
+				     else true));
+	 Test.test (fn x => Math.atan2 (x, 0.0)  = 0.0) 0.0;
+	 Test.test (fn x => Math.atan2 (x, 0.0) = ~0.0) ~0.0;
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn x => if x < 0.0 
+				     then Math.atan2 (0.0, x) = Math.pi
+				     else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn x => if x < 0.0 
+				     then Math.atan2 (~0.0, x) = ~Math.pi
+				     else true));
+	 Test.test (fn x => Math.atan2 (x, ~0.0)  = Math.pi) 0.0;
+	 Test.test (fn x => Math.atan2 (x, ~0.0) = ~Math.pi) ~0.0;
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y > 0.0 
+				then Math.atan2 (y, 0.0) = Math.pi / 2.0
+				else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y > 0.0 
+				then Math.atan2 (y, ~0.0) = Math.pi / 2.0
+				else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y < 0.0 
+				then Math.atan2 (y, 0.0) = ~Math.pi / 2.0
+				else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y < 0.0 
+				then Math.atan2 (y, ~0.0) = ~Math.pi / 2.0
+				else true));
+         Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y > 0.0 
+				then Math.atan2 (y, Real.posInf) = 0.0
+				else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y < 0.0 
+				then Math.atan2 (y, Real.posInf) = ~0.0
+				else true));
+         Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y > 0.0 
+				then Math.atan2 (y, Real.negInf) = Math.pi
+				else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn y => 
+				if y < 0.0 
+				then Math.atan2 (y, Real.negInf) = ~Math.pi
+				else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn x => 
+			   if Real.isFinite x
+			   then Math.atan2 (Real.posInf, x) = Math.pi / 2.0
+			   else true));
+	 Gen.try 1000 Gen.real 
+		 (Test.test (fn x => 
+			   if Real.isFinite x
+			   then Math.atan2 (Real.negInf, x) = ~Math.pi / 2.0
+			   else true));
+	 Test.test (fn x => Math.atan2 x = Math.pi / 4.0) 
+		                            (Real.posInf, Real.posInf);
+	 Test.test (fn x => Math.atan2 x = 
+			    ~Math.pi / 4.0) (Real.negInf, Real.posInf);
+	 Test.test (fn x => Math.atan2 x = 
+			    3.0 * Math.pi / 4.0) (Real.posInf, Real.negInf);
+	 Test.test (fn x => Math.atan2 x = 
+			    ~3.0 * Math.pi / 4.0) (Real.negInf, Real.negInf))
+								
+
+    fun testSinh () = 
+	let
+	    fun t' x = (Math.exp x - Math.exp (~x)) / 2.0
+	    fun t x = impreciseEqual (Math.sinh x, t' x)
+	in
+	    (Gen.try 10000 Gen.real (Test.test t);
+	     Test.test (fn x => Math.sinh x = x) 0.0;
+	     Test.test (fn x => Math.sinh x = x) ~0.0;
+	     Test.test (fn x => Math.sinh x = x) Real.posInf;
+	     Test.test (fn x => Math.sinh x = x) Real.negInf)
+	end
+
+    fun testCosh () = 
+	let
+	    fun t' x = (Math.exp x + Math.exp (~x)) / 2.0
+	    fun t x = impreciseEqual (Math.cosh x, t' x)
+	in
+	    (Gen.try 10000 Gen.real (Test.test t);
+	     Test.test (fn x => Math.cosh x = 1.0) 0.0;
+	     Test.test (fn x => Math.cosh x = 1.0) ~0.0;
+	     Test.test (fn x => Math.cosh x = x) Real.posInf;
+	     Test.test (fn x => Math.cosh x = Real.posInf) Real.negInf)
+	end
+
+    fun testTanh () = 
+	let
+	    fun t x =
+	        let
+	            val a = Math.tanh x
+	            val b = Math.sinh x / Math.cosh x
+	        in
+	            impreciseEqual (a, b) orelse
+	            (impreciseEqual (a, 1.0) andalso Real.isNan b)
+	        end
+	in
+	    (Gen.try 10000 Gen.real (Test.test t);
+	     Test.test (fn x => Math.tanh x = x) 0.0;
+	     Test.test (fn x => Math.tanh x = x) ~0.0;
+	     Test.test (fn x => Math.tanh x = 1.0) Real.posInf;
+	     Test.test (fn x => Math.tanh x = ~1.0) Real.negInf)
+	end
+
+    fun testAsinh () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAcosh () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAtanh () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("Math", [("e", testE),
+			  ("pi", testPi),
+			  ("sqrt", testSqrt),
+			  ("exp", testExp),
+			  ("pow", testPow),
+			  ("ln", testLn),
+			  ("log10", testLog10),
+			  ("sin", testSin),
+			  ("cos", testCos),
+			  ("tan", testTan),
+			  ("asin", testAsin),
+			  ("acos", testAcos),
+			  ("atan", testAtan),
+			  ("atan2", testAtan2),
+			  ("sinh", testSinh),
+			  ("cosh", testCosh),
+			  ("tanh", testTanh),
+			  ("asinh", testAsinh),
+			  ("acosh", testAcosh),
+			  ("atanh", testAtanh)])
+
+end
+
+

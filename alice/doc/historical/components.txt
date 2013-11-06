@@ -1,0 +1,48 @@
+COMPONENTS
+==========
+
+Stockhausen provides separate compilation and dynamic linking via components.
+
+Syntactically, components are provided by introducing a new start symbol:
+
+	component  ::=	import <`;'> program
+
+	import     ::=	`import' spec `from' string
+			(*empty*)
+			import <`;'> import
+
+Each compilation unit exports all items declared in the contained program. A
+compiled component is stored at a URL. It can be imported by other components
+through the use of import declarations. Import declarations consist of a
+specification (following the syntax used in signatures for now) of what
+entities to use and a URL. The exported bindings of the corresponding component
+must match the spec given, subject to the usual signature matching rules.
+
+Later we will provide special forms of import specifications that do not
+require giving type and interface annotations to mentioned value and module
+names. The required information will then be extracted from the imported
+component itself. But we need to bootstrap first, and have type checking.
+
+From an abstract viewpoint, a component is a structure matching the following
+signature:
+
+	signature COMPONENT =
+	  sig
+	    signature IMPORT
+	    signature EXPORT
+	    functor Eval(X: IMPORT): EXPORT
+	  end
+
+where IMPORT contains only structure specifications (the components imported)
+plus a mapping from structure names to URLs. The structure names in this mapping
+correspond 1-to-1 to the members of the IMPORT signature. The Eval functor will
+be applied (executing the body of the component) when the component is loaded.
+Loading of components is done by need.
+
+The Stockhausen compiler will uniformingly view every input as a component. The
+interactive toplevel will immediately apply the compiled component and open the
+resulting structure into its environment.
+
+For more detailed information on the general semantics of components see
+
+	http://www.ps.uni-sb.de/~smolka/drafts/Amadeus/components

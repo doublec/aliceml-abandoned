@@ -1,0 +1,91 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeValue           from "../../lib/system/UnsafeValue"
+import structure Reflect               from "../../lib/system/Reflect"
+import structure Component             from "../../lib/system/Component"
+import signature COMPONENT_MANAGER
+    from "../../lib/system/COMPONENT_MANAGER-sig"
+import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
+import structure Target                from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC
+    from "../infrastructure/BACKEND_SPECIFIC-sig"
+import structure MkTracingPhase        from "../infrastructure/MkTracingPhase"
+import structure StampMap              from "../common/StampMap"
+import structure Value                 from "Value"
+import structure MkAbstractCodeGrammar from "MkAbstractCodeGrammar"
+import structure MkCodeGenPhase        from "MkCodeGenPhase"
+
+functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
+		      structure Switches: SWITCHES): BACKEND_SPECIFIC =
+    let
+	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
+	structure CodeGenPhase = 
+	    MkCodeGenPhase(structure AbstractCodeGrammar = AbstractCodeGrammar
+			   structure Switches = Switches)
+
+	structure ThePhase =
+	    struct
+		structure C = CodeGenPhase.C
+		structure I = CodeGenPhase.I
+		structure O = Target
+
+		fun translate (desc, env, component) =
+		    let
+			val (context, (value, exportDesc)) =
+			    CodeGenPhase.translate (desc, env, component)
+			val component: Component.t = UnsafeValue.cast value
+			(* Extend environment first, so that
+			 * background evaluation for toplevel works. *)
+			val exports =
+			    Vector.map (fn (stamp, label) =>
+					let
+					    val p = Promise.promise ()
+					in
+					    StampMap.insert (context, stamp,
+							     Promise.future p);
+					    (p, label)
+					end) exportDesc
+			fun eval baseUrl =
+			    let
+				val package =
+				    ComponentManager.eval (baseUrl, component)
+				    handle exn =>
+					(Vector.app
+					 (fn (p, _) => Promise.fail (p, exn))
+					 exports;
+					 raise exn)
+				val str = #1 (Reflect.reflectPackage package)
+			    in
+				Vector.app
+				    (fn (p, label) =>
+					 Promise.fulfill
+					 (p, UnsafeValue.projPoly (str, label)))
+				    exports;
+				package
+			    end
+		    in
+			(context, Target.COMPONENT
+				  {component = fn () => component, eval})
+		    end
+	    end
+	structure TracingPhase =
+	    MkTracingPhase(structure Phase = ThePhase
+			   structure Switches = Switches
+			   val name = "Code Generation")
+    in
+	struct
+	    open TracingPhase
+	    structure O = Target
+	    val isCross = false
+	end
+    end

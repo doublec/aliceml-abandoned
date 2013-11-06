@@ -1,0 +1,104 @@
+<?php include("macros.php3"); ?>
+<?php heading("The ATOM signature", "The <TT>ATOM</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature ATOM
+    structure Atom : ATOM where String = String
+  </PRE>
+
+  <P>
+    This structure provides an efficient representation for strings that
+    guarantees that equal strings share their representation. Such strings
+    are also known as <EM>internalized string</EM>, <EM>symbols</EM>, or
+    <EM>atoms</EM>.
+  </P>
+
+  <P>See also:
+    <A href="string.html"><TT>STRING</TT></A>,
+    <A href="substring.html"><TT>SUBSTRING</TT></A>,
+    <A href="hashable.html"><TT>HASHABLE</TT></A>,
+    <A href="ordered.html"><TT>ORDERED</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature ATOM from "x-alice:/lib/data/ATOM-sig"
+    import structure Atom from "x-alice:/lib/data/Atom"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature ATOM =
+    sig
+	eqtype string
+	eqtype atom
+	type t = atom
+
+	val atom :     string -> atom
+	val toString : atom -> string
+
+	val equal :    atom * atom -> bool
+	val compare :  atom * atom -> order
+	val hash :     atom -> int
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>eqtype atom</TT>
+      <TT>type t = atom</TT>
+    </DT>
+    <DD>
+      <P>The type of uniquely represented strings. Equality is defined
+      structurally.</P>
+    </DD>
+
+    <DT>
+      <TT>atom <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Creates an atom with content <TT><I>s</I></TT>. If an
+      atom with the same content already exists, that one is
+      returned.</P>
+    </DD>
+
+    <DT>
+      <TT>toString <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Extracts the content of the atom <TT><I>a</I></TT>. It holds
+      that</P>
+      <PRE>
+        toString (atom <I>s</I>) = <I>s</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>a1</I>, <I>a2</I>)</TT>
+    </DT>
+    <DD>
+      <P>An explicit equality function on atoms.
+      Equivalent to <TT>op=</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>compare (<I>a1</I>, <I>a2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Defines an ordering on atoms. Comparison is intended to be
+      constant time. Note that the ordering is not lexicographic.</P>
+    </DD>
+
+    <DT>
+      <TT>hash <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>A hash function for atoms. Hashing is constant time.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

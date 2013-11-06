@@ -1,0 +1,36 @@
+TestAliceParser
+===============
+
+This is intended to be the *big* aliceyacc, alicelex testcase.  By entering
+make a file called TestAliceParser.alc will be produced.  Run it by calling
+
+alicerun TestAliceParser SomeAliceSourceFile.aml  
+
+It will just test the parser with the both a alicelex and a ml-lex generated
+lexer.
+
+Note that compiling the Parser will take a really long time:
+
+[0]dreamer:lexyacc_test> alicec --no-warn-conventions --dump-phases AliceParser.aml 
+-- Parsing... 8.114 secs
+-- Abstraction... 6.441 secs
+-- Elaboration... AliceParser.aml:2.17-2.25: warning: imported structure LrParser is not used and
+has been dropped
+965.531 secs
+-- Translation... 2.62 secs
+-- Verification (optional)... 0.0 secs
+-- Flattening... AliceParser.aml:12313.8-12315.0: warning:
+match is not exhaustive, because e.g.
+    ABSTYPE
+is not covered
+16.874 secs
+-- Value Propagation... 12.062 secs
+-- Liveness Analysis... 1.14 secs
+-- Code Generation... 1.441 secs
+
+As you can see this takes about 14 - 16 minutes (on my machine a 1.6 Centrino 
+Laptop with 768 Megabytes of RAM).  
+
+Note that right now this parser also takes more time to parse a file than
+the one used in alice.  
+

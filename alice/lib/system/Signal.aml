@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2004
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeSignal from "UnsafeSignal"
+import signature SIGNAL       from "SIGNAL-sig"
+
+structure Signal :> SIGNAL =
+    struct
+        datatype signal = SIGINT | SIGSTOP
+	open UnsafeSignal
+    end

@@ -1,0 +1,436 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD           from "x-alice:/lib/constraints/FD"
+import structure FS           from "x-alice:/lib/constraints/FS"
+import structure Space        from "x-alice:/lib/constraints/Space"
+import structure Packer       from "x-alice:/lib/distribution/Packer"
+import structure Remote       from "x-alice:/lib/distribution/Remote"
+import structure Server       from "Server"
+import signature MANAGER      from "MANAGER-sig"
+import signature SCRIPT       from "SCRIPT-sig"
+import signature PLAIN_WORKER from "PLAIN_WORKER-sig"
+import signature BEST_WORKER  from "BEST_WORKER-sig"
+import structure Trace        from "Trace"
+import structure WorkerDict   from "WorkerDict"
+import signature LOGGER       from "LOGGER-sig"
+
+functor MkManager(structure Logger : LOGGER
+		  val mode : int
+		  structure Script : SCRIPT) : MANAGER =
+    struct
+	(* Localize Order and Types *)
+	structure MyScript = Script.MkScript(structure FD = FD structure FS = FS)
+	    
+	(* Import Problem Type *)
+	type sol          = Script.sol
+	type internal_sol = MyScript.internal_sol
+	type trace        = sol Trace.trace
+	    
+	(* ManagerCore Datatype Definition *)
+	type manager_core = {have_worker : (unit Promise.promise) Promise.promise,
+			     done        : unit Promise.promise,
+			     workers     : WorkerDict.dict,
+			     busy        : int list ref,
+			     no_workers  : int ref,
+			     task_id     : int ref,
+			     is_done     : bool ref}
+	    
+	(* Manager Datatype Definition *)
+	datatype manager =
+	    One  of manager_core * sol list Promise.promise
+	  | All  of manager_core * (sol list Promise.promise ref) * (sol list Promise.promise ref)
+	  | Best of manager_core *
+	    (sol list Promise.promise ref) * (sol list Promise.promise ref) * sol option ref
+	    
+	(* Manager Instance *)
+	local
+	    val core = {have_worker = Promise.promise (),
+			done        = Promise.promise (),
+			workers     = WorkerDict.new (),
+			busy        = ref nil,
+			no_workers  = ref 0,
+			task_id     = ref 0,
+			is_done     = ref false}
+	in
+	    val self = (case mode of
+			    0 => One(core, Promise.promise ())
+			  | 1 =>
+				let
+				    val p = Promise.promise ()
+				in
+				    All(core, ref p, ref p)
+				end
+			  | 2 =>
+				let
+				    val p = Promise.promise ()
+				in
+				    Best(core, ref p, ref p, ref NONE)
+				end)
+	end
+	(* Lock Substitute *)
+	val serve = Server.server ()
+
+	(* Global Helper Functions *)
+	fun getCore (One(core, _))        = core
+	  | getCore (All(core, _, _))     = core
+	  | getCore (Best(core, _, _, _)) = core
+	    
+	fun isBest(Best _) = true
+	  | isBest _       = false
+
+	fun delay n = (Future.await (Future.alarm (Time.fromMilliseconds n)))
+	    
+	(* Manager Methods Implementation *)
+	fun syncMesg v =
+	    let
+		val {done = p, ...} = getCore self
+	    in
+		Promise.fulfill(v, Promise.future p)
+	    end
+
+	local
+	    fun argToString(i, t, s) =
+		String.concat(["[", Int.toString i, "] ",
+			       ": ", Int.toString t, " : ", s, "\n"])
+	in
+	    fun logMesg v = Logger.log (argToString v)
+	end
+
+	fun getTaskIdMesg () =
+	    let
+		val {task_id=task_id, ...} = getCore self
+		val id                     = (!task_id)
+	    in
+		(task_id := (id + 1); id)
+	    end
+
+	local
+	    fun tellMessage(nil, ws, f)   =  ()
+	      | tellMessage(i::nr, ws, f) =
+		let
+		    val worker = WorkerDict.get(ws, i)
+		in
+		    (f worker; tellMessage(nr, ws, f))
+		end
+	in
+	    fun broadcastMesg (f : Packer.package -> unit) : unit =
+		let
+		    val {workers=workers, ...} = getCore self
+		in
+		    tellMessage(WorkerDict.keys workers, workers, f)
+		end
+	end
+
+	fun doneMesg (One(_, sol)) =
+	    if (Future.isFuture (Promise.future sol)) then Promise.fulfill(sol, nil) else ()
+	  | doneMesg (All(_, _, stl))     = Promise.fulfill((!stl), nil)
+	  | doneMesg (Best(_, _, stl, _)) = Promise.fulfill((!stl), nil)
+
+	local
+	    fun callShutdown(false, p) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = PLAIN_WORKER where type sol = sol)
+		in
+		    W.shutdown ()
+		end
+	      | callShutdown(true, p) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = BEST_WORKER where type sol = sol)
+		in
+		    W.shutdown ()
+		end
+
+	    fun tellShutdown(nil, _)         = ()
+	      | tellShutdown(i::ir, workers) =
+		let
+		    val w = WorkerDict.get(workers, i)
+		in
+		    (callShutdown(isBest self, w); tellShutdown(ir, workers))
+		end
+
+	in
+	    fun shutdownMesg () =
+		let
+		    val {workers=workers, ...} = getCore self
+		in
+		    tellShutdown(WorkerDict.keys workers, workers)
+		end
+	end
+
+	local
+	    fun handleDone () =
+		let
+		    val {is_done=is_done, done=done, ...} = getCore self
+		in
+		    if (!is_done) then ()
+		    else
+			(is_done := true;
+			 Promise.fulfill(done, ());
+			 serve (fn () => (doneMesg self; shutdownMesg ())))
+		end
+
+	    fun callSteal(true, p, w)  =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = BEST_WORKER where type sol = sol)
+		in
+		    W.steal w
+		end
+	      | callSteal(false, p, w) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = PLAIN_WORKER where type sol = sol)
+		in
+		    W.steal w
+		end
+
+	    fun findWork(bs, workers) =
+		(case bs of
+		     nil   => NONE
+		   | b::br =>
+			 let
+			     val w      = Promise.promise ()
+			     val worker = WorkerDict.get(workers, b)
+			     val a      = callSteal(isBest self, worker, w)
+			 in
+			     (case Promise.future w of
+				  NONE => findWork(br, workers)
+				| work => work)
+			 end)
+
+	    fun callStart(true, p, task, id) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = BEST_WORKER where type sol = sol)
+		in
+		    W.start(task, id)
+		end
+	      | callStart(false, p, task, id) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = PLAIN_WORKER where type sol = sol)
+		in
+		    W.start(task, id)
+		end
+
+	    fun  subtract(bs, id) =
+		(case bs of
+		     nil   => nil
+		   | b::br => if (b = id) then br else b::subtract(br, id))
+		     
+	    fun handleWork(bs, wid) =
+		let
+		    val {busy=busy, workers=workers, ...} = getCore self
+		in
+		    (case findWork(bs, workers) of
+			 NONE => ignore
+			     (Thread.spawn (fn () => (delay 150; serve (fn () => idleMesg' wid))))
+		       | SOME (task, pid, sid) =>
+			     let
+				 val worker = WorkerDict.get(workers, wid)
+				 val id     = getTaskIdMesg ()
+			     in
+				 (busy := (bs @ [wid]);
+				  callStart(isBest self, worker, task, id))
+			     end)
+		end
+	    and handleBusy id =
+		let
+		    val {busy=busy, ...} = getCore self
+		in
+		    (case !busy of
+			 nil => handleDone ()
+		       | bs  => handleWork(bs, id))
+		end
+	    and idleMesg' id =
+		let
+		    val {busy=busy, ...} = getCore self
+		in
+		    (busy := subtract(!busy, id); handleBusy id)
+		end
+	in
+	    fun idleMesg id = idleMesg' id
+	end
+
+	local
+	    fun tellIdle nil      = ()
+	      | tellIdle (id::kr) = (serve (fn () => idleMesg id); tellIdle kr)
+		
+	    fun callStart(true, p, v) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = BEST_WORKER where type sol = sol)
+		in
+		    W.start v
+		end
+	      | callStart(false, p, v) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = PLAIN_WORKER where type sol = sol)
+		in
+		    W.start v
+		end
+	in
+	    fun startMesg () =
+		let
+		    val {busy=busy, workers=workers, ...} = getCore self
+		    val keys = WorkerDict.keys workers
+		in
+		    (case keys of
+			 id::kr =>
+			     let
+				 val tid    = getTaskIdMesg ()
+				 val worker = WorkerDict.get(workers, id)
+			     in
+				 (busy := [id];
+				  callStart(isBest self, worker, (nil, tid));
+				  tellIdle kr)
+			     end
+		       | _      => raise Subscript)
+		end
+	end
+
+	fun prepareMesg v =
+	    let
+		val {have_worker=have_worker, ...} = getCore self
+	    in
+		Promise.fulfill(have_worker, v)
+	    end
+
+	local
+	    fun checkStart(go, id, n) =
+		if (n = 1) then
+		    (Promise.fulfill(go, ()); serve startMesg)
+		else
+		    (serve (fn () => idleMesg id))
+
+	    fun inc w =
+		let
+		    val i = !w
+		in
+		    w := (i + 1)
+		end
+	in
+	    fun registerMesg(p, i) =
+		let
+		    val {have_worker=have_worker, workers=workers,
+			 no_workers=no_workers, ...} = getCore self
+		in
+		    (WorkerDict.put(workers, i, p);
+		     inc no_workers;
+		     checkStart(Promise.future have_worker, i, !no_workers))
+		end
+	end
+
+	local
+	    fun callStop (true, p) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = BEST_WORKER where type sol = sol)
+		in
+		    W.stop ()
+		end
+	      | callStop (false, p) =
+		let
+		    structure W = Packer.Unpack(val package = p
+						signature S = PLAIN_WORKER where type sol = sol)
+		in
+		    W.stop ()
+		end
+
+	    fun tellStop(nil, _)          = ()
+	      | tellStop(id::br, workers) =
+		let
+		    val worker = WorkerDict.get(workers, id)
+		in
+		    (callStop(isBest self, worker);
+		     tellStop(br, workers))
+		end
+	in
+	    fun stopMesg () =
+		let
+		    val {busy=busy, workers=workers, ...} = getCore self
+		    val bs                                = !busy
+		in
+		    (busy := nil; tellStop(bs, workers))
+		end
+	end
+
+	fun succeededMesg(One(_, sol), s) =
+	    if (Future.isFuture (Promise.future sol)) then
+		(Promise.fulfill(sol, [s]); stopMesg ())
+	    else ()
+	  | succeededMesg(All(_, shd, stl), s) =
+	    let
+		val newtail = Promise.promise ()
+		val tail    = (!stl)
+	    in
+		(Promise.fulfill(tail, s::(Promise.future newtail)); stl := newtail)
+	    end
+	  | succeededMesg _ = raise Subscript
+
+	local
+	    fun isBetter(NONE, _)     = true
+	      | isBetter(SOME s1, s2) =
+		let
+		    val ts = Space.space (fn r => (MyScript.order(MyScript.internalize s1,
+								  MyScript.internalize s2); r))
+		in
+		    not((Space.ask ts) = Space.FAILED)
+		end
+	    
+	    fun makeConstrain s =
+		(fn p =>
+		 let
+		     structure W = Packer.Unpack(val package = p
+						 signature S = BEST_WORKER where type sol = sol)
+		 in
+		     W.constrain s
+		 end)
+	in
+	    fun collectMesg(Best(_, shd, stl, best), s) =
+		if isBetter((!best), s) then
+		    let
+			val newtail = Promise.promise ()
+			val tail    = (!stl)
+		    in
+			(serve (fn () => broadcastMesg (makeConstrain s));
+			 best := SOME s;
+			 Promise.fulfill(tail, s::(Promise.future newtail));
+			 stl := newtail)
+		    end
+		else ()
+	      | collectMesg _ = raise Subscript
+	end
+
+	fun getMesg(One(_, sol), v)        = Promise.fulfill(v, Promise.future sol)
+	  | getMesg(All(_, shd, _), v)     = Promise.fulfill(v, Promise.future (!shd))
+	  | getMesg(Best(_, shd, _, _), v) = Promise.fulfill(v, Promise.future(!shd))
+	    
+	(* Manager Interface Functions *)
+	val log       = Remote.proxy (fn v => logMesg v)
+	val sync      = Remote.proxy (fn s => serve (fn () => syncMesg s))
+	val prepare   = Remote.proxy (fn v => serve (fn () => prepareMesg v))
+	val register  = Remote.proxy (fn v => serve (fn () => registerMesg v))
+	val start     = Remote.proxy (fn n => serve (fn () => startMesg n))
+	val broadcast = Remote.proxy (fn f => serve (fn () => broadcastMesg f))
+	val idle      = Remote.proxy (fn id => serve (fn () => idleMesg id))
+	val done      = Remote.proxy (fn () => serve (fn () => doneMesg self))
+	val stop      = Remote.proxy (fn () => serve stopMesg)
+	val succeeded = Remote.proxy (fn s => serve (fn () => succeededMesg(self, s)))
+	val collect   = Remote.proxy (fn s => serve (fn () => collectMesg(self, s)))
+	val get       = Remote.proxy (fn s => serve (fn () => getMesg(self, s)))
+    end

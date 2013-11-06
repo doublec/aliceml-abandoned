@@ -1,0 +1,17 @@
+Group
+
+    structure FlatGrammar
+    functor MkBackendCommon
+
+is
+
+    ../infrastructure/phase.cm
+
+    flat-grammar.cm
+    output-flat-grammar.cm
+    flattening-phase.cm
+    value-propagation-phase.cm
+    liveness-analysis-phase.cm
+    engine.cm
+
+    MkBackendCommon.aml

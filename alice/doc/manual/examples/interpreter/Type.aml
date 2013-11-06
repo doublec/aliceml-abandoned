@@ -1,0 +1,26 @@
+(*
+ * Interpreter for F - Types stuff
+ *
+ * 2000/02/02 Andreas Rossberg
+ *)
+
+import structure Syntax from "Syntax"
+import structure Env    from "Env"
+import signature TYPE   from "TYPE-sig"
+
+structure Type :> TYPE =
+struct
+    datatype typ = datatype Syntax.typ
+
+    fun constant n = Int
+
+    val arithTyp = Arrow (Int, Arrow (Int,Int))
+    val compTyp  = Arrow (Int, Arrow (Int,Bool))
+
+    val base = List.foldl (fn ((x,t),T) => Env.insert (x,t,T)) Env.empty
+		[("add",   arithTyp),
+		 ("sub",   arithTyp),
+		 ("mul",   arithTyp),
+		 ("equal", compTyp),
+		 ("less",  compTyp)]
+end

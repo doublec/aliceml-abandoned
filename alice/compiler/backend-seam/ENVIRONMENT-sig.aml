@@ -1,0 +1,38 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Type                  from "../../lib/rtt/Type"
+import structure Stamp                 from "../common/Stamp"
+import structure StampMap              from "../common/StampMap"
+import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+
+signature ENVIRONMENT =
+    sig
+	structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
+
+	type t
+
+	val startTop: string * AbstractCodeGrammar.value StampMap.t -> t
+	val endTop: t -> (string * Type.t) option vector
+	val startFn: t -> unit
+	val endFn: t -> FlatGrammar.id vector * (string * Type.t) option vector
+	val filename: t -> string
+	val declare: t * FlatGrammar.id -> AbstractCodeGrammar.id
+	val unDeclare: t * AbstractCodeGrammar.id -> unit
+	val fresh: t -> AbstractCodeGrammar.id
+	val lookup: t * FlatGrammar.idRef -> AbstractCodeGrammar.idRef
+	val weakLookup: t * FlatGrammar.idRef -> AbstractCodeGrammar.id option
+	val lookupStamp: t * Stamp.t -> AbstractCodeGrammar.idRef option
+	val lookupShared: t * Stamp.t -> AbstractCodeGrammar.instr option
+	val declareShared: t * Stamp.t * AbstractCodeGrammar.instr -> unit
+    end

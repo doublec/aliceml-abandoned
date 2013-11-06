@@ -1,0 +1,149 @@
+__prebound Prebound
+
+type int = Prebound.int
+type real = Prebound.real
+type string = Prebound.string
+type unit = {}
+
+datatype list = datatype Prebound.list
+
+__primitive val show: 'a -> unit = "show"
+
+structure Assembler =
+    struct
+	type typ
+	type field
+	type ctor
+	type method
+	type ilGenerator
+	type label
+	type dynamic
+
+	__primitive constructor UnknownType: exn = "Assembler.UnknownType"
+	__primitive constructor UnknownMember: exn = "Assembler.UnknownMember"
+
+	__primitive val getType: string -> typ =
+	    "Assembler.getType"   (* UnknownType *)
+	__primitive val getField: typ * string -> field =
+	    "Assembler.getField"   (* UnknownMember *)
+	__primitive val getConstructor: typ * typ list -> ctor =
+	    "Assembler.getConstructor"   (* UnknownType, UnknownMember *)
+	__primitive val getMethod: typ * string * typ list -> method =
+	    "Assembler.getMethod"   (* UnknownMember *)
+
+	__primitive val dynamic: 'a -> dynamic = "cast"
+	__primitive val invoke: method * dynamic list -> unit =
+	    "Assembler.invoke"
+
+	__primitive val defineType: string * string * typ -> typ =
+	    "Assembler.defineType"
+	__primitive val createType: typ -> unit =
+	    "Assembler.createType"
+
+	__primitive val defineField: typ * string * typ -> field =
+	    "Assembler.defineField"
+	__primitive val defineConstructor: typ * typ list -> ctor =
+	    "Assembler.defineConstructor"
+	__primitive val defineMethod: typ * string * typ list * typ -> method =
+	    "Assembler.defineMethod"
+	__primitive val defineStaticMethod: typ * string * typ list * typ -> method =
+	    "Assembler.defineStaticMethod"
+
+	__primitive val constructorDeclareLocal: ctor * typ -> unit =
+	    "Assembler.constructorDeclareLocal"
+	__primitive val constructorGetILGenerator: ctor -> ilGenerator =
+	    "Assembler.constructorGetILGenerator"
+
+	__primitive val methodDeclareLocal: method * typ -> unit =
+	    "Assembler.methodDeclareLocal"
+	__primitive val methodGetILGenerator: method -> ilGenerator =
+	    "Assembler.methodGetILGenerator"
+
+	__primitive val emit: ilGenerator * int -> unit =
+	    "Assembler.emit"
+	__primitive val emitUnsignedInt8: ilGenerator * int * int -> unit =
+	    "Assembler.emitUnsignedInt8"
+	__primitive val emitInt8: ilGenerator * int * int -> unit =
+	    "Assembler.emitInt8"
+	__primitive val emitInt16: ilGenerator * int * int -> unit =
+	    "Assembler.emitInt16"
+	__primitive val emitInt32: ilGenerator * int * int -> unit =
+	    "Assembler.emitInt32"
+	__primitive val emitFloat32: ilGenerator * int * real -> unit =
+	    "Assembler.emitFloat32"
+	__primitive val emitString: ilGenerator * int * string -> unit =
+	    "Assembler.emitString"
+	__primitive val emitField: ilGenerator * int * field -> unit =
+	    "Assembler.emitField"
+	__primitive val emitConstructor: ilGenerator * int * ctor -> unit =
+	    "Assembler.emitConstructor"
+	__primitive val emitMethod: ilGenerator * int * method -> unit =
+	    "Assembler.emitMethod"
+	__primitive val emitType: ilGenerator * int * typ -> unit =
+	    "Assembler.emitType"
+	__primitive val emitLabel: ilGenerator * int * label -> unit =
+	    "Assembler.emitLabel"
+	__primitive val beginExceptionBlock: ilGenerator -> unit =
+	    "Assembler.beginExceptionBlock"
+	__primitive val beginCatchBlock: ilGenerator * typ -> unit =
+	    "Assembler.beginCatchBlock"
+	__primitive val endExceptionBlock: ilGenerator -> unit =
+	    "Assembler.endExceptionBlock"
+	__primitive val createLabel: ilGenerator -> label =
+	    "Assembler.createLabel"
+	__primitive val markLabel: ilGenerator * label -> unit =
+	    "Assembler.markLabel"
+
+(*--** ab hier fehlen noch
+	__primitive val emitInt64: ilGenerator * int * int -> unit =
+	    "Assembler.emitInt64"
+	__primitive val emitFloat64: ilGenerator * int * real -> unit =
+	    "Assembler.emitFloat64"
+	__primitive val emitLabels: ilGenerator * int * label list -> unit =
+	    "Assembler.emitLabels"
+*)
+    end
+
+open Assembler
+
+val t = defineType ("Test.Test", "Bla", getType "System.Object")
+
+val c = defineConstructor (t, nil)
+val i = constructorGetILGenerator c
+
+(* ldarg.0 *)
+val _ = emit (i, 0x2)
+
+(* call instance void System.Object::.ctor() *)
+val _ = emitConstructor (i, 0x28, getConstructor (getType "System.Object", nil))
+
+(* ret *)
+val _ = emit (i, 0x2A)
+
+val m = defineMethod (t, "Hello", nil, getType "System.Void")
+val i = methodGetILGenerator m
+
+(* ldstr "It works!" *)
+val _ = emitString (i, 0x72, "It works!")
+
+(* call void System.Console::WriteLine(class System.String) *)
+val _ = emitMethod (i, 0x28, getMethod (getType "System.Console", "WriteLine", [getType "System.String"]))
+
+(* ret *)
+val _ = emit (i, 0x2A)
+
+val g = defineStaticMethod (t, "Main", nil, getType "System.Void")
+val i = methodGetILGenerator g
+
+(* newobj instance void Test.Test.Bla::.ctor() *)
+val _ = emitConstructor (i, 0x73, c)
+
+(* call instance void Test.Test.Bla::Hello() *)
+val _ = emitMethod (i, 0x28, m)
+
+(* ret *)
+val _ = emit (i, 0x2A)
+
+val _ = createType t
+
+val _ = invoke (getMethod (getType "Test.Test.Bla", "Main", nil), nil)

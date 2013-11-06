@@ -1,0 +1,186 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import structure Report from "x-alice:/lib/test/Report"
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Print     from "x-alice:/lib/system/Print"
+
+import structure Explorer  from "x-alice:/tools/Explorer"
+
+structure GecodeTest :
+  sig
+      val binarySet : 
+          string * int * int list *
+          (Space.space * FS.setvar * FS.setvar -> unit)
+          * (FS.setvar * FS.setvar -> Space.space -> bool)
+          -> (string * (unit -> unit) list)
+      val ternarySet : 
+          string * int * int list *
+          (Space.space * FS.setvar * FS.setvar * FS.setvar -> unit)
+          * (FS.setvar * FS.setvar * FS.setvar -> Space.space -> bool)
+          -> (string * (unit -> unit) list)
+      val narySet : 
+          string * int * int list * int *
+          (Space.space * FS.setvar vector * FS.setvar -> unit)
+          * (FS.setvar vector * FS.setvar -> Space.space -> bool)
+          -> (string * (unit -> unit) list)
+
+
+      val runTests : (string * (unit -> unit) list) list
+                     -> unit
+  end
+  =
+  struct
+
+  (* Generic search engine with verification *)
+  fun testVerify (s,v,f,p) =
+      let
+	  fun dfe (s) =(
+	      (case Space.status s of
+		  Space.FAILED => (f (); Space.discard s)
+		| Space.SOLVED => ((*p s;*)
+                                   assert (v s);
+		                   Space.discard s)
+		| Space.BRANCH (alt,desc) =>
+		  let
+                      val _ = p s
+		      val c = Space.clone s
+		  in
+		      Space.commit(s, desc, 0);
+		      (dfe s);
+		      Space.commit(c, desc, 1);
+		      (dfe c)
+		  end
+		 ))
+	in
+	    dfe (s)
+	end
+
+  (* What to do when failure is found *)
+  exception Error
+  fun testVerifySimple (s, v, p) =
+      testVerify (s, v,
+                  (fn () => (print "Space failed!\n";raise Error)), p)	
+  fun testVerifyComplex (s, v, p) = testVerify (s, v, (fn () => ()), p)
+  fun testVerifyGraphical (s, v : FS.setvar vector, _) = (Explorer.exploreAllRoot s v; ())
+
+  (* Translate propagator calling convention *)
+  fun mkBinary prop = fn (s,#[a,b]) => prop(s,a,b) | _ => raise Subscript
+  fun mkTernary prop = fn (s,#[a,b,c]) => prop(s,a,b,c) | _ => raise Subscript
+  fun mkNary prop =
+      fn (s, v) =>
+         prop(s,VectorSlice.toVector (VectorSlice.slice(v, 1, NONE)),
+              Vector.sub(v, 0))
+                                                                     
+  (* A test case for set constraints *)
+  fun mkSetTest arity prop max seed =
+      let
+	  val space = Space.new()
+	  val root = FS.setvarVec (space, arity)
+	  val top = FS.Value.make (space,#[(0,max)])
+      in
+          Vector.app (fn v => FS.subset (space, v, top)) root;
+          prop(space, root);
+	  FS.randomBranch(space, root,
+                          FS.FSB_RANDOM_VAR, FS.FSB_RANDOM_VAL,
+                          seed);
+	  (*FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN);*)
+	  (root, space)
+      end
+	
+	
+  (* Space printer from root vector*)
+  fun setPrint root space = 
+      let
+	  val rootLB = Vector.map (fn v=> FS.Reflect.lowerBound (space,v)) root
+	  val rootUB = Vector.map (fn v=> FS.Reflect.upperBound (space,v)) root
+      in
+	  print "\nUpper bounds:";
+	  Print.printVal rootUB;
+	  print "\nLower bounds:";
+	  Print.printVal rootLB;
+	  print "\n"
+      end
+          
+  fun fakePrint _ = ()
+
+  (* Test case generation for binary set constraints *)
+  fun binarySet (name, max, seeds, propagator, verifier) =
+      let
+          val mkMyTest = mkSetTest 2 (mkBinary propagator) max
+          val tests = 
+              List.map (fn s => fn () =>
+                           let
+                               val (root, space) = mkMyTest s
+                               val v = verifier
+                                           (case root of #[a,b] => (a,b)
+                                                       | _ => raise Subscript)
+                           in
+                               (*testVerifySimple (space, v, setPrint root)*)
+                               testVerifySimple (space, v, fakePrint)
+                               before Space.discard space
+                           end) seeds
+      in
+          (name, tests)
+      end
+
+  (* Test case generation for ternary set constraints *)
+  fun ternarySet (name, max, seeds, propagator, verifier) =
+      let
+          val mkMyTest = mkSetTest 3 (mkTernary propagator) max
+          val tests = 
+              List.map (fn s => fn () =>
+                           let
+                               val (root, space) = mkMyTest s
+                               val v = verifier
+                                           (case root of #[a,b,c] => (a,b,c)
+                                                       | _ => raise Subscript)
+                           in
+                               testVerifySimple (space, v, fakePrint)
+                           end) seeds
+      in
+          (name, tests)
+      end
+
+  (* Test case generation for n-ary set constraints *)
+  fun narySet (name, max, seeds, arity, propagator, verifier) =
+      let
+          val mkMyTest = mkSetTest arity (mkNary propagator) max
+          val tests = 
+              List.map (fn s => fn () =>
+                let
+                    val (root, space) = mkMyTest s
+                    val v = verifier (VectorSlice.toVector
+                                          (VectorSlice.slice(root,1,NONE)),
+                                          Vector.sub(root,0))
+                in
+                    testVerifySimple (space, v, fakePrint)
+                end) seeds
+      in
+          (name, tests)
+      end
+          
+  (* running test suites *)
+  val gecodeConfig = {
+	              timeout = Time.fromSeconds (Int.toLarge 600),
+	              separate = false
+                      }
+
+  fun runTests testsuite = Report.runAll TextIO.stdOut
+                                         gecodeConfig testsuite
+
+  end

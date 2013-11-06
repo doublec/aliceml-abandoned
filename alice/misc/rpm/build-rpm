@@ -1,0 +1,95 @@
+#!/bin/sh
+# 
+# build-rpm: Build RPMs from a list of sources
+# Marco Kuhlmann <kuhlmann@ps.uni-sb.de>, public domain
+# 
+
+# Usage: Call this script with a list of filenames constituting
+# the sources for the RPMs-to-build (specfile, source tarballs,
+# patches, additions).  The script will create a temporary RPM
+# directory hierarchy and build the source and the binary RPMs in
+# it, using the first specfile given on the command line.  The
+# finished RPMs will be moved to the working directory.
+
+set -e
+
+test $# -eq 0 && exit 0
+
+# RPM can be configured with a user-specific RPM macros file,
+# which also determines the top-level RPM root directory.  As we
+# will temporarily create our own RPM directory hierarchy, this
+# file needs to be saved in case it exists.
+
+rpmmacros=${HOME}/.rpmmacros
+
+if test -f ${rpmmacros}; then
+    echo -n "Backing up ${rpmmacros}... "
+    rpmmacros_old=$(mktemp /tmp/RPMMACROS.XXXXXX)
+    cp ${rpmmacros} ${rpmmacros_old}
+    echo "done."
+else
+    rpmmacros_old=""
+fi
+
+# Create the temporary RPM directory hierarchy and register it in
+# the ${rpmmacros} file.
+
+rpmroot=$(mktemp -d /tmp/RPMROOT.XXXXXX)
+echo "%_topdir ${rpmroot}" > ${rpmmacros}
+
+echo -n "Creating RPM file structure... "
+
+mkdir ${rpmroot}/BUILD
+mkdir ${rpmroot}/RPMS
+mkdir ${rpmroot}/SOURCES
+mkdir ${rpmroot}/SPECS
+mkdir ${rpmroot}/SRPMS
+
+echo "done."
+
+# Copy the source files given on the command line to the
+# appropriate directories.
+
+for f in $@; do
+    case "$f" in
+	*.spec)
+	    if test -z "${specfile}"; then
+		specfile=$(basename $f)
+		cp $f ${rpmroot}/SPECS
+	    else
+		echo "Warning: More than one specfile given. "
+		echo "Only the first one (${specfile}) will be used."
+	    fi
+	    ;;
+	*)
+	    cp $f ${rpmroot}/SOURCES
+	    ;;
+    esac
+done
+
+if test -z "${specfile}"; then
+    echo "No specfile given; aborting."
+    exit 1
+fi
+
+echo "Starting RPM build using specfile ${specfile}."
+rpmbuild -ba ${rpmroot}/SPECS/${specfile}
+
+echo "RPM files generated:"
+
+for f in $(find ${rpmroot}/ -name "*.rpm"); do
+    echo "  $(basename $f)"
+    mv $f .
+done
+
+echo -n "Cleaning up... "
+rm -rf ${rpmroot} ${rpmmacros}
+echo "done."
+
+if test -n "${rpmmacros_old}"; then
+    echo -n "Restoring old ${rpmmacros}... "
+    mv ${rpmmacros_old} ${HOME}/.rpmmacros
+    echo "done."
+fi
+
+exit 0

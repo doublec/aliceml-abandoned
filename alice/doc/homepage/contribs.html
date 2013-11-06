@@ -1,0 +1,112 @@
+<?php include("macros.php3"); ?>
+<?php heading("Alice Contributions", "contributions") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>This page is intended as a repository for Alice-related libraries, tools, and
+other contributions by the user community. Please post additions, updates,
+corrections and report broken links to</P>
+
+<UL>
+  <LI><A
+  href="mailto:stockhausen@ps.uni-sb.de"><TT>stockhausen@ps.uni-sb.de</TT></A></LI>
+</UL>
+
+
+<?php section("libraries", "Libraries") ?>
+
+<UL>
+  <LI><B><A href="http://www.alice.cardexpert.net/">AliceParsec</A></B>
+      by <A href="http://www.cardexpert.net/">Benedikt Grundmann</A>.
+  <BR>
+      Port of Daan Leijen's
+      <a href="http://www.cs.uu.nl/~daan/parsec.html">Parsec</A> parsing
+      combinator library for Haskell.
+  <BR>
+      Requires a <a href="http://www.metrak.com/src/alice-parsec/alice1.4.patch">patch</a> to compile with Alice >=1.4 (by Paul Sorenson).
+  <BR><BR>
+  </LI>
+
+  <LI><B><A href="http://www.ps.uni-sb.de/~tack/alice_ports.html">Functional
+      Graph Library</A></B>
+      by <A href="http://www.ps.uni-sb.de/~tack/">Guido Tack</A>.
+  <BR>
+      Port of Martin Erwig's
+      <A href="http://eecs.oregonstate.edu/~erwig/fgl/">FGL</A>, which is based
+      on inductive graphs.
+  <BR><BR>
+  </LI>
+
+  <LI><B><A href="http://www.ps.uni-sb.de/~tack/alice_ports.html">Purely
+      Functional Data Structures</A></B>
+      by <A href="http://www.ps.uni-sb.de/~tack/">Guido Tack</A>.
+  <BR>
+      Port of the data structures from Chris Okasaki's book, including lazy
+      data structures.
+  <BR><BR>
+  </LI>
+
+  <LI><B><A href="http://www.ps.uni-sb.de/~tack/alice_ports.html">Functional
+      XML Parser</A></B>
+      by <A href="http://www.ps.uni-sb.de/~tack/">Guido Tack</A>.
+  <BR>
+      Port of Andreas's Neumann's
+      <A href="http://www.informatik.uni-trier.de/~aberlea/Fxp/"><I>fxp</I></A>.
+  <BR><BR>
+  </LI>
+
+  <LI><B><A href="http://www.ps.uni-sb.de/~tack/alice_ports.html">Regular
+      Expression Library</A></B>
+      by <A href="http://www.ps.uni-sb.de/~tack/">Guido Tack</A>.
+  <BR>
+      Port of the SML/NJ RegExp library.
+  <BR><BR>
+  </LI>
+</UL>
+
+<!--
+<P>More to come...</P>
+-->
+
+<?php section("seam-libraries", "Seam-only libraries") ?>
+
+<P>Libraries in this section can only be used with Alice versions from 1.0 on.</P>
+
+<UL>
+  <LI><B><A href="http://www.ps.uni-sb.de/~tack/alice_bindings.html">GD
+      Graphics Library</A></B>
+      by <A href="http://www.ps.uni-sb.de/~tack/">Guido Tack</A>.
+  <BR>
+      A binding for the <a href="http://www.boutell.com/gd/">GD</a> library
+      that provides functions for creating and manipulating JPEG and PNG images,
+      plus a high-level declarative interface.
+  <BR><BR>
+  </LI>
+  <LI><B><A href="http://www.ps.uni-sb.de/~tack/alice_bindings.html">SQLite</A></B>
+      by <A href="http://www.ps.uni-sb.de/~tack/">Guido Tack</A>.
+  <BR>
+      A binding for <a href="http://www.hwaci.com/sw/sqlite/">SQLite</a>.
+      Gives Alice access to SQL databases.
+  <BR><BR>
+  </LI>
+</UL>
+
+
+<?php section("mozart-libraries", "Mozart-only libraries") ?>
+
+<P>Libraries in this section can only be used with Alice versions up to 0.9.3.</P>
+
+<UL>
+  <LI><B><A href="http://www.ps.uni-sb.de/~smiele/stockhausen-graph">Graph Data
+      Structure</A></B>
+      by <A href="http://www.ps.uni-sb.de/~smiele/">Sebastian Miele</A>.
+  <BR>
+      Binding to the
+      <A href="http://www.mozart-oz.org/mogul/info/smiele/graph.html">Graph Data
+      Structure</A> for Mozart, which provides imperative graphs.
+  <BR><BR>
+  </LI>
+</UL>
+
+<?php footing() ?>

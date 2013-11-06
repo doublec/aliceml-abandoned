@@ -1,0 +1,56 @@
+(*
+ * Authors:
+ *   Niko Paltzer <nikopp@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TYPE_CONST from "TYPE_CONST-sig"
+import structure Type from "Type"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure Label from "x-alice:/lib/rtt/Label"
+
+structure TypeConst :> TYPE_CONST  =
+struct
+
+(*
+open Type
+*)
+nonfix @
+
+val V = Type.var
+val C = fn s => fn k => Type.con(Path.fromString s, k)
+val --> = Type.arrow
+val || = Type.tuple
+val P = Type.prod
+val S = Type.sum
+val E = fn v => fn t => Type.exist(v, t)
+val A = fn v => fn t => Type.all(v, t)
+val L = fn v => fn t => Type.lambda(v, t)
+val @ = Type.apply
+val ~ = Type.abbrev
+
+val T = Type.starKind()
+val Ex = Type.extKind()
+val ==> = Type.arrowKind
+val Si = Type.singKind
+
+val ## = Type.emptyRow()
+val :# = fn (lt, r) => case lt of (l, t) => Type.extendRow(l, t, r)
+val ? = fn (s, t) => (Label.fromString s, t)
+val nV = fn k => Type.newVar(k, Type.Unconstrained)
+val nU = fn _ => Type.unknown T
+
+val i = Type.inspect
+
+infixr 4 -->
+infixr 5 :#
+infix 6 ?
+infix 7 ~
+infix 8 @
+
+infixr ==>
+
+end

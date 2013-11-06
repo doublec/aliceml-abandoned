@@ -1,0 +1,62 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
+import signature PHASE             from "../infrastructure/PHASE-sig"
+import structure ComposePhases'    from "../infrastructure/ComposePhases"
+import structure MkTracingPhase    from "../infrastructure/MkTracingPhase"
+import structure MkResultDumpingPhase
+				   from "../infrastructure/MkResultDumpingPhase"
+
+import structure PPAbstractGrammar from "../frontend-common/AbstractGrammar"
+import structure MkParsingPhase    from "MkParsingPhase"
+import structure MkAbstractionPhase
+       structure SigLoader         from "MkAbstractionPhase"
+
+
+functor MkFrontendSML (
+    val loadSig :        SigLoader.t
+    structure Switches : SWITCHES
+) : PHASE =
+let
+    structure Phase1 =
+	      MkTracingPhase (
+		    structure Phase    = MkParsingPhase(Switches)
+		    structure Switches = Switches
+		    val name = "Parsing"
+	      )
+    structure Phase2 =
+	      MkTracingPhase (
+		    structure Phase    =
+			MkAbstractionPhase(val loadSig = loadSig
+					   structure Switches = Switches)
+		    structure Switches = Switches
+		    val name = "Abstraction"
+	      )
+    structure Phase2' =
+	      MkResultDumpingPhase (
+		    structure Phase    = Phase2
+		    structure Switches = Switches
+		    val header = "Abstract Syntax"
+		    val pp     = PPAbstractGrammar.ppCom
+		    val switch = Switches.Debug.dumpAbstractionResult
+	      )
+in
+    ComposePhases' (
+	structure Phase1  = Phase1
+	structure Phase2  = Phase2'
+	structure Context = Phase2'.C
+	val context       = Pair.snd
+	val context1      = ignore
+	val context2      = Fn.id
+    )
+end

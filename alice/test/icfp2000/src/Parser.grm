@@ -1,0 +1,79 @@
+exception Error of int * string
+
+
+structure Env = BinarySetFn(type ord_key = string  val compare = String.compare)
+
+(* Because ML-Yacc does not have inherited attributes, we have to deal
+ * with the scopes via side effects. :-((
+ *)
+val envStack = ref(nil : Env.set list)
+val env      = ref(Env.empty)
+
+%%
+
+%header	(functor LrVals(structure Token : TOKEN))
+%name Parser
+
+%pos  int
+%term	  EOF
+	| LBRACK | RBRACK
+	| LBRACE | RBRACE
+	| IDENTIFIER of string
+	| BINDER     of string
+	| BOOLEAN    of string
+	| INTEGER    of int
+	| REAL       of real
+	| STRING     of string
+
+%eop     EOF
+%noshift EOF
+
+
+%start    program
+%nonterm  program    of Machine.program
+	| tokenlist  of Machine.token list
+	| tokengroup of Machine.token
+	| token      of Machine.token
+	| lbrace | rbrace | lbrack | rbrack
+
+%%
+
+program:
+	  tokenlist			( Machine.Program tokenlist )
+
+tokenlist:
+	  (*empty*)			( nil )
+	| tokengroup tokenlist		( tokengroup::tokenlist )
+
+tokengroup:
+	  token				( token )
+	| lbrace tokenlist rbrace	( Machine.Function tokenlist )
+	| lbrack tokenlist rbrack	( Machine.Array tokenlist )
+
+lbrace:	  LBRACE			( envStack := !env :: !envStack )
+lbrack:	  LBRACK			( envStack := !env :: !envStack )
+rbrace:	  RBRACE			( env      := List.hd(!envStack);
+					  envStack := List.tl(!envStack) )
+rbrack:	  RBRACK			( env      := List.hd(!envStack);
+					  envStack := List.tl(!envStack) )
+
+token:	  IDENTIFIER			( case Machine.operator IDENTIFIER
+					    of SOME operator =>
+						Machine.Operator operator
+					     | NONE =>
+						if Env.member(!env, IDENTIFIER)
+						then Machine.Id IDENTIFIER
+						else raise Error(IDENTIFIERleft,
+							"unbound identifier")
+					)
+	| BINDER			( case Machine.operator BINDER
+					    of SOME _ =>
+						raise Error(BINDERleft,
+							"rebinding of operator")
+					     | NONE =>
+						( env := Env.add(!env, BINDER)
+						; Machine.Binder BINDER )
+					)
+	| INTEGER			( Machine.Int INTEGER )
+	| REAL				( Machine.Real REAL )
+	| STRING			( Machine.String STRING )

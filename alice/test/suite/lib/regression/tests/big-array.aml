@@ -1,0 +1,22 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure BigArray : REGRESSION =
+struct
+
+val name = "bigarray"
+
+val ok = SOME "big-array.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+open Array
+
+val a'' = tabulate (1000000, fn i => i)
+val _ = sub (a'', 0) + sub (a'', 1)
+val _ = concatResult "OK\n"
+
+val result = !result
+
+end

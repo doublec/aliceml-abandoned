@@ -1,0 +1,749 @@
+<?php include("macros.php3"); ?>
+<?php heading("The FD structure", "The <TT>FD</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature FD
+    structure FD : FD</PRE>
+
+  <P>
+    The <TT>FD</TT> structure provides access to finite domain variables
+    and propagators.
+  </P>
+  <P>
+    Finite domain variables are variables whose values are integers.
+  </P>
+  <P>
+    If a propagator is invoked, it tries to narrow the domains of the
+    variables it is posted on. The amount of narrowing of domains
+    depends on the operational semantics of the propagator.
+    There are two main schemes for the operational semantics of a propagator.
+    Domain propagation means that the propagator narrows the domains
+    such that all values are discarded, which are not contained in a
+    solution of the modeled constraint. But due to efficiency reasons,
+    most propagators provide only interval propagation,
+    i. e. only the bounds of domains are narrowed.
+    Even faster to perform, but even less strict is value propagation, 
+    which is performed only when one of the variables is determined.
+    Some propagators take a "consistency level" argument to determine 
+    the desired mode of operation.
+  </P>
+
+  <P>See also:
+    <A href="fs.html"><TT>FS</TT></A>,
+    <A href="modeling.html"><TT>Modeling</TT></A>,
+    <A href="space.html"><TT>Space</TT></A>
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature FD from "x-alice:/lib/gecode/FD-sig"
+    import structure FD from "x-alice:/lib/gecode/FD"</PRE>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+signature FD =
+sig
+    type space
+    type intvar
+    type boolvar
+    exception NotAssigned
+    type domain = (int*int) vector
+    exception InvalidDomain
+    val domainFromList : int list -> domain
+    val domainToList : domain -> int list
+    val intvar :  space * domain -> intvar
+    val intvarVec :  space * int * domain -> intvar vector
+    val range :  space * (int * int) -> intvar
+    val rangeVec :  space * int * (int * int) -> intvar vector
+    val boolvar :  space -> boolvar
+    val boolvarVec :  space * int -> boolvar vector
+    val intvar2boolvar : space * intvar -> boolvar
+    val boolvar2intvar : boolvar -> intvar
+    datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
+    val assign : space * intvar vector * avalsel -> unit
+    val dom :  space * intvar * (int * int) vector -> unit
+    datatype relation =
+	     EQ (* Equality         == *)
+	   | NQ (* Disequality      != *)
+	   | LQ (* Less or equal    <= *)
+	   | LE (* Less             <  *)
+	   | GQ (* Greater or equal >= *)
+	   | GR (* Greater          >  *)
+    datatype conlevel = 
+	     BND | DEF | DOM | VAL
+    val rel  :  space * intvar * relation * intvar -> unit
+    val relI :  space * intvar * relation * int -> unit
+    val equal  : space * intvar * intvar * conlevel -> unit
+    val equalV : space * intvar vector * conlevel -> unit
+    val distinct : space * intvar vector * conlevel -> unit
+    val distinctOffset : space * (int * intvar) vector *
+			 conlevel -> unit
+    val sortedness : space * intvar vector * intvar vector * conlevel -> unit
+    val permsort : space * intvar vector * intvar vector * intvar vector * conlevel -> unit
+    val gcc1 : space * intvar vector * int vector * int * int * int * int *
+	conlevel -> unit
+    val gcc2 : space * intvar vector * int vector * int * int * int * int *
+	int * conlevel -> unit
+    val gcc3 : space * intvar vector * int * conlevel -> unit
+    val gcc4 : space * intvar vector * int * int * conlevel -> unit
+    val gcc5 : space * intvar vector * intvar vector * int * int *
+	conlevel -> unit
+    val gcc6 : space * intvar vector * int vector * intvar vector * int *
+	int * bool * int * int * conlevel -> unit
+    val gcc7 : space * intvar vector * int vector * intvar vector * int *
+	int * int * bool * int * int * conlevel -> unit
+    val countII : space * intvar vector * 
+		  int * relation * int -> unit
+    val countVI : space * intvar vector * 
+		 intvar * relation * int -> unit
+    val countIV : space * intvar vector * 
+		  int * relation * intvar -> unit
+    val countVV : space * intvar vector * 
+		 intvar * relation * intvar -> unit
+    val element : space * intvar vector * intvar *
+		 intvar -> unit
+    val elementI : space * int vector * intvar *
+		  intvar -> unit
+    val lex : space * intvar vector * relation *
+	     intvar vector -> unit
+    val nega  : space * boolvar * boolvar -> unit
+    val conj  : space * boolvar * boolvar * boolvar -> unit
+    val disj  : space * boolvar * boolvar * boolvar -> unit
+    val impl  : space * boolvar * boolvar * boolvar -> unit
+    val equi  : space * boolvar * boolvar * boolvar -> unit
+    val exor  : space * boolvar * boolvar * boolvar -> unit
+    val conjV : space * boolvar vector * boolvar -> unit
+    val disjV : space * boolvar vector * boolvar -> unit
+    val linear : space * (int * intvar) vector * relation *
+		 int * conlevel -> unit
+    val min : space * intvar vector * intvar -> unit
+    val max : space * intvar vector * intvar -> unit
+    val abs : space * intvar * intvar * conlevel -> unit
+    val mult: space * intvar * intvar * intvar * conlevel -> unit
+    structure Reified :
+	sig
+	    val intvar : space * domain * boolvar -> intvar
+	    val intvarVec : space * int * domain * boolvar ->
+			    intvar vector
+	    val dom : space * intvar * (int * int) vector *
+		      boolvar -> unit
+	    val rel : space * intvar * relation * intvar *
+		      boolvar -> unit
+	    val relI : space * intvar * relation * int *
+		       boolvar -> unit
+	    val linear : space * (int * intvar) vector * relation *
+			 int * boolvar * conlevel -> unit
+	end
+    structure Reflect :
+	sig
+	    val min : space * intvar -> int
+	    val max : space * intvar -> int
+            val med : space * intvar -> int
+	    val value : space * intvar -> int (* NotAssigned *)
+	    val boolVal : space * boolvar -> bool (* NotAssigned *)
+	    val size : space * intvar -> int
+	    val dom : space * intvar -> domain
+            val assigned : space * intvar -> bool
+            val range : space * intvar -> bool
+	end
+    datatype b_var_sel =
+	     B_DEGREE_MAX
+	   | B_DEGREE_MIN
+	   | B_MAX_MAX
+	   | B_MAX_MIN
+	   | B_MIN_MAX
+	   | B_MIN_MIN
+	   | B_NONE
+	   | B_REGRET_MAX_MAX
+	   | B_REGRET_MAX_MIN
+	   | B_REGRET_MIN_MAX
+	   | B_REGRET_MIN_MIN
+	   | B_SIZE_MAX
+	   | B_SIZE_MIN
+    datatype b_val_sel =
+	     B_MAX
+	   | B_MED
+	   | B_MIN
+	   | B_SPLIT_MAX
+	   | B_SPLIT_MIN
+    val branch : space * intvar vector * b_var_sel *
+		 b_val_sel -> unit
+end
+</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+       <DT
+      <TT>type space</TT>
+    </DT>
+    <DD>
+      <P>The type of first class comutational spaces. Usually equal to <TT>SPACE.space</TT>.
+    </P></DD>
+
+    <DT
+      <TT>type intvar</TT> 
+    </DT>
+    <DD>
+      <P>The type of finite domain variables.
+    </P></DD>
+
+    <DT
+      <TT>type boolvar</TT> 
+    </DT>
+    <DD>
+      <P>The type of boolean constraint variables.
+      Fundamentally, they are FD variables constrained to the 0-1 domain.
+    </P></DD>
+
+
+    <DT>
+      <TT>exception NotAssigned</TT>
+    </DT>
+    <DD>
+      <P>is raised when a reflection operation intended for determined values only is performed 
+      on a variable in a space where its domain is not yet narrowed to a single value.
+    </P></DD>
+
+
+    <DT>
+      <TT>type domain = (int*int) vector</TT>
+    </DT>
+    <DD>
+      <P>The type of domain descriptions. 
+      Used to define variable bounds at variable creation or later, in value declaration, and reflection.
+      It is an ordered, non-overlapping, non-contingous vector of ordered integer pairs. 
+      For example the set of all primes between 1 and 10 is #[(2,3),(5,5),(7,7)] <BR>
+      Observe that #[(1,2),(3,4)] is an invalid domain: contigous ranges, use #[(1,4)] instead <BR>
+      #[(1,3),(3,4)] is even more so.<BR>
+      #[(3,2)] is also invalid, the range is ill-defined.<BR>
+      #[(4,5),(1,2)] is nonconformant in pair ordering, #[(1,2),(4,5)] is fine.
+    </P></DD>
+
+    <DT>
+      <TT>exception InvalidDomain</TT>
+    </DT>
+    <DD>
+      <P>Exception thrown by all variable creation and domain tell operations
+      on receipt of a domain description not conforming to the above rules.
+    </P></DD>
+
+    <DT>
+      <TT>domainFromList <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a valid domain description containing the same integers as <I>l</I> does.
+    </P></DD>
+
+    <DT>
+      <TT>domainToList <I>d</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the list of integers that correspond to domain description
+         <I>d</I>.
+    </P></DD>
+
+    <DT>
+      <TT>intvar (<I>s, d</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns a fresh FD variable valid in <I>s</I> and all its descendents 
+      not originating from a child created earlier than the introduction of the variable.<BR>
+      The fresh variable is already constrained to be in <I>d</I>.
+    </P></DD>
+
+    <DT>
+      <TT>intvarVec (<I>s, n, d</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <I>n</I> FD variables freshly created in <I>s</I>.
+      They are already constrained to be in <I>d</I>.
+    </P></DD>
+
+    <DT>
+      <TT>range (<I>s, (min, max)</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns an FD variable freshly created in <I>s</I>.
+      It is already constrained to be between <I>min</I> and <I>max</I>, inclusive.
+    </P></DD>
+
+    <DT>
+      <TT>rangeVec (<I>s, n, (min, max)</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <I>n</I> FD variables freshly created in <I>s</I>.
+      They are already constrained to be between <I>min</I> and <I>max</I>, inclusive.
+    </P></DD>
+
+    <DT>
+      <TT>boolvar <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Returns true-false domain variable freshly created in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>boolvarVec (<I>s, n</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <I>n</I> true-false domain variables freshly created in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>intvar2boolvar (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> to the (0,1) range, 
+      and returns a boolvar tied to it with the obvious mapping 0:false, 1:true.
+    </P></DD>
+
+    <DT>
+      <TT>boolvar2intvar <I>b</I></TT>
+    </DT>
+    <DD>
+      <P> Returns an intvar in the 0-1 range tied to <I>b</I> with the mapping 0:false, 1:true.
+    </P></DD>
+
+    <DT>
+      <TT>datatype avalsel</TT>
+    </DT>
+    <DD>
+      <P>Type to identify a value assignments strategy.<BR>
+      <TT>AVAL_MIN</TT>: Pick the smallest possible value.<BR>
+      <TT>AVAL_MAX</TT>: Pick the largest possible value.<BR>
+      <TT>AVAL_MED</TT>: Pick the median of the available values.
+    </P></DD>
+
+    <DT>
+      <TT>assign (<I>s, v, strategy</I>)</TT>
+    </DT>
+    <DD>
+      <P> Determines all elements of <I>v</I> in <I>s</I> 
+      following the <I>strategy</I> provided.
+    </P></DD>
+
+    <DT>
+      <TT>dom (<I>s, x, d</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> in <I>s</I> 
+      to the domain <I>d</I>.
+    </P></DD>
+
+    <DT>
+      <TT>datatype relation</TT>
+    </DT>
+    <DD>
+      <P>Type to identify an arithmetic relation in constraints.<BR>
+      <TT>EQ</TT>: Equal.<BR>
+      <TT>NQ</TT>: Not equal.<BR>
+      <TT>LQ</TT>: Less or equal.<BR>
+      <TT>LE</TT>: Less.<BR>
+      <TT>GQ</TT>: Greater or equal.<BR>
+      <TT>GR</TT>: Greater.
+    </P></DD>
+
+    <DT>
+      <TT>datatype conlevel</TT>
+    </DT>
+    <DD>
+      <P>Type to identify the eagerness of propagation. 
+      When the required level is not implemented for a propagator,
+      the closest, stricter version is used.<BR>
+      <TT>DOM</TT>: Domain Proagatin. Strictest.<BR>      
+      <TT>BND</TT>: Bounds Propagation.<BR>
+      <TT>VAL</TT>: Value Propagation. Most loose. <BR>
+      <BR>
+      <TT>DEF</TT>: The default for the propagator.<BR>      
+    </P></DD>
+
+    <DT>
+      <TT>rel (<I>s, x, relation, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator to constrain <I>x</I> and <I>y</I> in <I>s</I> 
+      to be in the given <I>relation</I>.
+    </P></DD>
+
+    <DT>
+      <TT>relI (<I>s, x, relation, n</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> in <I>s</I> 
+      to be in the given <I>relation</I> with the integer <I>n</I>.
+    </P></DD>
+
+    <DT>
+      <TT>equal (<I>s, x, y, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator to constrain <I>x</I> and <I>y</I> in <I>s</I> 
+      to be equal.
+    </P></DD>
+
+    <DT>
+      <TT>equalV (<I>s, v, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator to constrain all elements of <I>v</I> in <I>s</I> 
+      to be equal.
+    </P></DD>
+
+    <DT>
+      <TT>distinct (<I>s, v, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator to constrain all elements of <I>v</I> in <I>s</I> 
+      to be different, pairwise non-equal.
+    </P></DD>
+
+    <DT>
+      <TT>distinctOffset (<I>s, v, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the following:
+      For all <I>(ci,xi)</I> and <I>(cj,xj)</I>, xi+ci != xj+cj.
+    </P></DD>
+
+    <DT>
+      <TT>sortedness (<I>s, xs, ys, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> that states that the
+      <I>ys</I> are the sorted <I>xs</I>.
+    </P></DD>
+
+    <DT>
+      <TT>permsort (<I>s, xs, ys, zs, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> that states that the
+      <I>ys</I> are the sorted <I>xs</I>, and the <I>zs</I> are the
+      corresponding permutation.
+    </P></DD>
+
+    <DT>
+      <TT>gcc1 (<I>s,x,c,m,u,min,max,level</I>)</TT><BR>
+      <TT>gcc2 (<I>s,x,c,m,ulow,uup,min,max,level</I>)</TT><BR>
+      <TT>gcc3 (<I>s,x,u,level</I>)</TT><BR>
+      <TT>gcc4 (<I>s,x,min,max,level</I>)</TT><BR>
+      <TT>gcc5 (<I>s,x,c,min,max,level</I>)</TT><BR>
+      <TT>gcc6 (<I>s,x,v,c,m,u,all,min,max,level</I>)</TT><BR>
+      <TT>gcc7 (<I>s,x,v,c,m,ulow,uup,all,min,max,level</I>)</TT><BR>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the global cardinality
+      constraint. This constraint generalises the distinct constraint
+      in that it gives lower and upper bounds on the number of times a
+      certain value may occur in <I>x</I>.</P>
+      <P>This constraint comes with seven different ways to specify its
+         arguments.</P>
+    </P></DD>
+
+    <DT>
+      <TT>countII (<I>s, v, n, rel, m</I>)</TT><BR>
+      <TT>countVI (<I>s, v, x, rel, m</I>)</TT><BR>
+      <TT>countIV (<I>s, v, n, rel, y</I>)</TT><BR>
+      <TT>countVV (<I>s, v, x, rel, y</I>)</TT><BR>                  
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the following:
+      The number of elements in <I>v</I> equal to <I>n</I> (or <I>x</I>)
+      is in <I>rel</I> with <I>m</I> (or <I>y</I>).<BR>
+      For example, There are exactly 5 elements equal to 3 of v:<BR>
+      <TT>countII (<I>s, v, 3, EQ, 5</I>)</TT><BR>
+    </P></DD>
+
+    <DT>
+      <TT>element (<I>s, v, x, y</I>)</TT><BR>
+      <TT>elementI (<I>s, v, x, y</I>)</TT><BR>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the following:
+      The <I>x</I>th element of <I>v</I> is <I>y</I>
+    </P></DD>
+
+    <DT>
+      <TT>lex (<I>s, v1, rel, v2</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the following:
+	<I>v1</I> and <I>v2</I> taken as strings of integers are 
+	lexographically oredered according to <I>rel</I>.
+    </P></DD>
+
+    <DT>
+      <TT>nega (<I>s, b1, b2</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b1</I> is the negation of <I>b2</I>. 
+      Observe that all consistency levels would result in the same algorithm
+      for propagators operating on booleans only.
+    </P></DD>
+
+    <DT>
+      <TT>conj (<I>s, b1, b2, b3</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b3</I> is the conjunction of <I>b1</I> and <I>b2</I>
+    </P></DD>
+
+    <DT>
+      <TT>disj (<I>s, b1, b2, b3</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b3</I> is the disjunction of <I>b1</I> and <I>b2</I>
+    </P></DD>
+
+    <DT>
+      <TT>impl (<I>s, b1, b2, b3</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b3</I> is the implication from <I>b1</I> to <I>b2</I>
+    </P></DD>
+
+    <DT>
+      <TT>equi (<I>s, b1, b2, b3</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b3</I> is the equivalence of <I>b1</I> and <I>b2</I>
+    </P></DD>
+
+    <DT>
+      <TT>exor (<I>s, b1, b2, b3</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b3</I> is the non-equality of <I>b1</I> and <I>b2</I>
+    </P></DD>
+
+    <DT>
+      <TT>conjV (<I>s, v, b1</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b1</I> is the conjunction of all elements in <I>v</I>.
+    </P></DD>
+
+    <DT>
+      <TT>disjV (<I>s, v, b1</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring 
+      <I>b1</I> is the disjunction of all elements in <I>v</I>.
+    </P></DD>
+
+    <DT>
+      <TT>linear (<I>s, v, rel, n, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the following: 
+      Regard the elements of <I>v</I> as two-tier multiplications.
+      The sum of all these multiplicants is in <I>rel</I> with <I>n</I>
+    </P></DD>
+
+    <DT>
+      <TT>min (<I>s, v, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring
+      <I>x</I> is equal to the smallest element of <I>v</I>.
+    </P></DD>
+
+    <DT>
+      <TT>max (<I>s, v, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring
+      <I>x</I> is equal to the largest element of <I>v</I>.
+    </P></DD>
+
+    <DT>
+      <TT>abs (<I>s, x, y, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring
+      <I>y</I> is equal to the absolute value of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>mult (<I>s, x, y, z, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring
+      <I>z</I> is equal to <I>x</I> times <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reified.intvar (<I>s, dom, b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns an FD variable freshly created in <I>s</I>.
+      Also, a propagator is created to ensure <I>b</I> is true 
+      if and only if the intvar returned is in <I>dom</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reified.intvarVec (<I>s, n, dom, b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns a vector of FD variables freshly created in <I>s</I>.
+      Also, a propagator is created to ensure <I>b</I> is true 
+      if and only if all the intvars returned are in <I>dom</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reified.dom (<I>s, x, dom, b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> to ensure <I>b</I> is true 
+      if and only if <I>x</I> is in <I>dom</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reified.rel (<I>s, x, rel, y, b</I>)</TT>
+      <TT>Reified.relI (<I>s, x, rel, n, b</I>)</TT><BR>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> to ensure <I>b</I> is true 
+      if and only if <I>x</I> is in <I>rel</I> with <I>y</I> (or <I>n</I>).
+    </P></DD>
+
+    <DT>
+      <TT>Reified.linear (<I>s, v, rel, n, b, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> to ensure <I>b</I> is true 
+      if and only if the regular <TT>linear</TT> constraint holds for the arguments.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.min (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the smallest possible value in the current domain of
+      <I>x</I> in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.max (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the largest possible value in the current domain of <I>x</I> in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.med (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the median of the possible values <I>x</I> may take in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.value (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the value <I>x</I> takes in <I>s</I>. Throws NotAssigned if <I>x</I> is not determined.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.boolVal (<I>s, b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the value <I>b</I> takes in <I>s</I>. Throws NotAssigned if <I>b</I> is not determined.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.size (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the number of possible values <I>x</I> may take in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.dom (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the current domain of <I>x</I> in <I>s</I>.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.assigned (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns true if <I>x</I> is determined to be a single value in <I>s</I>, false if not yet.
+    </P></DD>
+
+    <DT>
+      <TT>Reflect.range (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns true if the possible values <I>x</I> may take in <I>s</I> form a single, continuous range.
+    </P></DD>
+
+    <DT>
+      <TT>datatype b_var_sel</TT>
+    </DT>
+    <DD>
+      <P>Identifies the variable selection strategy in branching.<BR>
+      <TT>B_DEGREE_MAX</TT> : Pick the variable involved in the most propagators.<BR>
+      <TT>B_DEGREE_MIN</TT> : Pick the variable involved in the fewest propagators.<BR>      
+      <TT>B_MAX_MAX</TT> : Pick the variable with the largest upper bound.<BR>
+      <TT>B_MAX_MIN</TT> : Pick the variable with the smallest upper bound.<BR>
+      <TT>B_MIN_MAX</TT> : Pick the variable with the largest lower bound.<BR>
+      <TT>B_MIN_MIN</TT> : Pick the variable with the smallest lower bound.<BR>
+      <TT>B_NONE</TT> : Pick the leftmost undetermined variable.<BR>
+      <TT>B_REGRET_MAX_MAX</TT> : Pick the variable with largest
+      max-regret. The max-regret of a variable is the difference
+      between the largest and second-largest value still in the
+      domain. <BR>
+      <TT>B_REGRET_MAX_MIN</TT> : Pick the variable with smallest
+      max-regret. The max-regret of a variable is the difference
+      between the largest and second-largest value still in the
+      domain.<BR>
+      <TT>B_REGRET_MIN_MAX</TT> : Pick the variable with largest
+      min-regret. The min-regret of a variable is the difference
+      between the smallest and second-smallest value still in the
+      domain.<BR>
+      <TT>B_REGRET_MIN_MIN</TT> : Pick the variable with smallest
+      min-regret. The min-regret of a variable is the difference
+      between the smallest and second-smallest value still in the
+      domain.<BR>
+      <TT>B_SIZE_MAX</TT> : Pick the variable with the most possible values.<BR>
+      <TT>B_SIZE_MIN</TT> : Pick the variable with the fewest possible values. Also known as First Fail strategy.<BR>
+    </P></DD>
+
+    <DT>
+      <TT>datatype b_val_sel</TT>
+    </DT>
+    <DD>
+      <P>Identifies the value selection strategy in branching.<BR>
+      <TT>B_MAX</TT> : Pick the largest possible value of the variable.<BR>
+      <TT>B_MIN</TT> : Pick the smallest possible value of the variable.<BR>
+      <TT>B_MED</TT> : Pick the median of all possible values of the variable.<BR>      
+      <TT>B_SPLIT_MIN</TT> : Pick the lower half of the domain.<BR>              
+      <TT>B_SPLIT_MAX</TT> : Pick the upper half of the domain.<BR>                    
+    </P></DD>
+
+    <DT>
+      <TT>branch (<I>s, v, varStrategy, valStrategy</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new branching (aka distributor or labeling) in <I>s</I> 
+      over the variables in <I>v</I> following the given strategy.
+    </P></DD>
+
+
+  </DL>
+
+<?php footing() ?>

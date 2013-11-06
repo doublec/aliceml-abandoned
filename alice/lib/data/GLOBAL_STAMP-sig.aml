@@ -1,0 +1,30 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature STAMP from "STAMP-sig"
+
+
+signature GLOBAL_STAMP =
+sig
+    (*include STAMP*)
+
+    eqtype stamp
+    type t = stamp
+
+    val stamp :		unit   -> stamp
+    val fromString :	string -> stamp
+    val toString :	stamp  -> string
+
+    val equal :		stamp * stamp -> bool
+    val compare :	stamp * stamp -> order
+    val hash :		stamp -> int
+end

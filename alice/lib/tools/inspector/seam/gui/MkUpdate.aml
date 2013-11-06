@@ -1,0 +1,454 @@
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure Reflect      from "x-alice:/lib/system/Reflect" 
+import signature UPDATE       from "UPDATE-sig"
+import signature GR_TREE      from "GR_TREE-sig"
+import structure GrTypes      from "GrTypes"
+import structure Common       from "../Common"
+import structure Prefs        from "../Prefs"
+import structure AbsTree      from "../AbsTree"
+import structure TypeMappers  from "../TypeMappers"
+import structure ModuleMapper from "../ModuleMapper"
+import structure Builtin      from "../BuiltinTypeMappers"
+
+functor MkUpdate (GrTree : GR_TREE) :> UPDATE =
+struct
+
+open GrTypes
+
+structure Driver = GrTree.Driver
+structure Layout = GrTree.Layout
+
+val replaceListTailP = Promise.promise ()
+val replaceListTail  = Promise.future replaceListTailP 
+
+val refl = Reflect.reflect
+
+fun newHidden () =
+    let val hiddenGroup = Driver.newGroupX (Driver.rootGroup, 400)
+    in
+      Driver.hide hiddenGroup ;
+      hiddenGroup
+    end
+        
+(* Replace the prefix with delta = delta' in the given tree.  *)
+fun updPrefixInParent' (subtree, delta', Prefix {delta, tree, ...}) =
+       if delta = delta' then true
+       else false before (if updPrefixInParent' (subtree, delta', !tree) 
+                            then tree := subtree else ())
+  | updPrefixInParent' _ = assert false (* Prefix not found ! *)
+
+fun updPrefixInParent (subtree, parent, index, id) =
+  case parent of
+    Container {kids, ...} =>
+       if updPrefixInParent' (subtree, id, Array.sub (!kids, index))
+        then Array.update (!kids, index, subtree)
+        else ()
+  | _ => assert false
+
+(* Update a Container or a Simple in the Prefix sequence. *)
+fun updOtherInParent' (subtree, Prefix {tree, ...}) =
+  false before (if updOtherInParent' (subtree, !tree)
+                  then tree := subtree else ())
+  | updOtherInParent' (_, _) = true
+
+(* Update a Container or a Simple in the given parent/index. *)
+fun updOtherInParent (subtree, parent, index) =
+  case parent of
+    Container {kids, ...} =>
+      if updOtherInParent' (subtree, Array.sub (!kids, index))
+        then Array.update (!kids, index, subtree)
+        else ()
+  | _ => assert false
+
+(* Replace the given tree by another tree.
+ * and propagate layout information. *)
+fun substitute (tree, tree', parent, index) =
+  let
+    val _ = (* Update the parent's array / ref. *)
+      case tree of
+        (Simple _ | Container _) => updOtherInParent (tree', parent, index)
+      | Prefix {delta, ...} => updPrefixInParent (tree', parent, index, delta)
+
+    val isCon = Layout.isContainer tree
+    val isCon' = Layout.isContainer tree'
+  in
+    Layout.replaced (parent, index, isCon, isCon')
+  end
+
+fun getLocation tree =
+  case tree of
+    Simple {delta, parent, index, depth, ...}
+                => (getGroup tree, delta, parent, index, depth)
+  | Container {group, delta, parent, index, depth, ...}
+                => (group, delta, !parent, !index, depth)
+  | Prefix {group, delta, parent, index, depth, ...}
+                => (group, delta, parent, index, depth)
+      
+(* Replace the given tree by the given object. *)
+fun replaceBy (tree, abstree) =
+  let
+    (* Get the information about the location of the tree. *)
+    val (group, delta, parent, index, depth) = getLocation tree
+
+    (* Don't forget to get the suffix. *)
+    val suffixes = getSuffixes (tree, depth)
+
+    (* Create subtree. *)
+    val (subtree, height, width) =
+	GrTree.fromAbsTree {group, delta = !delta, abstree, depth,
+                            parent, index, suffixes, id = NONE}
+  in
+    substitute (tree, subtree, parent, index) ;
+   
+    (* If the parent was a faked container, this tree must be hidden. *)
+    (case parent of
+       GrTypes.Container {index = pindex, group, kids, ...} =>
+         if !pindex = ~1
+           then (assert index = 0 ;
+                 GrTypes.reparent (GrTypes.getGroup parent)
+                 (Array.sub (!kids, 0)))
+         else ()
+     | _ => assert false)
+  end
+
+fun updateWith (tree, obj) = (replaceBy (tree, obj) ;
+			      GrTree.Monitors.destroy tree)
+
+fun reinspect' (tree, depth) = 
+  case AbsTree.downcastItem (getDesc tree) of
+    SOME desc => updateWith (tree, TypeMappers.map (depth, desc))
+  | NONE => reinspect' (#1 (getParent tree), depth)
+
+fun reinspect tree = reinspect' (tree, !Prefs.depthLimit)
+
+val undefinedExpand = Common.undefined "MkUpdate.expandWidth-item"
+val undefinedAbsExpand  = Common.undefined "MkUpdate.expandWidth-abstract-item"
+
+datatype limit_description = datatype AbsTree.limit_description
+
+(* Gets the module from the inner container. *)
+fun getModuleFromStruct tree = case getDesc (#1 (getParent tree)) of
+				 Module (_, m, _) => m | _ => assert false
+
+fun getModuleFromField tree = getModuleFromStruct (#1 (getParent tree))
+
+(* Expand a declaration in a module. *)
+fun expandDecl (decl, tree) =
+    Option.app (fn abstree => updateWith (tree, abstree))
+               (ModuleMapper.fromDecl (getModuleFromField tree, decl))
+ 
+(* Expands a record or a tuple. *)
+fun abstreeBuilder (depth, TupRec {row, tagged}, desc, start, _) =
+  let val value = AbsTree.getValue desc
+  in
+    case row of 
+      AbsTree.Tuple typvec =>
+        ((fn (limit,array) => AbsTree.makeTuple (depth, limit, array, typvec,
+                                                 value, tagged, start)),
+         Vector.length typvec)
+        
+    | AbsTree.Record (labvec, typarr) =>
+        ((fn (limit, array) => AbsTree.makeRecord(depth, limit, array, labvec,
+                                                  typarr,value,tagged,start)),
+         Array.length typarr)
+  end
+
+(* Expands a module. *)
+  | abstreeBuilder (depth, ModuleLimit (items, length), desc, start, tree) =
+    let
+      val module = getModuleFromStruct tree
+      fun makeAbs (limit, array) = ModuleMapper.makeDecl (module, depth, array,
+                                                          items, length, limit)
+    in
+      (makeAbs, length + start)
+    end
+    
+(* Expands a vector or array. *)
+  | abstreeBuilder (depth, VecArrayLimit (length, typ, sub),
+		    desc, start, tree) =
+    let
+      val value = Reflect.reify (AbsTree.getValue desc)
+      fun makeAbs (limit, array) = AbsTree.makeVecArray (sub, length, depth,
+							 limit, array,
+                                                         value, start, typ)
+    in
+      (makeAbs, length)
+    end
+
+
+  | abstreeBuilder (_, ListLimit _, _, _, _) = assert false
+      
+(* Enlarge the given limited container. *)
+fun expandWidth (fully, parent, limitDesc) =
+    case parent of
+      Container {kids, desc, depth, mode, group, delta, ...} =>
+      (case limitDesc of
+         ListLimit (typ, l) => (* Special expansion for lists. *)
+	 let
+	   val index = Array.length (!kids) - 1
+	   val tree = Array.sub (!kids, index)
+	   val path = TypeMappers.path_list
+	   val targs = #2 (TypeMappers.unapply typ)
+	   val value = refl l
+	   val item = GrTree.unmapDesc desc
+	   val depth = !Prefs.incrDepth
+	   val width = if fully then !Prefs.incrWidth else !Prefs.bigWidth
+	   val abstree = Builtin.list' (width, depth, item, path, targs, l)
+	 in
+	   replaceListTail (abstree, parent, index, tree)
+	 end
+
+       | _ =>
+         let 
+	   val size = Array.length (!kids)
+	   val depth = depth + 1
+	   val lastElement = Array.sub (!kids, size - 1)
+	   val lastSuffixes = getSuffixes (lastElement, depth)
+	   val start = size - 1
+	   val (makeAbs, full) = abstreeBuilder (!Prefs.incrDepth, limitDesc,
+                                                 desc, start, parent)
+				 
+	   val newSize = size - 1 + !Prefs.incrWidth
+	   val (newSize, limit) = if fully orelse newSize >= full
+                                    then (full, false)
+				    else (newSize + 1, true)
+				       
+           (* Number of abstract trees to create, including the limit. *)
+	   val nAbstrees = 1 + newSize - size
+	   val abstrees = Array.array (nAbstrees, undefinedAbsExpand)
+	   val newkids = Array.array (newSize, undefinedExpand)
+	   val xpos = Int.max (0, !delta)
+
+	   fun mapAbstree (abstree, index) =
+	       let
+		 val group = case !mode of
+			       Horizontal => Driver.newGroupX (group, 0)
+			     | Vertical _ => Driver.newGroupX (group, xpos)
+			     | AlwaysVertical => Driver.newGroupX (group, xpos)
+
+		 val suffixes = if index = newSize - 1
+				then lastSuffixes else []
+		 val tree =
+		     #1 (GrTree.fromAbsTree {group, delta = 0, abstree, parent,
+					     index, depth, suffixes,id = NONE})
+		 val isCon = Layout.isContainer tree
+	       in
+		 Layout.replaced (parent, index, false, isCon) ;
+		 tree
+	       end
+	 in
+	   (* Create the abstrees. *)
+	   makeAbs (limit, abstrees) ;
+
+	   (* The first part of the container is the original grtrees. *)
+	   Common.copy {src = !kids, dst = newkids,
+			length = size - 1} ;
+
+	   (* The second part is the mapping of abstrees. *)
+	   Common.map {src = abstrees, isrc = 0,
+		       dst = newkids, idst = size - 1, 
+		       length = nAbstrees, f = mapAbstree} ;
+
+	   GrTypes.destroy lastElement ;
+
+	   kids := newkids
+	 end)
+
+
+  | _ => assert false
+
+fun forceEval tree =
+  let val value = case getDesc tree of
+                    NestedRow _        => refl 0
+		  | TopLevel           => assert false
+		  | Struct             => refl 0
+		  | Decl _             => refl 0
+                  | ListTail (_, v, _) => refl v
+                  | Value (_, v, _)    => refl v
+                  | Module (_, m, _)   => refl m
+  in
+    if Future.isLazy value then ignore (spawn (Future.await value)) else ()
+  end
+
+fun refontPrefix ([], width, height, dx) = (width, height, dx)
+  | refontPrefix ((item, (_, style)) :: xs, width, height, dx) =
+          let
+	    val oldWidth = Driver.getWidth item
+	    val (_, width', height') = Driver.styleItem (item, style)
+	    val dx' = dx + width' - oldWidth
+          in
+	    Driver.mvByX (item, dx) ;
+            refontPrefix (xs, width + width', Int.max (height, height'), dx')
+          end
+
+fun refontSuffix ([], width, height, dx) = (width, height)
+  | refontSuffix ((gl, orient, depth) :: xs, width, height, dx) =
+          let
+            val (width', height', dx') = refontPrefix (gl, 0, 0, dx)
+          in
+            refontSuffix (xs, width + width', Int.max (height, height'), dx')
+          end
+
+fun getStyle (String (_, style)) = style
+  | getStyle (Fold _ | WidthLimit _) = Prefs.limitStyle
+
+(* Redraw all the tree (because of a font change or a color change). *)
+fun refont tree =
+  case tree of
+    Simple {textItem, delta, desc, parent, index, depth,
+            content, suffix, width = oldWidth, ...} =>
+      let
+        val style = getStyle content
+        val (_, width, height) = Driver.styleItem (textItem, style)
+        val (suffixWidth, height) =
+          refontSuffix (List.rev suffix, 0, height, width - oldWidth)
+        val subtree = Simple {textItem, delta, desc, parent, index, depth, 
+                              width, height, content, suffix, suffixWidth}
+      in
+        substitute (tree, subtree, parent, index)
+      end
+  | Prefix {group, delta, parent, index, depth, prefix, orient,
+            tree = subtreeRef, ...} =>
+      let
+        val xpos = Int.max (0, !delta)
+        val (prefixWidth, prefixHeight, _) =
+                refontPrefix (List.rev prefix, 0, 0, 0)
+        val newPrefix = Prefix {group, delta, parent, index, depth, prefix,
+                                tree = subtreeRef, orient,
+                                prefixWidth, prefixHeight}
+      in
+        substitute (tree, newPrefix, parent, index) ;
+        refont (!subtreeRef)
+      end
+    
+  | Container {kids, status, ...} => Array.app refont (!kids)
+
+(* Expand the given item. *)
+fun expand full tree =
+    case tree of
+      Simple {content = Fold NONE, ...} => 
+        let val depth = if full then !Prefs.bigDepth else !Prefs.incrDepth
+        in
+          reinspect' (tree, depth)
+        end
+
+    | Simple {content = WidthLimit limitDesc, parent, ...} =>
+        expandWidth (full, parent, limitDesc)
+
+    | Simple {content = Fold (SOME {tree = ftree, group = hgroup, ...}),
+	      parent = parent', index = index', delta = delta', ...} =>
+              let
+                (* If it is a container, this is the faked parent. *)
+                val fftree = case ftree of
+                               (Simple _ | Prefix _) => ftree
+                             | Container {kids, ...} => Array.sub (!kids, 0)
+
+                (* Update with the correct index/parent. *)
+                val fftree = updateParent (fftree, parent', index')
+                val group' = getGroup tree
+		val (_, delta) = getDelta fftree
+              in
+		if !delta' <= 0 then delta := !delta' else () ;
+                reparent group' fftree ;
+		assert group' = (getGroup fftree) ;
+                substitute (tree, fftree, parent', index') ;
+		GrTypes.destroy tree ; (* Not Monitors.destroy ! *)
+		Gtk.Object.destroy hgroup ;
+		refont fftree
+              end
+
+    | Simple {desc = AbsTree.Decl decl, ...} => expandDecl (decl, tree)
+
+    | Prefix {tree = kid, ...} =>
+       (case !kid of
+	  Simple {desc = AbsTree.Decl decl, ...} => expandDecl (decl, tree)
+	| _ => Common.warning ("MkUpdate.expand: Declaration not expandable."))
+                                     
+    | _ => Common.warning ("MkUpdate.expand: not expandable.")
+
+
+val undefinedTopR = ref (Common.undefined "MkUpdate.fakedTree parent")
+
+fun checkNotMonitored' (Simple _) = ()
+  | checkNotMonitored' (Prefix {tree, ...}) = checkNotMonitored' (!tree)
+  | checkNotMonitored' (Container {desc, ...}) =
+         case desc of
+             NestedRow _ => ()
+	   | TopLevel    => assert false
+	   | Value (_, v, Reference) => assert false
+	   | Value (_, v, Future _) => assert false
+	   | ListTail (_, v, Future _) => assert false
+	   | Module (_, m, Future _) => assert false
+	   | Value _ => ()
+	   | Module _ => ()
+	   | ListTail _ => ()
+
+fun checkNotMonitored (Container _) = ()
+  | checkNotMonitored (Simple _) = ()
+  | checkNotMonitored (Prefix {tree, ...}) = checkNotMonitored' (!tree)
+
+fun isFolded (Simple {content = Fold _, ...}) = true
+  | isFolded _ = false
+
+(* Fold the tree : hide it and replace it with a symbol. *)
+fun fold tree =
+  if isFolded tree then ()
+  else
+  case AbsTree.downcastItem (getDesc tree) of
+    NONE => ()
+  | SOME desc => 
+    let
+      (* We must ensure that this tree is either a Container
+       * or is not monitored. *)
+      val _ = checkNotMonitored tree
+
+      (* Get the information about the location of the tree. *)
+      val (group, delta, parent, index, depth) = getLocation tree
+						
+      val hiddenGroup = newHidden ()
+      val _ = reparent hiddenGroup tree
+
+      (* If the tree is a container, it might be monitored.
+       * This is why we change its parent tree. *)
+      val storedTree =
+	  case tree of
+	      Simple _ => tree
+	    | Prefix _ => tree
+	    | Container {parent, index, delta, depth, mode, ...} =>
+	      let
+                val kids = Array.array (1, tree)
+                val fakedParent = Container {group = hiddenGroup,
+                                             delta = ref (!delta),
+                                             desc = AbsTree.TopLevel, 
+                                             parent = undefinedTopR,
+                                             index = ref ~1,
+                                             depth,
+                                             height = ref 0,
+                                             width = ref 0,
+                                             status = ref Clean,
+                                             kids = ref kids,
+                                             mode = ref (!mode) }
+	      in
+                parent := fakedParent ;
+                index := 0 ;
+                fakedParent
+	      end
+        
+      (* Get the suffix. *)
+      val suffixes = getSuffixes (tree, depth)
+        
+      (* Create subtree. *)
+      val folded = {tree = storedTree, 
+		    group = hiddenGroup}
+
+      val (subtree, height, width) =
+        GrTree.makeSimple {group, delta = !delta, suffixes, parent,
+			   index, depth, desc = AbsTree.castItem desc,
+			   content = Fold (SOME folded), id = NONE }
+                           
+    in
+      substitute (tree, subtree, parent, index)
+    end     
+
+end
+

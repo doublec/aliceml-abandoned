@@ -1,0 +1,17 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature ANALYZER =
+    sig
+	val analyzeString: string -> string list
+	val analyzeFile:   string -> string list
+    end

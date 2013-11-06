@@ -1,0 +1,60 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                        from "Pervasive"
+import __primitive
+       type unit and int and string and exn
+       datatype order                               from "ToplevelTypes"
+import __primitive
+       infix 3 := :=: o infix 0 before
+       val ! and op := and op :=:                   from "ToplevelValues"
+import __primitive signature GENERAL                from "GENERAL-sig"
+
+structure General : GENERAL =
+struct
+    type unit					= unit
+    type exn					= exn
+
+    __primitive exception Assert of string * int = "General.Assert"
+    __primitive exception Bind			= "General.Bind"
+    __primitive exception Chr			= "General.Chr"
+    __primitive exception Div			= "General.Div"
+    __primitive exception Domain		= "General.Domain"
+    __primitive exception Fail of string	= "General.Fail"
+    __primitive exception Match			= "General.Match"
+    __primitive exception Overflow		= "General.Overflow"
+    __primitive exception Size			= "General.Size"
+    __primitive exception Span			= "General.Span"
+    __primitive exception Subscript		= "General.Subscript"
+    __primitive exception Unordered             = "General.Unordered"
+
+    __primitive val exnName : exn -> string	= "Exn.name"
+    val exnMessage				= exnName
+
+    datatype order				= datatype order
+
+    fun inverse LESS				= GREATER
+      | inverse EQUAL				= EQUAL
+      | inverse GREATER				= LESS
+
+    val !					= !
+    val op :=					= op :=
+    val op :=:					= op :=:
+
+    fun (f o g) a				= f(g a)
+    fun a before b				= a
+    fun ignore a				= ()
+end

@@ -1,0 +1,17 @@
+Group
+
+    structure IntermediateAux
+
+is
+
+    ../../lib/utility/sources.cm
+    ../../lib/rtt/type.cm
+    ../infrastructure/sources.cm
+    ../common/id-stamp.cm
+    ../common/intermediate-grammar.cm
+
+    arity.cm
+    flat-grammar.cm
+
+    INTERMEDIATE_AUX-sig.aml
+    IntermediateAux.aml

@@ -1,0 +1,106 @@
+ifndef SOURCES
+  SOURCES := foo.aml
+endif
+export SOURCES
+
+
+ifndef ROOT
+  ROOT := $(basename $(firstword $(SOURCES)))
+endif
+export ROOT
+
+ifndef SH_EXT
+  SH_EXT := alc
+endif
+export SH_EXT
+
+ifndef PREFIX
+  PREFIX := ../../install
+endif
+export PREFIX
+
+ifndef SW_EXT
+  SW_EXT := alc
+endif
+export SW_EXT
+
+ifndef SH_LINKED
+  SH_LINKED := ${ROOT}-linked.${SH_EXT}
+endif
+export SH_LINKED
+
+ifndef SW_LINKED
+  SW_LINKED := ${ROOT}-linked.${SW_EXT}
+endif
+export SW_LINKED
+
+ifndef ALICEC
+  ALICEC := alicec
+endif
+export ALICEC
+
+ifndef ALICE
+  ALICE := alice
+endif
+
+ifndef ALICELINK
+  ALICELINK := alicelink
+endif
+
+ifndef ALICEDEP
+  ALICEDEP := alicedep
+endif
+
+.PHONY: .DELETE_ON_ERROR all components library depend clean install
+.DELETE_ON_ERROR:
+
+
+FILTER_SOURCES := %.aml 
+export FILTER_SOURCES
+FILTERED_SOURCES := $(filter $(FILTER_SOURCES),$(SOURCES))
+export FILTERED_SOURCES
+SH_COMPONENTS := $(addsuffix .$(SH_EXT),$(basename $(FILTERED_SOURCES)))
+export SH_COMPONENTS
+SW_COMPONENTS := $(addsuffix .$(SW_EXT),$(basename $(FILTERED_SOURCES)))
+export SW_COMPONENTS
+SH_ROOT := $(addsuffix $(SH_EXT), $(ROOT))
+export SH_ROOT
+SW_ROOT := $(addsuffix $(SW_ROOT), $(ROOT))
+
+all: sh_components
+#clean: sh_clean
+#all: sw_components
+clean: sw_clean sh_clean
+veryclean: clean
+distclean: veryclean
+
+install: all
+	mkdir -p -m 775 $(PREFIX)/lib/test  #install -d $(PREFIX)/lib/test
+	install *.$(SH_EXT) $(PREFIX)/lib/test
+
+depend: $(FILTERED_SOURCES)
+	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
+
+-include Makefile.depend
+
+sh_components: Makefile.depend $(SH_COMPONENTS)
+
+sw_components: Makefile.depend $(SW_COMPONENTS)
+
+sh_library: sh_components
+	$(ALICELINK) --include ./$(SH_ROOT) -o $(SH_LINKED)
+
+sw_library: sw_components
+	$(ALICELINK) -z --include ./$(SW_ROOT) -o $(SW_LINKED)
+
+%.$(SH_EXT) : %.aml
+	$(ALICEC) $< -o $@
+
+%.$(SW_EXT) : %.aml
+	$(ALICEC) -z $< -o $@
+
+sh_clean: 
+	rm -f $(SH_COMPONENTS) $(SH_ROOT) Makefile.depend
+
+sw_clean:
+	rm -f $(SW_COMPONENTS) $(SW_ROOT) Makefile.depend

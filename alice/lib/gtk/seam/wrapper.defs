@@ -1,0 +1,180 @@
+;;
+;; Author:
+;;   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+;;
+;; Copyright:
+;;   Benedikt Grundmann, 2005
+;;
+;; Last Change:
+;;   $Date$ by $Author$
+;;   $Revision$
+;;
+
+;; additional type definitions missing in pygtk 
+
+
+(define-boxed PtrArray
+  (in-module "GLib")
+  (c-name    "GPtrArray")
+  (fields
+    '("guint" "len")))
+
+(define-function g_ptr_array_new
+  (is-constructor-of "GPtrArray")
+  (c-name "g_ptr_array_new")
+  (return-type "GPtrArray*"))
+
+(define-method index
+  (of-object "GPtrArray")
+  (c-name "g_ptr_array_index")
+  (return-type "gpointer")
+  (parameters
+    '("gint" "ndx")))
+
+(define-object Object
+  (c-name "GObject")
+  (gtype-id "G_TYPE_OBJECT")
+  (in-module "GLib"))
+
+(define-method set_property
+  (c-name "g_object_set_property")
+  (of-object "GObject")
+  (parameters
+    '("const-gchar*" "property_name")
+    '("const-GValue*" "value")))
+
+(define-method get_property
+  (c-name "g_object_get_property")
+  (of-object "GObject")
+  (parameters
+    '("const-gchar*" "property_name")
+    '("GValue*" "value"))
+  (code 
+    "g_value_init ((GValue*)a2, G_PARAM_SPEC_VALUE_TYPE(
+        g_object_class_find_property (G_OBJECT_GET_CLASS ((GObject*)a0), (const gchar*)a1)));
+     g_object_get_property ((GObject*)a0, (const gchar*)a1, (GValue*)a2);
+    "))
+    
+(define-boxed BindingSet
+  (in-module "Gtk")
+  (c-name "GtkBindingSet"))
+
+(define-boxed Bitmap
+  (in-module "Gdk")
+  (c-name "GdkBitmap"))
+
+;(define-boxed Atom
+; (in-module "Gdk")
+;  (c-name "GdkAtom"))
+
+(define-boxed Rectangle
+  (in-module "Pango")
+  (c-name "PangoRectangle")
+  (fields
+    '("int" "x")
+    '("int" "y")
+    '("int" "width")
+    '("int" "height")))
+
+(define-boxed Point
+  (in-module "Gdk")
+  (c-name    "GdkPoint"))
+
+(define-boxed Region
+  (in-module "Gdk")
+  (c-name    "GdkRegion"))
+
+(define-boxed TimeVal
+  (in-module "GLib")
+  (c-name "GTimeVal")
+  (fields
+     '("glong" "tv_sec")
+     '("glong" "tv_usec")))
+
+(define-boxed PixbufFormat
+  (in-module "Gdk")
+  (c-name "GdkPixbufFormat"))
+
+(define-boxed LayoutLine
+  (in-module "Pango")
+  (c-name "PangoLayoutLine")
+  (fields
+    '("gint"   "start_index")
+    '("gint"   "length")
+    '("GSList*" "runs")
+    '("guint"  "is_paragraph_start")
+    '("guint"  "resolved_dir")))
+
+(define-boxed Attribute
+  (in-module "Pango")
+;  (parent "GObject")
+  (c-name "PangoAttribute"))
+
+(define-boxed TreePath
+  (in-module "Gtk")
+  (gtype-id "GTK_TYPE_TREE_PATH")
+  (c-name "GtkTreePath"))
+
+(include "pango.defs")
+(include "atk.defs")
+(include "gdk.defs")
+
+(define-boxed TargetEntry
+   (in-module "Gtk")
+   (c-name "GtkTargetEntry")
+   (fields
+     '("gchar*" "target")
+     '("guint"  "flags")
+     '("guint"  "info")))
+
+(include "gtk.defs")
+
+(define-function gtk_text_iter_new
+    (c-name "gtk_text_iter_new")
+    (code "GtkTextIter *cres = new GtkTextIter;")
+    (return-type "GtkTextIter*")
+    (is-constructor-of "GtkTextIter"))
+
+(define-function gtk_tree_iter_new
+    (c-name "gtk_tree_iter_new")
+    (code "GtkTreeIter *cres = new GtkTreeIter;")
+    (return-type "GtkTreeIter*")
+    (is-constructor-of "GtkTreeIter"))
+
+
+(include "gtk-properties.defs")
+
+(include "canvas.defs")
+
+(define-boxed Points
+    (in-module "Gnome")
+    (gtype-id "GNOME_TYPE_CANVAS_POINTS")
+    (c-name "GnomeCanvasPoints"))
+
+(define-function gnome_canvas_points_new  
+    (c-name "gnome_canvas_points_new")
+    (return-type "GnomeCanvasPoints*")
+    (is-constructor-of "GnomeCanvasPoints")
+    (parameters
+        '("int" "num-points")))
+
+(define-method set
+    (c-name "gnome_canvas_points_set")
+    (of-object "GnomeCanvasPoints")
+    (parameters
+        '("int" "ndx")
+        '("double" "pt"))
+    (code 
+        "((GnomeCanvasPoints*)a0)->coords[a1] = a2;"))
+
+
+(define-method connect_special_signals
+    (of-object "GtkTextBuffer")
+    (c-name "GtkTextBufferConnectSpecialSignals")
+    (code
+        "g_signal_connect ((GtkTextBuffer*)a0, \"delete_range\", 
+            (GCallback)specialDeleteRangeEvent, NULL);"))
+
+
+
+(include "canvas-properties.defs")

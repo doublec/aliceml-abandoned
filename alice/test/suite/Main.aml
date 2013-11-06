@@ -1,0 +1,314 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Report          from "x-alice:/lib/test/Report"
+(*
+import structure Test            from "x-alice:/lib/test/Test"
+*)
+import structure Time            from "x-alice:/lib/system/Time"
+
+import structure TestBool        from "lib/fundamental/Bool"
+import structure TestString      from "lib/fundamental/String"
+import structure TestSubstring   from "lib/fundamental/Substring"
+import structure TestGeneral     from "lib/fundamental/General"
+import structure TestOption      from "lib/fundamental/Option"
+import structure TestAlt         from "lib/fundamental/Alt"
+import structure TestIEEEReal    from "lib/fundamental/IEEEReal"
+import structure TestChar        from "lib/fundamental/Char"
+import structure TestReal        from "lib/fundamental/Real"
+import structure TestMath        from "lib/fundamental/Math"
+import structure TestWord        from "lib/fundamental/Word"
+import structure TestWord8       from "lib/fundamental/Word8"
+import structure TestWord32      from "lib/fundamental/Word32"
+import structure TestInteger     from "lib/fundamental/Integer"
+import structure TestIntInf      from "lib/fundamental/IntInf"
+import structure TestByte        from "lib/fundamental/Byte"
+import structure TestList        from "lib/fundamental/List"
+import structure TestListPair    from "lib/fundamental/ListPair"
+import structure TestArray       from "lib/fundamental/Array"
+import structure TestWord8Array  from "lib/fundamental/Word8Array"
+import structure TestCharArray   from "lib/fundamental/CharArray"
+import structure TestWideCharArray 
+		                 from "lib/fundamental/WideCharArray"
+import structure TestArraySlice  from "lib/fundamental/ArraySlice"
+import structure TestWord8ArraySlice 
+		                 from "lib/fundamental/Word8ArraySlice"
+import structure TestCharArraySlice 
+		                 from "lib/fundamental/CharArraySlice"
+import structure TestWideCharArraySlice 
+		                 from "lib/fundamental/WideCharArraySlice"
+import structure TestArray2      from "lib/fundamental/Array2"
+import structure TestVector      from "lib/fundamental/Vector"
+import structure TestWord8Vector from "lib/fundamental/Word8Vector"
+import structure TestCharVector  from "lib/fundamental/CharVector"
+import structure TestWideCharVector  
+		                 from "lib/fundamental/WideCharVector"
+import structure TestVectorSlice from "lib/fundamental/VectorSlice"
+import structure TestWord8VectorSlice
+		                 from "lib/fundamental/Word8VectorSlice"
+import structure TestCharVectorSlice
+		                 from "lib/fundamental/CharVectorSlice"
+import structure TestWideCharVectorSlice
+		                 from "lib/fundamental/WideCharVectorSlice"
+import structure TestVectorPair  from "lib/fundamental/VectorPair"
+import structure TestPair        from "lib/fundamental/Pair"
+import structure TestRef         from "lib/fundamental/Ref"
+import structure TestExn         from "lib/fundamental/Exn"
+import structure TestFuture      from "lib/fundamental/Future"
+import structure TestPromise     from "lib/fundamental/Promise"
+import structure TestHole        from "lib/fundamental/Hole"
+import structure TestThread      from "lib/fundamental/Thread"
+import structure TestPackage     from "lib/fundamental/Package"
+import structure TestStringCvt   from "lib/fundamental/StringCvt"
+(*
+import structure TestResolver    from "lib/fundamental/Resolver"
+import structure TestResolverHandler
+		                 from "lib/fundamental/ResolverHandler"
+import structure TestRemote      from "lib/fundamental/Remote"
+import structure TestHttp        from "lib/fundamental/Http"
+import structure TestHttpClient  from "lib/fundamental/HttpClient"
+import structure TestHttpServer  from "lib/fundamental/HttpServer"
+import structure TestPrimIo      from "lib/fundamental/PrimIo"
+import structure TestPrint       from "lib/fundamental/Print"
+import structure TestStore       from "lib/fundamental/Store"
+import structure TestSocket      from "lib/fundamental/Socket"
+import structure TestUnix        from "lib/fundamental/Unix"
+*)
+import structure TestLock        from "lib/data/Lock"
+import structure TestComponent   from "lib/system/Component"
+import structure TestComponentManager
+		                 from "lib/system/ComponentManager"
+import structure TestOSFileSys   from "lib/system/OSFileSys"
+import structure TestOSProcess   from "lib/system/OSProcess"
+import structure TestPickle      from "lib/system/Pickle"
+import structure TestUrl         from "lib/system/Url"
+import structure TestDate        from "lib/system/Date"
+import structure TestConfig      from "lib/system/Config"
+import structure TestTime        from "lib/system/Time"
+import structure TestTimer       from "lib/system/Timer"
+import structure TestOSPath      from "lib/system/OS_Path"
+import structure TestCompiler    from "lib/system/Compiler"
+import structure TestRegressions from "lib/regression/tests/TestRegressions"
+
+fun randomizeTests () = 
+    let
+	val allTests = [TestCompiler.randomize,
+			TestAlt.randomize,
+			TestBool.randomize,
+			TestChar.randomize,
+			TestFuture.randomize,
+			TestPromise.randomize,
+			TestHole.randomize,
+			TestThread.randomize,
+			TestPackage.randomize,
+			TestLock.randomize,
+			TestLock.randomize,
+			TestUrl.randomize,
+			TestOSFileSys.randomize,
+			TestOSProcess.randomize,
+			TestPickle.randomize,
+			TestComponent.randomize,
+			TestComponentManager.randomize,
+			TestDate.randomize,
+			TestStringCvt.randomize,(*
+			TestResolver.randomize,
+			TestResolverHandler.randomize,
+			TestResolver.randomize,
+			TestRemote.randomize,
+			TestHttp.randomize,
+			TestHttpClient.randomize,
+			TestHttpServer.randomize,
+			TestPrimIo.randomize,
+			TestPrint.randomize,
+			TestStore.randomize,
+			TestSocket.randomize,
+			TestUnix.randomize,*)
+			TestArray.randomize,
+			TestVector.randomize,
+			TestWord.randomize,
+			TestCompiler.randomize,
+			TestVectorPair.randomize,
+			TestGeneral.randomize,
+			TestMath.randomize,
+			TestArraySlice.randomize,
+			TestExn.randomize,
+			TestWord8ArraySlice.randomize,
+			TestWideCharArraySlice.randomize,
+			TestCharArraySlice.randomize,
+			TestWord8Vector.randomize,
+			TestCharVector.randomize,
+			TestWord8VectorSlice.randomize,
+			TestCharVectorSlice.randomize,
+			TestWideCharVectorSlice.randomize,
+			TestWideCharVector.randomize,
+			TestOption.randomize, 
+			TestWord8Array.randomize,
+			TestWideCharArray.randomize,
+			TestCharArray.randomize,
+			TestSubstring.randomize,
+			TestString.randomize,
+			TestIEEEReal.randomize,
+			TestVectorSlice.randomize,
+			TestInteger.randomize,
+			TestIntInf.randomize,
+			TestByte.randomize,
+			TestList.randomize,
+			TestListPair.randomize,
+			TestTime.randomize,
+			TestReal.randomize,
+			TestTimer.randomize,
+			TestWord8.randomize,
+			TestWord32.randomize,
+			TestArray2.randomize,
+			TestOSPath.randomize,
+			TestRef.randomize,
+			TestConfig.randomize,
+			TestPair.randomize,
+		        TestRegressions.randomize]
+    in
+	List.app (fn x => x ()) allTests
+    end
+
+fun allTests b = [TestRegressions.suite b,
+		  TestCompiler.suite,
+		  TestPair.suite,
+		  TestRef.suite,
+		  TestAlt.suite,
+		  TestBool.suite,
+		  TestGeneral.suite,
+		  TestWord.suite,
+		  TestWord8.suite,
+		  TestWord32.suite,
+		  TestReal.suite,
+		  TestMath.suite,
+		  TestOption.suite, 
+		  TestList.suite,
+		  TestListPair.suite,
+		  TestArray.suite,
+		  TestWord8Array.suite,
+		  TestCharArray.suite,
+		  TestWideCharArray.suite,
+		  TestArraySlice.suite,
+		  TestWord8ArraySlice.suite,
+		  TestCharArraySlice.suite,
+		  TestWideCharArraySlice.suite,
+		  TestArray2.suite,
+		  TestVector.suite,
+		  TestWord8Vector.suite,
+		  TestCharVector.suite,
+		  TestWideCharVector.suite,
+		  TestVectorSlice.suite,
+		  TestWord8VectorSlice.suite,
+		  TestCharVectorSlice.suite,
+		  TestWideCharVectorSlice.suite,
+		  TestVectorPair.suite,
+		  TestChar.suite,
+	          TestStringCvt.suite,
+		  TestString.suite,
+		  TestSubstring.suite,
+		  TestIEEEReal.suite,
+		  TestInteger.suite,
+		  TestIntInf.suite,
+		  TestByte.suite,
+		  TestExn.suite,
+		  TestFuture.suite, 
+		  TestPromise.suite, 
+		  TestHole.suite,
+		  TestThread.suite,
+		  TestPackage.suite,
+		  TestLock.suite,
+		  TestUrl.suite,
+		  TestOSFileSys.suite,
+		  TestOSProcess.suite,
+		  TestPickle.suite,
+		  TestComponent.suite,
+		  TestCompiler.suite,
+		  TestComponentManager.suite,
+		  TestDate.suite,
+		  (*TestResolverHandler.suite,
+		  TestResolver.suite,
+		  TestRemote.suite,
+		  TestHttp.suite,
+		  TestHttpClient.suite,
+		  TestHttpServer.suite,
+		  TestPrimIo.suite,
+		  TestPrint.suite,
+		  TestStore.suite,
+		  TestSocket.suite,
+		  TestUnix.suite,*)
+		  TestConfig.suite,
+		  TestOSPath.suite,
+		  TestTime.suite,
+		  TestTimer.suite]
+
+val defaultConfig = {
+	    timeout = Time.fromSeconds (Int.toLarge 20),
+	    separate = false,
+	    showMissing = true
+    }
+
+val beg = ref (Time.now ())
+
+fun displayNeededTime () =
+    let
+	val ending = Time.now ()
+	val result = Time.-(ending, !beg)
+	val result = IntInf.toInt (Time.toSeconds result)
+	val h = result div 3600
+	val m = (result mod 3600) div 60
+	val s = (result mod 3600) mod 60
+    in
+	TextIO.output (TextIO.stdOut, "\nneeded " ^ Int.toString h 
+				    ^ " hours " ^ Int.toString m 
+				    ^ " minutes " ^ Int.toString s 
+				    ^ " seconds")
+    end
+
+fun usage () = print "usage: alicerun Main [timeout, seperate, showMissing]\n"
+
+fun runTests conf b = 
+    Report.runAll TextIO.stdOut conf (allTests b)
+
+fun start cfg b = 
+    (beg := Time.now ();
+     TextIO.output (TextIO.stdOut, "\n\n   automatic testing sequence for " 
+                 ^ "Alice\n------------------------------------------\n\n");
+	 runTests cfg b)
+
+fun main () = 
+    case CommandLine.arguments () of
+	                []                       => (randomizeTests ();
+						     start defaultConfig false)
+       | [timeout, sep, showMissing, randomize]  => 
+	 let
+	     val t = valOf (Time.fromString timeout)
+		       handle Option => #timeout defaultConfig
+	     val b1 = valOf (Bool.fromString sep)
+		       handle Option => #separate defaultConfig
+	     val b2 = valOf (Bool.fromString showMissing)
+		       handle Option => #showMissing defaultConfig
+	     val b3 = valOf (Bool.fromString randomize)
+		       handle Option => true
+	 in 
+	     if b3 then randomizeTests () else ();
+             (start {timeout = t,
+		     separate = b1,
+		     showMissing = b2} true)
+	 end
+       |                 _                       => usage ()
+
+
+val _ = (main ();
+	 displayNeededTime ();
+	 TextIO.output (TextIO.stdOut, "\ndone.\n");
+	 OS.Process.exit OS.Process.success)
+

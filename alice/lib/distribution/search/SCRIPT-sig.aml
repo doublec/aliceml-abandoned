@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature FD from "x-alice:/lib/constraints/FD-sig"
+import signature FS from "x-alice:/lib/constraints/FS-sig"
+
+signature SCRIPT =
+    sig
+	type sol
+
+	functor MkScript(structure FD : FD structure FS : FS) :
+	    sig
+		type internal_sol
+
+		val script : unit -> internal_sol
+		val order : internal_sol * internal_sol -> unit
+		val internalize : sol -> internal_sol
+		val externalize : internal_sol -> sol
+	    end
+    end

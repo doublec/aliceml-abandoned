@@ -1,0 +1,553 @@
+<?php include("macros.php3"); ?>
+<?php heading("Components", "components") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P><EM>Components</EM> are the units of compilation and deployment. The
+<EM>export</EM> of a component is a module expression that will be evaluated
+when executing the component. A component can <EM>import</EM> other components,
+which may reside at remote URLs. Imported components are loaded and evaluated
+lazily. This <EM>linking</EM> operation includes a dynamic type check between
+import and export signatures.</P>
+
+<P>An <EM>application</EM> is defined by a set of
+components and a designated <EM>root</EM> component that represents its main
+body. Linking is performed and controlled by user-definable <EM>component managers</EM>, enabling the definition of <EM>sandboxes</EM> for evaluating untrusted components.
+</P>
+
+
+<?php section("source", "defining components") ?>
+
+<P>Syntactically, a component is an SML program headed by a set of <I>import
+announcements</I> of the form</P>
+
+<PRE class=code>
+import <I>imp</I> from "url"</PRE>
+
+<P>The URL describes where to find the component, while the import description
+<I>imp</I> denotes what kind of item is imported from that particular
+component. For example,</P>
+
+<PRE class=code>
+import structure Foo from "http://ps.uni-sb.de/stockhausen/Foo"</PRE>
+
+<P>An import can contain any language entity, like values, types, structures,
+signatures, etc. (see <A href="#syntax">below</A>). Imports can be given in
+plain form like above, in which case the compiler will look up the actual type
+of the entity in the component itself, or in description form similar to
+specifications, in which case the compiler verifies that the description
+matches the actual component:</P>
+
+<PRE class=code>
+import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO-sig"
+import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo"</PRE>
+
+<P>Each component exports exactly its body environment, i.e. all entities
+declared on its toplevel. For example, the component</P>
+
+<PRE class=code>
+import structure Y from "other"
+
+signature S = sig end
+structure X :> S = struct end</PRE>
+
+<P>exports a signature item <TT>S</TT> and a structure <TT>X</TT>. The export
+signature of the component will consist of these two items. Structure
+<TT>Y</TT> is not exported (but may be by a simple rebinding, if desired).</P>
+
+<P>A compiled component also includes information about all its import
+signatures. These are determined by the export signatures found in the
+imported components at compile time.</P>
+
+
+<?php subsection("source-interactive", "interactive import") ?>
+
+<P>For convenience, it is possible to abbreviate import announcements as
+follows in the <A href="interactive.html">interactive top-level</A>:</P>
+
+<PRE class=code>
+import "http://www.mydomain.net/Foo"</PRE>
+
+<P>Such an announcement will import all items exported by the corresponding
+component.</P>
+
+
+<?php section("execution", "execution") ?>
+
+<P>An application is executed by evaluating its root component. In general, a
+component imports other components. Imported components are loaded and
+evaluated lazily by the default <A
+href="library/component-manager.html"><I>component manager</I></A>, which is
+part of the runtime system. A component that is never actually accessed will
+not get loaded. URL resolving is handled by the component manager's <A
+href="library/resolver.html"><I>resolver</I></A>.</P>
+
+<P>Lazy linking is achieved by representing imports by <A
+href="futures.html#lazy">lazy futures</A> of their result module. A component
+gets linked when the future is <A href="futures.html#request">requested</A>.
+The first step of linking is matching the export signature of the linked
+component against the corresponding import signature of the component that 
+requested it. If the check is succesful, the component is evaluated <A
+href="futures.html#spawn">concurrently</A> and the future is replaced by a
+concurrent future of the result of the evaluation.</P>
+
+<P>Every component is loaded and evaluated at most once in a single process. If
+multiple components request an import from the same (resolved) URL, they
+will share a reference to the same instantiation of that component.</P>
+
+<?php subsection("execution-failure", "Failure") ?>
+
+<P>Linking may fail for several reasons. In any case, the corresponding futures
+are failed with a <A
+href="library/component.html#Failure"><TT>Component.Failure</TT></A>
+exception indicating the respective cause:</P>
+
+<UL>
+  <LI>Component could not be located</LI>
+  <LI>Component file was corrupt</LI>
+  <LI>Mismatch with the corresponding import signature</LI>
+  <LI>Evaluation of the components body terminated with an exception</LI>
+</UL>
+
+<P>This may happen transitively with other components requested indirectly, in
+which the <TT>Component.Failure</TT> will propagate through. The exception
+carries the URL of the component that originally caused the failure.</P>
+
+
+<?php section("firstclass", "first-class components") ?>
+
+<P>Components can be created dynamically as first-class values, by means of the following expression syntax:</P>
+
+<PRE class=code>
+comp &lt;<I>imports</I> in&gt; <I>specs</I> with <I>decs</I> end </PRE>
+
+<P>The structure of this expression is similar to that of a compilation unit:
+it starts with an optional list of imports, and a sequence of declarations
+represents the export of the created component. However, unlike for compilation
+units, the export <I>signature</I> has to be given explicitly, in form of a
+sequence of specifications. Another difference is that import descriptions
+may <I>not</I> be omitted.</P>
+
+<P>For example, the following program creates a component that will print its
+creation date when invoked later:</P>
+
+<PRE class=code>
+val date = Date.toString(Date.fromTimeLocal(Time.now()))
+val component =
+    comp
+        import structure TextIO : TEXT_IO from "x-alice:/lib/system/TextIO"
+    in
+        val hello : unit -> unit
+    with
+        fun hello() =
+            TextIO.print("Hello world! Created at " ^ date ^ "\n")
+    end</PRE>
+
+<P>This component can be evaluated with the <A href="library/component-manager.html">component manager</A>:</P>
+
+<PRE class=code>
+structure C =
+   unpack ComponentManager.eval(Url.fromString ".", component)
+        : (val hello : unit -> unit)
+do C.hello()</PRE>
+
+<P>Alternatively, the component can be saved:</P>
+
+<PRE class=code>
+Component.save("/tmp/hello.alc", component)</PRE>
+
+<P>It can then be imported as if it was an ordinary compiled component, using
+an <A href="#source">import announcements</A>:</P>
+
+<PRE class=code>
+import val hello : unit -> unit from "/tmp/hello"
+do hello()</PRE>
+
+<P>Components can also be created directly from a package, using the function <A href="library/component.html#fromPackage"><TT>Component.fromPackage</TT></A>.
+Such components are essentially constant and cannot have any imports.</P>
+
+<P>First-class components may be stored or passed to other processes. A
+particular use case is <A href="distribution.html#remote">distributed programming</A>.
+
+
+<?php subsection("firstclass-higher", "higher-order components") ?>
+
+<P>Unlike components generated by the compiler, first-class components are not
+restricted to ground signatures: using the <A
+href="library/component.html#Create"><TT>Component.Create</TT></A> functor components can be created whose export is a higher-order module. Components
+with higher-order export signatures cannot be imported by import announcements,
+though. They can be evaluated only through the <A
+href="library/component-manager.html#Eval-fn"><TT>ComponentManager.Eval</TT></A>
+functor.</P>
+
+
+<?php section("evaluated", "evaluated components") ?>
+
+<P>Components generated by the compiler are <EM>unevaluated</EM>. Linking them
+will evaluate the contained module expression. Dynamically created components
+may be <EM>evaluated</EM>. An evaluated component has no imports and contains a
+module <EM>value</EM>. Linking an evaluated components hence does not produce
+any side effects, nor will it create any new <A
+href="packages.html#dynamic">generative</A> entities, like types or
+exceptions.<P>
+
+<P>Evaluated components stored to a file are called <A
+href="pickling.html"><EM>pickles</EM></A>. A pickle is a serialized and closed
+representation of a value. The library structure <A
+href="library/pickle.html"><TT>Pickle</TT></A> provides convenient operations
+for handling pickles.</P>
+
+<!--
+  <P>
+    In some sense, import announcements may be seen as syntactic sugar for
+    appropriate applications of <TT>Pickle.Load</TT>. However, there are
+    important differences between both mechanisms:
+  </P>
+
+  <UL>
+    <LI> The component's signature need not be specified explicitly in import
+         announcements, since the compiler fetches it automatically from
+	 the component during compilation. This requires that the component
+	 exists at compile time, however, which is not the case for
+	 the load mechanism.
+    <LI> Linking of imports happens lazily, while the <TT>Load</TT>
+         functor executes at least the root component eagerly.
+    <LI> Components imported via import announcements are only linked
+         in once in a given process, regardless how many import announcements
+	 exist for the same component. <TT>Load</TT> will always reload
+	 the requested component.
+    <LI> Import announcements allow the import of arbitrary and multiple
+         entities from a component while the <TT>Load</TT> functor can only
+	 load modules (whose name is fixed to <TT>X</TT>).
+  </UL>
+-->
+
+
+<?php section("managers", "component managers and Sandboxing") ?>
+
+<P>An application's root component is located and loaded by the root <A
+href="library/component-manager.html">component manager</A>. An application may
+create custom managers using the <A
+href="library/component.html#MkManager"><TT>Component.MkManager</TT></A>
+functor. By evaluating a <A href="#firstclass">first-class component</A> using
+the <A href="library/component-manager.html#Eval-fn"><TT>Eval</TT></A> functor
+of a custom manager, all direct and indirect imports of that component will be
+handled by that respective manager.</P>
+
+<P>User-defined component managers particularly allow setting up custom
+<EM>sandbox environments</EM> for untrusted components. The library structure <A
+href="library/sandbox.html"><TT>Sandbox</TT></A> contains some infrastructure to readily create sandboxes - see the <A
+href="library/sandbox.html#example">examples</A> shown there.</P>
+
+
+<?php section("syntax", "syntax") ?>
+
+<P>Derived forms are marked (*).</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>comp</TT> &lt;<I>ann</I> <TT>in</TT>&gt;
+         <I>spec</I> <TT>with</TT> <I>dec</I> <TT>end</TT> </TD>
+    <TD> first-class component<SUP>1</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>component</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>ann</I> &lt;<I>program</I>&gt; </TD>
+    <TD> component </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>ann</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>import</TT> <I>imp</I> <TT>from</TT> <I>string</I> </TD>
+    <TD> import announcement </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>import</TT> <I>string</I> </TD>
+    <TD> import all (*)</TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD>  </TD>
+    <TD> empty </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>ann</I> &lt;<TT>;</TT>&gt; <I>ann</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>imp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>val</TT> <I>valitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>type</TT> <I>typitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>datatype</TT> <I>datitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exception</TT> <I>exitem</I> </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>structure</TT> <I>stritem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>functor</TT> <I>funitem</I> </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>sigitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>infix</TT> &lt;<I>d</I>&gt; <I>vid</I><SUB>1</SUB>
+                                     ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>infixr</TT> &lt;<I>d</I>&gt; <I>vid</I><SUB>1</SUB>
+                                      ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>nonfix</TT> <I>vid</I><SUB>1</SUB>
+                     ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD>  </TD>
+    <TD> empty </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>imp</I> &lt;<TT>;</TT>&gt; <I>imp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>valitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         &lt;<TT>and</TT> <I>valitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>:</TT> <I>ty</I>
+         &lt;<TT>and</TT> <I>valitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>typitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>typitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I>
+         &lt;<TT>and</TT> <I>typitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>datitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> <I>conitem</I>
+         &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>conitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         &lt;<TT>|</TT> <I>conitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>extitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> 
+         &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>econitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+         &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+	 <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+         &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+-->
+  <TR></TR>
+  <TR>
+    <TD> <I>exitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+         &lt;<TT>and</TT> <I>exitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>of</TT> <I>ty</I>
+         &lt;<TT>and</TT> <I>exitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>stritem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> &lt;<TT>and</TT> <I>stritem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>stritem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>funitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+	 <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
+    <TD> (<I>n</I>&ge;1) (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
+         &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
+    <TD> (<I>n</I>&ge;1) </TD>
+  </TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) The syntax of import items in a first-class component is
+restricted to the syntactic subclass of the corresponding descriptions, as
+used in signatures.</P>
+ 
+
+<?php subsection("syntax-derived", "Derived forms") ?>
+
+<TABLE class="bnf df">
+  <TR>
+    <TD> <TT>import</TT>&nbsp;<I>string</I> </TD>
+    <TD> <TT>import</TT>&nbsp;<I>imp</I>&nbsp;<TT>from</TT>&nbsp;<I>string</I>&nbsp;<SUP>1</SUP>) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>exception</TT>&nbsp;<I>exitem</I> </TD>
+    <TD> <TT>constructor</TT>&nbsp;<I>exitem</I> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>functor</TT>&nbsp;<I>funitem</I> </TD>
+    <TD> <TT>structure</TT>&nbsp;<I>funitem</I> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> &lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;&lt;<TT>and</TT>&nbsp;<I>exitem</I>&gt; </TD>
+    <TD> &lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;&lt;<TT>and</TT>&nbsp;<I>exitem</I>&gt; </TD>
+  </TR>
+  <TR>
+    <TD> &lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;<TT>of</TT>&nbsp;<I>ty</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>exitem</I>&gt; </TD>
+    <TD> &lt;<TT>op</TT>&gt;&nbsp;<I>vid</I>&nbsp;<TT>of</TT>&nbsp;<I>ty</I>&nbsp;<!--
+	--><TT>:</TT>&nbsp;<TT>exn</TT>&nbsp;&lt;<TT>and</TT>&nbsp;<I>exitem</I>&gt; </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>strid</I>&nbsp;&lt;<TT>and</TT>&nbsp;<I>funitem</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;&lt;<TT>and</TT>&nbsp;<I>funitem</I>&gt; </TD>
+  </TR>
+  <TR>
+    <TD> <I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<!--
+	--><TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>funitem</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;<TT>-></TT>&nbsp;...<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I><!--
+	-->&lt;<TT>and</TT>&nbsp;<I>funitem</I>&gt; </TD>
+  </TR>
+</TABLE>
+
+<P><SUP>1</SUP>) The <I>imp</I> is generated by
+enumerating all items exported by the respective component.</P>
+
+
+<?php footing() ?>

@@ -1,0 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name from "Name"
+
+signature LABEL =
+sig
+    eqtype lab						(* [lab,l] *)
+    type t = lab
+
+
+    (* Operations *)
+
+    val fromString :	string -> lab			(* Domain, Overflow *)
+    val fromInt :	int    -> lab			(* Domain *)
+    val fromName :	Name.t -> lab			(* Domain *)
+    val toName :	lab    -> Name.t
+    val toString :	lab    -> string
+    val toInt :		lab    -> int option
+
+    val equal :		lab * lab -> bool
+    val compare :	lab * lab -> order
+    val hash :		lab -> int
+end

@@ -1,0 +1,221 @@
+(* Efficient Parser Combinators.
+   Does LL(1) parsing by default!  Use [try] to introduce
+   arbitrary look ahead.
+
+   Straightforward port of the core of the parsec Haskell library to Alice.
+ *)
+import signature TOKEN      from "TOKEN-sig"
+import signature PRIM       from "PRIM-sig"
+
+import structure MkError    from "MkError"
+
+
+functor MkPrim (T: TOKEN) :> PRIM where  
+                        type Token.token    = T.token and
+                        type Token.position = T.position =
+struct
+    structure Token = T
+    structure Error = MkError (T)
+    
+    type 'user_state state = 
+        Token.token list * Token.position * 'user_state
+    
+    datatype ('res, 'user_state) reply =
+            OK      of 'res * 'user_state state * Error.error
+        |   ERROR   of Error.error
+
+
+    datatype ('res, 'user_state) consumed =
+            CONSUMED    of ('res, 'user_state) reply
+        |   EMPTY       of ('res, 'user_state) reply
+
+
+    type ('res, 'user_state) parser = 
+        'user_state state -> ('res, 'user_state) consumed
+
+
+    infix 3 >>= 
+    infix 3 >>
+    infix 2 <|> 
+    infix 2 <?>
+
+    infix 3 ignoreR 
+    infix 3 using
+
+    
+    fun return v state = 
+        EMPTY (OK (v, state, Error.unknownError (#2 state) ))
+
+    
+    fun getState state  = EMPTY (OK (#3 state, state, Error.unknownError (#2 state) ))
+
+    fun updateState f (ts, pos, st) =
+        let
+            val st'     = f st
+            val state'  = (ts, pos, st')
+        in
+            EMPTY (OK ((), state', Error.unknownError pos )) 
+        end
+
+    fun setState st = updateState (fn _ => st)
+
+    fun fail s (state: 'a state) =
+        EMPTY (ERROR (Error.error (Error.MESSAGE s, #2 state) ))
+
+    fun sysUnexpectedError (msg, pos)   =
+        ERROR (Error.error (Error.SYS_UNEXPECTED msg, pos))
+
+    fun expectedError (msg, pos) =
+        ERROR (Error.error (Error.EXPECTED msg, pos))
+
+    fun satisfy p (ts, pos, state) =
+        case ts of
+            []      => EMPTY (sysUnexpectedError ("", pos))
+        |   t::ts'   =>
+            if p t then
+                let
+                    val newPos      = Token.nextPos (pos, t)
+                    val newState    = (ts', newPos, state)
+                in
+                    CONSUMED (OK (t, newState, Error.unknownError pos))
+                end
+            else
+                EMPTY (sysUnexpectedError (Token.toString t, pos))
+
+    fun mergeErrorReply err1 reply =
+        case reply of
+            OK (x, state, err2) => OK (x, state, Error.merge (err1, err2))
+        |   ERROR err2          => ERROR (Error.merge (err1, err2))
+
+    
+    fun unexpected msg (state: 'a state) =
+        EMPTY (ERROR (Error.error (Error.UNEXPECTED msg, #2 state) ))
+
+
+    fun m >>= f = (fn state =>
+        case m state of
+            CONSUMED reply1 =>
+            CONSUMED (lazy (case reply1 of
+                OK (x, state, err1) =>
+                    (case (f x) state of
+                         EMPTY reply2   => mergeErrorReply err1 reply2
+                     |   CONSUMED reply2  => reply2)
+            |   ERROR e         => ERROR e )) 
+        |   EMPTY reply1 =>
+            case reply1 of
+                OK (x, state1, err1) =>
+                    (case (f x) state1 of
+                        EMPTY reply2 => EMPTY (mergeErrorReply err1 reply2)
+                    |   other        => other)
+            |   ERROR err1      => EMPTY (ERROR err1)  )
+
+
+    fun m1 >> m2 = m1 >>= (fn _ => m2)
+
+    fun m1 ignoreR m2 = m1 >>= (fn res => m2 >> return res)
+
+
+    fun p <?> label = (fn state =>
+        case p state of
+            EMPTY (ERROR msg) =>
+                EMPTY (ERROR (setExpected (msg, label)))
+        |   EMPTY (OK (x, state, msg)) =>
+                EMPTY (OK (x, state, setExpected (msg, label)))
+        |   other => other)
+
+ 
+    and setExpected (err, exp) =
+        Error.setMessage (Error.EXPECTED exp, err)
+ 
+    fun m1 <|> m2 = (fn state =>
+        case m1 state of
+            EMPTY (ERROR msg1) => 
+                (case m2 state of
+                    EMPTY (ERROR msg2)  =>
+                        mergeError (msg1, msg2)
+                |   EMPTY (OK (x, state, msg2)) =>
+                        mergeOK (x, state, msg1, msg2)
+                |   consumed    =>
+                        consumed)
+        |   EMPTY (OK (x, state, msg1)) =>
+                (case m2 state of
+                    EMPTY (ERROR msg2) =>
+                        mergeError (msg1, msg2)
+                |   EMPTY (OK (_, _, msg2)) =>
+                        mergeOK (x, state, msg1, msg2)
+                |   consumed =>
+                        consumed)
+        |   consumed => consumed)
+    
+
+    and mergeError (msg1, msg2) =
+        EMPTY (ERROR (Error.merge (msg1, msg2)))
+
+    and mergeOK (x, state, msg1, msg2) =
+        EMPTY (OK (x, state, Error.merge (msg1, msg2)))
+
+
+    fun try p ts = 
+        case p ts of
+            CONSUMED (ERROR e)  => EMPTY (ERROR e)
+        |   other               => other
+
+        
+    fun eof (ts, pos, user) =
+        case ts of  
+            []      => EMPTY (OK ((), ([], pos, user), Error.unknownError pos))
+        |   (t::_)  => EMPTY (expectedError ("", pos))
+
+
+    fun executeParser p state l =
+        let
+            val reply = case p (l, Token.position "", state) of
+                            EMPTY       reply => reply
+                        |   CONSUMED    reply => reply
+        in
+            case reply of
+                ERROR msg               => FST msg
+            |   OK (x, (ts, _, st), _)  => SND (x, ts, st)
+        end
+    
+    fun parse p state l = 
+        Alt.mapSnd (fn (x, ts, st) => (x, ts)) (executeParser p state l)
+
+
+    val errorToString  = Error.toString Error.englishMsgCfg
+
+    fun char c = satisfy (Fn.curry op= c) <?> ("'" ^ Token.toString c ^ "'")
+
+    fun anyChar() = satisfy (Fn.const true)
+
+
+    fun seq (m1, m2) =
+        m1 >>= (fn x => 
+        m2 >>= (fn y => 
+        return (x, y) ))
+    
+    fun seq3 (m1, m2, m3) =
+        m1 >>= (fn x =>
+        m2 >>= (fn y =>
+        m3 >>= (fn z =>
+        return (x, y, z) )))
+    
+    fun seq4 (m1, m2, m3, m4) =
+        m1 >>= (fn a =>
+        m2 >>= (fn b =>
+        m3 >>= (fn c =>
+        m4 >>= (fn d =>
+        return (a, b, c, d) ))))
+    
+    fun seq5 (m1, m2, m3, m4, m5) =
+        m1 >>= (fn a =>
+        m2 >>= (fn b =>
+        m3 >>= (fn c =>
+        m4 >>= (fn d =>
+        m5 >>= (fn e =>
+        return (a, b, c, d, e) ))))) 
+
+    fun p using f =
+        p >>= (fn x => return (f x))
+
+end

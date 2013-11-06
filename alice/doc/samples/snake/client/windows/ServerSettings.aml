@@ -1,0 +1,409 @@
+(* Alice Snake 2.0 - ServerSettingsWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature SERVERSETTINGS from "SERVERSETTINGS-sig"
+
+import structure Gtk            from "GtkSupport"
+
+import structure Color          from "../../common/Color"
+import structure Config         from "../../common/Config"
+
+import structure Text           from "Text"
+
+
+
+structure ServerSettings :> SERVERSETTINGS =
+struct
+
+    type ready_cb = (string * Color.color) option * Config.config ->
+	                                                          string option
+
+    type cancel_cb = unit -> unit 
+
+    type server_settings_widget = 
+	          {object : Gtk.object,
+		   alreadyConn : (string * Color.color) list ref}
+	
+
+    fun alreadyConn (s : server_settings_widget) = !(#alreadyConn s)
+	
+    fun mkServerSettingsWindow (parent, readyCB, cancelCB) =
+	let
+
+	    val serverSettings     = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val dialogVBox         = Gtk.VBox.new (false, 0)
+	    val nameLabel 	   = Gtk.Label.new "Name :         "
+	    val nameText	   = Gtk.Entry.new ()
+	    val nameHBox	   = Gtk.HBox.new (false, 0)
+	    val separator1	   = Gtk.HSeparator.new ()
+	    val colorLabel         = Gtk.Label.new "Color :         "
+	    val colorHBox	   = Gtk.HBox.new (false, 4)
+	    val normalRadioButton  =
+		Gtk.RadioButton.newWithLabel ([], "Normal Mode")
+	    val radioButtonGroup = Gtk.RadioButton.getGroup normalRadioButton
+	    val spectatorRadioButton = 
+		Gtk.RadioButton.newWithLabel (radioButtonGroup, 
+					     "Spectator Mode")
+	    val livesCheckButton   = 
+		Gtk.CheckButton.newWithLabel "infinity Lives"
+	    val levelsCheckButton  = 
+		Gtk.CheckButton.newWithLabel "infinity Levels"
+	    val loadSavedButton    = 
+		Gtk.Button.newWithLabel "load config"
+	    val loadMultiButton    = 
+		Gtk.Button.newWithLabel "load MP default"
+	    val loadSingleButton   = 
+		Gtk.Button.newWithLabel "load SP default"
+	    val saveConfigButton   = 
+		Gtk.Button.newWithLabel "save config"
+	    val table              = Gtk.Table.new (2, 2, true)
+	    val livesHBox          = Gtk.HBox.new (false, 0)
+	    val levelsHBox         = Gtk.HBox.new (false, 0)
+	    val loadSaveHBox1      = Gtk.HButtonBox.new ()
+	    val loadSaveHBox2      = Gtk.HButtonBox.new ()
+	    val separator3	   = Gtk.HSeparator.new ()
+	    val settingsHBox       = Gtk.HBox.new (false, 0)
+	    val settingsVBoxLeft   = Gtk.VBox.new (false, 0)
+	    val settingsVBoxCenter = Gtk.VBox.new (false, 0)
+	    val settingsVBoxRight  = Gtk.VBox.new (false, 0)
+	    val separator4         = Gtk.VSeparator.new ()
+	    val okButton    	   = Gtk.Button.newWithLabel "OK"
+	    val cancelButton       = Gtk.Button.newWithLabel "Cancel"
+	    val buttonHBox	   = Gtk.HButtonBox.new ()
+	    val leftVBox           = Gtk.VBox.new (false, 10)
+	    val rightHBox          = Gtk.HBox.new (false, 10)
+	    val separator5         = Gtk.HSeparator.new ()
+
+	    val allColors = List.map Color.toString Color.all
+		
+	    val colorCombo  = Gtk.ComboBox.newText ()
+	
+	    fun insertColors () = 
+                List.app (fn c =>
+                    Gtk.ComboBox.appendText (colorCombo, c)) allColors
+
+	    fun mkScale scaleNew (box, label, value, lower, upper) = 
+		let
+		    val adj = Gtk.Adjustment.new (value, lower, upper, 
+						 1.0, 1.0, 1.0)
+		    val scale = scaleNew adj
+		    val label = Gtk.Label.new label
+		in
+		    Gtk.Scale.setDigits (scale, 0);
+		    Gtk.Box.packStart (box, label, false, false, 7);
+		    Gtk.Box.packStart (box, scale, true, true, 0);
+		    (adj, scale)
+		end
+
+            fun mkScaleProb scaleNew (box, label, value) =
+                let
+                    val adj = Gtk.Adjustment.new (value, 0.0, 2.0, 
+                                                    0.001, 0.1, 0.1)
+		    val scale = scaleNew adj
+                    val label = Gtk.Label.new label
+                in
+                    Gtk.Scale.setDigits (scale, 3);
+                    Gtk.Box.packStart (box, label, false, false, 7);
+                    Gtk.Box.packStart (box, scale, true, true, 0);
+		    (adj, scale)
+                end
+        
+            val mkhScaleProb = mkScaleProb Gtk.HScale.new
+            val mkvScaleProb = mkScaleProb Gtk.VScale.new
+	    val mkhScale     = mkScale Gtk.HScale.new
+	    val mkvScale     = mkScale Gtk.VScale.new
+
+
+	    val (tickAdjust, tickScale) = 
+		mkvScale (settingsVBoxLeft, "Tick", 50.0, 50.0, 601.0)
+	    val (timeoutAdj, timeoutScale) =
+		mkvScale (settingsVBoxRight, "Timeout", 50.0, 50.0, 301.0)
+	    val (xDimAdjust, xDimScale) =
+		mkhScale (settingsVBoxCenter, "X-Dimension", 50.0, 15.0, 501.0)
+	    val (yDimAdjust, yDimScale) =
+		mkhScale (settingsVBoxCenter, "Y-Dimension", 50.0, 15.0, 501.0)
+	    val (goodysAdjust, goodysScale) =
+		mkhScale (settingsVBoxCenter, "Goodies", 50.0, 0.0, 16.0)
+	    val (gateTresAdjust, gateTresScale) = 
+		mkhScale (settingsVBoxCenter, "gate treshold", 10.0, 0.0, 30.0)
+	    val (livesAdjust, livesScale) =
+		mkhScale (livesHBox, "Lives", 50.0, 1.0, 31.0)
+	    val (maxPlayerAdjust, maxPlayersScale) =
+		mkhScale (settingsVBoxCenter, "maxPlayers", 50.0, 2.0, 17.0)
+	    val (goodyProbAdjust, goodyProbScale) =
+		mkhScaleProb (settingsVBoxCenter, "Goody probability", 0.2)
+	    val (levelsAdjust, levelsScale) =
+		mkhScale (levelsHBox, "Levels", 50.0, 1.0, 31.0)
+
+	    val alreadyConn = ref nil
+
+	    val serverSettingsWidget = {object = serverSettings,
+					alreadyConn}
+
+
+	    fun mainQuit () = (Gtk.Widget.destroy serverSettings; cancelCB ())
+		
+	    fun changedNameText () = 
+		if Gtk.Entry.getText nameText = ""
+		    then Gtk.Widget.setSensitive (okButton, false)
+		else  Gtk.Widget.setSensitive (okButton, true)
+
+	    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
+		if Gtk.ToggleButton.getActive spectator
+		    then
+			(Gtk.Widget.setSensitive (nameBox, false);
+			 Gtk.Widget.setSensitive (colorBox, false);
+			 Gtk.Widget.setSensitive (okButton, true))
+		else
+		    (Gtk.Widget.setSensitive (nameBox, true);
+		     Gtk.Widget.setSensitive (colorBox, true);
+		     if Gtk.Entry.getText nameText = "" 
+			 then Gtk.Widget.setSensitive (okButton, false)
+		     else ())
+		    
+	    fun pressedInfinityButton (button, scale) =
+		if Gtk.ToggleButton.getActive button
+		    then Gtk.Widget.setSensitive (scale, false)
+		else
+		    Gtk.Widget.setSensitive (scale, true)
+
+	    fun readValues () = 
+		let
+		    fun read adj = 
+			Real.round (Gtk.Adjustment.getFieldValue adj)
+		    
+		    val tick       = 
+                          Time.fromMilliseconds (Int.toLarge (read tickAdjust))
+		    val timeout    = 
+                          Time.fromSeconds (Int.toLarge (read timeoutAdj))
+		    val dimensions = (read yDimAdjust, read xDimAdjust)
+		    val goodie     = read goodysAdjust
+		    val lives = 
+			if Gtk.ToggleButton.getActive livesCheckButton
+			    then NONE
+			else  SOME (read livesAdjust)
+		    val maxPlayers = read maxPlayerAdjust
+		    val goodieProb = 
+			Gtk.Adjustment.getFieldValue goodyProbAdjust
+		    val levels = 
+			if Gtk.ToggleButton.getActive levelsCheckButton
+			    then NONE
+			else SOME (read levelsAdjust)
+		    val gateTreshold = read gateTresAdjust
+		    val config = {
+				  tick,
+				  timeout,
+				  dimensions,
+				  goodie,
+				  gateTreshold,
+				  lives,
+				  maxPlayers,
+				  goodieProb,
+				  levels
+				  }
+		in
+		    config
+		end
+
+	    fun setValues {
+			   tick,
+			   timeout,
+			   dimensions = (x, y),
+			   goodie,
+			   lives,
+			   maxPlayers,
+			   goodieProb,
+			   gateTreshold,
+			   levels
+			   }  =
+		let
+		    val _ = Gtk.ToggleButton.setActive (livesCheckButton,
+							    false)
+		    val _ = Gtk.ToggleButton.setActive (levelsCheckButton,
+							    false)
+		    val tick         = 1000.0 * (Time.toReal tick)
+		    val timeout      = Time.toReal timeout
+		    val xCoord       = Real.fromInt x
+		    val yCoord       = Real.fromInt y
+		    val gateTreshold = Real.fromInt gateTreshold
+		    val goodie       = Real.fromInt goodie
+		    val lives = 
+			case lives of
+			    SOME l => Real.fromInt l
+			  |   _    => 
+				(Gtk.ToggleButton.setActive (livesCheckButton,
+							    true);
+				 Gtk.Widget.setSensitive (livesScale, 
+							 false);
+				 1.0)
+		    val maxPlayers = Real.fromInt maxPlayers
+		    val goodieProb = goodieProb
+		    val levels = 
+			case levels of
+			    SOME l => Real.fromInt l
+			  |   _    => 
+				(Gtk.ToggleButton.setActive (levelsCheckButton, 
+							    true);
+				 Gtk.Widget.setSensitive (levelsScale, 
+							 false);
+				 1.0)
+		in
+		    Gtk.Adjustment.setValue (tickAdjust, tick);
+		    Gtk.Adjustment.setValue (timeoutAdj, timeout);
+		    Gtk.Adjustment.setValue (xDimAdjust, xCoord);
+		    Gtk.Adjustment.setValue (yDimAdjust, yCoord);
+		    Gtk.Adjustment.setValue (goodysAdjust, goodie);
+		    Gtk.Adjustment.setValue (livesAdjust, lives);
+		    Gtk.Adjustment.setValue (gateTresAdjust, gateTreshold);
+		    Gtk.Adjustment.setValue (maxPlayerAdjust, maxPlayers);
+		    Gtk.Adjustment.setValue (goodyProbAdjust, goodieProb);
+		    Gtk.Adjustment.setValue (levelsAdjust, levels)
+		end
+		
+
+	    fun okClickedCB spectator = 
+		let
+		    val config = readValues ()
+
+		    fun return () = 
+			if Gtk.ToggleButton.getActive spectator
+			    then readyCB (NONE, config)
+			else
+			    let
+				val name  = Gtk.Entry.getText nameText
+				val color = Color.fromString(
+                                    Gtk.ComboBox.getActiveText colorCombo)
+			    in
+				(#alreadyConn serverSettingsWidget) := 
+				                               [(name, color)];
+				readyCB (SOME (name, color), config) 
+			    end
+
+		in
+		    Gtk.Widget.destroy (#object serverSettingsWidget);
+		    case return () of 
+			NONE => ()
+		      | SOME errorMsg => 
+      	                  (Text.mkTextWindow (parent, "ERROR!", errorMsg);())
+		end
+
+	in
+	    Gtk.Window.setModal (serverSettings, true);
+	    Gtk.Window.setTitle (serverSettings, "Server Settings");
+	    Gtk.Window.setPosition (serverSettings, Gtk.WindowPosition.CENTER);
+	    Gtk.Container.setBorderWidth (serverSettings, 10);
+	    Gtk.Widget.setSensitive (okButton, false);
+	    
+	    Gtk.signalConnect (serverSettings, 
+			       "delete-event", 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (spectatorRadioButton, 
+			       "clicked", 
+			       fn _ => 
+			       pressedSpectatorButton (spectatorRadioButton,
+						       nameHBox, 
+						       colorHBox));
+	    Gtk.signalConnect (livesCheckButton,
+			       "clicked",
+			       fn _ => 
+			       pressedInfinityButton (livesCheckButton,
+						      livesScale));
+	    Gtk.signalConnect (levelsCheckButton,
+			       "clicked",
+			       fn _ => 
+			       pressedInfinityButton (levelsCheckButton,
+						      levelsScale));
+	    Gtk.signalConnect (loadSavedButton,
+			       "clicked",
+			       fn _ =>
+			       setValues (Config.load ()));
+	    Gtk.signalConnect (saveConfigButton,
+			      "clicked",
+			      fn _ => 
+			      Config.save (readValues ()));
+	    Gtk.signalConnect (loadMultiButton,
+			       "clicked",
+			       fn _ =>
+			       setValues (Config.defaultMulti));
+	    Gtk.signalConnect (loadSingleButton,
+			       "clicked",
+			       fn _ =>
+			       setValues (Config.defaultSingle));
+	    Gtk.signalConnect (nameText, 
+			       "changed",
+			       fn _ => changedNameText ());
+	    Gtk.signalConnect (okButton, "clicked", 
+			       fn _ => okClickedCB 
+			       spectatorRadioButton);
+	    Gtk.signalConnect (cancelButton, "clicked", 
+			       fn _ => mainQuit ());
+
+	    insertColors ();
+	    setValues Config.defaultMulti;
+	    
+	    Gtk.Entry.setMaxLength (nameText, 12);
+
+	    Gtk.Box.packStart (nameHBox, nameLabel, false, false, 2);
+	    Gtk.Box.packStart (nameHBox, nameText,  false, false, 2);
+
+	    Gtk.Box.packStart (colorHBox, colorLabel, false, false, 2);
+	    Gtk.Box.packStart (colorHBox, colorCombo, false, false, 2);
+
+	    Gtk.Box.packStart (buttonHBox, okButton, false, false, 5);
+	    Gtk.Box.packStart (buttonHBox, cancelButton, false, false, 5);
+	    
+	    Gtk.Box.packStart (loadSaveHBox1, loadSavedButton, false, false, 5);
+	    Gtk.Box.packStart (loadSaveHBox1, loadMultiButton, false, false, 5);
+	    
+	    Gtk.Box.packStart (loadSaveHBox2, saveConfigButton, false, false, 5);
+	    Gtk.Box.packStart (loadSaveHBox2, loadSingleButton, false, false, 5);
+
+	    Gtk.Table.attachDefaults (table, levelsCheckButton, 0, 1, 0, 1);
+	    Gtk.Table.attachDefaults (table, livesCheckButton, 0, 1, 1, 2);
+	    Gtk.Table.attachDefaults (table, levelsHBox, 1, 2, 0, 1);
+	    Gtk.Table.attachDefaults (table, livesHBox, 1, 2, 1, 2);
+
+
+	    Gtk.Box.packStart (leftVBox, spectatorRadioButton, false, false, 0);
+	    Gtk.Box.packStart (leftVBox, normalRadioButton, false, false, 0);
+	    Gtk.Box.packStart (leftVBox, nameHBox, false, false, 2);
+	    Gtk.Box.packStart (leftVBox, colorHBox, false, false, 2);
+	    Gtk.Box.packStart (leftVBox, separator1, false, false, 2);
+	    Gtk.Box.packStart (leftVBox, table, false, false, 0);
+
+	    Gtk.Box.packStart (leftVBox, separator3, false, false, 5);
+	    Gtk.Box.packStart (leftVBox, loadSaveHBox1, false, false, 5);
+	    Gtk.Box.packStart (leftVBox, loadSaveHBox2, false, false, 5);
+	    
+	    Gtk.Box.packStart (rightHBox, settingsVBoxLeft, false, false, 5);
+	    Gtk.Box.packStart (rightHBox, settingsVBoxCenter, true, true, 5);
+	    Gtk.Box.packStart (rightHBox, settingsVBoxRight, false, false, 5);
+	    
+	    Gtk.Box.packStart (settingsHBox, leftVBox, true, true, 5);
+	    Gtk.Box.packStart (settingsHBox, separator4, false, false, 5);
+	    Gtk.Box.packStart (settingsHBox, rightHBox, true, true, 5);
+	    
+	    Gtk.Box.packStart (dialogVBox, settingsHBox, true, true, 2);
+	    Gtk.Box.packStart (dialogVBox, separator5, false, false, 10);
+	    Gtk.Box.packStart (dialogVBox, buttonHBox, false, false, 5);
+	    
+	    Gtk.Container.add (serverSettings, dialogVBox);
+
+	    Gtk.Widget.showAll serverSettings;
+	    
+	    serverSettingsWidget
+
+	end
+
+
+end
+
+

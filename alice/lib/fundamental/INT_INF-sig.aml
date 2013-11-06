@@ -1,0 +1,77 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, Leif Kornstaedt, and Guido Tack, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and Int and LargeInt and Word from "Pervasive"
+import __primitive
+       type char and string and bool and order and option from "ToplevelTypes"
+import __primitive structure StringCvt                    from "StringCvt"
+
+signature INT_INF =
+sig
+    eqtype int
+    type t = int							(**)
+
+    val minInt :	int option
+    val maxInt :	int option
+    val precision :	Int.int option
+
+    val toInt :		int -> Int.int
+    val fromInt :	Int.int -> int
+    val toLarge :	int -> LargeInt.int
+    val fromLarge :	LargeInt.int -> int
+
+    val ~ :		int -> int
+    val op + :		int * int -> int
+    val op - :		int * int -> int
+    val op * :		int * int -> int
+    val op div :	int * int -> int
+    val op mod :	int * int -> int
+    val op quot :	int * int -> int
+    val op rem :	int * int -> int
+
+    val op < :		int * int -> bool
+    val op > :		int * int -> bool
+    val op <= :		int * int -> bool
+    val op >= :		int * int -> bool
+    val equal :		int * int -> bool				(**)
+    val compare :	int * int -> order
+    val hash :		int -> Int.int					(**)
+
+    val abs :		int -> int
+    val min :		int * int -> int
+    val max :		int * int -> int
+    val sign :		int -> Int.int
+    val sameSign :	int * int -> bool
+
+    val divMod :        int * int -> int * int
+    val quotRem :       int * int -> int * int
+    val pow :           int * Int.int -> int
+    val log2 :          int -> Int.int
+    val orb :           int * int -> int
+    val xorb :          int * int -> int
+    val andb :          int * int -> int
+    val notb :          int -> int
+    val << :            int * Word.word -> int
+    val ~>> :           int * Word.word -> int
+
+    val toString :	int -> string
+    val fromString:	string -> int option
+    val fmt :		StringCvt.radix -> int -> string
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (int,'a) StringCvt.reader
+end

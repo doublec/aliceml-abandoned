@@ -1,0 +1,97 @@
+(* Alice Snake 2.0 - GUI
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Protocol   from "../common/Protocol"
+import structure Config     from "../common/Config"
+import structure Color      from "../common/Color"
+import structure Pos        from "../common/Pos"
+import structure Highscore  from "../common/Highscore"
+
+signature GUI =
+sig
+
+    type error = string
+
+    (* register a callback here to get notified, when some event
+     is triggered by the gui.  
+     *)
+	
+    type model_game = 
+	{
+	 turn       : Protocol.direction -> unit,
+	 changeView : Protocol.view_hint -> unit,
+	 giveUp     : unit -> unit
+	 }
+	
+    and gui_join = 
+	{
+	 playersJoined : (string * Color.color) list -> unit,
+	 playerDisconnected : string * Color.color -> unit,
+	 gameStarted : unit -> unit
+	 }
+	
+    type gui_game = 
+	{
+	 startLevel   : Protocol.level_info -> unit,
+	 countdown    : int -> unit,
+	 gameFinished : Highscore.highscore -> unit,
+	 tick         : Highscore.points list option * Protocol.diff list * Pos.pos option * Time.time -> unit
+	 }
+	
+	
+    type model_join = 
+	{
+	 play :  string * Color.color -> 
+	 (model_game * gui_game Promise.promise, error) alt,
+	 watch : unit -> (model_game * gui_game Promise.promise, error) alt,
+	 disconnect : unit -> unit
+	 }
+	
+    type model_start =
+	{
+	 start : unit -> (model_game * gui_game Promise.promise, error) alt,
+	 disconnect : unit -> unit
+	 }
+	
+	
+    and model_initial = 
+	{
+	 connect : string -> (model_join * gui_join Promise.promise, error) alt,
+	 
+	 startServer : (string * Color.color) option * Config.config -> 
+	 (model_start * gui_join Promise.promise * string, error) alt
+	 (* start a new server and display the snake selection
+	  dialog (in server mode i.e. with the ability to
+	  start a tournament)
+	  *)
+	 }
+	
+	
+    (* call these functions provided by the gui, if something
+     happens to the model.
+     *)
+    type gui =  
+	{
+	 reset : (string * string) option -> unit
+	 (* [reset NONE] reset's the gui to show the inital
+	  startup screen.  
+	  [reset SOME (title, msg)] first shows an messagebox
+          with title [title] displaying message [message] and
+	  reset's the gui afterwards
+	  *)
+	 
+	 }
+	
+    val serverError : exn -> 'a
+
+    val execute: model_initial * gui Promise.promise -> unit
+	
+end

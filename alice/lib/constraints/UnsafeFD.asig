@@ -1,0 +1,143 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_FD_COMPONENT =
+    sig
+	structure UnsafeFD :
+	    sig
+	        (* FD Limits *)
+                val inf : int
+		val sup : int
+
+		exception Tell of {cause : exn}
+
+		(* Allocation Functions *)
+		val unsafeFD : 'a
+		val unsafeFDVec : 'a
+		val unsafeRange : 'a
+		val unsafeRangeVec : 'a
+		val bin : 'a
+		val binVec : 'a
+
+		(* Assignment *)
+		val assign : 'a
+
+		(* Conversion *)
+		val toInt : 'a
+		val future : 'a
+		val unsafeFromInt : 'a
+		val isBin : 'a
+
+		(* Standards Sums *)
+		val sum : 'a
+		val sumC : 'a
+		val sumAC : 'a
+		val sumCN : 'a
+		val sumACN : 'a
+		val sumD : 'a
+		val sumCD : 'a
+
+		(* Standard Propagators; Interval propagation *)
+		val plus : 'a
+		val minus : 'a
+		val times : 'a
+		val power : 'a
+		val divI : 'a
+		val modI : 'a
+
+		(* Standard Propagators; Domain propagation *)
+		val plusD : 'a
+		val minusD : 'a
+		val timesD : 'a
+		val divD : 'a
+		val modD : 'a
+
+		val min : 'a
+		val max : 'a
+
+		val equal : 'a
+		val notequal : 'a
+		val distance : 'a
+		val less : 'a
+		val lessEq : 'a
+		val greater : 'a
+		val greaterEq : 'a
+		val disjoint : 'a
+		val disjointC : 'a
+		val tasksOverlap : 'a
+
+		(* Non-Linear Propagators *)
+		val distinct : 'a
+		val distinctOffset : 'a
+		val distinct2 : 'a
+		val atMost : 'a
+		val atLeast : 'a
+		val exactly : 'a
+		val element : 'a
+
+		(* 0/1 Propagators *)
+		val conj : 'a
+		val disj : 'a
+		val exor : 'a
+		val nega : 'a
+		val impl : 'a
+		val equi : 'a
+
+		(* Reified Constraints *)
+		val unsafeReified_fd : 'a
+		val unsafeReified_fdVec : 'a
+
+		val reified_card : 'a
+		val reified_distance : 'a
+		val reified_sum : 'a
+		val reified_sumC : 'a
+		val reified_sumAC : 'a
+		val reified_sumCN : 'a
+		val reified_sumACN : 'a
+
+		(* Reflection *)
+		val reflect_min : 'a
+		val reflect_max : 'a
+		val reflect_mid : 'a
+		val reflect_nextLarger : 'a
+		val reflect_nextSmaller : 'a
+		val reflect_size : 'a
+		val reflect_dom : 'a
+		val reflect_domList : 'a
+		val reflect_nbSusps : 'a
+		val reflect_eq : 'a
+
+		(* Watching *)
+		val watch_min : 'a
+		val watch_max : 'a
+		val watch_size : 'a
+
+		val distribute : 'a
+		val choose : 'a
+
+		(* Scheduling *)
+		val schedule_cumulative : 'a
+		val schedule_cumulativeEF : 'a
+		val schedule_cumulativeTI : 'a
+		val schedule_cumulativeUp : 'a
+		val schedule_disjoint : 'a
+		val schedule_firstsDist : 'a
+		val schedule_lastsDist : 'a
+		val schedule_firstsLastsDist : 'a
+		val schedule_taskIntervalsDistP : 'a
+		val schedule_taskIntervalsDistO : 'a
+		val schedule_serializedDisj : 'a
+		val schedule_serialized : 'a
+		val schedule_taskIntervals : 'a
+	    end
+    end

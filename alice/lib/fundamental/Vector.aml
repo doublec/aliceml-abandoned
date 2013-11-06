@@ -1,0 +1,45 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type int and vector and list from "ToplevelTypes"
+import __primitive val op =                     from "ToplevelValues"
+import __primitive functor MkVector             from "MkVector"
+import __primitive signature VECTOR             from "VECTOR-sig"
+
+structure Vector : VECTOR =
+struct
+    type vector = vector
+    type t      = vector
+
+    structure Vector = MkVector(
+	type vector     = vector
+	type dst_vector = vector
+	type 'a elem    = 'a
+	__primitive val maxLen :   int			= "Vector.maxLen"
+	__primitive val length :   'a t -> int		= "Vector.length"
+	__primitive val sub :	   'a t * int -> 'a	= "Vector.sub"
+	__primitive val uSub :	   'a t * int -> 'a	= "Unsafe.Vector.sub"
+	__primitive val tabulate : int * (int->'a) -> 'a t = "Vector.tabulate"
+	__primitive val fromList : 'a list -> 'a t	= "Vector.fromList"
+	__primitive val toList :  'a t -> 'a list	= "Vector.toList"
+	__primitive val concat :   'a t list -> 'a t	= "Vector.concat"
+    )
+    open Vector
+
+    fun contains v	= Vector.contains op= v
+    fun notContains v	= Vector.notContains op= v
+end

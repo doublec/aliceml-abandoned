@@ -1,0 +1,9 @@
+This is the Debian/GNU prepackaged version of the Alice Programming System.
+See http://www.ps.uni-sb.de/alice/ for a list of original authors.
+
+This package was put together by Marco Kuhlmann <mk@debian.org> using
+sources obtained from http://www.ps.uni-sb.de/alice/.
+
+Copyright notice (as found in COPYING in the original source)
+-------------------------------------------------------------
+ 

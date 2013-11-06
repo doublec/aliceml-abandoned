@@ -1,0 +1,18 @@
+signature UNSAFE_STORE_SIG =
+  sig
+      structure UnsafeStore:
+	  sig
+	      exception Stack
+	      val size      : 'a -> {nodes : int, words : int,
+                                     byneeds : int, futures : int,
+                                     transients : int}
+	      val sizeQuiet : 'a -> {nodes : int, words : int,
+                                     byneeds : int, futures : int,
+                                     transients : int}
+	      val collect   : int -> unit
+	      val newPartition : unit -> 'partition
+	      val loadGraph : 'partition * 'node -> unit
+	      val minimize : 'partition -> unit
+	      val signal' : int -> int
+	  end
+  end

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+tarname=helikopter.tar.gz
+sources="Color.sml Geometry.sml Lexer.lex Machine.sml Main.sml PPMFile.sml Parser.grm RENDERER.sml Renderer.sml build.sml sources.cm"
+examples="helikopter.gml"
+files="README buildme runme src helikopter.gml"
+
+tar -czf $tarname $files
+md5sum $tarname

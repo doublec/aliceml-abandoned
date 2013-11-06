@@ -1,0 +1,13 @@
+Source: alice-runtime
+Section: devel
+Priority: optional
+Build-Depends-Indep: debhelper (>= 4.1.6)
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+Standards-Version: 3.6.0
+
+Package: alice-runtime
+Architecture: all
+Depends: alice, alice-gtk, alice-gecode, alice-sqlite, alice-xml, alice-regex
+Recommends:
+Suggests:
+Description: The Alice system (Runtime)

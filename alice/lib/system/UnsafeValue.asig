@@ -1,0 +1,76 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name  from "../rtt/Name"
+
+signature UNSAFE_VALUE_COMPONENT =
+    sig
+	structure UnsafeValue:
+	    sig
+		(* Label vectors must always be sorted *)
+
+		val cast: 'a_value -> 'a
+		val same: 'a * 'b -> bool
+		val sameCode: ('a -> 'b) * ('c -> 'd) -> bool
+		val awaitRequest : 'a -> unit
+
+		val realToVector: real -> Word8Vector.vector
+
+		(* Projections *)
+
+		val proj: 'prod_value * 'lab vector * int -> 'value
+		val projTuple: 'tuple_value * int * int -> 'value
+
+		val tag: 'sum_value * 'lab vector -> int
+		val projTagged: 'sum_value * 'lab vector * int -> 'value
+		val projTaggedTuple: 'sum_value * int * int -> 'value
+
+		val con: 'ext_value -> 'con_value
+		val projConstructed: 'ext_value * 'lab vector * int -> 'value
+		val projConstructedTuple: 'ext_value * int * int -> 'value
+
+		val projPoly: 'prod_value * 'lab -> 'value
+
+		(* Construction *)
+
+		val tuple: 'value vector -> 'tuple_value
+		val prod: ('lab * 'value) vector -> 'prod_value
+
+		val tagged: 'lab vector * int *
+			    ('lab * 'value) vector -> 'sum_value
+		val taggedTuple: 'lab vector * int *
+				 'value vector -> 'sum_value
+
+		val conVal: 'con * ('lab * 'value) vector -> 'con_value
+		val conValTuple: 'con * 'value vector -> 'con_value
+
+		val prodPoly: ('lab * 'value) vector -> 'prod_value
+
+		val closure: 'code * 'value vector -> 'closure_value
+
+		val prim: string -> 'value
+
+		(* Inspection *)
+
+		val conName: 'con_value -> Name.t
+
+		(* These return one of:
+		 *   ~2      could not be determined
+		 *   ~1      single-argument
+		 *   n >= 0  tuple/record with n fields
+		 *)
+		val inArity: 'function_value -> int
+		val outArity: 'function_value -> int
+	    end
+    end

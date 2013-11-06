@@ -1,0 +1,161 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import functor MkRedBlackSet from "x-alice:/lib/data/MkRedBlackSet"
+
+signature HIGHLIGHT =
+sig
+    datatype style = PLAIN | RESERVED | STRING | COMMENT | ERRONEOUS
+
+    val scan : substring list -> (style * int * int * int * int) list
+end
+
+structure Highlight : HIGHLIGHT =
+struct
+    datatype style = PLAIN | RESERVED | STRING | COMMENT | ERRONEOUS
+
+    (* Reserved words *)
+
+    structure SubstringSet = MkRedBlackSet Substring
+
+    val reservedWords = (SubstringSet.fromVector o Vector.map Substring.full)
+	#["_file_", "_line_",
+	  "abstype", "and", "andalso", "any", "as", "assert",
+	  "assert0", "assert1", "assert2", "assert3", "assert4",
+	  "assert5", "assert6", "assert7", "assert8", "assert9",
+	  "case", "constructor",
+	  "datatype", "do",
+	  "else", "end", "eqtype", "exception", "exttype",
+	  "fct", "finally", "fn", "for", "from", "fun", "functor",
+	  "handle",
+	  "if", "import", "in", "include", "infix", "infixr",
+	  "lazy", "let", "local",
+	  "non", "nonfix",
+	  "of", "op", "open", "orelse",
+	  "pack",
+	  "raise", "rec",
+	  "sharing", "sig", "signature", "spawn", "struct", "structure",
+	  "then", "type",
+	  "unpack",
+	  "val",
+	  "where", "while", "with", "withfun", "withtype", "withval"
+	 ]
+
+    fun isReserved ss = SubstringSet.member (reservedWords, ss)
+
+    fun isIdChar c = Char.isAlphaNum c orelse c = #"_" orelse c = #"'"
+
+    fun checkReserved (s, y, x1, x2, rs) =
+	if Substring.sub (s, x1) = #"_"
+	orelse isReserved (Substring.slice (s, x1, SOME (x2-x1)))
+	then (RESERVED, y,x1, y,x2)::rs
+	else rs
+
+    (* Scanning *)
+
+    fun scanNLInner (cont, nil, y', x', y, x, rs) =
+	    (ERRONEOUS, y',x', y,x)::rs
+      | scanNLInner (cont, s::ss, y', x', y, x, rs) =
+	    cont (ss, s, y', x', y+1, 0, rs)
+
+    fun scanNL (nil, y, rs)   = rs
+      | scanNL (s::ss, y, rs) = scanPlain (ss, s, y+1, 0, rs)
+
+    and scanPlain (ss, s, y, x, rs) =
+	if x = Substring.size s then
+	    scanNL (ss, y, rs)
+	else let
+	    val c = Substring.sub (s, x)
+	in
+	    if isIdChar c then
+		scanId (ss, s, y, x, x+1, rs)
+	    else if c = #"\"" then
+		scanString (ss, s, y, x, y, x+1, rs)
+	    else if c = #"(" andalso x < Substring.size s
+		 andalso Substring.sub (s, x+1) = #"*" then
+		if x < Substring.size s - 2
+		     andalso Substring.sub (s, x+2) = #")" then
+		    scanLineComment 1 (ss, s, y, x, y, x+3,
+				       merge (PLAIN, x', x, rs))
+		else
+		    scanComment 1 (ss, s, y, x, y, x+2, rs)
+	    else
+		scanPlain (ss, s, y, x+1, rs)
+	end
+    and scanString (ss, s, y', x', y, x, rs) =
+	if x = Substring.size s then
+	    scanNL (ss, y, (ERRONEOUS, y',x', y,x)::rs)
+	else let
+	    val c = Substring.sub (s, x)
+	in
+	    if c = #"\"" then
+		scanPlain (ss, s, y, x+1, (STRING, y',x', y,x+1)::rs)
+	    else if c = #"\\" then
+		if x = Substring.size s - 1
+		orelse Char.isSpace (Substring.sub (s, x+1))
+		then scanStringGap (ss, s, y', x', y, x+1, rs)
+		else scanString (ss, s, y', x', y, x+2, rs)
+	    else if Char.ord c < 32 then
+		scanPlain (ss, s, y, x+1, (ERRONEOUS, y',x', y,x+1)::rs)
+	    else
+		scanString (ss, s, y', x', y, x+1, rs)
+	end
+    and scanStringGap (ss, s, y', x', y, x, rs) =
+	if x = Substring.size s then
+	    scanNLInner (scanStringGap, ss, y', x', y, x, rs)
+	else let
+	    val c = Substring.sub (s, x)
+	in
+	    if c = #"\\" then
+		scanString (ss, s, y', x', y, x+1, rs)
+	    else if Char.isSpace c then
+		scanStringGap (ss, s, y', x', y, x+1, rs)
+	    else
+		scanPlain (ss, s, y, x+1, (ERRONEOUS, y',x', y,x+1)::rs)
+	end
+    and scanId (ss, s, y, x', x, rs) =
+	if x = Substring.size s then
+	    scanNL (ss, y, checkReserved (s, y, x', x, rs))
+	else if isIdChar (Substring.sub (s, x)) then
+	    scanId (ss, s, y, x', x+1, rs)
+	else
+	    scanPlain (ss, s, y, x, checkReserved (s, y, x', x, rs))
+    and scanLineComment nesting (ss, s, y', x', y, x, rs) =
+	scanComment (nesting-1) (ss, s, y', x', y, Substring.size s, rs)
+    and scanComment nesting (ss, s, y', x', y, x, rs) =
+	if nesting = 0 then
+	    scanPlain (ss, s, y, x, (COMMENT, y',x', y,x)::rs)
+	(* last character cannot end or start a comment *)
+	else if x >= Substring.size s - 1 then
+	    scanNLInner (scanComment nesting, ss, y', x', y, x, rs)
+	else let
+	    val c = Substring.sub (s, x)
+	in
+	    if c = #"*" andalso Substring.sub (s, x+1) = #")" then
+		scanComment (nesting-1) (ss, s, y', x', y, x+2, rs)
+	    else if c = #"(" andalso Substring.sub (s, x+1) = #"*" then
+		if x < Substring.size s - 2
+		     andalso Substring.sub (s, x+2) = #")" then
+		    scanLineComment (nesting+1) (ss, s, y', x', y, x+3, rs)
+		else
+		    scanComment 1 (ss, s, y, x, y, x+2, rs)
+		    scanComment (nesting+1) (ss, s, y', x', y, x+2, rs)
+	    else
+		scanComment nesting (ss, s, y', x', y, x+1, rs)
+	end
+
+    (* Export *)
+
+    fun scan  nil    = nil
+      | scan (s::ss) = List.rev (scanPlain (ss, s, 1, 0, nil))
+end

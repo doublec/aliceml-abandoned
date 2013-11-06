@@ -1,0 +1,29 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+import structure Explorer from "x-alice:/lib/Tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Modeling
+
+val s = Space.new();
+
+fun test s = let
+	 	    val a = FD.range(s,(~4,~1))
+	 	    val b = FD.range(s,(0,4))
+	 	    val c = FD.range(s,(8,8))
+	 	    val d = FD.range(s,(1,34))
+	 	    val one = FD.range(s,(1,1))
+	 	    val tru = FD.intvar2boolvar(s,one)
+	 	    val b1 = FD.boolvar s
+	 	    val vec2 = FD.rangeVec(s,4,(3,3))
+	 	    val vec = FD.rangeVec(s,3,(2,2))
+	 	 in
+	 	
+	 	    post(s,SUMV(#[a,b,c]) `= FD(c) ,FD.DOM);
+	 	   
+	 	    FD.branch(s,(#[a,b,c,d]),FD.B_SIZE_MIN,FD.B_MIN);
+	 	    {a,b,c,d}
+	 	 end
+	 	 
+	 	 (* Explorer.exploreAll test *) 	  

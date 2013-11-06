@@ -1,0 +1,57 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "../../lib/system/TextIO"
+import signature ERROR  from "SML_ERROR-sig"
+
+structure Error :> ERROR =
+struct
+    type pos	= int * int
+    type region	= pos * pos
+
+    datatype error =
+	  UnclosedComment
+	| InvalidString
+	| EscapeCharTooLarge	of bool
+	| InvalidChar		of char
+	| SyntaxError		of string
+
+    exception Error of region * string
+
+    fun errorToString(UnclosedComment) =
+	  "unclosed comment"
+      | errorToString(InvalidString) =
+	  "invalid string constant"
+      | errorToString(InvalidChar c) =
+	  "invalid character `" ^ Char.toCString c ^ "'"
+      | errorToString(EscapeCharTooLarge uc) =
+	  (if uc then "unicode" else "ASCII") ^ " escape character too large"
+      | errorToString(SyntaxError s) =
+	  s
+
+    fun posToString(lin,col) =
+	Int.toString lin ^ "." ^ Int.toString col
+
+    fun regionToString(region as (pos1,pos2)) =
+	posToString pos1 ^ "-" ^ posToString pos2
+
+    fun print(reg, s) =
+        TextIO.output(TextIO.stdErr, regionToString reg ^ ": " ^ s ^ "\n")
+
+    fun error(region, e) =
+	let
+	    val message = errorToString e
+	in
+	    print(region, message);
+	    raise Error(region, message)
+	end
+end

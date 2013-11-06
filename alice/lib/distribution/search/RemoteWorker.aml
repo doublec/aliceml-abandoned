@@ -1,0 +1,54 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Packer        from "x-alice:/lib/distribution/Packer"
+import structure Remote        from "x-alice:/lib/distribution/Remote"
+import signature WORKER_PARCEL from "WORKER_PARCEL-sig"
+import structure MkPlainWorker from "MkPlainWorker"
+import signature PLAIN_WORKER  from "PLAIN_WORKER-sig"
+import structure MkBestWorker  from "MkBestWorker"
+import signature BEST_WORKER   from "BEST_WORKER-sig"
+import signature REMOTE_WORKER from "REMOTE_WORKER-sig"
+
+structure RemoteWorker :> REMOTE_WORKER =
+    struct
+	fun worker [parcel] =
+	    let
+		structure Parcel = Remote.Take(val ticket = parcel
+					       signature S = WORKER_PARCEL)
+	    in
+		(case Parcel.mode of
+		     0 => let
+			      structure W = MkPlainWorker(structure Manager = Parcel.Manager
+							  val id            = Parcel.id
+							  val script        = Parcel.script)
+			      structure P = Packer.Pack(structure X = W
+							signature S = PLAIN_WORKER)
+			  in
+			      Parcel.Manager.register(P.package, Parcel.id)
+			  end
+		   | 1 => let
+			      structure W = MkBestWorker(structure Manager = Parcel.Manager
+							 val id            = Parcel.id
+							 val script        = Parcel.script)
+			      structure P = Packer.Pack(structure X = W
+							signature S = BEST_WORKER)
+			  in
+			      Parcel.Manager.register(P.package, Parcel.id)
+			  end)
+	    end
+	  | worker _ = raise Subscript
+
+	(* Create the worker *)
+	val _ = worker (CommandLine.arguments ())
+    end

@@ -1,0 +1,226 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure OS           from "x-alice:/lib/system/OS"
+import structure FD           from "x-alice:/lib/constraints/FD"
+import structure FS           from "x-alice:/lib/constraints/FS"
+import structure Space        from "x-alice:/lib/constraints/Space"
+import structure Packer       from "x-alice:/lib/distribution/Packer"
+import structure Remote       from "x-alice:/lib/distribution/Remote"
+import structure MkTraceSpace from "MkTraceSpace"
+import structure Server       from "Server"
+import signature BEST_WORKER  from "BEST_WORKER-sig"
+import signature MANAGER      from "MANAGER-sig"
+import signature SCRIPT       from "SCRIPT-sig"
+
+functor MkBestWorker(structure Manager : MANAGER
+		     val id : int
+		     val script : Packer.package) : BEST_WORKER =
+    struct
+	(* Import Problem *)
+	structure MkScript = Packer.Unpack(val package = script signature S = SCRIPT
+					       where type sol = Manager.sol)
+	structure Script   = MkScript.MkScript(structure FD = FD structure FS = FS)
+	    
+	(* Build Type Converter *)
+	structure TC =
+	    struct
+		type sol = Manager.sol
+		type internal_sol = Script.internal_sol
+
+		val internalize = Script.internalize
+		val externalize = Script.externalize
+	    end
+
+	(* Build appropriate TraceSpace Module *)
+	structure TraceSpace = MkTraceSpace(structure T = TC)
+	    
+	(* Import Problem Types *)
+	type sol          = TC.sol
+	type internal_sol = TC.internal_sol
+	type trace        = Manager.trace
+
+	(* BestWorker Datatype Definition *)
+	type worker = {order    : internal_sol * internal_sol -> unit,
+		       root     : TraceSpace.tracespace,
+		       id       : int,
+		       fore     : TraceSpace.tracespace list ref,
+		       back     : TraceSpace.tracespace list ref,
+		       best     : sol option ref, 
+		       overhead : int ref,
+		       nodes    : int ref,
+		       task_id  : int ref}
+	    
+	(* BestWorker Instance *)
+	val self = {order    = Script.order,
+		    root     = TraceSpace.tracespace(Script.script, SOME (Script.order)),
+		    id       = id,
+		    fore     = ref nil,
+		    back     = ref nil,
+		    best     = ref NONE,
+		    overhead = ref 0,
+		    nodes    = ref 0,
+		    task_id  = ref 0} : worker
+
+	(* Lock Substitute *)
+	val serve = Server.server ()
+
+	(* BestWorker Methods Implementation *)
+	fun logMesg s =
+	    let
+		val {id=id, ...} = self
+	    in
+		Manager.log(id, Remote.now (), s)
+	    end
+
+	local
+	    fun updateExploreState(fore, back, best, s, sr) =
+		(case TraceSpace.ask s of
+		     Space.FAILED          => fore := sr
+		   | Space.SUCCEEDED       =>
+			 let
+			     val sol = TraceSpace.merge s
+			 in
+			     (Manager.collect sol;
+			      back := sr @ (!back);
+			      fore := nil;
+			      best := SOME sol)
+			 end
+		   | Space.ALTERNATIVES(n) =>
+			 let
+			     val c = TraceSpace.clone s
+			 in
+			     (TraceSpace.commit(s, Space.SINGLE 1);
+			      TraceSpace.commit(c, Space.RANGE(2, n));
+			      fore := s::c::sr)
+			 end)
+	in
+	    fun exploreMesg () =
+		let
+		    val {id=id, fore=fore, back=back, best=best, nodes=nodes, ...} = self
+		in
+		    (case !fore of
+			 nil   =>
+			     (case !back of
+				  nil   => (logMesg "no work left; sending idle";
+					    Manager.idle id)
+				| s::sr =>
+				      (logMesg "exploring";
+				       back := sr;
+				       fore := [s];
+				       TraceSpace.constrain(s, valOf(!best));
+				       serve exploreMesg))
+		       | s::sr =>
+				  (logMesg "exploring";
+				   nodes := (!nodes + 1);
+				   updateExploreState(fore, back, best, s, sr);
+				   serve exploreMesg))
+		end
+	end
+
+	fun startMesg(ts, id) =
+	    let
+		val {root=rootspace, overhead=overhead, fore=fore, back=back,
+		     nodes=nodes, task_id=task_id, ...} = self
+		val clone = TraceSpace.clone rootspace
+	    in
+		(TraceSpace.internalize(clone, ts);
+		 overhead := length ts;
+		 fore := [clone];
+		 back := nil;
+		 nodes := 0;
+		 task_id := id;
+		 serve exploreMesg)
+	    end
+
+	local
+	    fun canSteal ss =
+		(case ss of
+		     nil    => false
+		   | _::nil => false
+		   | _::sr  => true)
+		     
+	    fun canStealBest(fs, bs) =
+		(case bs of
+		     nil   => canSteal fs
+		   | _::br => br <> nil orelse fs <> nil)
+
+	    fun steal (s1::s1r, p) =
+		(case s1r of
+		     nil  => (Promise.fulfill(p, s1); nil)
+		   | _::_ => s1::steal(s1r, p))
+	in
+	    fun stealMesg v =
+		let
+		    val {fore=fore, back=back, best=best, overhead=overhead,
+			 nodes=nodes, task_id=task_id, ...} = self
+		in
+		    if canStealBest(!fore, !back) then
+			let
+			    val s = Promise.promise ()
+			in
+			    ((case !back of
+				  nil => fore := steal(!fore, s)
+				| _   => (back := steal(!back, s);
+					  TraceSpace.constrain(Promise.future s, valOf(!best))));
+				  logMesg "sharing work";
+				  Promise.fulfill(v, SOME (TraceSpace.externalize
+							   (Promise.future s),
+							   (!task_id),
+							   ((!nodes) + (!overhead)))))
+			end
+		    else (logMesg "no work to share";
+			  Promise.fulfill(v, NONE))
+		end
+	end
+
+	local
+	    fun isBetter(NONE, _, _)         = true
+	      | isBetter(SOME s1, s2, order) =
+		let
+		    val ts = Space.space (fn r => (order(TC.internalize s1, TC.internalize s2); r))
+		in
+		    not((Space.ask ts) = Space.FAILED)
+		end
+	in
+	    fun constrainMesg s =
+		let
+		    val {best=best, fore=fore, back=back, order=order, ...} = self
+		in
+		    if isBetter(!best, s, order) then
+			(back := ((!fore) @ (!back));
+			 fore := nil;
+			 best := SOME s)
+		    else ()
+		end
+	end 
+
+	fun stopMesg () =
+	    let
+		val {fore=fore, back=back, ...} = self
+	    in
+		(logMesg "stopped";
+		 fore := nil;
+		 back := nil)
+	    end
+
+	fun shutdownMesg () = OS.Process.exit(OS.Process.success)
+
+	(* BestWorker Interface Functions *)
+	val start     = Remote.proxy (fn v => serve (fn () => startMesg v))
+	val explore   = Remote.proxy (fn () => serve exploreMesg)
+	val steal     = Remote.proxy (fn v => serve (fn () => stealMesg v))
+	val constrain = Remote.proxy (fn v => serve (fn () => constrainMesg v))
+	val stop      = Remote.proxy (fn () => serve stopMesg)
+	val shutdown  = Remote.proxy (fn () => serve shutdownMesg)
+    end

@@ -1,0 +1,69 @@
+We are happy to announce version 1.2 of the Alice programming
+system:
+
+     http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with extensive
+support for type-safe programming of concurrent, distributed
+and open systems. It also features cutting-edge constraint
+programming technology in the tradition of Oz/Mozart.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and entire modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     constraint propagation and programmable search for
+     solving hard combinatorical problems
+  Virtual Machine
+     portable implementation with just-in-time compilation
+  Interactive tools
+     graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  New Byte Code Jitter
+     optimized internal byte code produced by jitting, which is
+     a lot faster than non-jitted code; unlike native code jitting
+     it is available on all platforms
+  Improvements to Interactive Toplevel
+     many tweaks and fixes in the GUI; new features include type hints,
+     and native look&feel on Windows (thanks to Gtk Wimp theme)
+  Overhaul of Gecode Constraint Library
+     many, many bug fixes in Gecode implementation and binding;
+     simplified interface to set constraints
+  Overhaul of Gtk Graphics Library
+     re-structured into submodules with proper dynamic type checking;
+     upgraded to Gtk 2.6, including bindings to GLib, Pango, and Atk
+  Regular Expression Library
+     a simple binding to the GNU Regex library is now included
+  64 Bit Support
+     Alice can now support 64 bit architectures; a first package
+     is available for Debian AMD 64
+  Bug Fixes
+     lots of bug fixes and minor improvements all over the place
+
+For a detailed list of changes please see:
+
+     http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Alice is open source under a BSD-style license. Source and binary
+packages are currently available for Linux, Mac OS, and Windows.
+
+Enjoy,
+
+        - The Alice Team

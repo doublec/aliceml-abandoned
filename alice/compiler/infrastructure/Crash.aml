@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Handling of internal inconsistencies. *)
+
+import signature CRASH from "CRASH-sig"
+
+
+structure Crash :> CRASH =
+struct
+    exception Crash of string
+end

@@ -1,0 +1,248 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                   from "Pervasive"
+import __primitive infix 6 + - infix 7 * / div
+        infix 4 = < >= > 
+       val op / val op + val op - val op * 
+       val op = val op < val op >= val op >    from "ToplevelValues"
+import __primitive structure Int               from "Int"
+import __primitive structure Real              from "Real"
+import __primitive structure IntInf            from "IntInf"
+import __primitive structure LargeInt          from "LargeInt"
+import __primitive structure LargeReal         from "LargeReal"
+import __primitive structure IEEEReal          from "IEEEReal"
+import __primitive signature TIME              from "TIME-sig"
+import __primitive structure Option            from "Option"
+import __primitive structure Vector            from "Vector"
+import __primitive structure StringCvt         from "StringCvt"
+import __primitive structure String            from "String"
+import __primitive structure General           from "General"
+import __primitive structure Char              from "Char"
+
+local
+    structure Time : TIME =
+    struct
+
+	type time		= LargeInt.int	(* milliseconds *)
+	type t			= time					(**)
+
+	exception Time
+
+	val thousand		= Int.toLarge 1_000
+	val million		= Int.toLarge 1_000_000
+	val realThousand	= Real.toLarge 1_000.0
+
+	val zeroTime		= Int.toLarge 0
+
+	fun fromReal x		= LargeReal.toLargeInt IEEEReal.TO_NEAREST
+						      (LargeReal.*(x,realThousand))
+	fun toReal t		= LargeReal.fromLargeInt t / realThousand
+
+	fun toSeconds t		    = IntInf.div (t, thousand)
+	fun toMilliseconds t	= t
+	fun toMicroseconds t	= IntInf.* (t, thousand)
+	fun toNanoseconds t	    = IntInf.* (t, million)
+	fun fromSeconds n	    = IntInf.* (n, thousand)
+	fun fromMilliseconds n	= n
+	fun fromMicroseconds n	= IntInf.div (n, thousand)
+	fun fromNanoseconds n	= IntInf.div (n, million)
+
+	val equal		        = IntInf.equal
+	val hash		        = LargeInt.hash
+
+    val quotRem = IntInf.quotRem
+        
+    (*********** conversion Time -> String **********)
+
+    fun largeInt s = Option.valOf (IntInf.fromString s)
+
+    (* maximum precision possible (nanosecond resolution) *)
+    val maxPrec     = 9
+    (* number of seconds in a nano second *)
+    val nanoSec     =    largeInt "1000000000"
+    (* rounding borders *)
+    val borders     = #[ largeInt "5"
+                       , largeInt "50"
+                       , largeInt "500"
+                       , largeInt "5000"
+                       , largeInt "50000"
+                       , largeInt "500000"
+                       , largeInt "5000000"
+                       , largeInt "50000000"
+                       , largeInt "500000000"
+                       ]
+                    
+    val zero        = IntInf.fromInt 0
+    val minusOne    = IntInf.fromInt (~1)
+    val one         = IntInf.fromInt 1
+    val two         = IntInf.fromInt 2
+    val ten         = IntInf.fromInt 10
+    val border      = Vector.sub (borders, 0)
+    
+    fun isEven i    = IntInf.rem (i, two) = zero
+
+    (* given a number [n] and a number of fractional
+       digits to split of [p], split [n] at [p] into
+       whole and fractional part.
+     *)
+    fun splitRaw (n, p) =
+        let
+            val border = Vector.sub (borders, Int.-(p, 1) )
+        in
+            quotRem (n, IntInf.* (border, two))
+        end
+    
+    (* given a number [n] and a number of fractional
+       digits to split of [p], split [n] at [p] into 
+       whole and fractional part, rounding if necessary.
+     *)
+    fun split (n:IntInf.int, p:Int.int) =
+        let
+            val border          = Vector.sub (borders, Int.- (p, 1) ) 
+            val (whole, frac)   = quotRem (n, IntInf.* (border, two))
+        in
+            case IntInf.compare (frac, border) of
+                LESS    => (whole, frac)
+              | GREATER => (IntInf.+ (whole, one), zero)
+              | EQUAL   => if isEven whole 
+                              then (whole, frac)
+                              else (IntInf.+ (whole, one), zero)
+        end
+
+    fun fmt prec t = 
+    let
+	    val nsec        = toNanoseconds t 
+        val (neg, nsec) = if Int.< (IntInf.sign nsec, 0) 
+                            then (1=1, IntInf.~ nsec) 
+                            else (1=0, nsec)
+	    fun fmtInt i = IntInf.fmt StringCvt.DEC i
+	    fun fmtSec (neg, i) = fmtInt (if neg then IntInf.~ i else i)
+    in
+        if prec < 0 then raise General.Size
+	    else if prec = 0 then
+            let val (sec, _)    = split (nsec, maxPrec)
+	        in
+		        fmtSec (neg, sec)
+	        end
+	    else if prec >= maxPrec then
+	        let val (sec, nsec) = quotRem (nsec, nanoSec)
+	            val frac        = fmtInt nsec
+            in
+                String.concat [fmtSec (neg, sec), ".",
+                        StringCvt.padRight #"0" prec frac]
+	        end
+	    else
+            let (* remove excess digits *) 
+                val (n, _)      = split (nsec, maxPrec - prec)
+                (* do the raw split *)
+                val (sec, frac) = splitRaw (n, prec) 
+                val frac        = fmtInt frac
+            in
+                String.concat [fmtSec (neg, sec), ".",
+                        StringCvt.padLeft #"0" prec frac]
+            end
+    end
+
+
+    fun toString msec = fmt 3 msec
+
+    
+    (*********** conversion String -> Time **********)
+  
+    fun pow10 n =
+        let 
+            val ten = IntInf.fromInt 10
+            fun loop i res =
+                if i = 0 then res
+                else loop (i - 1) (IntInf.* (res, ten))
+        in
+            loop n (IntInf.fromInt 1)
+        end
+
+    fun d2i d = assert (Char.isDigit d) do Int.toLarge (Char.ord d - Char.ord #"0")
+
+    fun ret (t, s) = Option.SOME (fromNanoseconds t, s)
+
+    fun loop' (sign, getc, s, res, n) =
+        case getc s of
+            Option.SOME (d, s') if (Char.isDigit d) =>
+            if n > maxPrec then loop' (sign, getc, s', res, n + 1)
+            else loop' (sign, getc, s', IntInf.+ (IntInf.* (res, ten), d2i d), n + 1)
+          | Option.SOME (_, s') =>
+            if n < maxPrec then ret (IntInf.* (IntInf.* (sign, res),
+                                               pow10 (maxPrec - n)), s')
+            else if n = 0 then Option.NONE
+            else ret (IntInf.* (sign, res), s')
+          | Option.NONE => 
+            if n < maxPrec then ret (IntInf.* (IntInf.* (sign, res),
+                                               pow10 (maxPrec - n)), s)
+            else if n = 0 then Option.NONE
+            else ret (IntInf.* (sign, res), s)
+ 
+            
+    fun loop (sign, getc, s, res) =
+        case getc s of
+            Option.SOME (d, s') if (Char.isDigit d) => 
+            loop (sign, getc, s', IntInf.+ (IntInf.* (res, ten), d2i d))
+          | Option.SOME (#".", s') =>
+            loop' (sign, getc, s', res, 0)
+          | _                                   => Option.NONE
+
+    (* scan unsigned time. *)
+    fun scanTime (sign, getc, s) =
+        case getc s of
+            Option.SOME (d, s') if (Char.isDigit d) =>
+            loop (sign, getc, s', d2i d)
+          | Option.SOME (#".", s') =>
+            loop' (sign, getc, s', zero, 0)
+          | _ =>
+            Option.NONE
+        
+    fun scan getc s =
+    let
+        fun sign s =
+            case getc s of
+                Option.NONE                      => Option.NONE
+              | Option.SOME (#"+", s')           => scanTime (one, getc, s')
+              | Option.SOME ((#"-" | #"~"), s')  => scanTime (minusOne, getc, s')
+              | _                         => scanTime (one, getc, s)
+    in
+        sign (StringCvt.skipWS getc s)
+    end
+
+
+    fun fromString s = StringCvt.scanString scan s
+
+    val op +                = IntInf.+
+    val op -                = IntInf.-
+    val op <                = IntInf.<
+    val op >                = IntInf.>
+    val op <=               = IntInf.<=
+    val op >=               = IntInf.>=
+    val compare             = IntInf.compare
+
+    end
+
+    __primitive eqtype time = "''Time.time"
+    __primitive functor Cast (structure X : TIME signature S) : S = "Cast"
+
+
+in
+    structure Time = Cast (signature S = TIME where type time = time
+			   structure X = Time)
+end

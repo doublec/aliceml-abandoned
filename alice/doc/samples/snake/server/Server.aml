@@ -1,0 +1,866 @@
+import structure DynArray       from "x-alice:/lib/utility/DynArray"
+import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
+import structure Random         from "x-alice:/lib/utility/Random"
+import structure Remote         from "x-alice:/lib/distribution/Remote"
+import structure ReadWriteLock  from "ReadWriteLock"
+import structure Color          from "../common/Color"
+import structure Protocol       from "../common/Protocol"
+import structure Snake          from "Snake"
+import structure Channel        from "Channel"
+import structure Util           from "Util"
+import structure PState         from "PState"
+import structure Arena          from "Arena"
+import structure HighscoreIO    from "HighscoreIO"
+import structure Highscore      from "../common/Highscore"
+import structure Print          from "x-alice:/lib/system/Print"
+
+val printVal = Print.printVal
+
+(* overview:
+
+         Locking:  There is basically one datastructure the participant 
+           map, which must be protected!  This map is only modified by:
+           connect, play and tick (and startServer but this procedure is
+           executed before any other and thus does not need to locked)
+ *)
+
+structure Server =
+struct
+    structure P         = Protocol
+    structure RWLock    = ReadWriteLock
+    
+    open Ctrl
+
+    (* a not yet done Remote Procedure Calls *)
+    type rpc = unit -> unit
+
+    (* collection of all events which might happen to a participant
+       in between two ticks. 
+     *)
+    type event = {
+        newDir  :       Protocol.direction option ref,
+        giveUp :        bool ref,
+        changedView :   Protocol.view_hint option ref,
+
+        disconnected :  bool ref
+        (* happens only once, after that we remove this participant *)
+    }
+ 
+    (** We store the following informations about every participant:
+            - what he wants to do next (event)
+            - his current state
+            - delayed RPCs (this server calling functions on the client)
+            - the interface
+      *)
+    datatype pdesc = PDESC of {
+        event       : event,
+        state       : PState.pstate,
+        interface   : P.client_interface,
+        rpcs        : rpc Channel.channel
+    }
+
+
+    fun initialEvent () = {
+            newDir          = ref NONE,
+            giveUp          = ref false,
+            disconnected    = ref false,
+            changedView     = ref NONE
+        }
+
+    (**
+       messages to be used with the Protocol.exception:
+      *)
+    val unknownClientMsg    = "Unknown / Disconnected client."
+    val gameStartedMsg      = "Game already started.  Maybe next time."
+
+    
+    exception ServerDisconnected 
+    (* raised when the player controlling the server disconnected.
+       the tournament is then finished.
+     *)
+    
+    val pcId = 0
+ 
+    (** compute possibly infinite stream of levels according
+        to config *)
+    fun computeLevels ({    dimensions, maxPlayers=players,
+                            levels = levelNum,
+                            ...
+                        } : Protocol.config) =
+        Util.tabulateStream (levelNum, 
+                fn _ => Arena.random { dimensions, players, walls = 10 } ) 
+
+
+    (**
+       [startServer ()] starts the server.
+     *)
+
+    fun startServer (pClient, config : Protocol.config) =
+        let
+            val partDescs       = DynArray.array (0, 
+                    lazy (raise P.Protocol unknownClientMsg) ) : pdesc DynArray.array
+           
+            fun mapPlayers (pd, f) = 
+                DynArray.foldl (fn (p as PDESC pd, res) =>
+                    if PState.isPlayer $ #state pd then
+                        f p :: res
+                    else res) [] pd                        
+
+            
+            fun mapPlayed (pd, f) = 
+                DynArray.foldl (fn (p as PDESC pd, res) =>
+                    if PState.played $ #state pd then
+                        f p :: res
+                    else res) [] pd                        
+            
+
+            val lock            = RWLock.lock ()
+
+            (* true when game has started and no more connections are possible
+             *)
+            val gameStarted = ref false
+
+             
+            (* number of connected players. 
+             *)
+            val playerNum       = ref 0
+
+            val goodies         = ref 0
+
+            (**
+              [actualInvoke (event, chan)]
+              processes outstanding RPCs on channel [chan].
+             *)
+
+            fun actualInvoke (event : event, chan) =
+                actualInvoke' (event, chan) handle Channel.Closed => ()
+
+            and actualInvoke' (event : event, chan) =
+                if not (! $ #disconnected event) then
+                    let
+                        val rpc     = Channel.receive chan
+                       
+                        fun remove (event : event, chan, num) =
+                            ((*print ("registering not responding client as " ^
+                                        "disconnected after " ^
+                                    Int.toString num ^ " tries to talk to him\n");*)
+                             #disconnected event := true;
+                             Channel.destroy chan;
+                             false)
+
+                        fun try (rpc, event : event, chan, num) =
+                            if num >= 3 then remove (event, chan, num)
+                            else 
+                                    (rpc (); true)
+                                handle Remote.Proxy _ =>
+                                    (* RPC call failed.
+                                       this shouldn't happen,
+                                       try again *)
+                                    try (rpc, event, chan, num + 1)
+                                |   _   =>
+                                    (* client has raised an exception
+                                       this shouldn't happen therefore remove 
+                                       it *)
+                                    remove (event, chan, num)
+                    in
+                        if try (rpc, event, chan, 1) then
+                            actualInvoke' (event, chan)
+                        else ()
+                    end 
+                else ()
+                    
+                 
+	    (* schedule an RPC call.  
+             *)
+            fun invoke (PDESC desc, f, a) = 
+                (* we do not need to worry about closed channels here,
+                   Channel.send on a closed channel does nothing *)
+                Channel.send (#rpcs desc, (fn () => f (#interface desc) a))
+
+                
+            (* Invoke f a on several clients simultaneously.
+             *)
+            fun invokeSeveral (clients, f, a) = 
+                List.app (fn c => invoke (c, f, a)) clients 
+               
+            
+            fun synchronize (partDescs, config : P.config) =
+                let
+                    val syncStepTime    = Int.toLarge 10
+
+                    fun isSynced partDescs =
+                        DynArray.all (fn PDESC pd => 
+                            !(#disconnected $ #event pd) orelse
+                            PState.isDisconnected (#state pd) orelse
+                            Channel.length (#rpcs pd) = 0) partDescs
+
+                    fun killSlowClients partDescs =
+                        DynArray.appi (fn (id, PDESC pd) =>
+                            let val chan    = #rpcs pd 
+                                val ev      = #event pd
+                            in
+                                if Channel.length chan > 0 then
+                                    ((*print ("disconnecting SLOW client " ^ Int.toString id ^ "\n");*)
+                                     #disconnected ev := true;
+                                     Channel.destroy chan)
+                                else ()
+                            end)  partDescs
+
+                    fun loop (pds, syncs) =
+                        if isSynced pds then syncs
+                        else if Int.toLarge syncs * syncStepTime > Time.toMilliseconds
+                                (#tick config) * Int.toLarge 4 then
+                            syncs before killSlowClients pds
+                        else (Thread.sleep $ Time.fromMilliseconds (Int.toLarge 10);
+                              loop (pds, syncs + 1) )
+                    
+                    val steps   = loop (partDescs, 0)
+                in
+                    if steps > 0 then
+                        TextIO.output (TextIO.stdErr, "sync " ^ 
+                            LargeInt.toString (syncStepTime * Int.toLarge steps) ^ "\n")
+                    else ()
+                end
+                    
+            fun invokeOnAll (partDescs, f, a) =
+                DynArray.app (fn c => invoke (c, f, a)) partDescs
+            
+            fun invokeOnAllBut (partDescs, id, f, a) =
+                DynArray.app (fn (c as PDESC pdesc) => 
+                    if PState.id (#state pdesc) = id then ()
+                    else invoke (c, f, a)) partDescs
+                
+            fun invokeOnAllNonPlayers (partDescs, f, a) =
+                DynArray.app (fn (c as PDESC pdesc) =>
+                    if PState.isPlayer (#state pdesc) then ()
+                    else invoke (c, f, a)) partDescs
+            
+            fun computePoints (partDescs, config : P.config) = 
+                mapPlayed (partDescs, fn (PDESC pd) => 
+                        PState.points (#state pd, #lives config)) 
+
+            (* for each participant send tick signal *)
+            fun sendTick (pointsChanged, diffs, time, config : P.config,
+                            partDescs) =
+                let
+                    val points = 
+                        if pointsChanged 
+                            then SOME $ computePoints (partDescs, config)
+                            else NONE
+                in
+                    DynArray.app (fn pd =>
+                        let
+                            fun getPos (PDESC pd) =
+                                case PState.position $ #state pd of
+                                    FST p           => SOME p
+                                |   SND NONE        => NONE
+                                |   SND (SOME id)   => getPos (
+                                        DynArray.sub (partDescs, id))
+                        in
+                           invoke (pd, #tick, (points, diffs, getPos pd, time)) 
+                        end) partDescs
+                end
+
+            (**
+              tick handler:
+                - process all events registered in event map
+                - move snakes
+                - ...
+             *)
+
+            val tick        = RWLock.syncWrite lock (fn (arena, ticks, 
+                                    config :P.config, partDescs) =>
+                let
+                    val disconns        = ref [] : (string * Color.color) list ref
+                    val quitters        = ref [] : (string * Color.color) list ref
+                    val dead            = ref [] 
+                    val snakes          = ref []
+                    val snakesInGate    = ref []
+
+                    val pointsChanged   = ref false 
+                    (* wether we have to include the points in 
+                       the call to update? *)
+                   
+                    fun cancelGame (PDESC pdesc) =
+                        (assert PState.played (#state pdesc);
+                         pointsChanged := true;
+                         PState.giveUp (#state pdesc))
+                        
+                    fun actualDisconnect (disconns, p as PDESC pdesc) =
+                        ((* remember that we processed this event *)
+                        #disconnected (#event pdesc) := false;
+                        if PState.played (#state pdesc) then
+                            (if PState.isPlaying (#state pdesc) orelse
+                                    PState.hasEnteredGate (#state pdesc) then
+                                Arena.removeSnake (arena,
+                                    PState.snake $ #state pdesc)
+                             else ();
+                             disconns := PState.nameNColor (#state pdesc)
+                                            :: ! disconns;
+                             cancelGame p)
+                        else ();
+                        PState.disconnect (#state pdesc);
+
+                        if PState.id (#state pdesc) = pcId then 
+                            (* priviliged client has disconnected! 
+                               abort the game.
+                             *)
+                            raise ServerDisconnected
+                        else ())
+
+                    fun giveUp (p as PDESC pdesc) =
+                        let
+                            val nc  = PState.nameNColor $ #state pdesc
+                        in
+                            quitters := nc :: !quitters;
+                            cancelGame p;
+			    if PState.isPlaying (#state pdesc) then
+				Arena.removeSnake (arena, PState.snake (#state pdesc))
+			    else
+                            	()
+                        end
+
+                    fun nextId (lastId, d) = 
+                        let
+                            fun playing (PDESC p) =
+                                PState.isPlaying $ #state p
+                            val max = DynArray.length partDescs
+                        in
+                            case lastId of
+                                NONE    => 
+                                (case DynArray.find playing partDescs of
+                                    NONE            => NONE
+                                |   SOME (PDESC pd) => 
+                                    SOME (PState.id $ #state pd) )
+                            |   SOME id => nextId' (id, (id + d) mod max, d)
+                        end
+
+                    and nextId' (last, c, d) =
+                        if c = last 
+                            then NONE
+                            else let 
+                                    val PDESC p = DynArray.sub (partDescs, c)
+                                    val state   = #state p
+                                    val max     = DynArray.length partDescs
+                                 in
+                                    if PState.isPlaying state 
+                                        then SOME $ PState.id state
+                                        else nextId' (last, (c + d) mod max, d)
+                                 end
+                        
+                                
+                    (* process events:
+                        turn, changeView, giveUp
+                     *)
+                    fun processUserEvent (part, ev: event, 
+                                    quitters, dead, snakes, snakesInGate) =
+                        let
+                            val PDESC pd    = part
+                            val state       = #state pd
+                        in
+                            if ! $ #giveUp ev then 
+                                (#giveUp ev := false; giveUp part) 
+                            else if PState.hasEnteredGate state then
+                                (* user can not do anything but giving up 
+                                   right now... *)
+                                snakesInGate := PState.snake state 
+                                    :: ! snakesInGate
+                            else if PState.isPlaying state then
+                                let
+                                    val snake   = PState.snake state
+                                in case ! $ #newDir ev of
+                                    NONE        => 
+                                    snakes := (snake, 
+                                        Snake.direction snake) :: !snakes
+                                |   SOME d      => 
+                                    (snakes := (snake, d) :: !snakes;
+                                     #newDir ev := NONE)
+                                end
+                            else if PState.isObserver state then
+                                case ! $ #changedView ev of
+                                    NONE    => ()
+                                |   SOME P.NEXT =>
+                                    (PState.changeObserved (state, 
+                                        nextId (PState.observed state, 1) );
+                                     #changedView ev := NONE)
+                                |   SOME P.PREV =>
+                                    (PState.changeObserved (state,
+                                        nextId (PState.observed state, ~1) );
+                                     #changedView ev := NONE)
+                            else ()
+                        end 
+                   
+                    (* we really should use Time.now here. But as of
+                       know it's not yet available in alice. 
+                     *) 
+                    (* estimated amount of time this game is running now *) 
+                    val time        = Time.fromMilliseconds (ticks * 
+                                        Time.toMilliseconds (#tick config))
+                    val timeout     = #timeout config
+                    (* amount of time left. *)
+                    val timeLeft    = Time.fromSeconds (LargeInt.max (Int.toLarge 0, 
+                            Time.toSeconds (Time.- (timeout, time))))
+                    
+                    (* percentage of time expired *)
+                    val expiredTime = Real.fromLargeInt (Time.toMilliseconds time) / 
+                                     Real.fromLargeInt (Time.toMilliseconds timeout)
+
+                    (* traverse event map :
+                        - remove disconnected clients
+                        - forall other clients process 
+                            turn , changeView, giveUp
+                     *)
+                    val _ = DynArray.appi (fn (id, PDESC pdesc) =>
+                        let val ev      = #event pdesc
+                            val part    = DynArray.sub (partDescs, id)
+                        in
+                            if ! $ #disconnected ev then 
+                                actualDisconnect (disconns, part)
+                            else 
+                                processUserEvent (part, ev, quitters,
+                                    dead, snakes, snakesInGate)
+                        end) partDescs;
+                   
+                    (* move all snakes *)
+                    val (res as { dead, grown, gateEntered, finished }) = 
+                            Arena.moveSnakes (arena, !snakes, !snakesInGate)
+
+                    fun sendDead [] = ()
+                      | sendDead deads = 
+                        invokeOnAll (partDescs, #playersDied, deads)
+                in 
+                    (* shall we place a goody ? *)
+                    if !goodies < #goodie config andalso 
+                                Random.real 1.0 <= #goodieProb config 
+                        then if Arena.placeGoody (arena, 3) 
+                                then goodies := !goodies + 1
+                                else ()
+                        else ();
+                            
+                    (* register dead snakes *) 
+                    List.foldl (fn (deadSnake, namesNColors) =>
+                        let val id          = Snake.id deadSnake
+                            val PDESC pd    = DynArray.sub (partDescs, id)
+                            val state       = #state pd
+                        in
+                            PState.die (state, #lives config);
+                            pointsChanged := true;
+                            PState.nameNColor state :: namesNColors
+                        end) [] dead ++ 
+                    sendDead;
+                    
+                    (* register grown snakes *)
+                    List.app (fn grownSnake =>
+                        let val id          = Snake.id grownSnake
+                            val PDESC pd    = DynArray.sub (partDescs, id)
+                            val state       = #state pd
+                        in
+                            PState.adjustPoints state;
+                            pointsChanged := true;
+                            (* snake has eaten a goodie *)
+                            goodies := !goodies - 1;
+
+                            if PState.canEnterGate (state, #gateTreshold config) then
+                                let val pos     = PState.gatePos state 
+                                in
+                                    Arena.openGate (arena, pos)
+                                end
+                            else ()
+                        end) grown;
+
+                    (* register snakes which entered a gate *)
+                    List.app (fn snakeInGate =>
+                        let val id          = Snake.id snakeInGate
+                            val PDESC pd    = DynArray.sub (partDescs, id)
+                            val state       = #state pd
+                        in
+                            PState.enterGate state;  
+                            pointsChanged := true
+                        end) gateEntered;
+                   
+                    (* register snakes which have finished this level *)
+                    List.app (fn finishedSnake =>
+                        let val id          = Snake.id finishedSnake
+                            val PDESC pd    = DynArray.sub (partDescs, id)
+                            val state       = #state pd
+                        in
+                            PState.finish (state, 1.0 - expiredTime);
+                            pointsChanged := true
+                        end) finished;
+                    
+                    (* timeout expired? *)
+                    if timeLeft = Time.fromMilliseconds (Int.toLarge 0) then
+                        (* kill all slow snakes! *)
+                        DynArray.foldl (fn (p as PDESC pdesc, deads) =>
+                            let val state   = #state pdesc
+                            in
+                                if PState.isPlaying state orelse
+                                    PState.hasEnteredGate state then 
+                                    (PState.die (state, #lives config);
+                                     pointsChanged := true;
+                                     PState.nameNColor state :: deads)
+                                else
+                                    deads
+                            end) [] partDescs ++
+                        sendDead
+                    else ();
+
+                    sendTick (!pointsChanged, Arena.commit arena, timeLeft, 
+                            config, partDescs);
+
+                    (* are there still some snakes left on the arena ? 
+                       and is there still time left *)
+                    List.length (!snakes) + List.length (!snakesInGate) 
+                        - List.length dead - List.length finished > 0 
+                        andalso timeLeft <> (Time.fromMilliseconds (Int.toLarge 0))
+                end)
+            
+            (**
+              [startMainLoop ()] starts the main game loop, which just 
+              executes all levels one after another.
+             *)
+              
+            fun finishTournament (partDescs, config : P.config)=
+                let
+                    val highscore' = HighscoreIO.load ()
+                    val highscore  = Highscore.merge (highscore',
+                                        computePoints (partDescs, config), 0)
+                    val _          = HighscoreIO.save highscore
+                in
+                    gameStarted := false;
+                    invokeOnAll (partDescs, #tournamentFinished, highscore)
+                end
+                
+            fun startMainLoop (config : P.config, partDescs) =
+                let
+                    fun mainLoop [] = finishTournament (partDescs, config)
+                      | mainLoop (l::ls) =
+                        (if executeLevel (l, partDescs, config) then
+                            mainLoop ls
+                         else 
+                            finishTournament (partDescs, config) )
+                in
+                    if !gameStarted 
+                        then raise P.Protocol gameStartedMsg
+                        else ()(*print "game started.\n"*);
+
+                    gameStarted := true;
+                   
+                    (* let the games begin ... ;-) *)
+                    invokeOnAll (partDescs, #tournamentStarted, ());
+
+                    ispawn (_file_, _line_) mainLoop (computeLevels config)
+                end
+
+            and startLevel (arena, startPos, config : P.config,
+                            partDescs) =
+                let
+                    (* all players who are allowed to play another level *)
+                    val players     = mapPlayers (partDescs, id)
+                    val dims        = #dimensions config 
+                    val levelInfo   = {
+                            dimensions = dims
+                        }
+                in
+                    (* reset number of goodies *)
+                    goodies := 0;
+                    
+                    (* no more players left? *)
+                    if null players 
+                        then false
+                        else (
+                            ListPair.app (fn (player as PDESC pd, (pos, dir)) =>
+                                let
+                                    val state       = #state pd
+                                    val (_,color)   = PState.nameNColor state
+                                in
+                                    (* place gate *)
+                                    Arena.placeGate (arena, pos, color);
+                                    (* setup state of snake *)
+                                    PState.startLevel (state, op* dims, pos, dir)
+                                end) (players, startPos);
+            
+                            invokeOnAll (partDescs, #levelStarted, levelInfo);
+                            (* send initial diff list *)
+                            let
+                                val diffs   = Arena.commit arena
+                                val pts     = SOME (computePoints 
+                                                (partDescs, config))
+                                val time    = #timeout config
+                            in
+                                ListPair.app (fn (p as PDESC pd, (pos, _)) =>
+                                    let
+                                        val state       = #state pd
+                                    in
+                                        invoke (p, #tick, 
+                                            (pts, diffs, SOME pos, time) )
+                                    end) (players, startPos);
+                                invokeOnAllNonPlayers (partDescs, #tick, 
+                                        (pts, diffs, NONE, time) )
+                            end;
+                            countdown (partDescs, 3))
+                end
+
+            and countdown (partDescs, n) =
+                let
+                    val p   = Promise.promise ()
+                    
+                    fun loop (partDescs, n) =
+                        if n < 0 
+                            then Promise.fulfill (p, true)
+                            else (Thread.sleep (Time.fromMilliseconds (Int.toLarge 990));
+                                  invokeOnAll (partDescs, #countdown, n);
+                                  loop (partDescs, n - 1) )
+                in
+                    ispawn (_file_, _line_) loop (partDescs, n);
+                    Promise.future p
+                end
+                
+            and finishLevel (arena) =
+                ()
+
+            and executeLevel ((arena, startPos), partDescs, 
+                                config : P.config) =
+                let
+                    fun ticker (level, ticks, config, partDescs) =
+                        (* if level not yet done *)
+                        if tick (level, ticks, config, partDescs)
+                            then 
+                                (* sleep some tick and execute next ticks *)
+                                (Thread.sleep $ #tick config;
+                                 synchronize (partDescs, config);
+                                 ticker (level, ticks + Int.toLarge 1, config, partDescs))
+                            else ()
+                in
+                    if startLevel (arena, startPos, config, partDescs) then
+                        (ticker (arena, Int.toLarge 0, config, partDescs);
+                         finishLevel (arena, partDescs);
+                         true)
+                        handle ServerDisconnected => false
+                    else false
+              end
+
+            (**
+               [startGame] can only be called by the priviliged client
+               (i.e the one that started the server)
+             *)
+            val startGame = RWLock.syncWrite lock 
+                            (fn () => startMainLoop (config, partDescs))
+
+
+            (**
+               all commands below just register appropriate information
+               in the appropriate event.  The actual "work" is then done 
+               at the start of the next tick loop.
+               
+               The next two functions capture the common behavior.
+             *)
+            
+            fun updateEvent1 (id, f) = RWLock.sync lock (fn a =>
+                let
+                    val PDESC pdesc = DynArray.sub (partDescs, id)
+                    val ev          = #event pdesc
+		    val st	    = #state pdesc
+                in
+		    if not (PState.isDisconnected st) then
+                    	f (id, Future.await ev, a)
+		    else
+			raise P.Protocol unknownClientMsg
+                end)
+                
+            fun updateEvent0 (id, f) = RWLock.sync lock (fn () =>
+                let
+                    val PDESC pdesc = DynArray.sub (partDescs, id)
+                    val ev          = #event pdesc
+		    val st	    = #state pdesc
+                in
+		    if not (PState.isDisconnected st) then
+                    	f (id, Future.await ev)
+		    else
+			raise P.Protocol unknownClientMsg
+                end)
+                
+            fun turn id = updateEvent1 (id, fn (id, ev, dir) => 
+                #newDir ev := SOME dir)
+
+            fun changeView id = updateEvent1 (id, fn (id, ev, chv) =>
+                #changedView ev := SOME chv)
+
+             fun giveUp id = updateEvent0 (id, fn (id, ev) =>
+                #giveUp ev := true)
+
+           
+            fun disconnect id = RWLock.syncWrite lock (fn () =>
+                let
+                    val PDESC pdesc = DynArray.sub (partDescs, id)
+                    val state       = #state pdesc
+                    val ev          = #event pdesc
+                in
+                    if PState.isDisconnected state then
+                        ()
+                    else if not (!gameStarted) then
+                        (* game not yet started. If this is a player
+                           we must inform the others *)
+                        ((*print (Int.toString id ^ " disconnected\n");*)
+                         if PState.isPlayer state then
+                            invokeOnAllBut (partDescs, id, 
+                                #playerDisconnected, 
+                                PState.nameNColor state)
+                         else ();
+                         Channel.close (#rpcs pdesc);
+                         (* Channel.destroy (#rpcs pdesc); *)
+                         PState.disconnect state)
+                    else 
+                        #disconnected ev := true
+                end)
+
+
+            (**
+              [play (name, color)] is called by the client when he has
+              selected name and color of his snake and wants to play.
+             *)
+            fun play id = RWLock.syncWrite lock (fn (name, color) =>
+                let
+                    val PDESC pdesc         = DynArray.sub (partDescs, id)
+                    val ev                  = #event pdesc
+                    val state               = #state pdesc
+                    val maxLen              = op* (#dimensions config)
+                in
+                    if !(#disconnected ev )
+                        then raise P.Protocol unknownClientMsg
+                        else ();
+                    if !gameStarted 
+                        then raise P.Protocol gameStartedMsg
+                        else ();
+                    if not (PState.isConnected state)
+                        then raise P.Protocol "already a player / spectator"
+                        else ();
+
+                    (* is there a location left on the map? *)
+                    if !playerNum < #maxPlayers config 
+                        then ((* yes got another player *)
+                              playerNum := !playerNum + 1;
+                              PState.play (state, maxLen, name, color);
+                              (* inform the others *)
+                              invokeOnAllBut (partDescs,
+                                id, #playersJoined, [(name, color)]); 
+                              true)
+                        else false 
+                end)
+
+            
+            (**
+              [watch ()] is called by the client when he just wants
+              to watch a game.
+             *)
+            fun watch id = RWLock.syncWrite lock (fn () =>
+                let
+                    val PDESC pdesc         = DynArray.sub (partDescs, id)
+                    val ev                  = #event pdesc
+                    val state               = #state pdesc
+                in
+                    if ! (#disconnected ev )
+                        then raise P.Protocol unknownClientMsg
+                        else ();
+                    if !gameStarted 
+                        then raise P.Protocol gameStartedMsg
+                        else ();
+                    if not (PState.isConnected state)
+                        then raise P.Protocol "already a player / spectator"
+                        else ();
+                    
+                    PState.watch state
+                end)
+             
+            (**
+              [createParticipant clientInterface] creates a new entry
+              in the participant map [partDescs]. The caller is responsible
+              for the locking!
+             *)
+            fun createParticipant interface =
+                let
+                    (* do not allow connections to a running game *)
+                    val _   = if !gameStarted 
+                                then raise P.Protocol gameStartedMsg
+                                else ()
+
+                    (* determine new id *)
+                    val id          = DynArray.length partDescs
+                    val event       = initialEvent ()
+                    val state       = PState.pstate id
+                    val chan        = Channel.channel ()
+                    val pd          = PDESC {
+                        event,
+                        interface,
+                        rpcs = chan,
+                        state
+                    }
+                in
+                    (* setup participant desc *)
+                    DynArray.resize (partDescs, id + 1, pd);
+
+                    (* start rpc handler *)
+                    ispawn (_file_, _line_) actualInvoke (event, chan);
+                    pd
+                end
+
+
+            (**
+              connect handler: 
+                - create new entry in participant map
+             *)
+            val connect     = RWLock.syncWrite lock (fn interface =>
+                let
+                    val (allPlayers, allPlayersLook)   = ListPair.unzip $ 
+                        mapPlayers (partDescs, fn (pdesc as PDESC p) => 
+                            (pdesc, PState.nameNColor $ #state p) )
+
+                    val pdesc as PDESC p    = createParticipant interface
+                    val id                  = PState.id $ #state p
+                in
+                    (* inform this client of the already connected clients *)
+                    invoke (pdesc, #playersJoined, allPlayersLook);
+                    
+                    (* return proxied server interface.
+                       NOTE: UCs are not allowed to call startGame
+                        therefore startGame = NONE
+                    *)
+                    (config, {
+                        disconnect  = Remote.proxy (disconnect id),
+                        play        = Remote.proxy (play id),
+                        turn        = Remote.proxy (turn id),
+                        changeView  = Remote.proxy (changeView id),
+                        giveUp      = Remote.proxy (giveUp id),
+                        startGame   = NONE,
+                        watch       = Remote.proxy (watch id)
+                    })
+                end)
+                
+            (**
+              here we actually create the priviliged client.  It's the
+              first one we add therefore it's id is always 0!
+             *)
+            val _       = createParticipant pClient
+            
+            (* allow other clients to connect *)
+            val package = pack (val connect = Remote.proxy connect) :> 
+                            P.SERVER_CONNECTOR
+
+            val ticket  = Remote.offer package
+           
+
+            val pcServerInterface = 
+                {   disconnect  = Remote.proxy (disconnect pcId),
+                    play        = Remote.proxy (play pcId),
+                    turn        = Remote.proxy (turn pcId),
+                    changeView  = Remote.proxy (changeView pcId),
+                    giveUp      = Remote.proxy (giveUp pcId),
+                    watch       = Remote.proxy (watch pcId),
+                    startGame   = SOME (Remote.proxy startGame)
+                }
+        in
+            (* return ticket and the server interface to 
+               the priviliged client *) 
+            (ticket, pcServerInterface)
+        end
+end

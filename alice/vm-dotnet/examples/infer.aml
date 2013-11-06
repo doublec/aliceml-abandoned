@@ -1,0 +1,422 @@
+(*
+ * A Hindley/Milner style type inferencer for a simple language.
+ *
+ * See signature EXPRESSION for supported language constructs.
+ *)
+
+import structure TextIO from "x-alice:/TextIO"
+import structure OS from "x-alice:/OS"
+
+signature SYMBOL =
+    sig
+	type id = string
+
+	type 'a t
+
+	exception Error
+
+	val new: unit -> 'a t
+	val push: 'a t * id * 'a -> unit
+	val pop: 'a t * id -> unit         (* Error *)
+	val top: 'a t * id -> 'a           (* Error *)
+    end
+
+structure Symbol :> SYMBOL =
+    struct
+	type id = string
+
+	type 'a t = (id * 'a list ref) list ref
+
+	exception Error
+
+	fun lookup (id, (id', r)::rest) =
+	    if id = id' then SOME r else lookup (id, rest)
+	  | lookup (_, nil) = NONE
+
+	fun new () = ref nil
+
+	fun push (table, id, x) =
+	    case lookup (id, !table) of
+		SOME r => r := x::(!r)
+	      | NONE => table := (id, ref [x])::(!table)
+
+	fun pop (table, id) =
+	    case lookup (id, !table) of
+		SOME (r as ref (_::rest)) => r := rest
+	      | _ => raise Error
+
+	fun top (table, id) =
+	    case lookup (id, !table) of
+		SOME (ref (x::_)) => x
+	      | _ => raise Error
+    end
+
+
+signature TYPE =
+    sig
+	type ty
+
+	type tycon = string
+
+	exception Unification of string   (* error message *)
+
+	val var: unit -> ty
+	val cons: tycon * ty list -> ty
+	val unify: ty * ty -> unit        (* Unification *)
+
+	val instantiate: ty -> ty
+	val beginScheme: unit -> unit
+	val endScheme: ty -> unit
+
+	val toString: ty -> string
+    end
+
+structure Type :> TYPE =
+    struct
+	type level = int
+	type tycon = string
+
+	datatype typeterm =
+	    TVar of level
+	  | TCons of tycon * ty list
+	  | TPtr of ty
+	withtype ty = typeterm ref
+
+	exception Unification of string   (* error message *)
+
+	val level = ref 0
+
+	fun var () = ref (TVar (!level))
+
+	fun cons (tycon, tys) = ref (TCons (tycon, tys))
+
+	fun lift (r, i, ty) =
+	    let
+		fun lift' (r' as ref (TVar j)) =
+		    if i < j then r' := TVar i
+		    else if r = r' then raise Unification "occur check failed"
+		    else ()
+		  | lift' (ref (TPtr ty)) = lift' ty
+		  | lift' (ref (TCons (tycon, tys))) = List.app lift' tys
+	    in
+		lift' ty; r := TPtr ty
+	    end
+
+	fun unify (ty, ty') =
+	    if ty = ty' then () else unify' (ty, ty')
+	and unify' (ref (TPtr ty), ty') = unify (ty, ty')
+	  | unify' (ty, ref (TPtr ty')) = unify (ty, ty')
+	  | unify' (r as ref (TVar i), r' as ref (TVar j)) =
+	    if i < j then r' := TPtr r else r := TPtr r'
+	  | unify' (r as ref (TVar i), ty) = lift (r, i, ty)
+	  | unify' (ty, r as ref (TVar i)) = lift (r, i, ty)
+	  | unify' (ref (TCons (tycon, tys)), ref (TCons (tycon', tys'))) =
+	    if tycon = tycon' andalso List.length tys = List.length tys'
+	    then ListPair.app unify (tys, tys')
+	    else raise Unification "type mismatch"
+
+	fun instantiate ty =
+	    let
+		val env = ref nil
+		fun instantiate' (r as ref (TVar ~1)) =
+		    (case List.find (fn (r', _) => r = r') (!env) of
+			 SOME (_, r') => r'
+		       | NONE =>
+			     let
+				 val r' = var ()
+			     in
+				 env := (r, r')::(!env); r'
+			     end)
+		  | instantiate' (r as ref (TVar _)) = r
+		  | instantiate' (ref (TCons (tycon, tys))) =
+			 cons (tycon, List.map instantiate' tys)
+		  | instantiate' (ref (TPtr ty)) = instantiate' ty
+	    in
+		instantiate' ty
+	    end
+
+	fun beginScheme () = level := !level + 1
+
+	fun endScheme ty =
+	    let
+		val n = !level
+		fun generalize (r as ref typeterm) =
+		    case typeterm of
+			TVar i => if i = n then r := TVar ~1 else ()
+		      | TCons (_, tys) => List.app generalize tys
+		      | TPtr ty => generalize ty
+	    in
+		level := n - 1;
+		generalize ty
+	    end
+
+	local
+	    exception Crash
+
+	    fun member (x, xs) = List.exists (fn y => y = x) xs
+
+	    fun adjoin (x, xs) = if member (x, xs) then xs else x::xs
+
+	    fun union (xs, ys) = List.foldr adjoin xs ys
+
+	    fun collect (r as ref (TVar _), rs) = adjoin (r, rs)
+	      | collect (ref (TCons (_, tys)), rs) =
+		List.foldl collect rs tys
+	      | collect (ref (TPtr ty), rs) =
+		collect (ty, rs)
+	in
+	    fun toString ty =
+		let
+		    val counter = ref (Char.ord #"a")
+		    val vars =
+			List.foldr (fn (r, rs) =>
+				    let
+					val n = !counter
+				    in
+					counter := n + 1;
+					(r, "'" ^ String.str (Char.chr n))::rs
+				    end) nil (collect (ty, nil))
+		    val quantified =
+			List.foldr (fn ((ref (TVar ~1), s), s') => " " ^ s ^ s'
+		      | ((ref _, _), s') => s') "" vars
+		    fun toString' (r as ref (TVar _), _) =
+			(case List.find (fn (r', _) => r' = r) vars of
+			     SOME (_, s) => s
+			   | NONE => raise Crash)
+		      | toString' (r as ref (TCons ("->", [ty1, ty2])), true) =
+			"(" ^ toString' (r, false) ^ ")"
+		      | toString' (ref (TCons ("->", [ty1, ty2])), false) =
+			toString' (ty1, true) ^ " -> " ^ toString' (ty2, false)
+		      | toString' (ref (TCons (tycon, nil)), _) = tycon
+		      | toString' (ref (TCons (tycon, ty::tys)), _) =
+			tycon ^ "(" ^ (List.foldl
+				       (fn (ty, s) =>
+					s ^ ", " ^ toString' (ty, false))
+				       (toString' (ty, false)) tys) ^ ")"
+		      | toString' (ref (TPtr ty), b) = toString' (ty, b)
+		in
+		    case quantified of
+			"" => toString' (ty, false)
+		      | s => "forall" ^ s ^ ": " ^ toString' (ty, false)
+		end
+	end
+    end
+
+
+signature EXPRESSION =
+    sig
+	type id = string
+
+	datatype exp =                 (* a ::= *)
+	    VarExp of id                  (* x *)
+	  | AppExp of exp * exp           (* a1 a2 *)
+	  | FnExp of id * exp             (* fn x => a *)
+	  | ValExp of id * exp * exp      (* val x = a1 in a2 *)
+    end
+
+structure Expression :> EXPRESSION =
+    struct
+	type id = string
+
+	datatype exp =                 (* a ::= *)
+	    VarExp of id                  (* x *)
+	  | AppExp of exp * exp           (* a1 a2 *)
+	  | FnExp of id * exp             (* fn x => a *)
+	  | ValExp of id * exp * exp      (* val x = a1 in a2 *)
+    end
+
+signature ELAB =
+    sig
+	val elab: Type.ty Symbol.t * Expression.exp -> string option
+    end
+
+structure Elab :> ELAB =
+    struct
+	open Expression
+
+	fun elab' (VarExp id, env) =
+	    Type.instantiate (Symbol.top (env, id))
+	  | elab' (AppExp (exp1, exp2), env) =
+	    let
+		val ty1 = elab' (exp1, env)
+		val ty2 = elab' (exp2, env)
+		val ty3 = Type.var ()
+		val ty = Type.cons ("->", [ty2, ty3])
+	    in
+		(Type.unify (ty1, ty); ty3)
+	    end
+	  | elab' (FnExp (id, exp), env) =
+	    let
+		val ty1 = Type.var ()
+		val _ = Symbol.push (env, id, ty1)
+		val ty2 = elab' (exp, env)
+		val _ = Symbol.pop (env, id)
+	    in
+		Type.cons ("->", [ty1, ty2])
+	    end
+	  | elab' (ValExp (id, exp1, exp2), env) =
+	    let
+		val _ = Type.beginScheme ()
+		val ty1 = elab' (exp1, env)
+		val _ = Type.endScheme ty1
+		val _ = Symbol.push (env, id, ty1)
+		val ty2 = elab' (exp2, env)
+		val _ = Symbol.pop (env, id)
+	    in
+		ty2
+	    end
+
+	fun elab (env, exp) =
+	    SOME (Type.toString (elab' (exp, env)))
+	    handle Type.Unification s => (TextIO.print (s ^ "\n"); NONE)
+    end
+
+open Expression;
+
+
+(* Test initial environment *)
+
+(*
+    val one: int
+    val true: bool
+    val false: bool
+    val id: 'a -> 'a
+    val before: 'a -> 'b -> 'a
+    val o: ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
+    val pair: 'a -> 'b -> ('a -> 'b -> 'c) -> 'c
+    val fst: (('a -> 'b -> 'a) -> 'c) -> 'c
+    val snd: (('a -> 'b -> 'b) -> 'c) -> 'c
+ *)
+
+local
+    val int = Type.cons ("int", [])
+    val bool = Type.cons ("bool", [])
+    infixr -->
+    fun a --> b = Type.cons ("->", [a, b])
+    fun cons (env, id, f) =
+	let
+	    val _ = Type.beginScheme ()
+	    val ty = f (Type.var (), Type.var (), Type.var ())
+	    val _ = Type.endScheme ty
+	in
+	    Symbol.push (env, id, ty)
+	end
+in
+    fun initializeEnv env =
+	(Symbol.push (env, "one", int);
+	 Symbol.push (env, "true", bool);
+	 Symbol.push (env, "false", bool);
+	 cons (env, "id", fn (a, _, _) => a --> a);
+	 cons (env, "before", fn (a, b, _) => a --> b --> a);
+	 cons (env, "o", fn (a, b, c) => (a --> b) --> (c --> a) --> c --> b);
+	 cons (env, "pair", fn (a, b, c) => a --> b --> (a --> b --> c) --> c);
+	 cons (env, "fst", fn (a, b, c) => ((a --> b --> a) --> c) --> c);
+	 cons (env, "snd", fn (a, b, c) => ((a --> b --> b) --> c) --> c))
+end
+
+val env = let
+	      val env = Symbol.new ()
+	  in
+	      initializeEnv env; env
+	  end
+
+fun print (SOME x) = TextIO.print (x ^ "\n")
+
+val _ = print (Elab.elab (env, VarExp "one"))
+
+val _ = print (Elab.elab (env, VarExp "true"))
+
+val _ = print (Elab.elab (env, VarExp "false"))
+
+val _ = print (Elab.elab (env, VarExp "id"))
+
+val _ = print (Elab.elab (env, VarExp "before"))
+
+val _ = print (Elab.elab (env, VarExp "o"))
+
+val _ = print (Elab.elab (env, VarExp "pair"))
+
+val _ = print (Elab.elab (env, VarExp "fst"))
+
+val _ = print (Elab.elab (env, VarExp "snd"))
+
+(*   val x = (fn z => val y = fn v => v in y z) in x   *)
+
+val test1 = ValExp ("x", FnExp ("z", ValExp ("y", FnExp ("v", VarExp "v"),
+					     AppExp (VarExp "y", VarExp "z"))),
+		    VarExp "x")
+
+val _ = print (Elab.elab (env, test1))
+
+(*   val x = (fn z => val y = fn v => z v in y) in x   *)
+
+val test2 = ValExp ("x", FnExp ("z", ValExp ("y", FnExp ("v",
+							 AppExp (VarExp "z",
+								 VarExp "v")),
+					     VarExp "y")), VarExp "x")
+
+val _ = print (Elab.elab (env, test2))
+
+(*   val seq = fn com1 => fn com2 => com2 in
+ *   val id = fn x => x in
+ *   seq (id 2) (id true)
+ *)
+
+val test3 =
+    ValExp ("seq", FnExp ("com1", FnExp ("com2", VarExp "com2")),
+	    ValExp ("id", FnExp ("x", VarExp "x"),
+		    AppExp (AppExp (VarExp "seq",
+				    AppExp (VarExp "id", VarExp "one")),
+			    AppExp (VarExp "id", VarExp "true"))))
+
+val _ = print (Elab.elab (env, test3))
+
+(*   fn x => (o fst) (pair x)   *)
+
+val test4 = FnExp ("x", AppExp (AppExp (VarExp "o", VarExp "fst"),
+				AppExp (VarExp "pair", VarExp "x")))
+
+val _ = print (Elab.elab (env, test4))
+
+(*   (o fst) ((o snd) ((o pair) before))   *)
+
+val test5 = AppExp (AppExp (VarExp "o", VarExp "fst"),
+		    AppExp (AppExp (VarExp "o", VarExp "snd"),
+			    AppExp (AppExp (VarExp "o", VarExp "pair"),
+				    VarExp "before")))
+
+val _ = print (Elab.elab (env, test5))
+
+(*
+    val f0 = fn x => fn y => (y x) x in
+    val f1 = fn x => f0 (f0 x) in
+    val f2 = fn x => f1 (f1 x) in
+    val f3 = fn x => f2 (f2 x) in f3
+ *)
+
+local
+    fun id i = "f" ^ Int.toString i
+    val f0 = FnExp ("x", FnExp ("y", AppExp (AppExp (VarExp "y", VarExp "x"),
+					     VarExp "x")))
+    fun fi i =
+	let
+	    val var = VarExp (id (i - 1))
+	in
+	    FnExp ("x", AppExp (var, AppExp (var, VarExp "x")))
+	end
+    fun f n =
+	let
+	    fun f' 0 = ValExp (id 0, f0, f' 1)
+	      | f' i = ValExp (id i, fi i,
+			       if i < n then f' (i + 1) else VarExp "one")
+	in
+	    f' 0
+	end
+in
+    val test6 = f 4
+end
+
+val _ = print (Elab.elab (env, test6))
+
+val _ = TextIO.print "done\n"
+val _ = OS.Process.exit OS.Process.success

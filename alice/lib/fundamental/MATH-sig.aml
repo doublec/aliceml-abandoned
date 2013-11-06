@@ -1,0 +1,46 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+
+signature MATH =
+sig
+    eqtype real
+
+    val e :		real
+    val pi :		real
+
+    val sqrt :		real -> real
+    val exp :		real -> real
+    val pow :		real * real -> real
+    val ln :		real -> real
+    val log10 :		real -> real
+
+    val sin :		real -> real
+    val cos :		real -> real
+    val tan :		real -> real
+    val asin :		real -> real
+    val acos :		real -> real
+    val atan :		real -> real
+    val atan2 :		real * real -> real
+    val sinh :		real -> real
+    val cosh :		real -> real
+    val tanh :		real -> real
+    val asinh :		real -> real					(**)
+    val acosh :		real -> real					(**)
+    val atanh :		real -> real					(**)
+end

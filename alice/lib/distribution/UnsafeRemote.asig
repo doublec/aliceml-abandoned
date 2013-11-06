@@ -1,0 +1,36 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_REMOTE_COMPONENT =
+    sig
+	structure UnsafeRemote:
+	    sig
+		exception Port
+		exception Ticket
+		exception SitedInternal
+		exception CorruptInternal
+		exception SitedArgument
+		exception SitedResult
+		exception Proxy of exn
+		exception Protocol of string
+		exception Remote of exn
+		exception Connection
+		exception Exit of int
+
+		val getLocalIP: unit -> string
+
+		val setCallback: ('ticket * 'a -> 'b) -> unit
+
+		val packValue: 'a -> string   (* SitedInternal *)
+		val unpackValue: string -> 'b (* CorruptInternal *)
+	    end
+    end

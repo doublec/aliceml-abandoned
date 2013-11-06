@@ -1,0 +1,53 @@
+(*
+ * Author:
+ *   Jens Regenberg, <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Reflect from "Reflect"
+import structure Type from "../rtt/Type"
+
+signature DEBUGGER =
+    sig
+	exception UnknownThread
+	exception InvalidThreadState
+	exception InvalidBreakpoint
+	
+	type value = Reflect.value
+	type position = string * int * int
+	type environment = (Type.t * (string * value * Type.t) list) list
+	type eventstream
+	    
+	datatype step_point_type =
+	    Application of value * Type.t * value vector
+	  | Conditional of value * Type.t
+	  | Constructor of value * Type.t * value vector
+	  | Handler     of exn
+	  | Raise       of exn
+	  | RecordSel   of int * value * Type.t
+	  | Spawn
+	  | Strict      of value * Type.t
+
+	datatype event = 
+	    Entry      of Thread.thread * position * step_point_type
+	  | Breakpoint of Thread.thread * position * step_point_type
+	  | Exit       of Thread.thread * position * value * Type.t option
+	  | UnCaught   of Thread.thread * exn
+	  | Blocked    of Thread.thread
+	  | Runnable   of Thread.thread
+	  | Terminated of Thread.thread
+
+	val getEventStream: unit -> eventstream
+	val readEventStream: eventstream -> event * eventstream
+	val singleStep: Thread.thread -> unit
+	val detach: Thread.thread -> unit
+	val breakpoint: unit -> unit
+	val getRuntimeEnvironment: Thread.thread -> environment
+	val lookup: Thread.thread * string -> value * Type.t
+    end

@@ -1,0 +1,63 @@
+Core language:
+
++ binary literals
++ longids as context-free syntax
++ allow op in signatures
+- allow with type instead of withtype?
+
+- var annotations in types?
+- curried fn? (grammar overhead)
++ more liberal syntax in fun
++ punning in record expressions
+- record update
++ vector constants and patterns
+- list and vector comprehensions
++ generalized rec
++ pattern guards
++ alternative patterns
++ negated patterns
++ generalized layered patterns
++ with patterns
+- matches in valbinds? (val SOME x = exp1 | x = exp2)
++ rec expressions derived form
+* nonlinear patterns? (better not, requires structural equality)
+
++ allow rebinding of =
++ allow rebinding of builtin identifiers
+* heavier overloaded literals (allow 4*3.3 and 0wx3f<<6)
+* overloaded vector expressions and patterns (poly vector or mono vectors)
+* make real an eqtype
++ more admissive treatment of ungeneralised type variables
+* polymorphic records
++ abstract type declarations (type t eqtype u)
++ open datatypes, turning exceptions into derived forms
+* existential types in datatypes
+* higher kind type variables (type ('a : . * . -> .) t = (int,bool) 'a)
+* specs as decs (semantics?)
+
++ prebound and primitive declarations for bootstrapping
++ overload and instance declarations for bootstrapping
++ __eqtype for bootstrapping
+
+Module language:
+
++ merge decs and topdecs
++ parenthesized structure and signature expressions
++ withtype derived form in signatures
+- open with structure expressions?
++ fixity specs
+
++ where for structures
++ structure synonyms
+* singleton signatures / open in signatures (DF)
+* hiding
+* signature composition
+* signature subtraction
+* parameterized signatures
+
++ higher-order functors (functors in structures and signatures)
+* longids as path expressions
+* functor signatures
++ top signatures
+* first-class structures/functors (exp ::= pack strexp, strexp ::= unpack exp :
+sigexp)

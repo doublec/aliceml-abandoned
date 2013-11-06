@@ -1,0 +1,36 @@
+(* Alice Snake 2.0 - WaitWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk        from "GtkSupport"
+
+import structure Color      from "../../common/Color"
+
+
+signature WAIT =
+sig
+
+    type wait_widget
+
+    type ready_cb = unit -> string option
+
+    type cancel_cb = unit -> unit
+
+    val mkWaitWindow       : Gtk.object * (string * Color.color) list * 
+	                                   ready_cb * cancel_cb * string -> 
+	                                                            wait_widget
+
+    val playersJoined      : wait_widget * (string * Color.color) list -> unit
+
+    val playerDisconnected : wait_widget * string * Color.color -> unit
+
+    val gameStarted        : wait_widget -> unit
+
+end

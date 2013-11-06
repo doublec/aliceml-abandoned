@@ -1,0 +1,558 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Crash              from "../infrastructure/Crash"
+import structure Source             from "../infrastructure/Source"
+import structure MkHashScopedImpMap from "../infrastructure/MkHashScopedImpMap"
+import structure Stamp              from "../common/Stamp"
+import structure StampMap           from "../common/StampMap"
+import structure Lab                from "Lab"
+import structure VId
+       structure TyVar
+       structure TyCon
+       structure SigId
+       structure StrId              from "Ids"
+import structure InputGrammar       from "InputGrammar"
+import structure Infix              from "Infix"
+import signature BIND_ENV           from "BIND_ENV-sig"
+
+
+structure BindEnv :> BIND_ENV =
+struct
+
+    type Info  = Source.region
+    type stamp = Stamp.t
+
+
+    (* The environment's domain *)
+
+    type Lab   = Lab.t
+    type VId   = VId.t
+    type TyVar = TyVar.t
+    type TyCon = TyCon.t
+    type StrId = StrId.t
+    type SigId = SigId.t
+
+    datatype Dom = INFIX of VId
+		 | LAB   of Lab
+		 | TYVAR of TyVar
+		 | VID   of VId
+		 | TYCON of TyCon
+		 | STRID of StrId
+		 | SIGID of SigId
+		 | SELF
+
+    fun hashDom(INFIX id) = String.hash(  VId.toString id)
+      | hashDom(LAB   id) = String.hash(  Lab.toString id)
+      | hashDom(TYVAR id) = String.hash(TyVar.toString id)
+      | hashDom(VID   id) = String.hash(  VId.toString id)
+      | hashDom(TYCON id) = String.hash(TyCon.toString id)
+      | hashDom(STRID id) = String.hash(StrId.toString id)
+      | hashDom(SIGID id) = String.hash(SigId.toString id)
+      | hashDom(SELF)     = 0
+
+
+    (* The map implementing the environment *)
+
+    structure Map = MkHashScopedImpMap(type t    = Dom
+				       val equal = op=
+				       val hash  = hashDom)
+
+
+    (* The environment's range *)
+
+    datatype InfAssoc  = datatype Infix.Assoc
+    type     InfStatus = Infix.InfStatus
+    datatype Arity     = NULLARY | UNARY | NARY
+    datatype IdStatus  = V | T of Arity * TyCon * int | C of Arity | R
+
+    datatype Env   = ENV of (Ran * stamp) Map.t  (* stamp is for ordering *)
+    and      EnvFn = EMPTY
+		   | PLAIN of Env
+		   | PARAM of stamp * EnvFn
+		   | ABSTR of stamp * StrId list * SigId * EnvFn list
+    and      Ran   = INF of Inf
+		   | FLD of Fld
+		   | VAR of Var
+		   | VAL of Val
+		   | TY  of Ty
+		   | STR of Str
+		   | SIG of Sig
+		   | STAMP of stamp
+
+    withtype Inf = Info * InfStatus
+    and      Fld = Info
+    and      Var = Info * stamp * bool
+    and      Val = Info * stamp * IdStatus
+    and      Ty  = Info * stamp * {CE : Env, arity : int, def : (InputGrammar.TyVarSeq * InputGrammar.Ty) option, eq : bool option, ext : bool}
+    and      Str = Info * stamp * EnvFn
+    and      Sig = Info * stamp * EnvFn
+
+    type TyStr = {CE : Env, arity : int, def : (InputGrammar.TyVarSeq * InputGrammar.Ty) option, eq : bool option, ext : bool}
+    type t = Env
+
+    fun asInfo(SOME(INF x,_)) = SOME x | asInfo _ = NONE
+    fun asFldo(SOME(FLD x,_)) = SOME x | asFldo _ = NONE
+    fun asVaro(SOME(VAR x,_)) = SOME x | asVaro _ = NONE
+    fun asValo(SOME(VAL x,_)) = SOME x | asValo _ = NONE
+    fun asTyo (SOME(TY  x,_)) = SOME x | asTyo  _ = NONE
+    fun asStro(SOME(STR x,_)) = SOME x | asStro _ = NONE
+    fun asSigo(SOME(SIG x,_)) = SOME x | asSigo _ = NONE
+    fun asStampo(SOME(STAMP x,_)) = SOME x | asStampo _ = NONE
+
+    fun appInf f (INFIX id, (INF x,_)) = f(id,x) | appInf f _ = ()
+    fun appFld f (LAB   id, (FLD x,_)) = f(id,x) | appFld f _ = ()
+    fun appVar f (TYVAR id, (VAR x,_)) = f(id,x) | appVar f _ = ()
+    fun appVal f (VID   id, (VAL x,_)) = f(id,x) | appVal f _ = ()
+    fun appTy  f (TYCON id, (TY  x,_)) = f(id,x) | appTy  f _ = ()
+    fun appStr f (STRID id, (STR x,_)) = f(id,x) | appStr f _ = ()
+    fun appSig f (SIGID id, (SIG x,_)) = f(id,x) | appSig f _ = ()
+
+    fun foldInf f (INFIX id, (INF x,_), a) = f(id,x,a) | foldInf f (_,_,a) = a
+    fun foldFld f (LAB   id, (FLD x,_), a) = f(id,x,a) | foldFld f (_,_,a) = a
+    fun foldVar f (TYVAR id, (VAR x,_), a) = f(id,x,a) | foldVar f (_,_,a) = a
+    fun foldVal f (VID   id, (VAL x,_), a) = f(id,x,a) | foldVal f (_,_,a) = a
+    fun foldTy  f (TYCON id, (TY  x,_), a) = f(id,x,a) | foldTy  f (_,_,a) = a
+    fun foldStr f (STRID id, (STR x,_), a) = f(id,x,a) | foldStr f (_,_,a) = a
+    fun foldSig f (SIGID id, (SIG x,_), a) = f(id,x,a) | foldSig f (_,_,a) = a
+
+    fun fold (fInf, fFld, fVar, fVal, fTy, fStr, fSig) =
+	fn ((INFIX id, (INF x,_)), a) => fInf(id,x,a)
+	 | ((LAB   id, (FLD x,_)), a) => fFld(id,x,a)
+	 | ((TYVAR id, (VAR x,_)), a) => fVar(id,x,a)
+	 | ((VID   id, (VAL x,_)), a) => fVal(id,x,a)
+	 | ((TYCON id, (TY  x,_)), a) => fTy(id,x,a)
+	 | ((STRID id, (STR x,_)), a) => fStr(id,x,a)
+	 | ((SIGID id, (SIG x,_)), a) => fSig(id,x,a)
+	 | (_, a) => a
+
+
+    (* Collision exceptions *)
+
+    exception CollisionInf of VId
+    exception CollisionFld of Lab
+    exception CollisionVal of VId
+    exception CollisionTy  of TyCon
+    exception CollisionVar of TyVar
+    exception CollisionStr of StrId
+    exception CollisionSig of SigId
+
+    fun transformCollision(INFIX id)	= raise CollisionInf id
+      | transformCollision(LAB   id)	= raise CollisionFld id
+      | transformCollision(TYVAR id)	= raise CollisionVar id
+      | transformCollision(VID   id)	= raise CollisionVal id
+      | transformCollision(TYCON id)	= raise CollisionTy  id
+      | transformCollision(STRID id)	= raise CollisionStr id
+      | transformCollision(SIGID id)	= raise CollisionSig id
+      | transformCollision(SELF)	= raise Crash.Crash "BindEnv.collision"
+
+
+    (* Actual operations *)
+
+    fun env()				= ENV(Map.map())
+    val empty				= env()
+    fun clone(ENV E)			= ENV(Map.clone E)
+    fun cloneScope(ENV E)		= ENV(Map.cloneScope E)
+    fun splitScope(ENV E)		= ENV(Map.splitScope E)
+
+    fun insertScope(ENV E)		= Map.insertScope E
+    fun inheritScope(ENV E1, ENV E2)	= Map.inheritScope(E1,E2)
+    fun removeScope(ENV E)		= Map.removeScope E
+    fun removeAll(ENV E)		= Map.removeAll E
+    fun mergeScope(ENV E)		= Map.mergeScope E
+    fun mergeDisjointScope(ENV E)	= Map.mergeDisjointScope E
+					  handle Map.Collision coll =>
+						 transformCollision coll
+
+    fun restamp E			= (Map.modify (fn(x,_)=>(x,Stamp.stamp())) E; E)
+    fun union(ENV E1, ENV E2)		= Map.union(E1, restamp E2)
+    fun unionDisjoint(ENV E1, ENV E2)	= Map.unionDisjoint(E1, restamp E2)
+					  handle Map.Collision coll =>
+						 transformCollision coll
+
+    fun size(ENV E)			= Map.size E
+    fun sizeScope(ENV E)		= Map.sizeScope E
+
+    fun insert(ENV E, dom, ran)		= Map.insert(E, dom,(ran,Stamp.stamp()))
+    fun insertSelf(E)			= insert(E, SELF, STAMP(Stamp.stamp()))
+    fun insertInf(E, id, x)		= insert(E, INFIX id, INF x)
+    fun insertFld(E, id, x)		= insert(E, LAB   id, FLD x)
+    fun insertVar(E, id, x)		= insert(E, TYVAR id, VAR x)
+    fun insertVal(E, id, x)		= insert(E, VID   id, VAL x)
+    fun insertTy (E, id, x)		= insert(E, TYCON id, TY  x)
+    fun insertStr(E, id, x)		= insert(E, STRID id, STR x)
+    fun insertSig(E, id, x)		= insert(E, SIGID id, SIG x)
+
+    fun insertDisjoint(ENV E, dom, ran)	= Map.insertDisjoint(E, dom,
+							    (ran, Stamp.stamp()))
+    fun insertDisjointInf(E, id, x)	= insertDisjoint(E, INFIX id, INF x)
+					  handle Map.Collision(INFIX id) =>
+						 raise CollisionInf id
+    fun insertDisjointFld(E, id, x)	= insertDisjoint(E, LAB id, FLD x)
+					  handle Map.Collision(LAB id) =>
+						 raise CollisionFld id
+    fun insertDisjointVar(E, id, x)	= insertDisjoint(E, TYVAR id, VAR x)
+					  handle Map.Collision(TYVAR id) =>
+						 raise CollisionVar id
+    fun insertDisjointVal(E, id, x)	= insertDisjoint(E, VID id, VAL x)
+					  handle Map.Collision(VID id) =>
+						 raise CollisionVal id
+    fun insertDisjointTy(E, id, x)	= insertDisjoint(E, TYCON id, TY x)
+					  handle Map.Collision(TYCON id) =>
+						 raise CollisionTy id
+    fun insertDisjointStr(E, id, x)	= insertDisjoint(E, STRID id, STR x)
+					  handle Map.Collision(STRID id) =>
+						 raise CollisionStr id
+    fun insertDisjointSig(E, id, x)	= insertDisjoint(E, SIGID id, SIG x)
+					  handle Map.Collision(SIGID id) =>
+						 raise CollisionSig id
+
+    fun lookupSelf(ENV E)		= asStampo(Map.lookup(E, SELF))
+    fun lookupInf(ENV E, id)		= asInfo(Map.lookup(E, INFIX id))
+    fun lookupFld(ENV E, id)		= asFldo(Map.lookup(E, LAB   id))
+    fun lookupVar(ENV E, id)		= asVaro(Map.lookup(E, TYVAR id))
+    fun lookupVal(ENV E, id)		= asValo(Map.lookup(E, VID   id))
+    fun lookupTy (ENV E, id)		= asTyo (Map.lookup(E, TYCON id))
+    fun lookupStr(ENV E, id)		= asStro(Map.lookup(E, STRID id))
+    fun lookupSig(ENV E, id)		= asSigo(Map.lookup(E, SIGID id))
+
+    fun lookupScopeInf(ENV E, id)	= asInfo(Map.lookupScope(E, INFIX id))
+    fun lookupScopeFld(ENV E, id)	= asFldo(Map.lookupScope(E, LAB   id))
+    fun lookupScopeVar(ENV E, id)	= asVaro(Map.lookupScope(E, TYVAR id))
+    fun lookupScopeVal(ENV E, id)	= asValo(Map.lookupScope(E, VID   id))
+    fun lookupScopeTy (ENV E, id)	= asTyo (Map.lookupScope(E, TYCON id))
+    fun lookupScopeStr(ENV E, id)	= asStro(Map.lookupScope(E, STRID id))
+    fun lookupScopeSig(ENV E, id)	= asSigo(Map.lookupScope(E, SIGID id))
+
+    fun appiInfs f (ENV E)		= Map.appi (appInf f) E
+    fun appiFlds f (ENV E)		= Map.appi (appFld f) E
+    fun appiVars f (ENV E)		= Map.appi (appVar f) E
+    fun appiVals f (ENV E)		= Map.appi (appVal f) E
+    fun appiTys  f (ENV E)		= Map.appi (appTy  f) E
+    fun appiStrs f (ENV E)		= Map.appi (appStr f) E
+    fun appiSigs f (ENV E)		= Map.appi (appSig f) E
+    fun appiScopeVals f (ENV E)		= Map.appiScope (appVal f) E
+
+    fun foldiInfs f a (ENV E)		= Map.foldi (foldInf f) a E
+    fun foldiFlds f a (ENV E)		= Map.foldi (foldFld f) a E
+    fun foldiVars f a (ENV E)		= Map.foldi (foldVar f) a E
+    fun foldiVals f a (ENV E)		= Map.foldi (foldVal f) a E
+    fun foldiTys  f a (ENV E)		= Map.foldi (foldTy  f) a E
+    fun foldiStrs f a (ENV E)		= Map.foldi (foldStr f) a E
+    fun foldiSigs f a (ENV E)		= Map.foldi (foldSig f) a E
+
+    fun compareItem((_,(_,z1)), (_,(_,z2))) = Stamp.compare(z1,z2)
+
+    fun foldli fs a (ENV E) =
+	let
+	    val items  = Map.foldi (fn(x,y,a) => (x,y)::a) nil E
+	    val items' = List.sort compareItem items
+	in
+	    List.foldl (fold fs) a items'
+	end
+
+    fun foldri fs a (ENV E) =
+	let
+	    val items  = Map.foldi (fn(x,y,a) => (x,y)::a) nil E
+	    val items' = List.sort compareItem items
+	in
+	    List.foldr (fold fs) a items'
+	end
+
+
+    (* Union (approximation) *)
+
+    fun unionInf(E1,E2)			= appiInfs (fn(id,x) =>
+						     insertInf(E1,id,x)) E2
+
+    fun unionCompose(ENV E1, ENV E2)		= Map.unionWith compose'
+						    (E1, restamp E2)
+
+    and compose'((x1,z1), (x2,z2))		= (compose(x1,x2), z1)
+    and compose(INF(I1,fix1),   INF(I2,fix2))	= INF(I1,fix2)
+      | compose(FLD(I1),        FLD(I2))	= FLD(I1)
+      | compose(VAR(I1,z1,b1),  VAR(I2,z2,b2))	= VAR(I1,z1,b1 orelse b2)
+      | compose(VAL(I1,z1,is1), VAL(I2,z2,is2))	= VAL(I1,z1,
+						    composeIdStatus(is1,is2))
+      | compose(TY (I1,z1,ts1), TY (I2,z2,ts2))	= TY(I1,z1,composeTyStr(ts1,ts2))
+      | compose(STR(I1,z1,F1),  STR(I2,z2,F2))	= ( composeEnvFn(F1,F2)
+						  ; STR(I1,z1,F1) )
+      | compose(SIG(I1,z1,F1),  SIG(I2,z2,F2))	= ( SIG(I1,z1,F1) )
+      | compose(STAMP(z1),      STAMP(z2))	= ( STAMP(z1) )
+      | compose _				= raise Crash.Crash
+							"BindEnv.compose"
+    and composeEnvFn(F1, EMPTY)			= ()
+      | composeEnvFn(EMPTY, F2)			= ()
+      | composeEnvFn(PLAIN E1, PLAIN E2)	= unionCompose(E1,E2)
+      | composeEnvFn(PARAM(z1,F1),PARAM(z2,F2))	= composeEnvFn(F1,F2) (*UNFIN*)
+      | composeEnvFn(ABSTR args1, ABSTR args2)	= ()
+      | composeEnvFn _				= raise Crash.Crash
+							"BindEnv.composeEnvFn"
+    and composeIdStatus(V, is)			= is
+      | composeIdStatus(is, V)			= is
+      | composeIdStatus(is1, is2)		= is2
+
+    and composeTyStr({CE=CE1, arity=arity1, def=def1, eq=eq1, ext=ext1},
+		     {CE=CE2, arity=arity2, def=def2, eq=eq2, ext=ext2}) =
+	(unionCompose(CE1,CE2); {CE=CE1, arity=arity1,
+				 def=composeDef(def1,def2),
+				 eq=composeEq(eq1,eq2),
+				 ext=ext1 orelse ext2})
+
+    and composeDef(NONE, def2) = def2
+      | composeDef(def1, _)    = def1
+
+    and composeEq(NONE, eq2) = eq2
+      | composeEq(eq1, NONE) = eq1
+      | composeEq(SOME b1, SOME b2) = SOME(b1 andalso b2)
+
+    (* Extracting an infix environment *)
+
+    fun infEnv E vid				= case lookupInf(E, vid)
+						    of NONE        => NONE
+						     | SOME(_,inf) => inf
+
+    (* Operations on env functions *)
+
+    (* Note that in the case of errors we do not bail out, but generate
+     * dummy environments in error cases (marked with (**)).
+     * Elaboration will later detect the cause of the error and
+     * can give more useful error messages.
+     *)
+
+    (* Instantiation (cloning) *)
+
+    exception Instance
+
+    fun instance F = instance' (StampMap.map()) F
+
+    and instance' Z (EMPTY) = EMPTY
+
+      | instance' Z (PLAIN(ENV E)) =
+	let
+	    val E' = Map.map()
+	    val z' = Stamp.stamp()
+	    val z  = Option.valOf(lookupSelf(ENV E))
+		     handle Option.Option => raise Instance
+	in
+	    StampMap.insert(Z,z,z');
+	    Map.appi (instanceItem(Z,E')) E;
+	    PLAIN(ENV E')
+	end
+
+      | instance' Z (PARAM(z,F)) =
+	let
+	    val z' = Stamp.stamp()
+	in
+	    StampMap.insert(Z,z,z');
+	    PARAM(z', instance' Z F)
+	end
+
+      | instance' Z (ABSTR(z,strids,sigid,Fs)) =
+	let
+	    val z' = Option.getOpt(StampMap.lookup(Z,z), z)
+	in
+	    ABSTR(z', strids, sigid, List.map (instance' Z) Fs)
+	end
+
+    and instanceItem (Z,E) (SELF, (STAMP z,z')) =
+	    Map.insert(E, SELF, (STAMP(Option.valOf(StampMap.lookup(Z,z))), z'))
+      | instanceItem (Z,E) (strid, (STR(I,z,F),z')) =
+	    Map.insert(E, strid, (STR(I, z, instance' Z F), z'))
+      | instanceItem (Z,E) (strid, (SIG(I,z,F),z')) =
+	    Map.insert(E, strid, (SIG(I, z, instance' Z F), z'))
+      | instanceItem (Z,E) (id,x) =
+	    Map.insert(E,id,x)
+
+
+    (* Application *)
+
+    fun apply(PARAM(z,F1), F2)			= let val Z   = StampMap.map()
+						      val F1' = instance F1
+						  in  StampMap.insert(Z,z,F2);
+						      subst Z F1'
+						  end
+      | apply(ABSTR(z,strids,sigid,Fs), F)	= ABSTR(z,strids,sigid, Fs@[F])
+      | apply(F, _)				= F (**)
+
+    and revApply(F2,F1)				= apply(F1,F2)
+
+    and subst Z F =
+	(* Urgs, have to do expensive fixpoint iteration here, because our
+	 * environments are not ordered.
+	 * Strongly suggests that we have to rethink our representation
+	 * of environments and this whole binding analysis / elaboration
+	 * separation business... :-( 
+	 *)
+	let
+	    val b = ref true
+	    val f = ref F
+	in
+	    while !b do ( b := false ; f := subst' (Z,b) (!f) );
+	    !f
+	end
+
+    and subst' (Z,b) EMPTY =
+	    EMPTY
+
+      | subst' (Z,b) (F as PLAIN(ENV E)) =
+	let
+	    val items' = Map.foldi (substItem(Z,b)) [] E
+	in
+	    List.app (fn(x,y) => Map.insert(E,x,y)) items';
+	    F
+	end
+
+      | subst' (Z,b) (PARAM(z,F)) =
+	    PARAM(z, subst' (Z,b) F)
+
+      | subst' (Z,b) (ABSTR(z,strids,sigid,Fs)) =
+	let
+	    val Fs' = List.map (subst'(Z,b)) Fs
+	in
+	    case StampMap.lookup(Z,z)
+	      of SOME F => ( b := true
+			   ; List.foldl revApply (substAbs(strids,sigid,F)) Fs'
+			   )
+	       | NONE   => ABSTR(z,strids,sigid,Fs')
+	end
+
+    and substItem (Z,b) (STRID id, (STR(I,z,F),z'), items) =
+	let
+	    val F' = subst' (Z,b) F
+	in
+	    StampMap.insert(Z,z,F');
+	    (STRID id, (STR(I,z,F'),z')) :: items
+	end
+
+      | substItem (Z,b) (SIGID id, (SIG(I,z,F),z'), items) =
+	let
+	    val F' = subst' (Z,b) F
+	in
+	    (SIGID id, (SIG(I,z,F'),z')) :: items
+	end
+
+      | substItem (Z,b) (x, y, items) =
+	    items
+
+    and substAbs([], sigid, PLAIN E) =
+	   (case lookupSig(E, sigid)
+	      of SOME(I,z,F) => F
+	       | NONE        => EMPTY		(**)
+	   )
+      | substAbs(strid::strids, sigid, PLAIN E) =
+	   (case lookupStr(E, strid)
+	      of SOME(I,z,F) => substAbs(strids, sigid, F)
+	       | NONE        => EMPTY		(**)
+	   )
+      | substAbs _ = EMPTY			(**)
+
+
+    (* Strengthening *)
+
+    exception Strengthen
+
+    fun strengthen(z,F) =
+	let
+	    val Z = StampMap.map()
+
+	    fun calcSubst(strids, PLAIN E) =
+		(
+		    StampMap.insert(Z, Option.valOf(lookupSelf E), (z,strids))
+		    handle Option.Option => raise Strengthen;
+		    appiStrs (calcSubstItem strids) E
+		)
+	    |   calcSubst _ = ()
+
+	    and calcSubstItem strids (id, (I,z',F)) =
+		(
+		    StampMap.insert(Z, z', (z,strids));
+		    calcSubst(strids@[id], F)
+		)
+	in
+	    calcSubst([],F);
+	    strengthen' Z F
+	end
+
+    and strengthen' Z EMPTY =
+	    EMPTY
+
+      | strengthen' Z (F as PLAIN(ENV E)) =
+	let
+	    val items' = Map.foldi (strengthenItem Z) [] E
+	in
+	    List.app (fn(x,y) => Map.insert(E,x,y)) items';
+	    F
+	end
+
+      | strengthen' Z (F as PARAM(z,F')) =
+	    ( strengthen' Z F' ; F )
+
+      | strengthen' Z (ABSTR(z,strids,sigid,Fs)) =
+	let
+	    val Fs' = List.map (strengthen' Z) Fs
+	in
+	    case StampMap.lookup(Z,z)
+	      of SOME(z',strids') => ABSTR(z',strids'@strids,sigid,Fs')
+	       | NONE             => ABSTR(z,strids,sigid,Fs')
+	end
+
+    and strengthenItem Z (STRID id, (STR(I,z,F),z'), items) =
+	    (STRID id, (STR(I, z, strengthen' Z F), z')) :: items
+      | strengthenItem Z (SIGID id, (SIG(I,z,F),z'), items) =
+	    (SIGID id, (SIG(I, z, strengthen' Z F), z')) :: items
+      | strengthenItem Z (x, y, items) =
+	    items
+
+
+    (* Matching *)
+
+    fun match(PLAIN(ENV E1), F2 as PLAIN(ENV E2)) =
+	let
+	    val items' = Map.foldi (matchItem E1) [] E2
+	in
+	    List.app (fn(x,y) => Map.insert(E2,x,y)) items';
+	    F2
+	end
+
+      | match(PARAM(z1,F1), PARAM(z2,F2)) = PARAM(z1, match(F1,F2))
+      | match(F1, EMPTY)		  = F1
+      | match(F1, ABSTR _)                = F1
+      | match(F1, _)                      = F1 (**)
+
+    and matchItem E1 (SELF, stamp, items) =
+	let
+	    val stamp = Option.valOf(Map.lookup(E1,SELF))
+	in
+	    (SELF,stamp) :: items
+	end
+
+      | matchItem E1 (strid, str2 as (STR(I2,z2,F2), _), items) =
+	let
+	    val str = case Map.lookup(E1,strid)
+			of SOME(STR(I1,z1,F1),z') => (STR(I2, z1, match(F1,F2)),z')
+			 | _                      => str2 (**)
+	in
+	    (strid,str) :: items
+	end
+
+      | matchItem E1 (sigid, sign2 as (SIG _, _), items) =
+	let
+	    val sign = Option.getOpt(Map.lookup(E1,sigid), sign2 (**))
+	in
+	    (sigid,sign) :: items
+	end
+
+      | matchItem E1 (x, y, items) =
+	    items
+
+end

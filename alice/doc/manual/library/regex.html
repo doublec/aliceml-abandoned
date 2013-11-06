@@ -1,0 +1,177 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Regex structure",
+	      "The <TT>Regex</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature REGEX
+    structure Regex : REGEX
+  </PRE>
+
+  <P>
+    This structure provides an interface to a (subset of) POSIX-compatible
+    regular expressions. <BR>
+    Note: however, that the functions resulting from this partial 
+    application cannot be pickled.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import structure Regex from "x-alice:/lib/regex/Regex"
+    import signature REGEX from "x-alice:/lib/regex/REGEX-sig"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature REGEX =
+    sig
+	type <A href="#match-type">match</A>
+
+	infix 2 =~
+
+	exception <A href="#Malformed-exn">Malformed</A>
+	exception <A href="#NoSuchGroup-exn">NoSuchGroup</A>
+
+	val <A href="#match">match</A>      : string -> string -> match option
+	val <A href="#regex-op">=~</A>         : string * string -> bool
+
+	val <A href="#groups">groups</A>     : match -> string vector
+	val <A href="#group">group</A>      : match * int -> string
+	val <A href="#groupstart">groupStart</A> : match * int -> int
+	val <A href="#groupend">groupEnd</A>   : match * int -> int
+	val <A href="#groupspan">groupSpan</A>  : match * int -> (int * int)
+
+    end</PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="match-type">match</A></TT>
+    </DT>
+    <DD>
+      <P>The abstract type of a matching.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Malformed-exn">Malformed</A></TT>
+    </DT>
+    <DD>
+      <P>indicates that a regular expression not well-formed.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="NoSuchGroup-exn">NoSuchGroup</A></TT>
+    </DT>
+    <DD>
+      <P>indicates that an access to a group of a match has failed.
+         It does not exists such a group.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="match">match</A> <I>r s</I></TT>
+    </DT>
+    <DD>
+      <P>returns <I>SOME m </I>if <I>r </I>matches <I>s</I> and <I>NONE</I> 
+         otherwise. It raises <A href="#Malformed-exn"><I>Malformed</I></A> 
+	 if <I>r</I> is not
+	 a well-formed regular expression.</P>
+    </DD>
+
+    <DT>
+      <TT><I>r</I> <A name="regex-op">=~</A> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>The following equivalence holds:<BR>
+         <PRE><I>r</I> =~ <I>s</I> = <A href="option.html">Option</A>.isSome (match <I>r s</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT><A name="groups">groups</A> <I>m</I></TT>
+    </DT>
+    <DD>
+      <P>returns a string vector of the given matching <I>m</I></P>
+    </DD>
+
+    <DT>
+      <TT><A name="group">group</A> <I>(m, i)</I></TT></BR>
+      <TT><A name="groupstart">groupStart</A> <I>(m, i)</I></TT></BR>
+      <TT><A name="groupend">groupEnd</A> <I>(m, i)</I></TT>
+    </DT>
+    <DD>
+      <P>need a match <I>m</I> and an index <I>i</I>. 
+      It raises <A href="#NoSuchGroup-exn"><I>NoSuchGroup</I></A>, 
+      if <I>i</I> >= <A href="vector.html">Vector</A>.length (groups <I>m</I>) or
+      <I>i</I> < 0.</P>
+    </DD>
+
+<?php section("example", "example") ?>
+
+<P>This structure provides pattern matching with POSIX 1003.2 regular
+   expressions.<BR><BR>
+
+   The form and meaning of Extended and Basic regular expressions are
+   described below.  Here R and S denote regular expressions; m and n
+   denote natural numbers; L denotes a character list; and d denotes a
+   decimal digit:</P>
+
+<TABLE border="0" width="50%">
+ <TR>
+ <TH>Extended</TH><TH>Meaning</TH></TR>
+ <TR><TD><CENTER>c</CENTER></TD><TD><CENTER>Match the character c</CENTER></TD></TR>
+ <TR><TD><CENTER>.</CENTER></TD><TD><CENTER>Match any character</CENTER></TD></TR>
+ <TR><TD><CENTER>R*</CENTER></TD><TD><CENTER>Match R zero or more times</CENTER></TD></TR>
+ <TR><TD><CENTER>R+</CENTER></TD><TD><CENTER>Match R one or more times</CENTER></TD></TR>
+ <TR><TD><CENTER>R|S</CENTER></TD><TD><CENTER>Match R or S</CENTER></TD></TR>
+ <TR><TD><CENTER>R?</CENTER></TD><TD><CENTER>Match R or the empty string</CENTER></TD></TR>
+ <TR><TD><CENTER>R{m}</CENTER></TD><TD><CENTER>Match R exactly m times</CENTER></TD></TR>
+ <TR><TD><CENTER>R{m,}</CENTER></TD><TD><CENTER>Match R at least m times</CENTER></TD></TR>
+ <TR><TD><CENTER>R{m,n}</CENTER></TD><TD><CENTER>Match R at least m and at most n times</CENTER></TD></TR>
+ <TR><TD><CENTER>[L]</CENTER></TD><TD><CENTER>Match any character in L</CENTER></TD></TR>
+ <TR><TD><CENTER>[^L]</CENTER></TD><TD><CENTER>Match any character not in L</CENTER></TD></TR>
+ <TR><TD><CENTER>^</CENTER></TD><TD><CENTER>Match at string's beginning</CENTER></TD></TR>
+ <TR><TD><CENTER>$</CENTER></TD><TD><CENTER>Match at string's end</CENTER></TD></TR>
+ <TR><TD><CENTER>(R)</CENTER></TD><TD><CENTER>Match R as a group; save the match</CENTER></TD></TR>
+ <TR><TD><CENTER>\d</CENTER></TD><TD><CENTER>Match the same as previous group d</CENTER></TD></TR>
+ <TR><TD><CENTER>\\</CENTER></TD><TD><CENTER>Match \ --- similarly for *.[]^$</CENTER></TD></TR>
+ <TR><TD><CENTER>\+</CENTER></TD><TD><CENTER>Match + --- similarly for |?{}()</CENTER></TD></TR>
+</TABLE>
+<P>Some example character lists L:</P>
+<TABLE border="0" width="50%">
+ <TR><TD><CENTER>[aeiou]</CENTER></TD><TD><CENTER>Match vowel: a or e or i or o or u</CENTER></TD></TR>
+ <TR><TD><CENTER>[0-9]</CENTER></TD><TD><CENTER>Match digit: 0 or 1 or 2 or ... or 9</CENTER></TD></TR>
+ <TR><TD><CENTER>[^0-9]</CENTER></TD><TD><CENTER> Match non-digit</CENTER></TD></TR>
+ <TR><TD><CENTER>[-+*/^]</CENTER></TD><TD><CENTER>Match - or + or * or / or ^</CENTER></TD></TR>
+ <TR><TD><CENTER>[-a-z]</CENTER></TD><TD><CENTER>Match lowercase letter or hyphen (-)</CENTER></TD></TR>
+ <TR><TD><CENTER>[0-9a-fA-F]</CENTER></TD><TD><CENTER>Match hexadecimal digit</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:alnum:]]</CENTER></TD><TD><CENTER>Match letter or digit</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:alpha:]]</CENTER></TD><TD><CENTER>Match letter </CENTER></TD></TR>
+ <TR><TD><CENTER>[[:cntrl:]]</CENTER></TD><TD><CENTER>Match ASCII control character</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:digit:]]</CENTER></TD><TD><CENTER>Match decimal digit; same as [0-9]</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:graph:]]</CENTER></TD><TD><CENTER>Same as [:print:] but not [:space:]</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:lower:]]</CENTER></TD><TD><CENTER>Match lowercase letter</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:print:]]</CENTER></TD><TD><CENTER>Match printable character</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:punct:]]</CENTER></TD><TD><CENTER>Match punctuation character</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:space:]]</CENTER></TD><TD><CENTER>Match SML #" ", #"\r", #"\n", #"\t", #"\v", #"\f"</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:upper:]]</CENTER></TD><TD><CENTER>Match uppercase letter</CENTER></TD></TR>
+ <TR><TD><CENTER>[[:xdigit:]]</CENTER></TD><TD><CENTER>Match hexadecimal digit; same as [0-9a-fA-F]</CENTER></TD></TR>
+</TABLE>
+<P>Remember that backslash (\) must be escaped as "\\" in SML strings.</P>
+
+<P>
+Example: Match SML integer constant:<BR>
+   match "^~?[0-9]+$" [Extended] <BR><BR>
+
+   Example: Match SML alphanumeric identifier:<BR>
+   match "^[a-zA-Z0-9][a-zA-Z0-9'_]*$" [Extended]<BR><BR>
+
+   Example: Match SML floating-point constant:<BR>
+   match "^[+~]?[0-9]+(\\.[0-9]+|(\\.[0-9]+)?[eE][+~]?[0-9]+)$" [Extended]<BR><BR>
+
+   Example: Match any HTML start tag; make the tag's name into a group:<BR>
+   match "&lt;([[:alnum:]]+)[^&gt;]*&gt;" [Extended]<BR>
+</P>
+
+<?php footing() ?>

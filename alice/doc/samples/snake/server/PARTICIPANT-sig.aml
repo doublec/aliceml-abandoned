@@ -1,0 +1,85 @@
+(* Alice Snake 2.0 - Participant
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature MAP      from "x-alice:/lib/data/MAP-sig"
+
+import structure Protocol from "../common/Protocol"
+import structure Color    from "../common/Color"
+import structure Snake    from "Snake"
+
+
+signature PARTICIPANT =
+sig
+
+    type id = int
+
+    type player_info = {
+	       points     : int ref,
+               gamePoints : int ref,
+	       name       : string,
+	       color      : Color.color,
+	       nextDir    : Protocol.direction ref,
+               gatePos    : (int * int) ref,
+	       deathCount : int ref
+			(* number of times this snake has died already *)
+		       }
+
+    datatype state =
+	CONNECTED
+      | PLAYING  of player_info * Snake.snake
+      | HALF_FINISHED of player_info * int ref
+      | FINISHED of player_info * id option ref
+      | DEAD     of player_info * id option ref
+      | WATCHING of id option ref
+      | DISCONNECTED    
+
+    
+    type participant
+
+    val participant :       id * Protocol.client_interface -> participant
+
+    val playerInfo :        participant -> player_info
+    val snake :             participant -> Snake.snake
+    val id :                participant -> id
+    val client_interface :  participant -> Protocol.client_interface
+    val state :             participant -> state ref
+    
+    val nameNColor :        participant -> string * Color.color
+
+    val isConnected :       participant -> bool
+
+    val disconnect :        participant -> unit
+
+    val observes :          participant * id -> bool
+
+    val changeObserved :    participant * id option -> unit
+
+    (******* operations on a participant map *)
+
+    structure Map : MAP where type key = id
+    type pmap = participant Map.map
+    
+    val allParticipants :   (participant -> bool) -> pmap -> participant list
+
+    val allPlayers :        pmap -> participant list
+
+    val allHalfFinished :   pmap -> participant list
+
+    val allConnected :      pmap -> participant list
+
+    val allWithPoints :     pmap -> participant list
+    
+    val allNonFinished :    pmap -> participant list
+
+    val allSpectators :     pmap -> participant list
+end
+
+

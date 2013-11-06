@@ -1,0 +1,79 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                          from "Pervasive"
+import __primitive
+       type unit and int and bool and option and list from "ToplevelTypes"
+
+signature LIST_PAIR =
+sig
+    exception UnequalLengths
+
+    val zip :		'a list * 'b list -> ('a * 'b) list
+    val zipEq :		'a list * 'b list -> ('a * 'b) list
+    val unzip :		('a * 'b) list -> 'a list * 'b list
+
+    val app :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appEq :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val map :		('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val mapEq :		('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val foldl :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val foldlEq :	('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val foldr :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val foldrEq :	('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val all :		('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val allEq :		('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val exists :	('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val existsEq :	('a * 'b -> bool) -> 'a list * 'b list -> bool
+
+    (**)
+    val appr :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val apprEq :	('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val mapPartial :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+    val mapPartialEq :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+    val find :		('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) option
+    val filter :	('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) list
+    val filterEq :	('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) list
+
+    val appi :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appiEq :	(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appri :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appriEq :	(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val mapi :		(int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val mapiEq :	(int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val mapiPartial :	(int * 'a * 'b -> 'c option) -> 'a list * 'b list
+						     -> 'c list
+    val mapiPartialEq :	(int * 'a * 'b -> 'c option) -> 'a list * 'b list
+						     -> 'c list
+    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list ->'c
+    val foldliEq :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list ->'c
+    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list -> 'c
+    val foldriEq :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list -> 'c
+    val alli :		(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+    val alliEq :	(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+    val existsi :	(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+    val existsiEq :	(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+    val findi :		(int * 'a * 'b -> bool) -> 'a list * 'b list
+					        -> (int * 'a * 'b) option
+    val filteri :	(int * 'a * 'b -> bool) -> 'a list * 'b list
+						-> (int * 'a * 'b) list
+    val filteriEq :     (int * 'a * 'b -> bool) -> 'a list * 'b list
+						-> (int * 'a * 'b) list
+end

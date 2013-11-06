@@ -1,0 +1,117 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature VIEW        from "VIEW-sig"
+import structure Model       from "Model"
+import structure Socket      from "../../lib/system/Socket"
+import structure Type        from "../../lib/rtt/Type"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure PPValue     from "../../lib/system/PPValue"
+import structure PPType      from "../../lib/rtt/PPType"
+import structure OS          from "../../lib/system/OS"
+
+
+
+structure EnvView :> VIEW = 
+    struct
+	type view = Socket.socket list ref * 
+	            int * 
+		    Model.model ref *
+		    (Thread.thread * int) list ref
+
+	val columnNumber = 80
+	val rowNumber = 50
+	val newThreadID =
+	    let 
+		val id = ref 0
+	    in 
+		fn () => !id before id := !id + 1
+	    end
+
+	fun registerThread thread_list thread =
+	    if List.exists (fn (thr,_) => thr = thread) thread_list
+		then thread_list
+	    else (thread, newThreadID()) :: thread_list
+		
+	fun createNewClient(port) =
+	    OS.Process.system("xterm -geometry " ^ (Int.toString columnNumber) 
+			      ^ "x" ^ (Int.toString rowNumber)
+			      ^ " -title \"Environment View\" " 
+			      ^ "-e alicerun x-alice:/lib/debugger/Client "
+			      ^ Int.toString port
+			      ^ " &")
+
+
+	fun new () = 
+	    let
+		val client_sockets = ref nil
+		fun serve (socket, host, port) = 
+		    client_sockets := socket::(!client_sockets)
+		(* Setting up the server *)
+		val (socket, server_port) = Socket.server(NONE, serve)
+	    in
+		(client_sockets, server_port, ref(Model.new()), ref nil)
+	    end
+		    
+	fun update (view as (sockets, port, model_ref, thread_list)) thread =
+	    let 
+		val _ = thread_list := registerThread (!thread_list) thread
+		val env = Model.getEnvironment(!model_ref, thread) 
+		    handle UnknownThread => []
+		fun closureToString (_,clos) =
+		    foldl (fn ((name, value, typ), acc) => 
+		     if name = "" 
+			   orelse String.sub(name, 0) = #"$" 
+			   orelse String.sub(name, String.size name - 1) = #"$"
+			 then acc
+		     else 
+		       let 
+			val valueString = 
+			    PrettyPrint.toString(PPValue.ppVal 
+				  (Option.getOpt(Model.getType(!model_ref, thread) name,typ)) 
+						 value, 60)
+			val typeString  = PrettyPrint.toString(PPType.ppTyp typ, 60)
+		       in
+			   acc ^ "val " ^ name ^ " : " ^ typeString ^ " = " ^ valueString ^ "\n"
+		       end ) ("[ Size: "^(Int.toString(length clos))^"\n") clos
+
+		val env_string = String.concat (map (fn x => closureToString x ^ "]\n") env)
+		fun clear () =
+		    let fun iter 0 a = a
+			  | iter n a = iter (n-1) (a^"\n")
+		    in
+			iter rowNumber ""
+		    end
+		fun upd (nil, nil) = ()
+		  | upd (x::xr, (y,id)::yr) = 
+		    if y = thread 
+			then (Socket.output(x, clear());
+			      Socket.output(x, "ThreadID: " ^(Int.toString id)^"\n");
+			      Socket.output(x, env_string))
+		    else upd (xr, yr)
+		  | upd _ = raise Match
+	    in
+		(while (length(!sockets)) < (length(!thread_list)) do
+		     (let val soc = !sockets
+		      in
+			  createNewClient(port)
+			  ; while (soc = !sockets) do ()
+		      end)
+		; upd (!sockets,!thread_list))
+	    end
+
+	    
+	fun initialize (view : view, model) = 
+	    case view of
+		(_, _, model_ref, _) => (model_ref := model;
+				      Model.addView(model, update view))
+    end

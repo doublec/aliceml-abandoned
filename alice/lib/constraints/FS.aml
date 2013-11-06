@@ -1,0 +1,86 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD       from "FD"
+import structure UnsafeFS from "UnsafeFS"
+import signature FS       from "FS-sig"
+
+local
+    open FD
+in
+    structure FS : FS =
+	struct
+	    type fd = fd
+	    type bin = bin
+	    type fs
+
+	    exception Tell = FD.Tell
+
+	    (* Introduce flat bindings *)
+	    open UnsafeFS
+
+	    (* Wrap constructors *)
+	    fun checkBounds i = if i >= inf
+				then if i <= sup then ()
+				     else raise Overflow
+				else raise Domain
+					   
+	    fun checkDomainElement (SINGLE i)    = checkBounds i
+	      | checkDomainElement (RANGE(l, h)) =
+		(checkBounds l; checkBounds h)
+	    fun checkDomain d = Vector.app checkDomainElement d
+
+	    fun fs NONE                = unsafeFS NONE
+	      | fs (r as SOME(d1, d2)) =
+		(checkDomain d1; checkDomain d2; unsafeFS r)
+
+	    fun fsVec (i, d1, d2) =
+		(checkDomain d1; checkDomain d2; unsafeFSVec(i, d1, d2))
+		 
+	    fun value d = (checkDomain d; unsafeValue d)
+
+	    (* Integer FS *)
+	    structure Int =
+		struct
+		    val min = int_min
+		    val max = int_max
+		    val convex = int_convex
+		    val match = int_match
+		    val minN = int_minN
+		    val maxN = int_maxN
+		end
+
+	    (* Reified Propagators *)
+	    structure Reified =
+		struct
+		    val isIn = reified_isIn
+		    val areIn = reified_areIn
+		    val incl = reified_incl
+		    val equal = reified_equal
+		    val partition = reified_partition
+		end
+
+	    (* Reflection *)
+	    structure Reflect =
+		struct
+		    val card = reflect_card
+		    val lowerBound = reflect_lowerBound
+		    val unknown = reflect_unknown
+		    val upperBound = reflect_upperBound
+
+		    val cardOfLowerBound = reflect_cardOfLowerBound
+		    val cardOfUnknown = reflect_cardOfUnknown
+		    val cardOfUpperBound = reflect_cardOfUpperBound
+		end
+	end
+end

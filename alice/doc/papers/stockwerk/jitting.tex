@@ -1,0 +1,152 @@
+\section{Runtime Compilation}
+The presence of futures and transients in general disables many static compiler
+optimisations. Therefore, it is benefical to exploit runtime knowledge about
+data, especially about bound transients.
+This section explains how runtime compilation is organized in the vm.
+We will show that runtime compilation can be expressed
+with the mechanisms already provided by the vm.
+\subsection{Idea}
+One central idea of the vm is the transformation of data upon unpickling,
+namely the conversion from an abstract to a concrete representation,
+especially the notion of abstract and concrete code.
+This conversion is controlled within the language layers. They register
+handlers which are applied during unpickling.
+
+For example, the alice language layer registers the ``alice.function''
+handler. This handler is parameterized over a concrete code constructor
+function. This constructor function is the interface to a potentially available
+runtime compiler.
+
+Unpickling abstract code yields the invokation of the code handler and
+in case of alice the concrete code constructor is called. If the constructor
+refers to any runtime compiler, a lazy compile closure is constructed
+because runtime compilation is lazy.
+Requesting the concrete code value then triggers the compilation of the closure.
+\subsection{Target Platform}
+An important design decision is the selection of the target platform
+a runtime compiler procduces code for.
+Possible targets are either abstract machine code or native code.
+Both have their specific advantages and disadvantages as they trade
+speed against space.
+
+Abstract machine code allows compact code generation. This is advantagous
+for resource limited environments such as pdas and similar devices.
+
+Native code generations aims for high execution speed at the cost of larger
+memory requirements.
+
+The vm architecture does not make any assumption about the target platform.
+In particular, both can be used at the same time and interop is possible
+using the default interpreter parameterization mechanism.
+\subsection{Native Code Compiler}
+Currently the systems provides a native code runtime compiler.
+\subsubsection{Code Transformations}
+The static compiler produces code which is well suited for further runtime
+processing: an abstract tree with explicit control flow annotation
+and single assigment of identifiers.
+
+The following paragraphs list the optimizations the
+runtime compiler performs to improve the
+quality of the resulting code.
+\begin{paragraph}{Register Allocation}
+is the major part of native code generation.
+Since the allocation is performed during runtime, speed matters.
+In particular, standard graph coloring algorithms
+are ruled out due their time consumption.
+
+Instead, a very light-weight algorithm called linear scan allocation
+is used. Its results have been empirically proven to be within 15\% the
+speed of graph coloring (reference).
+
+The idea is that instead of traversing the entire execution graph, a list
+of liveness information is traversed. Each closure is provided such a list
+by the static compiler.
+
+The entries of this list are
+triples of id * born * dead, all of them integers. The id denotes the variable
+and born and dead its live intervall according to depth first traversal of
+the graph. This information is used to assign registers to variables.
+In case a register needs to be spilled, the longest living variable is spilled.
+
+Using the technique of index merging for spill slots,
+the comiler tries to further cut down the environment size.
+\end{paragraph}
+\begin{paragraph}{Scalar argument inlining}
+Scalar arguments are integers and reals.
+Integers are represented unboxed and can safely be inlined.
+This does not apply to reals because they are represented boxed and thus
+are subject to garbage collection.
+\end{paragraph}
+\begin{paragraph}{Application Optimization}
+The static compiler often places a generic application instruction because
+it cannot ``see'' the called closure.
+In contrast, the runtime compiler is often able to identify the closure beeing
+called and tries to optimize the call accordingly, that is, omitting
+the default scheduler calling mechanism. The runtime compiler is able to
+optimize three types: primitive calls, self calls and native calls.
+
+In case a primitive is found, it will be called directly or inlined if it
+belongs to the set of inlined primitives.
+
+In case a self call is detected, the compiler inserts fast continuation code.
+This detection does not require the closure to be bound since the runtime
+compiler has a reference to the current lazy compile closure.
+
+In case a native call is detected, that is, a call to an already runtime
+compiled closure, the compiler also inserts continuation code.
+\end{paragraph}
+\begin{paragraph}{Calling Convention Conversion}
+The compiler tries to skip
+calling convention conversion whenever possible. This is the case if it
+can detect the equivalency of arities.
+If this does not hold, the compiler tries to perform a static
+conversion instead of dynamic calling convention conversion.
+\end{paragraph}
+\subsection{Recompilation}
+During compilation time, transients might remain in prominent positions,
+such as callee positions in applications.
+Therefore, it is necessary to recompile
+the code in case those transients disappear.
+
+Recompilation can be organized in one of the following ways:
+\begin{itemize}
+\item direct and eager recompilation.
+\item lazy recompilation by converting the concrete code back to a lazy
+compile closure.
+\item concurrent lazy compilation
+\end{itemize}
+A recompilation approach has
+to take care of the problem that it might be possible to bind a bunch
+of transients within one execution of the closure body.
+Eager recompilation after each transient binding
+is therefore unfeasible. Instead, a heuristic to choose a good point
+is necessary. The longer recompilation is delayed, the better the
+profit from newly achieved information might be.
+
+Besides optimality, the compiler has to make sure that recompilation
+does not corrupt existing computation. That is, the reference to the
+``old'' code must not get lost until it is no longer referred to.
+This is the case for self and native call optimization, which
+must cache old code and immediate environment values.
+\subsubsection{Questions}
+Important questions are
+\begin{itemize}
+\item How to recompile?
+\item When to perform the recompilation?
+\item Which profits can be obtained from recompilation?
+\end{itemize}
+Further, it is interesting to see how recompilation fits into the architecture.
+
+Specialisation usually takes place when either transients are bound or
+a module is imported.
+
+The ``When'' question can be partially answered by having an oracle
+which is consulted in case a transient is bound.
+The orcacle can be supported by having runtime profiling information
+available. 
+
+Another question is whether to specialize the abstract code or the concrete
+code. Currently the concrete code is specialized using environment information.
+
+The scope of specialisation is also important: Focus on closure level or
+have many closures in one module specialized together.

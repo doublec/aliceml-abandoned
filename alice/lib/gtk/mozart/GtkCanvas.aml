@@ -1,0 +1,17 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeGtkCanvas from "UnsafeGtkCanvas"
+import signature GTK_CANVAS      from "GTK_CANVAS-sig"
+
+structure GtkCanvas :> GTK_CANVAS = UnsafeGtkCanvas

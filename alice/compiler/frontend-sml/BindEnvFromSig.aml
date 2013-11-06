@@ -1,0 +1,383 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Crash         from "../infrastructure/Crash"
+import structure Stamp         from "../common/Stamp"
+import structure Label         from "../../lib/rtt/Label"
+import structure Fixity        from "../../lib/rtt/Fixity"
+import structure Path          from "../../lib/rtt/Path"
+import structure PathMap       from "../../lib/rtt/PathMap"
+import structure Type          from "../../lib/rtt/Type"
+import structure Inf           from "../../lib/rtt/Inf"
+import structure PervasiveType from "../../lib/rtt/PervasiveType"
+import structure VId
+       structure TyCon
+       structure SigId
+       structure StrId         from "Ids"
+import structure Infix         from "Infix"
+import structure BindEnv       from "BindEnv"
+import signature BIND_ENV_FROM_SIG from "BIND_ENV_FROM_SIG-sig"
+
+
+(*
+ * This module is a hack. The main problem we have is to reconstruct
+ * identifier status for values. These are our heuristics for deriving the
+ * identifier status is for value identifier id with type !a1..an.t:
+ *
+ * - if there is a type d = mu\a1..\an.[id:<!>t',r] and t = t'->d a1..an,
+ *   then is = T(k,d) for suitable k
+ * - if there is a value 'id with type !a1..an.conarrow(<!>t1->t2) and t=t1->t2,
+ *   then is = C k for suitable k
+ * - if there is a type id = Ref and t = 'a->Ref 'a, then is = R
+ * - otherwise, is = V
+ *
+ * This is merely an approximation that may, in pathological cases, assign
+ * non-value status to values. This can happen when converting interfaces
+ * that have been inferred from components containing obscur forms of hiding.
+ * Here is an example:
+ *
+ *   functor F(X : sig type t val C : int -> t end) = X
+ *   datatype t = C of int
+ *   structure X = F(datatype t = datatype t)
+ *   open X
+ *
+ * This can actually lead to the wrong semantics (consider F wrapping
+ * the argument function C with some side-effect, this would not be
+ * executed in the importing component). Note however that such examples are
+ * pretty contrived and can only appear for toplevel entities or structures
+ * not constrained by a signature - both are discouraged anyway.
+ *
+ * Still it's very unfortunate, but there are only two ways of avoiding it:
+ * - put identifier status into signatures
+ *   (conceptionally it's purely syntactic and does not belong there -
+ *    OTOH fixity is there already...)
+ * - delete the possibility to match values with constructors
+ *   (serious departure from SML that actually would break the compiler)
+ * So I hate both... Hopefully we have a better solution one day in the context
+ * of a general views framework.
+ *)
+
+structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
+struct
+
+    open BindEnv
+
+    type sign = Inf.sign
+
+
+    (*
+     * Fixity modes not available in SML are converted as follows:
+     * - non-associative infix -> left-associative infix
+     * - prefix  -> nonfix
+     * - postfix -> nonfix
+     *)
+
+    fun assocFromAssoc(Fixity.LEFT)	= Infix.LEFT
+      | assocFromAssoc(Fixity.RIGHT)	= Infix.RIGHT
+      | assocFromAssoc(Fixity.NEITHER)	= Infix.LEFT
+
+    fun infFromFix(Fixity.NONFIX)	= NONE
+      | infFromFix(Fixity.PREFIX n)	= NONE
+      | infFromFix(Fixity.POSTFIX n)	= NONE
+      | infFromFix(Fixity.INFIX(n,a))	= SOME(assocFromAssoc a, n)
+
+    fun vidFromLabel a   = VId.fromString(Label.toString a)
+    fun tyconFromLabel a = TyCon.fromString(Label.toString a)
+    fun stridFromLabel a = StrId.fromString(Label.toString a)
+    fun sigidFromLabel a = SigId.fromString(Label.toString a)
+
+
+    fun unstrict t =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if Type.equal(t1, PervasiveType.typ_strict)
+	    then t2
+	    else t
+	  | _ => t
+
+    fun unapp  t     = unapp'(t,[])
+    and unapp'(t,ts) =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) => unapp'(t1, t2::ts)
+	  | _                 => (t,ts)
+
+
+    fun arityFromKind k =
+	case Type.inspectKind k
+	  of Type.StarKind => (0,NONE,false)
+	   | Type.ExtKind  => (0,NONE,true)
+	   | Type.EqKind k =>
+	     let
+		val (n,q,x) = arityFromKind k
+	     in
+		(n, if isSome q then q else SOME(n<>0), x)
+	     end
+	   | Type.ArrowKind(_,k') =>
+	     let
+		val (n,q,x) = arityFromKind k'
+	     in
+		(n+1,q,x)
+	     end
+	   | Type.SingKind t => arityFromKind(Type.kind t)
+
+
+    fun arityFromTyp t =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if not(Type.equal(t1, PervasiveType.typ_strict)) then UNARY else
+	    (case Type.inspect t2
+	     of Type.Prod r =>
+		if Type.isEmptyRow r
+		then NULLARY
+		else NARY
+	      | _ => NARY
+	    )
+	  | _ => UNARY
+
+
+    fun envFromTyp(I,E,s,t,tycon) =
+	if Type.equal(t, PervasiveType.typ_ref) then
+	    let val E' = env() in
+		let
+		   (* Constructor needs to have the same name as the tycon,
+		    * because we have no way of knowing its real name. *)
+		   val name = TyCon.toString tycon
+		   val l    = Label.fromString name
+		   (* t_l < ('_a -> ref '_a) ? *)
+		   val (t1,t2) = Type.asArrow(Type.instance(Inf.lookupVal(s,l)))
+		   val (t3,t4) = Type.asApply t2
+		   val vid     = VId.fromString name
+		   val x       = (I,Stamp.stamp(),R)
+		in
+		    if Type.isUnknown t1 andalso Type.equal(t3,t)
+					 andalso Type.equal(t4,t1)
+		    then (insertDisjointVal(E', vid, x); insertVal(E, vid, x))
+		    else ()
+		end handle (Inf.Lookup _ | Type.Type) =>
+		let
+		    val vid = VId.fromString(TyCon.toString tycon)
+		in
+		    insertVal(E', vid, (I,Stamp.stamp(),R));
+		    ()
+		end;
+	        E'
+	    end
+	else
+	    envFromTyp'(I,E,s,t,t,tycon,0)
+
+    and envFromTyp'(I, E,s, t,t0,tycon,k) =
+	case Type.inspect t
+	 of Type.Sum r		=> envFromRow(I, E,s, r,t0, tycon, k)
+	  | Type.Lambda(_,t')	=> envFromTyp'(I, E,s, t',t0, tycon, k+1)
+	  | Type.Mu t'		=> envFromTyp'(I, E,s, t',t0, tycon, k)
+	  | _			=> env()
+
+    and envFromRow(I,E,s,r,t0,tycon,k) =
+	let
+	    val E' = env()
+
+	    fun loop r =
+		case Type.inspectRow r
+		 of (Type.EmptyRow | Type.UnknownRow _) => ()
+		  | Type.FieldRow(l,t',r') =>
+		let
+		    val  vid    = VId.fromString(Label.toString l)
+		    val  is     = T(arityFromTyp t', tycon, k)
+		    val (_,z,_) = Option.valOf(lookupVal(E,vid))
+		    val  t''    = Type.instance(Inf.lookupVal(s,l))
+		    val (t1,t2) = case Type.inspect t''
+				   of Type.Arrow tt => tt
+				    | _             => (Type.tuple #[], t'')
+		    val (t3,ts) = unapp t2
+		in
+		    (* t_l = !'a1..'an.[t' ->] t0('a1)..('an) ? *)
+		    if not(List.all Type.isUnknown ts) then raise Type.Type else
+		    Type.unify(t0, t3);
+		    Type.unify(t1, unstrict t');
+		    insertDisjointVal(E', vid, (I,z,is));
+		    insertVal(E, vid, (I,z,is));	(* overwrite! *)
+		    loop r'
+		end
+		handle (Option.Option|Inf.Lookup _|Type.Type|Type.Mismatch _) =>
+		let
+		    val vid = VId.fromString(Label.toString l)
+		    val is  = T(arityFromTyp t', tycon, k)
+		in
+		    insertVal(E', vid, (I,Stamp.stamp(),is));
+		    loop r'
+		end
+	in
+	    loop r; E'
+	end
+
+    fun explodePath p =
+	case Path.inspect p
+	 of Path.Name n    => SOME(p, [], sigidFromLabel(Label.fromName n))
+	  | Path.Hidden _  => NONE
+	  | Path.Dot(p',l) => SOME(explodePath'(p', [], sigidFromLabel l))
+    and explodePath'(p, strids, sigid) =
+	case Path.inspect p
+	 of Path.Dot(p',l) => explodePath'(p', stridFromLabel l::strids, sigid)
+	  | _              => (p, strids, sigid)
+
+    fun selectSig(PLAIN E, [l])   = #3(valOf(lookupSig(E, sigidFromLabel l)))
+      | selectSig(PLAIN E, l::ls) =
+	selectSig(#3(valOf(lookupStr(E, stridFromLabel l))), ls)
+      | selectSig _               = raise Crash.Crash "BindEnvFromSig.selectSig"
+
+    fun envfnFromInf(I,j) = envfnFromInf'(I, PathMap.map(), j)
+    and envfnFromInf'(I,pm,j) =
+	case Inf.inspect j
+	 of Inf.Top =>
+		EMPTY
+	  | Inf.Con p =>
+	    (case explodePath p
+	     of NONE => EMPTY
+	      | SOME(p',strids,sigid) =>
+	    let
+		val z = case PathMap.lookup(pm,p') of SOME z => z
+						    | NONE   => Stamp.stamp()
+	    in
+		ABSTR(z,strids,sigid,[])
+	    end)
+	  | Inf.Sig s =>
+		PLAIN(envFromSig'(I, pm, Stamp.stamp(), s))
+	  | Inf.Arrow(p,j1,j2) =>
+	    let
+		val z  = Stamp.stamp()
+		val zo = PathMap.lookup(pm,p)
+	    in
+		PathMap.insert(pm,p,z);
+		PARAM(z, envfnFromInf'(I,pm,j2))
+		before
+		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
+	    end
+	  | Inf.Lambda(p,j1,j2) =>
+	    let
+		val z  = Stamp.stamp()
+		val zo = PathMap.lookup(pm,p)
+	    in
+		PathMap.insert(pm,p,z);
+		PARAM(z, envfnFromInf'(I,pm,j2))
+		before
+		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
+	    end
+	  | Inf.Apply(j1,m) =>
+	    let
+		val (_,j2) = Inf.asMod m
+		val  F1    = envfnFromInf'(I,pm,j1)
+		val  F2    = envfnFromInf'(I,pm,j2)
+	    in
+		apply(F1,F2)
+	    end
+	  | Inf.Sing m =>
+		envfnFromInf'(I,pm, #2(Inf.asMod m))
+	  | Inf.Exist(p,j1,j2) =>
+	    let
+		val z  = Stamp.stamp()
+		val zo = PathMap.lookup(pm,p)
+	    in
+		PathMap.insert(pm,p,z);
+		envfnFromInf'(I,pm,j2)
+		before
+		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
+	    end
+
+    and envFromSig (I,s)       = envFromSig'(I, PathMap.map(), Stamp.stamp(), s)
+    and envFromSig'(I,pm,z,s)  = Future.byneed(fn() => envFromSig''(I,pm,z,s))
+    and envFromSig''(I,pm,z,s) =
+	let
+	    val E     = env()
+	    val items = Inf.items s
+	in
+	    insertSelf E;
+	    (* Insert values first, as they may be overwritten by type
+	     * items (datatypes). *)
+	    List.appr (insertValItem(E,I,s)) items;
+	    List.appr (insertItem(E,I,pm,z,s)) items;
+	    E
+	end
+
+    and insertValItem (E,I,s) item =
+	case Inf.inspectItem item
+	 of Inf.ValItem(l,t) =>
+	    let
+		val name = Label.toString l
+		val vid  = vidFromLabel l
+		val z    = Stamp.stamp()
+		val is   = if String.sub(name,0) = #"'" then V else
+			    let
+				val l'        = Label.fromString("'" ^ name)
+				val t'        = Inf.lookupVal(s,l')
+				val (t1,t2)   = case Type.inspect t
+					        of Type.Arrow tt => tt
+					         | _ => (Type.tuple #[], t)
+				(* t' < conarrow (t1 -> t2) ? *)
+				val (tc,ta)   = Type.asApply(Type.instance t')
+				val (t1',t2') = Type.asArrow ta
+			    in
+				(* tc = conarrow *)
+				Type.unify(t1, unstrict t1');
+				Type.unify(t2, t2');
+				C(arityFromTyp t1')
+			    end
+			    handle (Inf.Lookup _|Type.Type|Type.Mismatch _) => V
+	    in
+		insertDisjointVal(E, vid, (I,z,is))
+	    end
+	  | _ => ()
+
+    and insertItem (E,I,pm,z,s) item =
+	case Inf.inspectItem item
+	 of Inf.FixItem(l,f) =>
+	    let
+		val is = infFromFix f
+	    in
+		insertInf(E, vidFromLabel l, (I,is))
+	    end
+	  | Inf.ValItem _ =>
+		()
+	  | Inf.TypItem(p,k) =>
+	    let
+		val l  = Path.toLab p
+		val x  = Stamp.stamp()
+		val E' = case Type.inspectKind k
+			  of Type.SingKind t =>
+				envFromTyp(I, E,s, t,
+					   TyCon.fromString(Label.toString l))
+			   | _ => env()
+		val (n,eq,ext) = arityFromKind k
+		val ts = {CE=E', arity=n, def=NONE, eq=eq, ext=ext}
+	    in
+		insertDisjointTy(E, tyconFromLabel l, (I,x,ts))
+	    end
+	  | Inf.ModItem(p,j) =>
+	    let
+		val l = Path.toLab p
+		val F = envfnFromInf'(I,pm,j)
+		val x = case F of PLAIN E' => Option.valOf(lookupSelf E')
+				| _        => Stamp.stamp()
+	    in
+		insertDisjointStr(E, stridFromLabel l, (I,x,F))
+	    end
+	  | Inf.InfItem(p,k) =>
+	    let
+		val l = Path.toLab p
+		val F = envfnFromInf'(I, pm, Inf.lookupInf'(s,l))
+		val x = Stamp.stamp()
+	    in
+		PathMap.insert(pm,p,z);
+		insertDisjointSig(E, sigidFromLabel l, (I,x,F))
+	    end
+	  | Inf.HiddenItem _ =>
+		()
+end

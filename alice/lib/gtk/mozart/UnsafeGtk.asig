@@ -1,0 +1,19 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature GTK from "GTK-sig"
+
+signature UNSAFE_GTK_COMPONENT =
+    sig
+	structure UnsafeGtk : GTK
+    end

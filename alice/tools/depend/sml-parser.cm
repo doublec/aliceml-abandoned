@@ -1,0 +1,22 @@
+Group is
+
+#if defined(NEW_CM)
+	$/ml-yacc-lib.cm
+#else
+	ml-yacc-lib.cm
+#endif
+
+	../../lib/utility/sources.cm
+	../../bootstrap/sources.cm
+
+	LEXER_ERROR-sig.aml
+	MkLexerError.aml
+	SML_ERROR-sig.aml
+	SMLError.aml
+
+	SMLLexer.lex
+	MkCountPosLexer.aml
+	SMLParser.grm
+
+	PARSER-sig.aml
+	SMLParser.aml

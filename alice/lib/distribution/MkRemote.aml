@@ -1,0 +1,463 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Contributor:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Component from "x-alice:/lib/system/Component"
+import signature COMPONENT_MANAGER
+    from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import structure Url               from "x-alice:/lib/system/Url"
+import signature REMOTE            from "REMOTE-sig"
+import structure UnsafeRemote      from "UnsafeRemote"
+(*import structure Debug from "x-alice:/lib/system/Debug"*)
+
+import structure Name  from "x-alice:/lib/rtt/Name"
+import structure Label from "x-alice:/lib/rtt/Label"
+import structure Path  from "x-alice:/lib/rtt/Path"
+import structure Type  from "x-alice:/lib/rtt/Type"
+import structure Inf   from "x-alice:/lib/rtt/Inf"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+
+(* for pretty printing this component's exceptions *)
+import structure PPValue from "x-alice:/lib/system/PPValue"
+
+
+(** bgrund:
+    I needed quite some time to digest what exactly happens / should
+    happen when certain functions of the Remote structure are called.  
+    So let me give you a simple overview here:
+
+    First of all let's start with a design overview. The Remote 
+    implementation consists of two layers:
+        
+        1) MkRemote, which provides functionality to convert 
+        Alice value into strings and vice versa, and provides
+        the high level proxy logic.
+
+        2) Actual transmitting of the string values and socket
+        handling is done by the RemotePort structure.  MkRemote
+        is functorized over structures of this signature (REMOTE_PORT),
+        so that changing the underlying protocol is rather easy.
+
+    Now let's look at the guts of all this, including some details of
+    the current simple binary protocol RemotePort implementation.
+
+    Let's start with this sample piece code:
+    <<
+        structure   S = (val f = Remote.proxy (fn x => x * x))
+    >>
+    
+        Remote.proxy g:
+            calls RemotePort.exportFn on a newly
+            created function f', which acts as a
+            wrapper around g of type
+        
+        f': string -> string 
+            Using UnsafeRemote.unpackValue / UnsafeRemote.packValue
+            to convert the returned / applied value to a string.
+            
+        RemotePort.exportFn f'
+            Registers a new handler at the underlying BinaryServer
+            (therefore creating a new ticket).  Messages send to this
+            handler (i.e BinaryMessages transmitted on the socket this
+            Server is listening on, with path = path of the new ticket)
+            must be of tag tagCall and f' is applied on their content.  
+            The resulting value is returned as the content of a new 
+            message of tag tagReturn by the handler. And therefore 
+            transmitted on the socket.  
+
+            Another procedure is created by RemotePort.exportFn:
+                fn x => dynamicCall (ticket, x)     (* let's call it g *)   
+            - ticket is the newly created ticket mentioned above
+            - dynamicCall is a special primitive ("Remote.call")
+              which calls the procedure ProxyCallback registered
+              using UnsafeRemote.SetCallback.  It's only needed
+              so that there are NO sited values in g because g is
+              returned by RemotePort.exportFn (and therefore by
+              Remote.proxy) and will be pickled later by 
+              Remote.offer.
+ 
+   Now let's assume the structure S is packaged and offered
+   <<
+        val ticket = Remote.offer (pack S :> (val f = int -> int))
+   >>
+
+        Remote.offer p
+            calls RemotePort.export (UnsafeRemote.packValue p) and
+            returns the returned url (the ticket) as a string
+            
+        RemotePort.export v 
+            Registers a new handler at the underlying BinaryServer
+            (again creating a new ticket, which is returned).  
+            Messages send to this handler must be of tag tagImport 
+            (empty content).  The handler then return v as the
+            content of a new message of tag tagExport.
+    
+   Now let's assume this ticket is taken (possibly by another process):
+   <<
+        val p   = Remote.take ticket
+   >>
+
+        Remote.take ticket
+            calls RemotePort.download ticket and returns the resulting
+            value after unpacking it using UnsafeRemote.unpackValue.
+        
+        RemotePort.download ticket
+            sends a empty message with tag tagImport to the server denoted
+            by the ticket.  It then returns the content of the received 
+            answer (with tag tagExport).  See the explanation of
+            RemotePort.export
+
+   And after unpack f being called:
+   <<
+        structure S = unpack p : (val f : int -> int)
+        val res     = S.f 3
+   >>
+
+        As you might probably remember S.f is actually the procedure g
+        returned by Remote (quite possibly in another process or even
+        on a different machine).  If you do not remember you are strongly
+        encouraged to read the section on RemotePort.exportFn again ;-)
+
+        So we know that S.f 3 results in a call to ProxyCallback (ticket, 3)
+        where ticket is the one created by RemotePort.exportFn and transmitted 
+        in the closure of g.  
+
+    ProxyCallback (ticket, v)
+        converts v (which is in this example 3) to a string s (again using 
+        UnsafeRemote.packValue).  And calls RemotePort.call (ticket, s).
+        
+    RemotePort.call (ticket, s) now creates a Message of tag tagCall
+        and content s and sends that to the server denoted by ticket. The
+        content of the returned Message of tag tagReturn is returned.
+
+        Converted by ProxyCallback back into a value (using 
+        UnsafeRemote.unpackValue) and returned.
+
+    Well that is it.  More or less.  I skipped the issue of functions 
+    which raise exceptions completely.  It boils down to using a variant
+    type (RETURN v | RAISE e).  I also skipped the issue of error detection
+    and especially error handling.  
+        
+    Design issues which need(?) to be addressed:
+
+        - clients of Remote cannot control lowlevel details (like time-outs)
+        - Error recovery, it's debatable wether support for that should
+          be included (can it be done?) in Remote or not.  
+*)
+
+
+(********** --------------- REMOTE_PORT signature ----------------- **********)
+
+signature REMOTE_PORT =
+sig
+    type ticket = Url.t
+
+    exception Port				(* port unavailable or already
+						   opened *)
+    exception Ticket                            (* invalid ticket 
+                                                   (e.g. process no 
+                                                   longer existing) *)
+    exception Proxy of exn                      (* raised if RPC fails 
+                                                   exn is reason (cause) 
+                                                 *)
+    exception SitedArgument			(* only as proxy cause *)
+    exception SitedResult			(* only as proxy cause *)
+    exception Protocol of string		(* only as proxy cause *)
+    exception Remote of exn			(* raised if remote exec fails
+                                                   exn is reason (cause) 
+                                                 *)
+    exception Connection			(* only as remote cause *)
+    exception Exit of OS.Process.status		(* only as remote cause *)
+
+    val port: unit -> int option
+    val setPort: int -> unit
+
+    val export: string -> ticket
+    val download: ticket -> string
+
+    val exportFn: (string -> string) -> ticket
+    val call: ticket * string -> string
+end
+
+
+(*********** ------------------- MkRemote functor ------------------ ************)
+ 
+functor MkRemote(RemotePort: REMOTE_PORT) : REMOTE =
+struct
+    exception Port = RemotePort.Port
+    exception Proxy = RemotePort.Proxy
+    exception SitedArgument = RemotePort.SitedArgument
+    exception SitedResult = RemotePort.SitedResult
+    exception Protocol = RemotePort.Protocol
+    exception Remote = RemotePort.Remote
+    exception Connection = RemotePort.Connection
+    exception Exit = RemotePort.Exit
+
+    val port = RemotePort.port
+    val setPort = RemotePort.setPort
+
+    (*--------------------------------------------------------------
+     * Proxies and RPC
+     *)
+
+    datatype 'a result = RETURN of 'a | RAISE of exn
+
+    fun proxyCallback (url, unpackedArgument) =
+        let
+            val packedArgument = UnsafeRemote.packValue unpackedArgument
+                                 handle UnsafeRemote.SitedInternal =>
+                                     raise Proxy SitedArgument
+            val packedResult = RemotePort.call (url, packedArgument)
+                               handle e => raise Proxy e
+            val unpackedResult = UnsafeRemote.unpackValue packedResult
+                                 handle UnsafeRemote.CorruptInternal =>
+                                    raise Proxy (IO.Io
+                                                 {name = "Remote",
+                                                  function = "proxy",
+                                                  cause = Pickle.Corrupt})
+        in
+            case unpackedResult of
+                RETURN y => y
+              | RAISE e => raise e
+        end
+
+    val _ = UnsafeRemote.setCallback proxyCallback
+        
+        
+    (* FIXME: this relies on REMOTE_PORT always using urls as tickets *)
+    __primitive val dynamicCall : Url.t * 'a -> 'b =                
+        "Remote.dynamicCall"
+
+    fun proxy f =
+        let
+            fun f' packedArgument =
+                let
+                    val unpackedArgument =
+                        UnsafeRemote.unpackValue packedArgument
+                        handle UnsafeRemote.CorruptInternal =>
+			    raise Proxy (IO.Io
+					 {name = "Remote",
+					  function = "proxy",
+					  cause = Pickle.Corrupt})
+                    val unpackedResult = RETURN (f unpackedArgument)
+                in
+                    UnsafeRemote.packValue unpackedResult
+                    handle UnsafeRemote.SitedInternal => raise Proxy SitedResult
+                end
+                handle e =>
+                    UnsafeRemote.packValue (RAISE e)
+                    handle _ => UnsafeRemote.packValue
+                                    (RAISE (Proxy SitedResult))
+            val url = RemotePort.exportFn f'
+        in
+            fn x => dynamicCall (url, x)
+        end
+
+    (*--------------------------------------------------------------
+     * Proxy modules
+     *)
+
+    exception Hidden
+
+    (* Keep in sync with compiler/frontend-common/NameTranslation! *)
+    fun trName f (Name.ExId s) = Name.ExId (f s)
+      | trName f Name.InId = Name.InId
+    fun trLab f l = Label.fromName(trName f (Label.toName l))
+    val trValLab = Fn.id
+    val trTypLab = trLab (fn s => "$" ^ s)
+    val trModLab = trLab (fn s => s ^ "$")
+    val trInfLab = trLab (fn s => "$" ^ s ^ "$")
+
+    fun proxyMod (m, j) =
+	case Inf.inspect j of
+	    Inf.Sig s =>
+		let
+		    val lvs = proxySig ([], m, Inf.items s)
+		in
+		    UnsafeValue.prodPoly (Vector.fromList lvs)
+		end
+          | Inf.Arrow(p, j1, j2) =>
+		let
+		    fun f x = proxyMod (UnsafeValue.cast m x, j2)
+		in
+		    UnsafeValue.cast (proxy f)
+		end
+          | Inf.Sing m' => proxyMod (m, #2 (Inf.asMod m'))
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and proxySig (lvs, m, []) = lvs
+      | proxySig (lvs, m, item::items) =
+	case Inf.inspectItem item of
+	    Inf.FixItem _ => proxySig (lvs, m, items)
+	  | Inf.ValItem (l, t) =>
+		let
+		    val l' = trValLab l
+		    val v = UnsafeValue.projPoly (m, l')
+		    val v' = proxyVal (v, t)
+		in
+		    proxySig ((l', v')::lvs, m, items)
+		end
+	  | Inf.TypItem (p, k) =>
+		let
+		    val l' = trTypLab (Path.toLab p)
+		    val v = UnsafeValue.projPoly (m, l')
+		in
+		    proxySig ((l',v)::lvs, m, items)
+		end
+	  | Inf.ModItem (p, j) =>
+		let
+		    val l' = trModLab (Path.toLab p)
+		    val v = UnsafeValue.projPoly (m, l')
+		    val v' = proxyMod (v, j)
+		in
+		    proxySig ((l', v')::lvs, m, items)
+		end
+	  | Inf.InfItem (p, k) =>
+		let
+		    val l' = trInfLab (Path.toLab p)
+		    val v = UnsafeValue.projPoly (m, l')
+		in
+		    proxySig ((l',v)::lvs, m, items)
+		end
+	  | Inf.HiddenItem _ => raise Hidden
+
+    and proxyVal (v, t) =
+	case Type.inspect t of
+	    Type.Arrow (t1, t2) =>
+		let
+		    fun f x = proxyVal (UnsafeValue.cast v x, t2)
+		in
+		    UnsafeValue.cast (proxy f)
+		end
+	  | (Type.All (_, t') | Type.Exist (_, t')) => proxyVal (v, t')
+	  | _ => v
+
+    functor Proxy (signature S structure X : S) =
+	let
+	    structure M = Reflect.Reflect (signature S = S structure X = X)
+	    structure J = Reflect.ReflectSig (signature S = S)
+	in
+	    Reflect.Reify (val x = proxyMod (UnsafeValue.cast M.x, J.x)
+			   signature S = S)
+	end
+
+    (*--------------------------------------------------------------
+     * Take and Offer
+     *)
+
+    type ticket = string
+
+    exception Ticket = RemotePort.Ticket
+
+    fun offer value =
+        Url.toString (RemotePort.export (UnsafeRemote.packValue value))
+	handle UnsafeRemote.SitedInternal => raise Pickle.Sited
+
+    fun take ticket =
+        let
+            val packedValue = RemotePort.download (Url.fromString ticket)
+        in
+            UnsafeRemote.unpackValue packedValue
+	    handle UnsafeRemote.CorruptInternal =>
+		raise Proxy (IO.Io
+			     {name = "Remote",
+			      function = "take",
+			      cause = Pickle.Corrupt})
+        end
+
+    functor Offer (signature S structure X: S) =
+        (val ticket = offer (pack X : S))
+
+    functor Take (val ticket: string signature S) = unpack take ticket : S
+
+    (*--------------------------------------------------------------
+     * Remote Execution
+     *)
+
+    datatype reply = OK of package | EXN of exn
+
+    fun execute (flag, host, component) =
+	let
+            val p = Promise.promise ()
+            val ticket =
+                offer (pack (val component = component
+			     val return = proxy (fn reply => 
+						 Promise.fulfill (p, reply)))
+			  : (val component : Component.t
+			     val return : reply -> unit))
+		handle Component.Sited => raise Remote SitedArgument
+(*DEBUG
+            val _ =
+                TextIO.print ("ssh " ^ host ^ " alicerun " ^
+                              "x-alice:/lib/distribution/RemoteServer " ^
+                              T.ticket ^ "\n")
+*)
+            val proc =
+                Unix.execute ("ssh",
+                              [host, "aliceremote",
+                               "x-alice:/lib/distribution/RemoteServer",
+                               flag, ticket])
+		handle e => raise Remote e
+	    val result =
+		case Future.awaitEither(Promise.future p, spawn Unix.wait proc) of
+		     FST result => result
+		   | SND n =>
+		     if Promise.isFulfilled p (* avoid race *)
+		     then Promise.future p
+		     else raise Remote(if n = 255 then Connection else Exit n)
+	in
+	    case result of
+		OK package => package
+	      | EXN exn => raise exn
+	end
+
+    fun eval (host, component) = execute ("-x", host, component)
+    fun run  (host, component) = execute ("-r", host, component)
+
+    functor Eval (val host: string
+                  signature S
+                  functor F: COMPONENT_MANAGER -> S) =
+        let
+	    structure C = Component.Create (signature S = S structure F = F)
+	    val package = eval (host, C.component)
+        in
+	    unpack package : S
+	end
+
+    functor Run (val host: string
+                 signature S
+                 functor F: COMPONENT_MANAGER -> S) =
+        let
+	    structure C = Component.Create (signature S = S structure F = F)
+	    val package = run (host, C.component)
+        in
+	    unpack package : S
+	end
+
+
+    (* exception pretty printing handler *)
+
+    fun ppExn t fm (Proxy e as exn) =
+        PPValue.ppExnWithArg fm exn e
+      | ppExn t fm (Protocol s as exn) =
+        PPValue.ppExnWithArg fm exn s
+      | ppExn _ _ _ = NONE
+
+    val _ = PPValue.registerTyp ppExn
+
+end

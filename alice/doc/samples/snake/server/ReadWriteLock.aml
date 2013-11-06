@@ -1,0 +1,98 @@
+import signature READ_WRITE_LOCK    from "READ_WRITE_LOCK-sig"
+import structure Stream             from "x-alice:/lib/data/Stream"
+
+
+structure ReadWriteLock :> READ_WRITE_LOCK =
+struct
+    datatype waiting_thread =
+        READER of unit Promise.promise Promise.promise 
+    |   WRITER of unit Promise.promise Promise.promise 
+    
+
+    type lock   = waiting_thread Stream.stream
+    type t      = lock
+
+
+    (** [barrier] waits till all promises are fulfilled *)
+    val barrier = foldl (fn ((), ()) => ()) ()
+        
+    val activeReadLocksTreshold = 20    (* TODO: find "best-on-average" value? *)
+
+    fun removeDetermined l =
+        List.foldl (fn (f, (n, l)) => 
+                        if Future.isDetermined f 
+                            then (n, l)
+                            else (n + 1, f :: l)) (0, []) l
+
+
+    fun processLock (n, activeReadLocks, READER r :: ths) =
+        let
+            val p = Promise.promise ()
+            val f = Promise.future p
+        in
+            (* signal reader that he may start *)
+            Promise.fulfill (r, p);
+            
+            (* avoid creating endless promise lists, for 
+               example when the user doesn't use syncWrite
+             *)
+            if n > activeReadLocksTreshold 
+                then let val (n, l) = removeDetermined activeReadLocks
+                     in
+                        processLock (n + 1, f :: l, ths)
+                     end
+                else processLock (n + 1, f :: activeReadLocks, ths)
+        end
+      | processLock (n, activeReadLocks, WRITER r :: ths) =
+        let
+            (* wait till all active read locks are done *)
+            val _ = barrier activeReadLocks
+            
+            val p = Promise.promise ()
+        in
+            (* signal writer to start *)
+            Promise.fulfill (r, p);
+            
+            (* and wait till it's finished *)
+            Future.await (Promise.future p);
+
+            (* continue -- there are NO active read locks now *)
+            processLock (0, [], ths)
+        end
+      | processLock (_, _, []) = ()
+
+        
+    fun lock () = 
+        let
+            val (s, l)  = Stream.stream ()
+        in
+            (* should probably use ispawn here, but that would
+               introduce another build time dependency *)
+            spawn processLock (0, [], l); 
+            s
+        end
+
+
+    fun doSync (kind, lock, f, x) =
+        (* sync for reading *)
+        let
+            val pStart  = Promise.promise ()
+            val _       = Stream.send (lock, kind pStart) 
+            
+            (* wait till we get the start signal *)
+            val pDone   = Future.await (Promise.future pStart)
+        in
+            (* execute f and signal that we are done afterwards *)
+                f x before Promise.fulfill (pDone, ()) 
+            handle e => (
+                (* f raised an exception!
+                   reraise it after cleanup. *)
+                Promise.fulfill (pDone, ());
+                raise e)
+        end
+
+    fun sync l f x          = doSync (READER, l, f, x)
+    
+    fun syncWrite l f x     = doSync (WRITER, l, f, x)
+
+end

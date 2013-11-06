@@ -1,0 +1,28 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive             from "Pervasive"
+import __primitive type int and list     from "ToplevelTypes"
+import __primitive structure Word8Vector from "Word8Vector"
+import functor MkMonoVectorSlice         from "MkMonoVectorSlice"
+
+structure Word8VectorSlice = MkMonoVectorSlice(
+    type elem   = Word8Vector.elem
+    type vector = Word8Vector.vector
+    __primitive type slice = "Word8VectorSlice.slice"
+    __primitive val vlength :   vector -> int = "Word8Vector.length"
+    __primitive val vsub :      vector * int -> elem = "Word8Vector.sub"
+    __primitive val vextract :  vector * int * int -> vector = "Word8Vector.extract"
+    __primitive val vtabulate : int * (int -> elem) -> vector = "Word8Vector.tabulate"
+    __primitive val vconcat :   vector list -> vector = "Word8Vector.concat"
+    __primitive val vfromList : elem list -> vector = "Word8Vector.fromList"
+)

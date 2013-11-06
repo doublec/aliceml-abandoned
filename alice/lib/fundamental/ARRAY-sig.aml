@@ -1,0 +1,73 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                   from "Pervasive"
+import __primitive
+       type unit and int
+       type bool and option and order and list from "ToplevelTypes"
+
+signature ARRAY =
+sig
+    __eqeqtype 'a array
+    type 'a vector
+    type 'a t = 'a array						(**)
+
+    val maxLen :	int
+
+    val array :		int * 'a -> 'a array
+    val vector :	'a array -> 'a vector
+    val toList :	'a array -> 'a list				(**)
+    val fromList :	'a list -> 'a array
+    val toVector :	'a array -> 'a vector				(**)
+    val fromVector :	'a vector -> 'a array				(**)
+    val tabulate :	int * (int -> 'a) -> 'a array
+
+    val length :	'a array -> int
+    val sub :		'a array * int -> 'a
+    val update :	'a array * int * 'a -> unit
+    val swap :		'a array * int * int -> unit			(**)
+    val rev :		'a array -> unit				(**)
+    val copy :		{src : 'a array,  dst : 'a array, di : int} -> unit
+    val copyVec :	{src : 'a vector, dst : 'a array, di : int} -> unit
+
+    val app :		('a -> unit) -> 'a array -> unit
+    val appr :		('a -> unit) -> 'a array -> unit		(**)
+    val modify :	('a -> 'a) -> 'a array -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val all :		('a -> bool) -> 'a array -> bool
+    val exists :	('a -> bool) -> 'a array -> bool
+    val find :		('a -> bool) -> 'a array -> 'a option
+
+    val appi :		(int * 'a -> unit) -> 'a array -> unit
+    val appri :		(int * 'a -> unit) -> 'a array -> unit		(**)
+    val modifyi :	(int * 'a -> 'a) -> 'a array -> unit
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val alli :		(int * 'a -> bool) -> 'a array -> bool		(**)
+    val existsi :	(int * 'a -> bool) -> 'a array -> bool		(**)
+    val findi :		(int * 'a -> bool) -> 'a array -> (int * 'a) option
+
+    val contains :	''a array -> ''a -> bool			(**)
+    val notContains :	''a array -> ''a -> bool			(**)
+
+    val equal :		('a * 'a -> bool) -> 'a array * 'a array -> bool (**)
+    val collate :	('a * 'a -> order) -> 'a array * 'a array -> order (**)
+
+    val isSorted :	('a * 'a -> order) -> 'a array -> bool		(**)
+    val sort :		('a * 'a -> order) -> 'a array -> unit		(**)
+end

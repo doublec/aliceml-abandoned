@@ -1,0 +1,178 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Vector structure", "The <TT>Vector</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature VECTOR
+    structure Vector : VECTOR
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/vector.html"><TT>Vector</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="vector-slice.html"><TT>VectorSlice</TT></A>,
+    <A href="vector-pair.html"><TT>VectorPair</TT></A>,
+    <A href="mono-vector.html"><TT>MONO_VECTOR</TT></A>,
+    <A href="array.html"><TT>Array</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature VECTOR =
+    sig
+	eqtype 'a vector
+	type   'a t = 'a vector
+
+	val maxLen :      int
+
+	val toList :      'a vector -> 'a list
+	val fromList :    'a list -> 'a vector
+	val tabulate :    int * (int -> 'a) -> 'a vector
+
+	val length :      'a vector -> int
+	val sub :         'a vector * int -> 'a
+	val update :      'a vector * int * 'a -> 'a vector
+	val concat :      'a vector list -> 'a vector
+	val rev :         'a vector -> 'a vector
+
+	val app :         ('a -> unit) -> 'a vector -> unit
+	val appr :        ('a -> unit) -> 'a vector -> unit
+	val map :         ('a -> 'b) -> 'a vector -> 'b vector
+	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+	val all :         ('a -> bool) -> 'a vector -> bool
+	val exists :      ('a -> bool) -> 'a vector -> bool
+	val find :        ('a -> bool) -> 'a vector -> 'a option
+
+	val appi :        (int * 'a -> unit) -> 'a vector -> unit
+	val appri :       (int * 'a -> unit) -> 'a vector -> unit
+	val mapi :        (int * 'a -> 'b) -> 'a vector -> 'b vector
+	val foldli :      (int * 'a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+	val foldri :      (int * 'a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+	val alli :        (int * 'a -> bool) -> 'a vector -> bool
+	val existsi :     (int * 'a -> bool) -> 'a vector -> bool
+	val findi :       (int * 'a -> bool) -> 'a vector -> (int * 'a) option
+
+	val contains :    ''a vector -> ''a -> bool
+	val notContains : ''a vector -> ''a -> bool
+
+	val equal :       ('a * 'a -> bool) -> 'a vector * 'a vector -> bool
+	val collate :     ('a * 'a -> order) -> 'a vector * 'a vector -> order
+
+	val isSorted :    ('a * 'a -> order) -> 'a vector -> bool
+	val sort :        ('a * 'a -> order) -> 'a vector -> 'a vector
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/vector.html"><TT>Vector</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = vector</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>vector</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toList <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a list of the elements of <TT><I>vec</I></TT> in order of
+      increasing indices.</P>
+    </DD>
+
+    <DT>
+      <TT>rev <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a vector that contains the elements of <TT><I>vec</I></TT>
+      in reverse order.</P>
+    </DD>
+
+    <DT>
+      <TT>appr <I>f</I> <I>vec</I></TT> <BR>
+      <TT>appri <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>app</TT> and <TT>appi</TT>, but apply <TT><I>f</I></TT> in
+      right to left order (i.e., decreasing indices). The expression
+      <TT>appr <I>f vec</I></TT> is equivalent to:</P>
+      <PRE>
+        appri (<I>f</I> o #2) <I>vec</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>alli <I>f</I> <I>vec</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>.
+      The index of each element is passed to <TT><I>f</I></TT> as an additional
+      argument. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>vec</I>    = alli (<I>f</I> o #2) <I>vec</I>
+        exists <I>f</I> <I>vec</I> = existsi (<I>f</I> o #2) <I>vec</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>contains <I>vec</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      vector <TT><I>vec</I></TT>; otherwise <TT>false</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>notContains <I>vec</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      vector <TT><I>vec</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>vec a</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>eq</I> (<I>vec1</I>, <I>vec2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an equality function on vectors given an equality on the
+      element type.</P>
+    </DD>
+
+    <DT>
+      <TT>isSorted <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> iff <TT><I>vec</I></TT> is sorted with respect
+      to the ordering function <TT><I>f</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>sort <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a new vector that contains the same elements as
+      <TT><I>vec</I></TT>, but sorted with respect to the ordering function
+      <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
+      elements.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

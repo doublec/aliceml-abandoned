@@ -1,0 +1,209 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature FD =
+sig
+    eqtype space
+    eqtype intvar
+    eqtype boolvar
+
+    exception NotAssigned
+		       
+    type domain = (int*int) vector
+    exception InvalidDomain
+    (* Exception thrown by all domain tells *)
+    (* if something that is no proper domain is used *)
+
+    val domainFromList : int list -> domain
+    val domainToList : domain -> int list
+
+    (* Allocation of finite domain variables *)
+    val intvar :  space * domain -> intvar
+    val intvarVec :  space * int * domain -> intvar vector
+    val range :  space * (int * int) -> intvar
+    val rangeVec :  space * int * (int * int) -> intvar vector
+
+    (* Allocation of boolean (0/1) finite domain variables *)
+    val boolvar :  space -> boolvar
+    val boolvarVec :  space * int -> boolvar vector
+
+    (* Constraining an intvar to a boolvar *)
+
+    val intvar2boolvar : space * intvar -> boolvar
+    val boolvar2intvar : boolvar -> intvar
+
+    (* Value assignment *)
+
+    datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
+
+    val assign : space * intvar vector * avalsel -> unit
+
+    (* Domain constraints *)
+    val dom :  space * intvar * (int * int) vector -> unit
+
+
+    (* debugging *)
+    (*val varStamp : intvar -> int*)
+
+    (* *********** *)
+    (* PROPAGATORS *)
+    (* *********** *)
+
+    (* Relations *)
+
+    datatype relation =
+	     EQ (* Equality         == *)
+	   | NQ (* Disequality      != *)
+	   | LQ (* Less or equal    <= *)
+	   | LE (* Less             <  *)
+	   | GQ (* Greater or equal >= *)
+	   | GR (* Greater          >  *)
+	     
+    datatype conlevel = 
+	     BND | DEF | DOM | VAL
+
+    val rel  :  space * intvar * relation * intvar -> unit
+    val relI :  space * intvar * relation * int -> unit
+
+    val equal  : space * intvar * intvar * conlevel -> unit
+    val equalV : space * intvar vector * conlevel -> unit
+
+    (* Distinct constraints *)
+    val distinct : space * intvar vector * conlevel -> unit
+    val distinctOffset : space * (int * intvar) vector *
+			 conlevel -> unit
+
+    (* Sortedness constraints *)
+    val sortedness : space * intvar vector * intvar vector * conlevel -> unit
+    val permsort : space * intvar vector * intvar vector * intvar vector * conlevel -> unit
+
+    (* Global cardinality *)
+    val gcc1 : space * intvar vector * int vector * int * int * int * int *
+	conlevel -> unit
+    val gcc2 : space * intvar vector * int vector * int * int * int * int *
+	int * conlevel -> unit
+    val gcc3 : space * intvar vector * int * conlevel -> unit
+    val gcc4 : space * intvar vector * int * int * conlevel -> unit
+    val gcc5 : space * intvar vector * intvar vector * int * int *
+	conlevel -> unit
+    val gcc6 : space * intvar vector * int vector * intvar vector * int *
+	int * bool * int * int * conlevel -> unit
+    val gcc7 : space * intvar vector * int vector * intvar vector * int *
+	int * int * bool * int * int * conlevel -> unit
+
+    (* Counting constraints *)
+    val countII : space * intvar vector * 
+		  int * relation * int -> unit
+    val countVI : space * intvar vector * 
+		 intvar * relation * int -> unit
+    val countIV : space * intvar vector * 
+		  int * relation * intvar -> unit
+    val countVV : space * intvar vector * 
+		 intvar * relation * intvar -> unit
+
+    (* Access constraints *)
+    val element : space * intvar vector * intvar *
+		 intvar -> unit
+    val elementI : space * int vector * intvar *
+		  intvar -> unit
+    val lex : space * intvar vector * relation *
+	     intvar vector -> unit
+			       
+    (* Boolean constraints *)			     
+    val nega  : space * boolvar * boolvar -> unit
+    val conj  : space * boolvar * boolvar * boolvar -> unit
+    val disj  : space * boolvar * boolvar * boolvar -> unit
+    val impl  : space * boolvar * boolvar * boolvar -> unit
+    val equi  : space * boolvar * boolvar * boolvar -> unit
+    val exor  : space * boolvar * boolvar * boolvar -> unit
+    val conjV : space * boolvar vector * boolvar -> unit
+    val disjV : space * boolvar vector * boolvar -> unit
+
+    (* Linear equations *)
+    val linear : space * (int * intvar) vector * relation *
+		 int * conlevel -> unit
+
+    (* Arithmetic constraints *)					
+    val min : space * intvar vector * intvar -> unit
+    val max : space * intvar vector * intvar -> unit
+    val abs : space * intvar * intvar * conlevel -> unit
+    val mult: space * intvar * intvar * intvar * conlevel -> unit
+(*    val power: space * intvar * intvar * intvar * conlevel -> unit*)
+
+    structure Reified :
+	sig
+	    val intvar : space * domain * boolvar -> intvar
+	    val intvarVec : space * int * domain * boolvar ->
+			    intvar vector
+	    val dom : space * intvar * (int * int) vector *
+		      boolvar -> unit
+	    val rel : space * intvar * relation * intvar *
+		      boolvar -> unit
+	    val relI : space * intvar * relation * int *
+		       boolvar -> unit
+(*	    val equal : space * intvar * intvar *
+			boolvar * conlevel -> unit*)
+	    val linear : space * (int * intvar) vector * relation *
+			 int * boolvar * conlevel -> unit
+	end
+
+    structure Reflect :
+	sig
+	    val min : space * intvar -> int
+	    val max : space * intvar -> int
+            val med : space * intvar -> int
+	    val value : space * intvar -> int (* NotAssigned *)
+	    val boolVal : space * boolvar -> bool (* NotAssigned *)
+(*	    val mid : space * intvar -> int *)
+(*	    val nextLarger : space * fd * int -> int *)
+(*	    val nextSmaller : space * fd * int -> int *)
+	    val size : space * intvar -> int
+	    val dom : space * intvar -> domain
+            val assigned : space * intvar -> bool
+            val range : space * intvar -> bool
+(*	    val domList : fd -> int list *)
+(*	    val nbSusps : fd -> int *)
+(*	    val eq : fd * fd -> bool (* token eq *) *)
+	end
+						  
+    (* Branching strategies *)
+
+    datatype b_var_sel =
+	     B_DEGREE_MAX
+	   | B_DEGREE_MIN
+	   | B_MAX_MAX
+	   | B_MAX_MIN
+	   | B_MIN_MAX
+	   | B_MIN_MIN
+	   | B_NONE
+	   | B_REGRET_MAX_MAX
+	   | B_REGRET_MAX_MIN
+	   | B_REGRET_MIN_MAX
+	   | B_REGRET_MIN_MIN
+	   | B_SIZE_MAX
+	   | B_SIZE_MIN
+	     
+    datatype b_val_sel =
+	     B_MAX
+	   | B_MED
+	   | B_MIN
+	   | B_SPLIT_MAX
+	   | B_SPLIT_MIN
+
+    val branch : space * intvar vector * b_var_sel *
+		 b_val_sel -> unit
+
+end

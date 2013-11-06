@@ -1,0 +1,63 @@
+<?php include("macros.php3"); ?>
+<?php heading("The HASHABLE signature", "The <TT>HASHABLE</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature HASHABLE
+  </PRE>
+
+  <P>
+    An abstract signature for types that support hashing, useful for functor
+    arguments. Note that most basic types in the fundamental library match
+    this signature.
+  </P>
+
+  <P>See also:
+    <A href="ordered.html"><TT>ORDERED</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature HASHABLE from "x-alice:/lib/data/HASHABLE-sig"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature HASHABLE =
+    sig
+	type t
+
+	val equal :  t * t -> bool
+	val hash :   t -> int
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type t</TT>
+    </DT>
+    <DD>
+      <P>The abstract type of hashable values.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>x1</I>, <I>x2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>x1</I></TT> and <TT><I>x2</I></TT>
+      are equal, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>hash <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Maps <TT><I>x</I></TT> to an integer suitable as a hash value.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

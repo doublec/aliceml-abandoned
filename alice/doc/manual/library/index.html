@@ -1,0 +1,572 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Alice library", "the\nalice\nlibrary") ?>
+
+<!--
+********************************************************************************
+
+NOTE: Any library page hooked in here must also be added to:
+
+* ../sitemap.html
+* ../Alice.hhc (the description for building the Windows help file)
+
+********************************************************************************
+-->
+
+<?php section("structure", "structure") ?>
+
+<P>Alice is equipped with an extended version of the <A
+href="http://www.standardml.org/Basis/">Standard ML Basis Library</A>. 
+Most additional modules deal with Alice ML extensions over Standard ML.</P>
+
+<P>The library is split into <A
+href="../components.html">components</A>. Usually, one component
+exports a single module (structure or functor) or signature. The components are
+named after the module or signature they export. Signature component names have
+a <TT>-sig</TT> suffix appended to avoid problems with case insensitive
+operating systems.</P>
+
+<P>Library components are imported through URIs using the <TT>x-alice:</TT>
+scheme. The library is organized hierarchically as follows:</P>
+
+<UL>
+  <LI><A href="#fundamental"><TT>"x-alice:/lib/fundamental/"</TT></A>
+	- fundamental types and data structures </LI>
+  <LI><A href="#data"><TT>"x-alice:/lib/data/"</TT></A>
+	- higher-level data structures </LI>
+  <LI><A href="#system"><TT>"x-alice:/lib/system/"</TT></A>
+	- I/O and other system related functionality </LI>
+  <LI><A href="#distribution"><TT>"x-alice:/lib/distribution/"</TT></A>
+	- distributed programming </LI>
+<?php if ($platform == "seam") { ?>
+  <LI><A href="#gecode"><TT>"x-alice:/lib/gecode/"</TT></A>
+<?php } else { ?>
+  <LI><A href="#constraints"><TT>"x-alice:/lib/constraints/"</TT></A>
+<?php } ?>
+	- constraint programming </LI>
+  <LI><A href="#tools"><TT>"x-alice:/lib/tools/"</TT></A>
+	- interactive tools </LI>
+  <LI><A href="#gtk"><TT>"x-alice:/lib/gtk/"</TT></A>
+	- Gtk+ GUI toolkit </LI>
+  <LI><A href="#regex"><TT>"x-alice:/lib/regex/"</TT></A>
+	- regular expressions </LI>
+  <LI><A href="#sqlite"><TT>"x-alice:/lib/sqlite/"</TT></A>
+	- SQLite database library </LI>
+  <LI><A href="#xml"><TT>"x-alice:/lib/xml/"</TT></A>
+	- XML parser library </LI>
+</UL>
+
+<P>The Standard ML <A href="#toplevel">top-level environment</A> is
+available as usual.</P>
+
+
+<?php section("import", "import") ?>
+
+<P>Components from the fundamental library, and those components of the system
+library that are part of the Standard ML Basis Library, are imported implicitly.
+Other components can be accessed through appropriate explicit import
+announcements. For example, a program using the <A
+href="url.html"><TT>Url</TT></A> component has to be prefixed by the
+following announcement:</P>
+
+<PRE class=code>
+import structure Url from "x-alice:/lib/system/Url"</PRE>
+
+<P>The reference pages for the individual library items contain the synopsis of
+the appropriate import announcement for each item. Note that it is not
+necessary to import a signature in order to use a structure implementing that
+signature, although the library pages usually contain the synopsis for both.
+Signatures only need to be imported if used explicitly.</P>
+
+
+<?php subsection("import-interactive", "Interactive top-level") ?>
+
+<P>The <A href="../interactive.html">interactive toplevel</A> system imports
+the <EM>complete</EM> library, except <TT>/lib/gtk/</TT>, implicitly. Loading of
+the respective components is performed lazily.</P>
+
+
+<!--
+<?php section("compatibility", "compatibility") ?>
+
+  <P>
+    <EM>Note:</EM> Most other SML implementations currently still implement
+    a <A href="http://www.dina.kvl.dk/~sestoft/sml/">previous version of the
+    Standard Basis library</A>. Some incompatible changes in the recent
+    version may thus cause some SML code ported from other systems to be
+    rejected by Alice. Watch out particularly for uses of array and vector
+    modules.
+  </P>
+-->
+
+<?php section("toplevel", "top-level") ?>
+
+<P>The <A href="toplevel.html">top-level environment</A> contains all
+types, exceptions and values that are available unqualified.</P>
+
+
+<?php section("fundamental", "fundamental library") ?>
+
+<?php subsection("fundamental-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="alt.html">ALT</A></TD> </TR>
+    <TR> <TD><A href="array.html">ARRAY</A></TD> </TR>
+    <TR> <TD><A href="array2.html">ARRAY2</A></TD> </TR>
+    <TR> <TD><A href="array-slice.html">ARRAY_SLICE</A></TD> </TR>
+    <TR> <TD><A href="bool.html">BOOL</A></TD> </TR>
+    <TR> <TD><A href="byte.html">BYTE</A></TD> </TR>
+    <TR> <TD><A href="char.html">CHAR</A></TD> </TR>
+    <TR> <TD><A href="exn.html">EXN</A></TD> </TR>
+    <TR> <TD><A href="fn.html">FN</A></TD> </TR>
+    <TR> <TD><A href="future.html">FUTURE</A></TD> </TR>
+    <TR> <TD><A href="general.html">GENERAL</A></TD> </TR>
+    <TR> <TD><A href="hole.html">HOLE</A></TD> </TR>
+    <TR> <TD><A href="ieee-real.html">IEEE_REAL</A></TD> </TR>
+    <TR> <TD><A href="integer.html">INTEGER</A></TD> </TR>
+    <TR> <TD><A href="int-inf.html">INT_INF</A></TD> </TR>
+    <TR> <TD><A href="list.html">LIST</A></TD> </TR>
+    <TR> <TD><A href="list-pair.html">LIST_PAIR</A></TD> </TR>
+    <TR> <TD><A href="math.html">MATH</A></TD> </TR>
+    <TR> <TD><A href="mono-array.html">MONO_ARRAY</A></TD> </TR>
+    <TR> <TD><A href="mono-array-slice.html">MONO_ARRAY_SLICE</A></TD> </TR>
+    <TR> <TD><A href="mono-vector.html">MONO_VECTOR</A></TD> </TR>
+    <TR> <TD><A href="mono-vector-slice.html">MONO_VECTOR_SLICE</A></TD> </TR>
+    <TR> <TD><A href="option.html">OPTION</A></TD> </TR>
+    <TR> <TD><A href="package.html">PACKAGE</A></TD> </TR>
+    <TR> <TD><A href="pair.html">PAIR</A></TD> </TR>
+    <TR> <TD><A href="promise.html">PROMISE</A></TD> </TR>
+    <TR> <TD><A href="real.html">REAL</A></TD> </TR>
+    <TR> <TD><A href="ref.html">REF</A></TD> </TR>
+    <TR> <TD><A href="string.html">STRING</A></TD> </TR>
+    <TR> <TD><A href="substring.html">SUBSTRING</A></TD> </TR>
+    <TR> <TD><A href="text.html">TEXT</A></TD> </TR>
+    <TR> <TD><A href="thread.html">THREAD</A></TD> </TR>
+    <TR> <TD><A href="vector.html">VECTOR</A></TD> </TR>
+    <TR> <TD><A href="vector-pair.html">VECTOR_PAIR</A></TD> </TR>
+    <TR> <TD><A href="vector-slice.html">VECTOR_SLICE</A></TD> </TR>
+    <TR> <TD><A href="word.html">WORD</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("fundamental-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="alt.html">Alt</A></TD> </TR>
+    <TR> <TD><A href="array.html">Array</A></TD> </TR>
+    <TR> <TD><A href="array2.html">Array2</A><TD> </TR>
+    <TR> <TD><A href="array-slice.html">ArraySlice</A></TD> </TR>
+    <TR> <TD><A href="bool.html">Bool</A></TD> </TR>
+    <TR> <TD><A href="byte.html">Byte</A></TD> </TR>
+    <TR> <TD><A href="char.html">Char</A></TD> </TR>
+    <TR> <TD><A href="mono-array.html">CharArray</A></TD> </TR>
+    <TR> <TD><A href="mono-array-slice.html">CharArraySlice</A></TD> </TR>
+    <TR> <TD><A href="mono-vector.html">CharVector</A></TD> </TR>
+    <TR> <TD><A href="mono-vector-slice.html">CharVectorSlice</A></TD> </TR>
+    <TR> <TD><A href="exn.html">Exn</A></TD> </TR>
+    <TR> <TD><A href="integer.html">FixedInt</A></TD> </TR>
+    <TR> <TD><A href="fn.html">Fn</A></TD> </TR>
+    <TR> <TD><A href="future.html">Future</A></TD> </TR>
+    <TR> <TD><A href="general.html">General</A></TD> </TR>
+    <TR> <TD><A href="hole.html">Hole</A></TD> </TR>
+    <TR> <TD><A href="ieee-real.html">IEEEReal</A></TD> </TR>
+    <TR> <TD><A href="integer.html">Int</A></TD> </TR>
+    <TR> <TD><A href="int-inf.html">IntInf</A></TD> </TR>
+    <TR> <TD><A href="integer.html">LargeInt</A></TD> </TR>
+    <TR> <TD><A href="real.html">LargeReal</A></TD> </TR>
+    <TR> <TD><A href="word.html">LargeWord</A></TD> </TR>
+    <TR> <TD><A href="list.html">List</A></TD> </TR>
+    <TR> <TD><A href="list-pair.html">ListPair</A></TD> </TR>
+    <TR> <TD><A href="math.html">Math</A></TD> </TR>
+    <TR> <TD><A href="option.html">Option</A></TD> </TR>
+    <TR> <TD><A href="package.html">Package</A></TD> </TR>
+    <TR> <TD><A href="pair.html">Pair</A></TD> </TR>
+    <TR> <TD><A href="integer.html">Position</A></TD> </TR>
+    <TR> <TD><A href="promise.html">Promise</A></TD> </TR>
+    <TR> <TD><A href="real.html">Real</A></TD> </TR>
+    <TR> <TD><A href="ref.html">Ref</A></TD> </TR>
+    <TR> <TD><A href="string.html">String</A></TD> </TR>
+    <TR> <TD><A href="substring.html">Substring</A></TD> </TR>
+    <TR> <TD><A href="text.html">Text</A></TD> </TR>
+    <TR> <TD><A href="thread.html">Thread</A></TD> </TR>
+    <TR> <TD><A href="vector.html">Vector</A></TD> </TR>
+    <TR> <TD><A href="vector-pair.html">VectorPair</A></TD> </TR>
+    <TR> <TD><A href="vector-slice.html">VectorSlice</A></TD> </TR>
+    <TR> <TD><A href="word.html">Word</A></TD> </TR>
+    <TR> <TD><A href="word.html">Word8</A></TD> </TR>
+    <TR> <TD><A href="word.html">Word31</A></TD> </TR>
+    <TR> <TD><A href="mono-array.html">Word8Array</A></TD> </TR>
+    <TR> <TD><A href="mono-array-slice.html">Word8ArraySlice</A></TD> </TR>
+    <TR> <TD><A href="mono-vector.html">Word8Vector</A></TD> </TR>
+    <TR> <TD><A href="mono-vector-slice.html">Word8VectorSlice</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("fundamental-funs", "Functors") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="future.html">Future.ByNeed</A></TD> </TR>
+    <TR> <TD><A href="future.html">Future.Concur</A></TD> </TR>
+    <TR> <TD><A href="package.html">Package.Pack</A></TD> </TR>
+    <TR> <TD><A href="package.html">Package.Unpack</A></TD> </TR>
+    <TR> <TD><A href="package.html">Package.PackVal</A></TD> </TR>
+    <TR> <TD><A href="package.html">Package.UnpackVal</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("data", "data library") ?>
+
+<?php subsection("data-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="atom.html">ATOM</A></TD> </TR>
+    <TR> <TD><A href="channel.html">CHANNEL</A></TD> </TR>
+    <TR> <TD><A href="hashable.html">HASHABLE</A></TD> </TR>
+    <TR> <TD><A href="imp-map.html">IMP_MAP</A></TD> </TR>
+    <TR> <TD><A href="imp-set.html">IMP_SET</A></TD> </TR>
+    <TR> <TD><A href="lock.html">LOCK</A></TD> </TR>
+    <TR> <TD><A href="map.html">MAP</A></TD> </TR>
+    <TR> <TD><A href="ordered.html">ORDERED</A></TD> </TR>
+    <TR> <TD><A href="ref-map.html">REF_MAP</A></TD> </TR>
+    <TR> <TD><A href="set.html">SET</A></TD> </TR>
+    <TR> <TD><A href="sited.html">SITED</A></TD> </TR>
+    <TR> <TD><A href="stack.html">STACK</A></TD> </TR>
+    <TR> <TD><A href="stamp.html">STAMP</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("data-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="atom.html">Atom</A></TD> </TR>
+    <TR> <TD><A href="channel.html">Channel</A></TD> </TR>
+    <TR> <TD><A href="stamp.html">GlobalStamp</A></TD> </TR>
+    <TR> <TD><A href="lock.html">Lock</A></TD> </TR>
+    <TR> <TD><A href="ref-map.html">RefMap</A></TD> </TR>
+    <TR> <TD><A href="sited.html">Sited</A></TD> </TR>
+    <TR> <TD><A href="stack.html">Stack</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("data-funs", "Functors") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="lock.html">Lock.Sync</A></TD> </TR>
+    <TR> <TD><A href="imp-map.html">MkHashImpMap</A></TD> </TR>
+    <TR> <TD><A href="imp-set.html">MkHashImpSet</A></TD> </TR>
+    <TR> <TD><A href="imp-map.html">MkRedBlackImpMap</A></TD> </TR>
+    <TR> <TD><A href="imp-set.html">MkRedBlackImpSet</A></TD> </TR>
+    <TR> <TD><A href="map.html">MkRedBlackMap</A></TD> </TR>
+    <TR> <TD><A href="set.html">MkRedBlackSet</A></TD> </TR>
+    <TR> <TD><A href="stamp.html">MkStamp</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("system", "system library") ?>
+
+<?php subsection("system-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="bin-io.html">BIN_IO</A></TD> </TR>
+    <TR> <TD><A href="command-line.html">COMMAND_LINE</A></TD> </TR>
+    <TR> <TD><A href="compiler.html">COMPILER</A></TD> </TR>
+    <TR> <TD><A href="component.html">COMPONENT</A></TD> </TR>
+    <TR> <TD><A href="component-manager.html">COMPONENT_MANAGER</A></TD> </TR>
+    <TR> <TD><A href="config.html">CONFIG</A></TD> </TR>
+    <TR> <TD><A href="date.html">DATE</A></TD> </TR>
+    <TR> <TD><A href="http.html">HTTP</A></TD> </TR>
+    <TR> <TD><A href="http-client.html">HTTP_CLIENT</A></TD> </TR>
+    <TR> <TD><A href="http-server.html">HTTP_SERVER</A></TD> </TR>
+    <TR> <TD><A href="imperative-io.html">IMPERATIVE_IO</A></TD> </TR>
+    <TR> <TD><A href="io.html">IO</A></TD> </TR>
+    <TR> <TD><A href="os.html">OS</A></TD> </TR>
+    <TR> <TD><A href="os-file-sys.html">OS_FILE_SYS</A></TD> </TR>
+    <TR> <TD><A href="os-io.html">OS_IO</A></TD> </TR>
+    <TR> <TD><A href="os-path.html">OS_PATH</A></TD> </TR>
+    <TR> <TD><A href="os-process.html">OS_PROCESS</A></TD> </TR>
+    <TR> <TD><A href="pickle.html">PICKLE</A></TD> </TR>
+    <TR> <TD><A href="policy.html">POLICY</A></TD> </TR>
+    <TR> <TD><A href="prim-io.html">PRIM_IO</A></TD> </TR>
+    <TR> <TD><A href="print.html">PRINT</A></TD> </TR>
+    <TR> <TD><A href="rand.html">RAND</A></TD> </TR>
+    <TR> <TD><A href="resolver.html">RESOLVER</A></TD> </TR>
+    <TR> <TD><A href="resolver-handler.html">RESOLVER_HANDLER</A></TD> </TR>
+    <TR> <TD><A href="sandbox.html">SANDBOX</A></TD> </TR>
+    <TR> <TD><A href="socket.html">SOCKET</A></TD> </TR>
+    <TR> <TD><A href="store.html">STORE</A></TD> </TR>
+    <TR> <TD><A href="stream-io.html">STREAM_IO</A></TD> </TR>
+    <TR> <TD><A href="text-io.html">TEXT_IO</A></TD> </TR>
+    <TR> <TD><A href="text-stream-io.html">TEXT_STREAM_IO</A></TD> </TR>
+    <TR> <TD><A href="time.html">TIME</A></TD> </TR>
+    <TR> <TD><A href="timer.html">TIMER</A></TD> </TR>
+    <TR> <TD><A href="unix.html">UNIX</A></TD> </TR>
+    <TR> <TD><A href="url.html">URL</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("system-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="bin-io.html">BinIO</A></TD> </TR>
+    <TR> <TD><A href="prim-io.html">BinPrimIO</A></TD> </TR>
+    <TR> <TD><A href="command-line.html">CommandLine</A></TD> </TR>
+    <TR> <TD><A href="compiler.html">Compiler</A></TD> </TR>
+    <TR> <TD><A href="component.html">Component</A></TD> </TR>
+    <TR> <TD><A href="component-manager.html">ComponentManager</A></TD> </TR>
+    <TR> <TD><A href="config.html">Config</A></TD> </TR>
+    <TR> <TD><A href="date.html">Date</A></TD> </TR>
+    <TR> <TD><A href="http.html">Http</A></TD> </TR>
+    <TR> <TD><A href="http-client.html">HttpClient</A></TD> </TR>
+    <TR> <TD><A href="http-server.html">HttpServer</A></TD> </TR>
+    <TR> <TD><A href="io.html">IO</A></TD> </TR>
+    <TR> <TD><A href="os.html">OS</A></TD> </TR>
+    <TR> <TD><A href="os-file-sys.html">OS.FileSys</A></TD> </TR>
+    <TR> <TD><A href="os-io.html">OS.IO</A></TD> </TR>
+    <TR> <TD><A href="os-path.html">OS.Path</A></TD> </TR>
+    <TR> <TD><A href="os-process.html">OS.Process</A></TD> </TR>
+    <TR> <TD><A href="pickle.html">Pickle</A></TD> </TR>
+    <TR> <TD><A href="print.html">Print</A></TD> </TR>
+    <TR> <TD><A href="rand.html">Rand</A></TD> </TR>
+    <TR> <TD><A href="resolver.html">Resolver</A></TD> </TR>
+    <TR> <TD><A href="sandbox.html">Sandbox</A></TD> </TR>
+    <TR> <TD><A href="socket.html">Socket</A></TD> </TR>
+    <TR> <TD><A href="store.html">Store</A></TD> </TR>
+    <TR> <TD><A href="store.html">Store.Map</A></TD> </TR>
+    <TR> <TD><A href="text-io.html">TextIO</A></TD> </TR>
+    <TR> <TD><A href="text-io.html">TextIO.StreamIO</A></TD> </TR>
+    <TR> <TD><A href="prim-io.html">TextPrimIO</A></TD> </TR>
+    <TR> <TD><A href="time.html">Time</A></TD> </TR>
+    <TR> <TD><A href="timer.html">Timer</A></TD> </TR>
+    <TR> <TD><A href="unix.html">Unix</A></TD> </TR>
+    <TR> <TD><A href="url.html">Url</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("system-funs", "Functors") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="imperative-io.html">ImperativeIO</A></TD> </TR>
+    <TR> <TD><A href="prim-io.html">PrimIO</A></TD> </TR>
+    <TR> <TD><A href="stream-io.html">StreamIO</A></TD> </TR>
+    <TR> <TD><A href="pickle.html">Pickle.Save</A></TD> </TR>
+    <TR> <TD><A href="pickle.html">Pickle.Load</A></TD> </TR>
+    <TR> <TD><A href="pickle.html">Pickle.SaveVal</A></TD> </TR>
+    <TR> <TD><A href="pickle.html">Pickle.LoadVal</A></TD> </TR>
+    <TR> <TD><A href="component.html#Create">Component.Create</A></TD> </TR>
+    <TR> <TD><A href="component.html#MkManager">Component.MkManager</A></TD> </TR>
+    <TR> <TD><A href="component-manager.html#Eval-fn">ComponentManager.Eval</A></TD> </TR>
+    <TR> <TD><A href="component-manager.html#Link-fn">ComponentManager.Link</A></TD> </TR>
+    <TR> <TD><A href="component-manager.html#Enter-fn">ComponentManager.Enter</A></TD> </TR>
+    <TR> <TD><A href="sandbox.html#MkManager">Sandbox.MkManager</A></TD> </TR>
+    <TR> <TD><A href="policy.html">MkPolicy</A></TD> </TR>
+    <TR> <TD><A href="policy.html">MkReadOnlyPolicy</A></TD> </TR>
+    <TR> <TD><A href="policy.html">MkNetworkPolicy</A></TD> </TR>
+    <TR> <TD><A href="policy.html">MkUnrestrictedPolicy</A></TD> </TR>
+  </TABLE>
+
+<?php section("distribution", "distribution library") ?>
+
+<?php subsection("distribution-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="remote.html">REMOTE</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("distribution-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="remote.html">Remote</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("distribution-funs", "Functors") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="remote.html#Proxy-fn">Remote.Proxy</A></TD> </TR>
+    <TR> <TD><A href="remote.html#Offer-fn">Remote.Offer</A></TD> </TR>
+    <TR> <TD><A href="remote.html#Take-fn">Remote.Take</A></TD> </TR>
+    <TR> <TD><A href="remote.html#Eval-fn">Remote.Eval</A></TD> </TR>
+    <TR> <TD><A href="remote.html#Run-fn">Remote.Run</A></TD> </TR>
+  </TABLE>
+
+
+<?php if ($platform == "seam") { ?>
+
+<?php section("gecode", "gecode library") ?>
+
+<?php subsection("gecode-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="fd.html">FD</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS</A></TD> </TR>
+    <TR> <TD><A href="modeling.html">MODELING</A></TD> </TR>
+    <TR> <TD><A href="search.html">SEARCH</A></TD> </TR>
+    <TR> <TD><A href="space.html">SPACE</A></TD> </TR>
+  </TABLE>
+
+  <P><I>Search Factory:</I></P>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="sf-debug.html">DEBUG</A></TD> </TR>
+    <TR> <TD><A href="sf-path.html">PATH</A></TD> </TR>
+    <TR> <TD><A href="sf-search.html">SEARCH</A></TD> </TR>
+    <TR> <TD><A href="sf-problem.html">PROBLEM</A></TD> </TR>
+    <TR> <TD><A href="sf-distributed.html">ENGINE</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("gecode-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="fd.html">FD</A></TD> </TR>
+    <TR> <TD><A href="fd.html">FD.Reflect</A></TD> </TR>
+    <TR> <TD><A href="fd.html">FD.Reified</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Reflect</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Reified</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Value</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Int</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS.Selection</A></TD> </TR>
+    <TR> <TD><A href="modeling.html">Modeling</A></TD> </TR>
+    <TR> <TD><A href="search.html">Search</A></TD> </TR>
+    <TR> <TD><A href="search.html">Search.Recompute</A></TD> </TR>
+    <TR> <TD><A href="space.html">Space</A></TD> </TR>
+  </TABLE>
+
+  <P><I>Search Factory:</I></P>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="sf-debug.html">Debug</A></TD> </TR>
+    <TR> <TD><A href="sf-path.html">Path</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("gecode-functors", "Functors") ?>
+
+  <P><I>Search Factory:</I></P>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="sf-search.html">MkSearch</A></TD> </TR>
+    <TR> <TD><A href="sf-distributed.html">MkEngine</A></TD> </TR>
+  </TABLE>
+
+<?php } else { ?>
+
+<?php section("constraints", "constraints library") ?>
+
+<?php subsection("constraints-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="fd.html">FD</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS</A></TD> </TR>
+    <TR> <TD><A href="modeling.html">MODELING</A></TD> </TR>
+    <TR> <TD><A href="search.html">SEARCH</A></TD> </TR>
+    <TR> <TD><A href="space.html">SPACE</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("constraints-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="fd.html">FD</A></TD> </TR>
+    <TR> <TD><A href="fs.html">FS</A></TD> </TR>
+    <TR> <TD><A href="modeling.html">Modeling</A></TD> </TR>
+    <TR> <TD><A href="search.html">Search</A></TD> </TR>
+    <TR> <TD><A href="space.html">Space</A></TD> </TR>
+  </TABLE>
+
+<?php } ?>
+
+<?php section("tools", "tools library") ?>
+
+<?php subsection("tools-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="explorer.html">EXPLORER</A></TD> </TR>
+    <TR> <TD><A href="inspector.html">INSPECTOR</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("tools-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="explorer.html">Explorer</A></TD> </TR>
+    <TR> <TD><A href="inspector.html">Inspector</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("gtk", "Gtk library") ?>
+
+<?php subsection("gtk-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+      <?php if ($platform == "seam") { ?>
+    <TR> <TD><A href="atk.html">ATK</A><TD></TR>
+      <?php } ?>
+    <TR> <TD><A href="gtk-canvas.html">CANVAS</A></TD> </TR>
+    <TR> <TD><A href="gdk.html">GDK</A></TD> </TR>
+      <?php if ($platform == "seam") { ?>
+    <TR> <TD><A href="gtkbuilder.html">GTK_BUILDER</A></TD> </TR>
+    <TR> <TD><A href="glib.html">GLIB</A><TD></TR>
+      <?php } ?>
+    <TR> <TD><A href="gtk.html">GTK</A></TD> </TR>
+    <TR> <TD><A href="gtk-canvas.html">CANVAS</A></TD> </TR>
+      <?php if ($platform == "seam") { ?>
+    <TR> <TD><A href="pango.html">PANGO</A><TD></TR>
+      <?php } ?>
+  </TABLE>
+
+
+<?php subsection("gtk-structs", "Structures") ?>
+
+  <TABLE class=tt>
+      <?php if ($platform == "seam") { ?>
+    <TR> <TD><A href="atk.html">Atk</A><TD></TR>
+      <?php } ?>
+    <TR> <TD><A href="gtk-canvas.html">Canvas</A></TD> </TR>
+    <TR> <TD><A href="gdk.html">Gdk</A></TD> </TR>
+      <?php if ($platform == "seam") { ?>
+    <TR> <TD><A href="gtkbuilder.html">GtkBuilder</A></TD> </TR>
+    <TR> <TD><A href="glib.html">GLib</A><TD></TR>
+      <?php } ?>
+    <TR> <TD><A href="gtk.html">Gtk</A></TD> </TR>
+    <TR> <TD><A href="gtk-canvas.html">Canvas</A></TD> </TR>
+      <?php if ($platform == "seam") { ?>
+    <TR> <TD><A href="pango.html">Pango</A><TD></TR>
+      <?php } ?>
+  </TABLE>
+
+<?php section("regex", "regex library") ?>
+
+<?php subsection("regex-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="regex.html">REGEX</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("regex-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="regex.html">Regex</A></TD> </TR>
+  </TABLE>
+
+<?php section("sqlite", "SQLite library") ?>
+
+<?php subsection("sqlite-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="sqlite.html">SQLITE</A></TD> </TR>
+  </TABLE>
+
+
+<?php subsection("sqlite-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="sqlite.html">SQLite</A></TD> </TR>
+  </TABLE>
+
+<?php section("xml", "XML parser library") ?>
+
+<?php subsection("xml-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="xml.html">XML</A></TD> </TR>
+  </TABLE>
+
+
+<?php subsection("xml-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="xml.html">XML</A></TD> </TR>
+  </TABLE>
+
+
+<?php footing() ?>

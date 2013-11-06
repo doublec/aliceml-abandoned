@@ -1,0 +1,49 @@
+(*
+ * Author:
+ *   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Marco Kuhlmann, 2003
+ * 
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+(*
+ * This component provides an interface to a (subset of) POSIX-
+ * compatible regular expressions.  The 'matchptr' array that
+ * results from the application of the C 'regexec' function is
+ * represented as a new type 'match'.  An explicit representation
+ * of the C 'regex_t' type that holds a compiled pattern is
+ * avoided by allowing the partial application of the 'match' and
+ * the 'search' functions. (Note, however, that the functions
+ * resulting from this partial application cannot be pickled.)
+ *
+ *)
+
+signature REGEX =
+  sig
+
+    type match
+
+    infix 2 =~
+
+    exception Malformed
+    exception NoSuchGroup
+
+    val match      : string -> string -> match option     (* Malformed *)
+    val =~         : string * string -> bool              (* Malformed *)
+
+    val groups     : match -> string vector
+    val group      : match * int -> string                (* NoSuchGroup *)
+    val groupStart : match * int -> int                   (* NoSuchGroup *)
+    val groupEnd   : match * int -> int                   (* NoSuchGroup *)
+    val groupSpan  : match * int -> (int * int)           (* NoSuchGroup *)
+
+  end

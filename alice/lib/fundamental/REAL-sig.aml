@@ -1,0 +1,121 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and LargeInt and LargeReal from "Pervasive"
+import __primitive
+       type int and char and string
+       type bool and order and option                   from "ToplevelTypes"
+import __primitive structure IEEEReal                   from "IEEEReal"
+import __primitive structure StringCvt                  from "StringCvt"
+import __primitive signature MATH                       from "MATH-sig"
+
+signature REAL =
+sig
+    eqtype real
+    type t = real							(**)
+
+    structure Math :	MATH where type real = real
+
+(*TODO
+    val radix :		int
+    val precision :	int
+    val maxFinite :	real
+    val minPos :	real
+    val minNormalPos :	real
+*)
+
+    val posInf :	real
+    val negInf :	real
+
+    val ~ :		real -> real
+    val op + :		real * real -> real
+    val op - :		real * real -> real
+    val op * :		real * real -> real
+    val op / :		real * real -> real
+    val rem :		real * real -> real
+    val *+ :		real * real * real -> real
+    val *- :		real * real * real -> real
+
+    val abs :		real -> real
+    val min :		real * real -> real
+    val max :		real * real -> real
+    val sign :		real -> int
+    val signBit :	real -> bool
+    val sameSign :	real * real -> bool
+    val copySign :	real * real -> real
+
+    val op < :		real * real -> bool
+    val op > :		real * real -> bool
+    val op <= :		real * real -> bool
+    val op >= :		real * real -> bool
+    val equal :		real * real -> bool				(**)
+    val compare :	real * real -> order
+    val compareReal :	real * real -> IEEEReal.real_order
+    val hash :		real -> int					(**)
+
+    val == :		real * real -> bool
+    val != :		real * real -> bool
+    val ?= :		real * real -> bool
+(*TODO
+    val unordered :	real * real -> bool
+*)
+
+    val isFinite :	real -> bool
+    val isNan :		real -> bool
+    val isNormal :	real -> bool
+    val class :		real -> IEEEReal.float_class
+    val checkFloat :	real -> real
+
+    val ceil :		real -> int
+    val floor :		real -> int
+    val trunc :		real -> int
+    val round :		real -> int
+    val realFloor :	real -> real
+    val realCeil :	real -> real
+    val realTrunc :	real -> real
+    val realRound :	real -> real
+
+(*TODO
+    val nextAfter :	real * real -> real
+*)
+
+(*TODO
+    val toManExp :	real -> {exp:int, man:real}
+    val fromManExp :	{exp:int, man:real} -> real
+    val split :		real -> {frac:real, whole:real}
+    val realMod :	real -> real
+*)
+
+    val toInt :		IEEEReal.rounding_mode -> real -> int
+    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
+    val fromInt :	int -> real
+    val fromLargeInt :	LargeInt.int -> real
+    val toLarge :	real -> LargeReal.real
+    val fromLarge :	IEEEReal.rounding_mode -> LargeReal.real -> real
+(*TODO
+    val toDecimal :	real -> IEEEReal.decimal_approx
+    val fromDecimal :	IEEEReal.decimal_approx -> real option
+*)
+
+    val toString :	real -> string
+    val fromString :	string -> real option
+(*TODO
+    val fmt :		StringCvt.realfmt -> real -> string
+*)
+    val scan :		(char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
+end

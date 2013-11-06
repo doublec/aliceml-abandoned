@@ -1,0 +1,185 @@
+\documentclass[a4,12pt]{seminar}
+
+\usepackage{talk}
+\input{interface}
+
+\begin{document}
+\pagestyle{fancy}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%             First PAGE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{slide}
+\Title{A distributed search engine}
+\begin{center}
+\rput(0,-30mm){\allinterface}
+\end{center}
+\end{slide}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%      The INTERFACES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{slide}
+\Title{Interfaces}
+\begin{flushright}
+\rput(-6mm,14mm){\interfaceA}
+%%
+\begin{minipage}{0.45\linewidth}
+\scriptsize
+\vskip 8mm
+\begin{alltt}
+type \ttv manager\_intf =
+    \{\ylab{register}: \ttv worker\_intf \tar unit ,
+     \glab{find    }: \hphantom{\ttv}        unit \tar unit ,
+     \glab{collect }:             \ttv \tar unit \}
+\end{alltt}
+\end{minipage}
+\hspace{2mm}
+
+\vskip 14mm
+
+\rput(-6mm,10mm){\interfaceB}
+%%
+\begin{minipage}{0.45\linewidth}
+\scriptsize
+\vskip 4mm
+\begin{alltt}
+type \ttv worker\_intf =
+    \{\glab{share  }:  \hphantom{\ttv}unit \tar (\ttv work) option,
+     \glab{explore}: \ttv work \tar unit ,
+     \ylab{stop   }: \hphantom{\ttv} unit \tar unit \}
+\end{alltt}
+\end{minipage}
+\hspace{2mm}
+
+\end{flushright}
+\end{slide}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%      Manager IMPLEMENTATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{slide}
+\Title{Manager Implementation}
+\vskip 6mm
+
+\begin{alltt}
+\footnotesize
+\kwd{fun} \blab{register} workerIntf = \cldots
+\kwd{fun} \blab{find}     ()         = \cldots
+\kwd{fun} \blab{collect}  sol        = \cldots
+
+\iftrue
+\kwd{val} \Blab{remoteRegister} = \cdi{Remote.proxy} \blab{register}
+\kwd{val} \Blab{remoteFind}     = \cdi{Remote.proxy} \blab{find}
+\kwd{val} \Blab{remoteCollect}  = \cdi{Remote.proxy} \blab{collect}
+
+
+\kwd{val} managerInterface =
+  \kwd{\{}\ylab{register} = \Blab{remoteRegister} ,
+   \glab{find}     = \Blab{remoteFind} ,    
+   \glab{collect}  = \kwd{fn} args \kwd{=>} \cdi{spawn} (\Blab{remoteCollect} args)\kwd{\}} \comt{(Asynchronous)}
+\else
+\kwd{val} managerInterface =
+  \kwd{let} \kwd{val} \Blab{register} = \cdi{Remote.proxy} \blab{register}
+      \kwd{val} \Blab{find}     = \cdi{Remote.proxy} \blab{find}
+      \kwd{val} \Blab{collect}  = \cdi{Remote.proxy} \blab{collect}
+  \kwd{in}
+
+  \kwd{\{}\ylab{register} = \Blab{register} ,
+   \glab{find}     = \Blab{find} ,    
+   \glab{collect}  = \kwd{fn} args \kwd{=>} \cdi{spawn} (\Blab{collect} args)\} \comt{(Asynchronous)}
+
+  \kwd{end}
+\fi
+\end{alltt}
+%
+\vskip -80mm
+\rput(110mm,-4mm){\blab{\normalsize Definitions}}
+\rput(110mm,-26mm){\Blab{\normalsize Remote functions}}
+\rput(110mm,-31.75mm){\Blab{\normalsize (RPC)}}
+\rput(110mm,-52mm){\glab{\normalsize Export}}
+\rput(110mm,-56.5mm){\glab{\normalsize Interface}}
+%
+\end{slide}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%           Distribution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{slide}
+\Title{Distribution}
+
+\begin{alltt}
+\footnotesize
+\kwd{val} \Blab{parcel} = \cdi{pack} (\kwd{val} interface = managerInterface)
+                \cdi{:>} \,\,(\kwd{val} interface : (int vector) manager_interface)
+\kwd{val} \Blab{url}    = \cdi{Remote.offer} \Blab{parcel}
+\end{alltt}
+
+\vskip 10mm
+
+\begin{dinglist}{\dingA}
+\item \cdi{\texttt{Remote.offer}} starts a http server which ``offers'' the manager interface.
+
+\item We send the \Blab{\normalsize \texttt{url}} by ssh
+\end{dinglist}
+
+\begin{alltt}
+OS.Process.system \textcolor{blue}{"ssh -f \textit{host} alicerun Worker \Blab{url}"}
+\end{alltt}
+
+\end{slide}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%           Worker
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{slide}
+\Title{Workers}
+
+\begin{alltt}
+\footnotesize
+\comt{(* Get and unpack the parcel. *)}
+\kwd{structure} \Blab{Parcel} =
+         \cdi{unpack} (\cdi{Remote.take} \Blab{url})
+           \cdi{:} \,\,(\kwd{val} interface : (int vector) manager_interface)
+
+\comt{(* Get functions from the manager interface. *)}
+\kwd{val} managerIntf = \Blab{Parcel}.interface
+\kwd{val} \ylab{register}    = #{register} managerIntf
+\kwd{val} \glab{find}        = #{find} managerIntf
+\kwd{val} \glab{collect}     = #{collect} managerIntf
+
+\comt{(* Each function call automatically uses the remote implementation. *)}
+\ldots find () \ldots
+\ldots collect solution \ldots
+\end{alltt}
+\end{slide}
+
+\begin{slide}
+\Title{Conclusion}
+
+\vskip 4mm
+Distribution and concurrency are achieved using only
+a few well-defined \boite{primitives}
+\vskip 8mm
+
+\begin{dinglist}{\dingC}
+\item \cdi{\texttt{Remote.proxy}}, \cdi{\texttt{Remote.offer}} and \cdi{\texttt{Remote.take}}
+\item \cdi{\texttt{pack}} and \cdi{\texttt{unpack}}
+\item \cdi{\texttt{spawn}}
+\end{dinglist}
+
+\vskip 5mm
+Static type-checking makes the use of these primitives \boite{safe}
+with respect to types.
+
+\end{slide}
+
+\end{document}

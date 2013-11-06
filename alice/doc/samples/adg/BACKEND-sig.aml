@@ -1,0 +1,26 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+signature BACKEND =
+sig
+
+    val name : string
+
+    val program : string
+
+    val header : string
+
+    val fileEnding : string
+
+    val output : string * (bool * string) list * TextIO.outstream -> unit
+
+end

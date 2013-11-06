@@ -1,0 +1,19 @@
+import structure GrTypes from "GrTypes"
+
+local
+  type tree = GrTypes.tree
+  type display_mode = GrTypes.display_mode
+  type group = GrTypes.group
+in
+signature LAYOUT =
+sig
+
+  val isContainer : tree -> bool
+  val replaced : tree * int * bool * bool -> unit
+  val layout   : tree -> (int * int)
+
+  val mvElement : group * int * int ref * display_mode -> unit
+  val propagateDirty : tree * int -> unit
+
+end
+end

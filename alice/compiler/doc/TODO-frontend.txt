@@ -1,0 +1,57 @@
+(* TODO-frontend.txt *)
+
+General:
+
+- Check for multiple imports from single (normalised) URL
+- Consistent state cleanup (especially on errors)
+
+Documentation:
+
+- Update compiler roadmap
+- Intermediate language rationale
+- Type language rationale
+
+Missing from Standard Core Language:
+
+- Equality types (equality is allowed on any type)
+  [deferred until design on type classes is finished]
+
+Missing from Standard Module Language:
+
+- Include (no work-around)
+  [might be translated into where expressions]
+
+Missing from Extended Core Language:
+
+- Specifications as declarations
+  [how model them in elaboration rules?]
+- Explicit quantification syntax
+  [not difficult]
+- Higher-kind type expressions and declarations, kind annotations
+  [need to finalize design first]
+- Existential constructors
+  [not too useful without type classes]
+- Universal constructors
+  [deferred to be designed together with existential constructors]
+- Type classes
+  [design not finished]
+- Polymorphic records, record composition
+  [deferred until we have type classes]
+- More general support for intensional polymorphism
+  [sensitive to type equivalences/generalisation, what about hidden types?]
+
+Missing from Extended Module Language:
+
+- Open in signatures
+  [not difficult, but do we want it? (required for some derived forms);
+   probably local specifications should contain declarations]
+- Singleton signatures (can use manifest structures in most cases)
+  [syntax? how do they colaborate with manifest structures?]
+- Functor paths
+  [how can they coexist with generative functors?]
+- General signature intersection
+  [algorithm?]
+- Hiding / signature subtraction
+  [worthwhile?]
+- First-class modules
+  [heavily messes up architecture of type checker]

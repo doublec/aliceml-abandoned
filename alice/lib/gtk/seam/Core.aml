@@ -1,0 +1,306 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure PPValue from "x-alice:/lib/system/PPValue"
+
+import structure NativeLibs from "NativeLibs" 
+import signature CORE from "CORE-sig"
+
+structure NativeCore = NativeLibs.NativeCore
+
+structure Core : CORE =
+struct
+    (* object is an abstract type for pointers to Gtk structures *)
+    __primitive eqtype object = "''Gtk.object"
+    __primitive type gtype    = "Gtk.gtype"
+    __primitive type gvalue   = "Gtk.gvalue"
+    
+    datatype 'a prop = PROP of {
+        name :          string,
+        toValue :       'a -> gvalue,
+        fromValue :     gvalue -> 'a
+    }
+
+    type prop_initializer = object -> unit
+
+    exception Error = NativeCore.Error
+    exception TypeError = NativeCore.TypeError
+    
+    (* event represents a GdkEvent *)
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:IntInf.int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:IntInf.int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:IntInf.int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:IntInf.int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:IntInf.int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:IntInf.int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:IntInf.int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:IntInf.int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:IntInf.int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:IntInf.int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+
+    (* arg is used for: 
+        - arguments coming from the event stream and passed to 
+          an alice event callback function
+        - arguments passed to a Gtk function that takes a variable number of
+	  arguments *)
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+
+    val NULL = NativeCore.null()      (* represents the C NULL pointer *)
+    val TRUE = NativeCore.gtkTrue()   (* the Gtk TRUE value as int *)
+    val FALSE = NativeCore.gtkFalse() (* the Gtk FALSE value as int *)
+    val EMPTY = NativeCore.null()     (* represents empty groups *)
+
+    type callback_function = object * arg list -> unit
+
+    (* signal connecting and signal table functions *)
+    fun doSignalConnect (obj,signame,callback,after) =
+	let
+	    val connid = NativeCore.signalConnect (obj,signame,after)
+	    val _      = NativeCore.signalMapAdd (connid,callback,obj)
+	in
+	    connid
+	end
+
+    local
+	fun checkSignalConnect _     (_,"destroy",_)        = ~1
+	  | checkSignalConnect after (obj,signame,callback) =
+	    doSignalConnect (obj,signame,callback,after)
+    in
+	val signalConnect      = checkSignalConnect false
+	val signalConnectAfter = checkSignalConnect true
+
+        val signalHandlerBlock = NativeCore.signalHandlerBlock
+        val signalHandlerUnblock = NativeCore.signalHandlerUnblock
+
+	fun signalDisconnect (obj, connid) =
+	    ( NativeCore.signalDisconnect(obj,connid) ;
+	      NativeCore.signalMapRemove connid )
+    end
+
+    (* event stream listener *)
+    local
+        fun dummyHandler _ = ()
+    in
+	fun listener nil                         = ()
+	  | listener ((connid,obj,args)::stream) =
+                (let (* val _ = TextIO.output (TextIO.stdErr, "*** looking up signal handler ***") *)
+                     val f = NativeCore.signalMapCondGet(connid, dummyHandler) 
+                 in
+                     (*
+                     TextIO.output (TextIO.stdErr,
+                       "*** calling signal handler ***");
+                     *)
+                     f (obj, args)
+                     (* ;
+                     TextIO.output (TextIO.stdErr,
+                         "*** signal handler has returned") *)
+                 end
+                 handle e =>
+		    (TextIO.output (TextIO.stdErr,
+		 		   "*** Gtk signal handler raised exception " ^
+		 		   Exn.name e ^
+		 		   " ***\n*** Backtrace:\n");
+		     Exn.dumpTrace(Exn.currentPacket()));
+	        listener stream)
+    end
+
+    (* finalization handling *)
+    (* - all objects are (Gtk-)referenced automatically upon creation and
+	 added to the weak map (if there are not already there)
+       - the following "destroyEvent" function is registered automatically
+	 when a new object "enters" alice
+       - Gtk calls "destroy" so that all owners of a reference
+	 to the object can release it
+       - "destroyEvent" then removes all callback functions 
+         (including itself) from the signal table and with it all
+         alice references it is aware of
+         (disconnecting is done automatically by Gtk)
+       - when all alice references are lost, the finalizer (Gtk-)unrefs
+         the object, telling Gtk that it may destroy the object completely
+    *)
+    fun destroyEvent (obj, _) = 
+        List.app NativeCore.signalMapRemove  
+		 (NativeCore.signalMapGetConnIds obj)
+
+
+    (* Character set conversion *)
+    val latin1ToUtf8 = NativeCore.latin1ToUtf8
+    val utf8ToLatin1 = NativeCore.utf8ToLatin1
+
+
+    (* debug functions *)
+    val printObject = NativeCore.printObject
+    val forceGC = NativeCore.forceGC
+
+    val lock = Lock.lock()
+
+    (* main loop *)
+    val initPoll = 10
+    local
+	val maxPoll = 50
+	val pollStep = 5
+	fun sleep ms = Thread.sleep (Time.fromMilliseconds (Int.toLarge ms))
+        fun poll sTime = if NativeCore.handlePendingEvents() then initPoll
+                         else Int.min(maxPoll, sTime+pollStep)
+    in
+	fun mainLoop sTime =
+	    (sleep sTime;
+	     mainLoop (Lock.sync lock poll sTime))
+    end
+
+    (* init core module *)
+    val _ =
+	let
+	    val eventStream : (int * object * arg list) list =
+		NativeCore.getEventStream destroyEvent
+	in
+	    spawn (listener eventStream);
+	    spawn (mainLoop initPoll)
+	end
+
+
+    structure Types =
+    struct
+        val string      = NativeCore.getStringType ()
+        val int         = NativeCore.getIntType ()
+        val float       = NativeCore.getFloatType ()
+        val double      = NativeCore.getDoubleType ()
+        val pixbuf      = NativeCore.getPixbufType ()
+    end
+
+    structure Value =
+    struct
+        val undefined   = NativeCore.valueUndefined
+        val int         = NativeCore.valueInt
+        val enum        = NativeCore.valueEnum
+        val string      = NativeCore.valueString
+        val float       = NativeCore.valueFloat
+        val double      = NativeCore.valueDouble
+        val bool        = NativeCore.valueBool
+        val object      = NativeCore.valueObject
+
+        val toInt       = NativeCore.valueToInt
+        val toString    = NativeCore.valueToString
+        val toReal      = NativeCore.valueToReal
+        val toBool      = NativeCore.valueToBool
+        val toObject    = NativeCore.valueToObject
+        val getType     = NativeCore.valueGetType
+    end
+
+    structure Prop =
+    struct
+
+        val rawSet = NativeCore.propRawSet
+        val rawGet = NativeCore.propRawGet
+
+        fun set (PROP { toValue, name, ... }) (ob, v) =
+            let
+                val gv = toValue v
+            in
+                rawSet (ob, name, gv)
+            end
+
+        fun get (PROP { fromValue, name, ... }) ob =
+            fromValue (rawGet (ob, name))
+
+        fun name (PROP { name, ... }) = name
+
+        fun newProp (name, toValue, fromValue) = PROP { name, toValue, fromValue }
+
+        fun prop (p, v) ob = set p (ob, v)
+
+        fun setL ob l =
+            List.app (fn pi => pi ob) l
+    end
+
+    fun ppExn t fm exn =
+        case exn of
+         | Error msg as exn     => PPValue.ppExnWithArg fm exn msg
+         | TypeError arg as exn => PPValue.ppExnWithArg fm exn arg
+         | _                    => NONE
+
+    do PPValue.registerTyp ppExn
+
+end
+

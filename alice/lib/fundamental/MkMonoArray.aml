@@ -1,0 +1,67 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive type unit and int and list from "ToplevelTypes"
+import __primitive functor   MkArray          from "MkArray"
+import __primitive signature MONO_VECTOR      from "MONO_VECTOR-sig"
+import __primitive signature MONO_ARRAY       from "MONO_ARRAY-sig"
+
+functor MkMonoArray(structure Vector : MONO_VECTOR
+		    eqtype array
+		    val maxLen :     int
+		    val length :     array -> int
+		    val sub :        array * int -> Vector.elem
+		    val update :     array * int * Vector.elem -> unit
+		    val array :      int * Vector.elem -> array
+		    val tabulate :   int * (int -> Vector.elem) -> array
+		    val fromList :   Vector.elem list -> array
+		    val toList :     array -> Vector.elem list
+		    val fromVector : Vector.t -> array
+		    val extract :    array * int * int -> Vector.t
+		   ) : MONO_ARRAY =
+struct
+    type elem   = Vector.elem
+    type vector = Vector.vector
+    type array  = array
+    type t      = array
+
+    structure Array = MkArray(type 'a array   = array
+			      type dst_array  = array
+			      type 'a vector  = vector
+			      type dst_vector = vector
+			      type 'a elem    = elem
+			      val maxLen      = maxLen
+			      val length      = length
+			      val sub         = sub
+			      val uSub        = sub
+			      val update      = update
+			      val uUpdate     = update
+			      val dlength     = length
+			      val dupdate     = update
+			      val dextract    = extract
+			      val vlength     = Vector.length
+			      val vsub        = Vector.sub
+			      val uVsub       = Vector.sub)
+    open Array
+
+    val array      = array
+    val tabulate   = tabulate
+    val fromList   = fromList
+    val toList     = toList
+    val fromVector = fromVector
+end

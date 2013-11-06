@@ -1,0 +1,65 @@
+With the next millenium in sight, what is an appropriate label
+for the next step in the evolution of Mozart technology? Here
+is a concrete proposal.
+
+The name should indicate a step forward. So Vivaldi is out.
+Amadeus is still retro. We don't want to become too mainstream,
+so Back Street Boys isn't a suitable name either. In contrast,
+Stockhausen is a modern composer and choosing his name not only
+implies a step into the next century but being real
+avant-garde. His music is puristic but demanding -- so will be
+our syntax. And the word has the right bit of Teutonic touch
+that we might want to bring across.
+
+Following the M-Oz-art analogy, the language itself can then be
+called Aus. English speakers will adapt to this easily, as it
+is pronounced almost like Oz. Moreover, Aus fits well into the
+famous OhneZukunft tradition: Oz war ohne Zukunft, was folgte,
+war das Aus. An alternative would be Ock, which has a look very
+similar to Oz.
+
+The compiler is invoked as stoc (which also has a valid
+interpretation as Statically Typed Oz Compiler).
+
+The emulator is the Stockwerker (hard at work), implementing
+the Stockwerk VM (the level below). The emulator can be invoked
+as stow (Eat my code!). Creating the symphony of a complete
+application is the job of the module/component manager: the Komponist.
+Stot invokes the interactive toplevel where you input your program piece
+by piece. And if you are a Depp not smart enough to work out the
+interdependences in your Stockhausen sources yourself you can invoke
+the stodep tool to extract them automatically.
+
+The several browsers will be called Hausers:
+* the Inspector:    Data Hauser (for easier house-keeping of your data)
+* the Explorer:     Space Hauser (exploring multiple universes)
+* the Investigator: Kaspar Hauser (this guy surely was constrained)
+
+The other tools:
+* the debugger: Stocker (your program will balk on every breakpoint)
+* the profiler: Stochist (getting pedantic about statistics)
+* yacc and lex: Jacke and Hose (the emperor's new clothes)
+
+And we want a foreign function interface -- the Stock Exchange.
+
+As for versions, each major version will be an opus. Increasements
+in minor versions are varations. So version 1.2 is Stockhausen Opus 1
+Variation 2. The prototypes are small operettes.
+
+We want the reader to compare this nice, consistent, and
+extensible naming scheme to the other current proposal,
+Amadeus. If the system is Amadeus then it only contains a Made
+(maggot). Or it's Mad, if you want. Also, what would the
+successor to Amadeus be? Anybody suggesting Wolfgang? This
+makes us the Wolf Gang -- we do not find this perspective too
+convincing. Moreover, using latinized words is out, so it
+should at least be Gottlieb.
+
+We hope you all recognise the metaphorical richness and
+elegance in our proposal. Let's get post-modern!
+
+
+	- Andreas, Gerhard, Katrin, Leif, Tobias
+
+
+PS: SICS may derive their own system and call it Stockholm.

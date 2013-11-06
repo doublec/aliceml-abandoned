@@ -1,0 +1,19 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS          from "../lib/system/OS"
+import structure CommandLine from "../lib/system/CommandLine"
+import structure SMLToMozartToplevel from "top/SMLToMozartToplevel"
+
+val use = SMLToMozartToplevel.use
+val _ = spawn OS.Process.exit(SMLToMozartToplevel.main(CommandLine.arguments()))

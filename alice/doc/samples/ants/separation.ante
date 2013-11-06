@@ -1,0 +1,14 @@
+
+val runaway = move ifnot nop ++ move ifnot nop ++ move ifnot nop ++ loop nop
+
+val faceout = sense leftahead home ifyes (runaway) ++ turn left ++ runaway
+
+val start = sense ahead home ifnot (faceout ++ runaway) ++ turn right ++
+sense ahead home ifnot (runaway) ++ turn right ++
+sense ahead home ifnot (runaway) ++ turn right ++
+sense ahead home ifnot (runaway) ++ turn right ++
+sense ahead home ifnot (runaway) ++ loop nop
+
+
+
+val ant = start

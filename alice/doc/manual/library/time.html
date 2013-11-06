@@ -1,0 +1,94 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Time structure", "The <TT>Time</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature TIME
+    structure Time : TIME
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/time.html"><TT>Time</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="hashable.html"><TT>HASHABLE</TT></A>,
+    <A href="ordered.html"><TT>ORDERED</TT></A>,
+    <A href="date.html"><TT>Date</TT></A>,
+    <A href="timer.html"><TT>Timer</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature TIME =
+    sig
+	eqtype time
+	type t = time
+
+	exception Time
+
+	val zeroTime :         time
+
+	val fromReal :         LargeReal.real -> time
+	val toReal :           time -> LargeReal.real
+	val toSeconds :        time -> LargeInt.int
+	val toMilliseconds :   time -> LargeInt.int
+	val toMicroseconds :   time -> LargeInt.int
+	val toNanoseconds :    time -> LargeInt.int
+	val fromSeconds :      LargeInt.int -> time
+	val fromMilliseconds : LargeInt.int -> time
+	val fromMicroseconds : LargeInt.int -> time
+	val fromNanoseconds :  LargeInt.int -> time
+
+	val op + :             time * time -> time
+	val op - :             time * time -> time
+	val op &lt; :             time * time -> bool
+	val op > :             time * time -> bool
+	val op &lt;= :            time * time -> bool
+	val op >= :            time * time -> bool
+	val equal :            time * time -> bool
+	val compare :          time * time -> order
+	val hash :             time  -> int
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/time.html"><TT>Time</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type <A name="#t">t</A> = time</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>time</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>t1</I>, <I>t2</I>)</TT>
+    </DT>
+    <DD>
+      <P>An explicit equality function on time values. Equivalent to <TT>op=</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>hash <I>t</I></TT>
+    </DT>
+    <DD>
+      <P>A hash function for time values.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

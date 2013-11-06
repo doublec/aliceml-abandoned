@@ -1,0 +1,805 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestCharArraySlice :> TESTSUITE = (* the arrayslice test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun fromInt x = if x > 255 then Char.chr 255 else Char.chr x
+
+
+    fun testSlice () =
+	let
+	    fun t'' (a, i, asl, j) = 
+		if j = CharArraySlice.length asl then true
+		else if CharArray.sub (a, i + j) = 
+			CharArraySlice.sub (asl, j) then
+		    t'' (a, i, asl, j + 1) else false
+
+	    fun t' (a, i, NONE, asl)   = CharArraySlice.length asl = 
+					 (CharArray.length a - i) andalso
+					 t'' (a, i, asl, 0)
+	      | t' (a, i, SOME j, asl) = CharArraySlice.length asl = j andalso
+					 t'' (a, i, asl, 0)
+
+	    fun t (a, i, sz) = t' (a, i, sz, CharArraySlice.slice (a, i, sz))
+			         handle Subscript => 
+					if Option.isSome sz then 
+					    i < 0 orelse
+					    (valOf sz) < 0 orelse
+					    CharArray.length a < i + (valOf sz)
+					else i < 0 orelse
+					     CharArray.length a < i
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charArray Gen.char,
+				      Gen.int,
+				      Gen.option Gen.int)) (Test.test t)
+	end
+
+
+    fun testFull () =
+	let
+	    fun t a = CharArraySlice.slice (a, 0, NONE)
+	in
+	    Gen.try 1000 (Gen.charArray Gen.char) 
+	      (Test.test (fn a => CharArraySlice.equal Char.equal 
+						   (CharArraySlice.full a, t a)))
+	end
+
+    fun testLength () =
+	let
+	    fun t (a, i, NONE, j)   = ((CharArray.sub (a, i + j);
+				       t (a, i, NONE, j + 1)) 
+		                             handle Subscript => j)
+	      | t (a, i, SOME x, j) = x
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charArray Gen.char,
+				      Gen.int, 
+				      Gen.option Gen.int))
+	      (Test.test (fn (a, i, sz) => 
+			     let
+				 val asl = SOME (CharArraySlice.slice (a, i, sz)) 
+					     handle Subscript => NONE
+			     in
+				 if Option.isSome asl
+				 then t (a, i, sz, 0) = 
+				      CharArraySlice.length (valOf asl)
+				 else if Option.isSome sz then 
+					    i < 0 orelse
+					    (valOf sz) < 0 orelse
+					    CharArray.length a < i + (valOf sz)
+					else i < 0 orelse
+					     CharArray.length a < i
+			     end))
+	end
+
+    fun testBase () =
+	let
+	    fun t (a, i, sz) = 
+		CharArraySlice.base (CharArraySlice.slice (a, i, sz)) = 
+		(a, i, CharArraySlice.length (CharArraySlice.slice (a, i, sz)))
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charArray Gen.char, 
+				      Gen.int,
+				      Gen.option Gen.int))
+		    (Test.test (fn (a, i, sz) => t (a, i, sz)
+		                      handle Subscript =>
+					     if Option.isSome sz then 
+						 i < 0 orelse
+						 (valOf sz) < 0 orelse
+						 CharArray.length a < 
+						 i + (valOf sz)
+					     else i < 0 orelse
+						  CharArray.length a < i))
+	end
+
+    fun testSub () = 
+	let
+	    fun t (asl, i) = if i < 0 orelse CharArraySlice.length asl <= i 
+			     then NONE
+			     else SOME (List.nth (CharArraySlice.toList asl, i))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charArraySlice Gen.char, Gen.int))
+	      (Test.test (fn x => let
+				    val r = SOME (CharArraySlice.sub x)
+					      handle Subscript => NONE
+			          in
+				    r = t x
+			          end))
+	end
+
+    fun testUpdate () = 
+	let
+	    fun t (asl, i, a) = 
+		let
+		    val r = SOME (CharArraySlice.update (asl, i, a))
+			     handle Subscript => NONE
+		in
+		    if Option.isSome r 
+		    then CharArraySlice.sub (asl, i) = a
+		    else i < 0 orelse CharArraySlice.length asl <= i
+		end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charArraySlice Gen.char,
+				      Gen.int, 
+				      Gen.char)) (Test.test t)
+	end
+
+    fun testSubslice () = 
+	let
+	    fun t'' (a, sl, i, sz) = 
+		let
+		    val r1 = SOME (CharArraySlice.slice (a, i, sz)) 
+			        handle Subscript => NONE
+		    val r2 = SOME (CharArraySlice.subslice (sl, i, sz))
+			        handle Subscript => NONE
+		in
+		    Option.equal (CharArraySlice.equal Char.equal) (r1, r2)
+		end
+	    fun t' (sl, a, i) = if i = CharArray.length a
+				then ()
+				else (CharArray.update (a, i, 
+						    CharArraySlice.sub (sl, i));
+				      t' (sl, a, i + 1))
+	    fun t (sl, i, sz) = 
+		let
+		    val a = CharArray.array (CharArraySlice.length sl, 
+					      fromInt 0)
+		in
+		    (t' (sl, a, 0);
+		     t'' (a, sl, i, sz))
+		end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charArraySlice Gen.char,
+				      Gen.int,
+				      Gen.option Gen.int))
+		    (Test.test t)
+	end
+
+    fun testVector () = 
+	let
+	    fun t asl = CharVector.tabulate (CharArraySlice.length asl,
+					 fn i => CharArraySlice.sub (asl, i))
+
+	    fun tt asl = CharVector.toList (CharArraySlice.vector asl)
+	in 
+	    Gen.try 1000 (Gen.charArraySlice Gen.char) 
+		    (Test.test (fn asl => CharVector.toList (t asl) = 
+					  tt asl))
+	end 
+
+    fun testCopy () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < CharArraySlice.length src
+		then (CharArray.update (dst, 
+					 di + i, CharArraySlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   CharArray.length dst < di + CharArraySlice.length src
+		then NONE
+		else SOME (CharArray.toList (t'' (src, dst, di, 0)))
+
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((CharArraySlice.copy {src, dst, di}; false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((CharArraySlice.copy {src, dst, di};
+				     CharArray.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charArraySlice Gen.char,
+				      Gen.charArray Gen.char,
+				      Gen.int)) (Test.test t)
+	end
+
+    fun testCopyVec () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < CharVectorSlice.length src
+		then (CharArray.update (dst, di + i, 
+					 CharVectorSlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   CharArray.length dst < di + CharVectorSlice.length src
+		then NONE
+		else SOME (CharArray.toList (t'' (src, dst, di, 0)))
+
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((CharArraySlice.copyVec {src, dst, di}; 
+				  false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((CharArraySlice.copyVec {src, dst, di};
+				     CharArray.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charVectorSlice Gen.char,
+				      Gen.charArray Gen.char,
+				      Gen.int)) (Test.test t)
+	end
+
+    fun testIsEmpty () = 
+	let
+	    fun t asl = #3 (CharArraySlice.base asl) = 0 = 
+			CharArraySlice.isEmpty asl
+	in
+	    Gen.try 1000 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testApp () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; fromInt (Char.ord a + 1); ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.app (f xs) sl;
+		 List.app (f ys) (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testAppi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; fromInt (Char.ord a + i); ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.appi (f xs) sl;
+		 List.appi (f ys) (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testAppr () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; fromInt (Char.ord a + 1); ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.appr (f xs) sl;
+		 List.appr (f ys) (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testAppri () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; fromInt (Char.ord a + i); ())
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.appri (f xs) sl;
+		 List.appri (f ys) (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testModify () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; fromInt (Char.ord a + 1))
+
+	    fun t (sl, csl) = 
+		(xs := nil;
+		 ys := nil;
+		 (CharArraySlice.modify (f xs) sl; CharArraySlice.toList sl) =
+		 List.map (f ys) (CharArraySlice.toList csl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) 
+	    (Test.test (fn sl => 
+			   let
+			       val (a, x, y) = CharArraySlice.base sl
+			       val b = CharArray.fromList (CharArray.toList a)
+			   in
+			       t (sl, CharArraySlice.slice (b, x, SOME y))
+			   end))
+	end
+
+    fun testModifyi () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; fromInt (Char.ord a + i))
+
+	    fun t (sl, csl) = 
+		(xs := nil;
+		 ys := nil;
+		 (CharArraySlice.modifyi (f xs) sl; CharArraySlice.toList sl) = 
+		 List.mapi (f ys) (CharArraySlice.toList csl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char)
+	    (Test.test (fn sl => 
+			   let
+			       val (a, x, y) = CharArraySlice.base sl
+			       val b = CharArray.fromList (CharArray.toList a)
+			   in
+			       t (sl, CharArraySlice.slice (b, x, SOME y))
+			   end))
+	end
+
+    fun testFoldl () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a : Char.char, b) = (x := a :: !x; fromInt (Char.ord a + 
+								 Char.ord b))
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.foldl (f xs) (fromInt 0) sl;
+		 List.foldl (f ys) (fromInt 0) 
+			    (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testFoldli () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a, b) = (x := a :: !x; fromInt (Char.ord a + 
+							Char.ord b + 
+							i))
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.foldli (f xs) (fromInt 0) sl;
+		 List.foldli (f ys) (fromInt 0) 
+			     (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testFoldr () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a : Char.char, b) = (x := a :: !x; fromInt (Char.ord a + 
+								 Char.ord b))
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.foldr (f xs) (fromInt 0) sl;
+		 List.foldr (f ys) (fromInt 0) 
+			    (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testFoldri () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a, b) = (x := a :: !x; fromInt (Char.ord a + 
+							Char.ord b + i))
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.foldri (f xs) (fromInt 0) sl;
+		 List.foldri (f ys) (fromInt 0) 
+			     (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testFind () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x a = (x := a :: !x; a = fromInt 42)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.find (f xs) sl;
+		 List.find (f ys) (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end     
+
+    fun testFindi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a) = (x := a :: !x; a = fromInt 42 andalso 
+					    fromInt i <= a)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 CharArraySlice.findi (f xs) sl;
+		 List.findi (f ys) (CharArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end 
+
+    fun testExists () = 
+	let
+	    fun f x = x > fromInt 0
+
+	    fun t asl = CharArraySlice.exists f asl = 
+			List.exists f (CharArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testAll () = 
+	let
+	    fun f x = x > fromInt 0
+
+	    fun t asl = CharArraySlice.all f asl = 
+			List.all f (CharArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testAlli () =
+	let
+	    fun f (i, x) = x > fromInt i
+
+	    fun t asl = CharArraySlice.alli f asl = 
+			List.alli f (CharArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testExistsi () =
+	let
+	    fun f (i, x) = x > fromInt 0
+
+	    fun t asl = CharArraySlice.existsi f asl = 
+			List.existsi f (CharArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testCollate () = 
+	let
+	    fun t (asl1, asl2) = 
+		CharArraySlice.collate Char.compare (asl1, asl2) = 
+		List.collate Char.compare (CharArraySlice.toList asl1,
+					    CharArraySlice.toList asl2)
+	in 
+	    Gen.try 100 (Gen.pair (Gen.charArraySlice Gen.char,
+				   Gen.charArraySlice Gen.char)) 
+		    (Test.test t)
+	end
+
+    fun testToVector () = 
+	let
+	    fun t asl = String.equal (CharArraySlice.toVector asl,
+				      CharArraySlice.vector asl)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testToList () = 
+	let
+	    fun t asl = CharVector.toList (CharArraySlice.toVector asl)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) 
+	    (Test.test (fn asl => CharArraySlice.toList asl = t asl))
+	end
+
+    fun testSwap () = 
+	let
+	    fun t' (sl, i, j) = 
+		let
+		    val h = CharArraySlice.sub (sl, i)
+		in
+		    CharArraySlice.update (sl, i, CharArraySlice.sub (sl, j));
+		    CharArraySlice.update (sl, j, h);
+		    sl
+		end
+
+	    fun t (sl1, sl2, i, j) = CharArraySlice.equal Char.equal
+		  ((CharArraySlice.swap (sl1, i, j); sl1), t' (sl2, i, j))
+		        handle Subscript => i < 0 orelse
+					    (CharArraySlice.length sl1) <= i orelse
+					    j < 0 orelse
+					    (CharArraySlice.length sl1) <= j
+	in 
+	    Gen.try 100 (Gen.triple (Gen.charArraySlice Gen.char,
+				      Gen.int,
+				      Gen.int)) 
+		     (Test.test (fn (sl, i, j) => 
+				    let
+					val (a, x, y) = CharArraySlice.base sl
+					val b = CharArray.fromList 
+						    (CharArray.toList a)
+					val csl = CharArraySlice.slice (b, x, 
+								    SOME y)
+				    in 
+					t (sl, csl, i, j)
+	                            end))
+	end
+
+    fun testRev () = 
+	let
+	    fun t' sl = 
+		let
+		    val (a, x, y) = CharArraySlice.base sl
+		in
+		    CharArray.rev a; 
+		    CharArraySlice.slice (a, (CharArray.length a) - x - y, 
+					   SOME y)
+		end
+	    fun t (sl, csl) = CharArraySlice.equal Char.equal 
+		  ((CharArraySlice.rev sl; sl), t' csl)
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char) 
+		    (Test.test (fn sl => 
+			       let
+				   val (a, x, y) = CharArraySlice.base sl
+				   val b = CharArray.fromList 
+					       (CharArray.toList a)
+				   val csl = CharArraySlice.slice (b, x, 
+								    SOME y)
+			       in 
+				   t (sl, csl)
+	                       end))
+	end
+
+    fun testTriml () = 
+	let
+	    fun t' (sl, a, i, j, k) = 
+		       if k > j 
+		       then CharArraySlice.subslice (sl, j, SOME 0)
+		       else CharArraySlice.slice (a, i + k, SOME (j - k))
+
+	    fun t (sl, k) = CharArraySlice.equal Char.equal (
+			            CharArraySlice.triml k sl,
+				    t' (sl, 
+					#1 (CharArraySlice.base sl),
+					#2 (CharArraySlice.base sl),
+					#3 (CharArraySlice.base sl), k))
+			      handle Subscript => k < 0
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charArraySlice Gen.char,
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testTrimr () = 
+	let
+	    fun t' (sl, a, i, j, k) = 
+		       if k > j 
+		       then CharArraySlice.subslice (sl, j, SOME 0)
+		       else CharArraySlice.slice (a, i, SOME (j - k))
+
+	    fun t (sl, k) = CharArraySlice.equal Char.equal (
+			            CharArraySlice.trimr k sl,
+				    t' (sl, 
+					#1 (CharArraySlice.base sl),
+					#2 (CharArraySlice.base sl),
+					#3 (CharArraySlice.base sl), k))
+			      handle Subscript => k < 0
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charArraySlice Gen.char,
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testSplitAt () = 
+	let
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		CharArraySlice.equal Char.equal (sl1, sl3) andalso
+		CharArraySlice.equal Char.equal (sl2, sl4)
+
+	    fun t' (sl, i) = SOME (CharArraySlice.subslice (sl, 0, SOME i),
+				   CharArraySlice.subslice (sl, i, NONE))
+			       handle Subscript => NONE
+	    fun t (sl, i) = 
+		let
+		    val r = t' (sl, i)
+		in 
+		    eq (CharArraySlice.splitAt (sl, i), valOf r)
+			       handle Subscript => Option.isNone r
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charArraySlice Gen.char, 
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testSplitl () = 
+	let
+	    val xs = ref []
+	    val ys = ref []
+
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		CharArraySlice.equal Char.equal (sl1, sl3) andalso
+		CharArraySlice.equal Char.equal (sl2, sl4)
+
+	    fun t' (sl, f, i) = if i = CharArraySlice.length sl
+				then i
+				else if Bool.not (f (CharArraySlice.sub (sl, 
+									  i)))
+				     then i
+				     else t' (sl, f, i + 1)
+
+	    fun f y x = (y := x :: !y; x = fromInt 42)
+
+	    fun t sl = eq (CharArraySlice.splitl (f xs) sl, 
+			   CharArraySlice.splitAt (sl, t' (sl, f ys, 0))) 
+		       andalso !xs = !ys
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char)
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+	
+    fun testSplitr () = 
+	let
+	    val xs = ref []
+	    val ys = ref []
+
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		CharArraySlice.equal Char.equal (sl1, sl3) andalso
+		CharArraySlice.equal Char.equal (sl2, sl4)
+
+	    fun t' (sl, f, i) = if i < 0
+				then 0
+				else if Bool.not (f (CharArraySlice.sub (sl, i)))
+				     then i + 1
+				     else t' (sl, f, i - 1)
+
+	    fun f y x = (y := x :: !y; x >= fromInt 42)
+
+	    fun t sl = 
+		eq (CharArraySlice.splitr (f xs) sl, 
+		    CharArraySlice.splitAt (sl, t' (sl, f ys, 
+						CharArraySlice.length sl - 1))) 
+		andalso !xs = !ys
+	in
+	    Gen.try 100 (Gen.charArraySlice Gen.char)
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+    fun testContains () = 
+	let
+	    fun t asl = CharArraySlice.contains Char.equal asl 
+						 (fromInt 3) = 
+			List.contains (CharArraySlice.toList asl) 
+				      (fromInt 3)
+	in 
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testNotContains () = 
+	let
+	    fun t asl = CharArraySlice.notContains Char.equal asl 
+						    (fromInt 3) = 
+			Bool.not (CharArraySlice.contains Char.equal asl 
+							   (fromInt 3))
+	in 
+	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testIsSorted () = 
+	let
+	    fun t' (f, sl, i) = if (i + 1) >= CharArraySlice.length sl
+			       then true
+			       else (case f (CharArraySlice.sub (sl, i),
+					     CharArraySlice.sub (sl, i + 1)) of
+					 EQUAL   => t' (f, sl, i + 1)
+				       | LESS    => t' (f, sl, i + 1)
+				       | GREATER => false)
+
+	    val f = Char.compare
+	    fun t sl = CharArraySlice.isSorted f sl = t' (f, sl, 0)
+	in
+	    Gen.try 1000 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+    fun testSort () = 
+	let
+	    fun t sl = (CharArraySlice.sort Char.compare sl;
+			CharArraySlice.isSorted Char.compare sl)
+	in
+	    Gen.try 1000 (Gen.charArraySlice Gen.char) (Test.test t)
+	end
+
+
+    val suite = ("CharArraySlice", [("slice", testSlice),
+				("subslice", testSubslice),
+				("full", testFull),
+				("length", testLength),
+				("sub", testSub),
+				("update", testUpdate),
+				("base", testBase),
+				("vector", testVector),
+				("swap", testSwap),
+				("rev", testRev),
+				("toVector", testToVector),
+				("isEmpty", testIsEmpty),
+				("toList", testToList),
+				("copy", testCopy),
+				("copyVec", testCopyVec),
+				("app", testApp),
+				("appi", testAppi),
+				("appr", testAppr),
+				("appri", testAppri),
+				("modify", testModify),
+				("modifyi", testModifyi),
+				("foldl", testFoldl),
+				("foldr", testFoldr),
+				("foldli", testFoldli),
+				("foldri", testFoldri),
+				("find", testFind),
+				("findi", testFindi),
+				("all", testAll),
+				("alli", testAlli),
+				("exists", testExists),
+				("existsi", testExistsi),
+				("contains", testContains),
+				("notContains", testNotContains),
+				("splitAt", testSplitAt),
+				("splitl", testSplitl),
+				("splitr", testSplitr),
+				("triml", testTriml),
+				("trimr", testTrimr),
+				("collate", testCollate),
+				("isSorted", testIsSorted),
+				("sort", testSort)])
+end

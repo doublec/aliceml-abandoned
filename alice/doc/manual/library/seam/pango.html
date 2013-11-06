@@ -1,0 +1,674 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Pango structure", "The <TT>Pango</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature PANGO
+    structure Pango : PANGO</PRE>
+
+ <P>
+ The <TT>Pango</TT> structure provides facilities for layout and rendering of
+ text with an emphasis on internationalization.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="glib.html"><TT>GLib</TT></A>,
+   <A href="atk.html"><TT>Atk</TT></A>,
+   <A href="gdk.html"><TT>Gdk</TT></A>,
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+   <A href="gtkbuilder.html"><TT>GtkBuilder</TT></A>
+ </P>
+
+ <?php section("import", "import"); ?>
+
+  <PRE>
+    import signature PANGO from "x-alice:/lib/gtk/PANGO-sig"
+    import structure Pango from "x-alice:/lib/gtk/Pango"
+  </PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature PANGO =
+sig
+    type object = Core.object
+    type gtype = Core.gtype
+    type gvalue = Core.gvalue
+    type prop   = Core.prop
+    type prop_initializer = Core.prop_initializer
+(* begin of CORE-sig.aml *)
+
+
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+
+    type callback_function = object * arg list -> unit
+    val signalConnect        : object * string * callback_function -> int
+    val signalConnectAfter   : object * string * callback_function -> int
+    val signalDisconnect     : object * int -> unit
+    val signalHandlerBlock   : object * int -> unit
+    val signalHandlerUnblock : object * int -> unit
+
+    val latin1ToUtf8 : string -> string
+    val utf8ToLatin1 : string -> string
+
+    val lock : Lock.lock
+
+
+    structure Types :
+    sig
+        val string : gtype
+        val int    : gtype
+        val float  : gtype
+        val double : gtype
+        val pixbuf : gtype
+    end
+
+    structure Value :
+    sig
+        (* exception TypeError *)
+
+        val undefined : unit -> gvalue
+
+        val int : int -> gvalue
+        val enum : int * gtype -> gvalue
+        val string : string -> gvalue
+        val float : real -> gvalue
+        val double : real -> gvalue
+        val bool : bool -> gvalue
+        val object : object -> gvalue
+            
+        val toInt : gvalue -> int
+        val toString : gvalue -> string
+        val toReal : gvalue -> real
+        val toBool : gvalue -> bool
+        val toObject : gvalue -> object
+
+        val getType : gvalue -> gtype
+    end
+
+    structure Prop :
+    sig
+        val setL : object -> prop_initializer list -> unit
+
+        val set : 'a prop -> object * 'a -> unit
+        val get : 'a prop -> object -> 'a 
+
+        val rawSet : object * string * gvalue -> unit
+        val rawGet : object * string -> gvalue
+
+        val name : 'a prop -> string
+
+        val prop : 'a prop * 'a -> prop_initializer
+
+        (* creation *)
+        val newProp : string * ('a -> gvalue) * (gvalue -> 'a) -> 'a prop
+    end
+(* end of CORE-sig.aml *)
+
+    structure EllipsizeMode :
+    sig
+        datatype t =
+            END
+          | MIDDLE
+          | NONE
+          | START
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Direction :
+    sig
+        datatype t =
+            LTR
+          | RTL
+          | TTB_LTR
+          | TTB_RTL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TabAlign :
+    sig
+        datatype t =
+            LEFT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WrapMode :
+    sig
+        datatype t =
+            CHAR
+          | WORD
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Alignment :
+    sig
+        datatype t =
+            CENTER
+          | LEFT
+          | RIGHT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FontMask :
+    sig
+        datatype flag =
+            FAMILY
+          | SIZE
+          | STRETCH
+          | STYLE
+          | VARIANT
+          | WEIGHT
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Stretch :
+    sig
+        datatype t =
+            CONDENSED
+          | EXPANDED
+          | EXTRA_CONDENSED
+          | EXTRA_EXPANDED
+          | NORMAL
+          | SEMI_CONDENSED
+          | SEMI_EXPANDED
+          | ULTRA_CONDENSED
+          | ULTRA_EXPANDED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Weight :
+    sig
+        datatype t =
+            BOLD
+          | HEAVY
+          | LIGHT
+          | NORMAL
+          | ULTRABOLD
+          | ULTRALIGHT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Variant :
+    sig
+        datatype t =
+            NORMAL
+          | SMALL_CAPS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Style :
+    sig
+        datatype t =
+            ITALIC
+          | NORMAL
+          | OBLIQUE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CoverageLevel :
+    sig
+        datatype t =
+            APPROXIMATE
+          | EXACT
+          | FALLBACK
+          | NONE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Underline :
+    sig
+        datatype t =
+            DOUBLE
+          | LOW
+          | NONE
+          | SINGLE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure AttrType :
+    sig
+        datatype t =
+            BACKGROUND
+          | FAMILY
+          | FONT_DESC
+          | FOREGROUND
+          | INVALID
+          | LANGUAGE
+          | RISE
+          | SCALE
+          | SHAPE
+          | SIZE
+          | STRETCH
+          | STRIKETHROUGH
+          | STYLE
+          | UNDERLINE
+          | VARIANT
+          | WEIGHT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TabArray :
+    sig
+        (* constructors *)
+        val newWithPositions : int * bool * TabAlign.t * int -> object
+        val new : int * bool -> object
+        (* methods *)
+        val getPositionsInPixels : object -> bool
+        val getTab : object * int * TabAlign.t * int -> TabAlign.t * int
+        val setTab : object * int * TabAlign.t * int -> unit
+        val resize : object * int -> unit
+        val getSize : object -> int
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+    end
+    structure LayoutIter :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getBaseline : object -> int
+        val getLayoutExtents : object * object * object -> unit
+        val getLineYrange : object * int * int -> int * int
+        val getLineExtents : object * object * object -> unit
+        val getRunExtents : object * object * object -> unit
+        val getClusterExtents : object * object * object -> unit
+        val getCharExtents : object * object -> unit
+        val nextLine : object -> bool
+        val nextRun : object -> bool
+        val nextCluster : object -> bool
+        val nextChar : object -> bool
+        val atLastLine : object -> bool
+        val getIndex : object -> int
+        val free : object -> unit
+        val getType : unit -> gtype
+    end
+    structure Language :
+    sig
+        (* constructors *)
+        val fromString : string -> object
+        (* methods *)
+        val toString : object -> string
+        val matches : object * string -> bool
+    end
+    structure GlyphString :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getLogicalWidths : object * string * int * int * int -> int
+        val extentsRange : object * int * int * object * object * object -> unit
+        val extents : object * object * object * object -> unit
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+        val setSize : object * int -> unit
+        val getFieldNumGlyphs : object -> int
+        val setFieldNumGlyphs : object * int -> unit
+        val getFieldLogClusters : object -> object
+        val setFieldLogClusters : object * int -> int
+        val getFieldGlyphs : object -> object
+        val setFieldGlyphs : object * object -> unit
+    end
+    structure FontMetrics :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getApproximateDigitWidth : object -> int
+        val getApproximateCharWidth : object -> int
+        val getDescent : object -> int
+        val getAscent : object -> int
+        val unref : object -> unit
+        val reference : object -> object
+        val getType : unit -> gtype
+    end
+    structure FontDescription :
+    sig
+        (* constructors *)
+        val fromString : string -> object
+        val new : unit -> object
+        (* methods *)
+        val toFilename : object -> string
+        val toString : object -> string
+        val betterMatch : object * object * object -> bool
+        val mergeStatic : object * object * bool -> unit
+        val merge : object * object * bool -> unit
+        val unsetFields : object * FontMask.t -> unit
+        val getSetFields : object -> FontMask.t
+        val getSize : object -> int
+        val setSize : object * int -> unit
+        val getStretch : object -> Stretch.t
+        val setStretch : object * Stretch.t -> unit
+        val getWeight : object -> Weight.t
+        val setWeight : object * Weight.t -> unit
+        val getVariant : object -> Variant.t
+        val setVariant : object * Variant.t -> unit
+        val getStyle : object -> Style.t
+        val setStyle : object * Style.t -> unit
+        val getFamily : object -> string
+        val setFamilyStatic : object * string -> unit
+        val setFamily : object * string -> unit
+        val free : object -> unit
+        val equal : object * object -> bool
+        val hash : object -> int
+        val copyStatic : object -> object
+        val copy : object -> object
+    end
+    structure Color :
+    sig
+        (* constructors *)
+        val new : { blue : int, green : int, red : int } -> object
+        (* methods *)
+        val parse : object * string -> bool
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+        val getFieldRed : object -> int
+        val setFieldRed : object * int -> unit
+        val getFieldGreen : object -> int
+        val setFieldGreen : object * int -> unit
+        val getFieldBlue : object -> int
+        val setFieldBlue : object * int -> unit
+    end
+    structure Attribute :
+    sig
+        (* constructors *)
+        (* methods *)
+        val equal : object * object -> bool
+        val destroy : object -> unit
+        val copy : object -> object
+    end
+    structure LayoutLine :
+    sig
+        (* constructors *)
+        val new : { is_paragraph_start : int, length : int, resolved_dir : int, runs : object list, start_index : int } -> object
+        (* methods *)
+        val getPixelExtents : object * object * object -> unit
+        val getExtents : object * object * object -> unit
+        val indexToX : object * int * bool * int -> int
+        val xToIndex : object * int * int * int -> bool * int * int
+        val unref : object -> unit
+        val reference : object -> unit
+        val getFieldStartIndex : object -> int
+        val setFieldStartIndex : object * int -> unit
+        val getFieldRuns : object -> object list
+        val setFieldRuns : object * (object list) -> unit
+        val getFieldResolvedDir : object -> int
+        val setFieldResolvedDir : object * int -> unit
+        val getFieldLength : object -> int
+        val setFieldLength : object * int -> unit
+        val getFieldIsParagraphStart : object -> int
+        val setFieldIsParagraphStart : object * int -> unit
+    end
+    structure Rectangle :
+    sig
+        (* constructors *)
+        val new : { height : int, width : int, x : int, y : int } -> object
+        (* methods *)
+        val getFieldY : object -> int
+        val setFieldY : object * int -> unit
+        val getFieldX : object -> int
+        val setFieldX : object * int -> unit
+        val getFieldWidth : object -> int
+        val setFieldWidth : object * int -> unit
+        val getFieldHeight : object -> int
+        val setFieldHeight : object * int -> unit
+    end
+    structure Layout :
+    sig
+        (* constructors *)
+        val new : object -> object
+        (* methods *)
+        val getIter : object -> object
+        val getLines : object -> object list
+        val getLine : object * int -> object
+        val getLineCount : object -> int
+        val getPixelSize : object * int * int -> int * int
+        val getSize : object * int * int -> int * int
+        val getPixelExtents : object * object * object -> unit
+        val getExtents : object * object * object -> unit
+        val xyToIndex : object * int * int * int * int -> bool * int * int
+        val moveCursorVisually : object * bool * int * int * int * int * int -> int * int
+        val getCursorPos : object * int * object * object -> unit
+        val indexToPos : object * int * object -> unit
+        val contextChanged : object -> unit
+        val getSingleParagraphMode : object -> bool
+        val setSingleParagraphMode : object * bool -> unit
+        val getTabs : object -> object
+        val setTabs : object * object -> unit
+        val getAlignment : object -> Alignment.t
+        val setAlignment : object * Alignment.t -> unit
+        val getAutoDir : object -> bool
+        val setAutoDir : object * bool -> unit
+        val getJustify : object -> bool
+        val setJustify : object * bool -> unit
+        val getSpacing : object -> int
+        val setSpacing : object * int -> unit
+        val getIndent : object -> int
+        val setIndent : object * int -> unit
+        val getWrap : object -> WrapMode.t
+        val setWrap : object * WrapMode.t -> unit
+        val getWidth : object -> int
+        val setWidth : object * int -> unit
+        val setFontDescription : object * object -> unit
+        val setMarkup : object * string * int -> unit
+        val getText : object -> string
+        val setText : object * string * int -> unit
+        val getContext : object -> object
+        val copy : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FontsetSimple :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+    end
+    structure Fontset :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getMetrics : object -> object
+        val getFont : object * int -> object
+        (* properties *)
+    end
+    structure FontMap :
+    sig
+        (* constructors *)
+        (* methods *)
+        val loadFontset : object * object * object * object -> object
+        val loadFont : object * object * object -> object
+        (* properties *)
+    end
+    structure FontFamily :
+    sig
+        (* constructors *)
+        (* methods *)
+        val isMonospace : object -> bool
+        val getName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FontFace :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getFaceName : object -> string
+        val describe : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Font :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getMetrics : object * object -> object
+        val describe : object -> object
+        val getType : unit -> gtype
+        val descriptionsFree : (object vector) -> unit
+        (* properties *)
+    end
+    structure Context :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getBaseDir : object -> Direction.t
+        val setBaseDir : object * Direction.t -> unit
+        val setLanguage : object * object -> unit
+        val getLanguage : object -> object
+        val getFontDescription : object -> object
+        val setFontDescription : object * object -> unit
+        val getMetrics : object * object * object -> object
+        val loadFontset : object * object * object -> object
+        val loadFont : object * object -> object
+        (* properties *)
+    end
+    structure Parse:
+    sig
+        val markup : string * int * int * object * (string vector) * object -> bool
+    end
+    structure Attr:
+    sig
+        val listGetType : unit -> gtype
+        val fallbackNew : bool -> object
+        val scaleNew : real -> object
+        val shapeNew : object * object -> object
+        val riseNew : int -> object
+        val strikethroughNew : bool -> object
+        val underlineNew : Underline.t -> object
+        val fontDescNew : object -> object
+        val stretchNew : Stretch.t -> object
+        val variantNew : Variant.t -> object
+        val weightNew : Weight.t -> object
+        val styleNew : Style.t -> object
+        val sizeNew : int -> object
+        val backgroundNew : int * int * int -> object
+        val foregroundNew : int * int * int -> object
+        val familyNew : string -> object
+        val languageNew : object -> object
+    end
+    structure Find:
+    sig
+        val paragraphBoundary : string * int * int * int -> int * int
+    end
+    structure Reorder:
+    sig
+        val items : (object list) -> object list
+    end
+end
+</PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.html">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>

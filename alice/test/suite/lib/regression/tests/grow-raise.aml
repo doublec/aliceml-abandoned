@@ -1,0 +1,24 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure GrowRaise : REGRESSION =
+struct
+
+val name = "grow-raise"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+exception E
+val rec loop =
+   fn 0 => raise E
+    | n => 1 + loop(n - 1)
+
+val _ = loop 1000000 handle E => 13
+
+val result = !result
+
+end

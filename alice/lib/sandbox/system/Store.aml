@@ -1,0 +1,35 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature STORE  from "../../system/STORE-sig"
+import structure Store  from "../../system/Store"
+import signature POLICY from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure Store : STORE =
+struct
+    exception Stack = Store.Stack
+
+    val equiv     = Store.equiv
+    val same      = Store.same
+    val collect   = Store.collect
+    val minimize  = Store.minimize
+    val size      = Store.size
+    val sizeQuiet = Store.sizeQuiet
+    val futures   = Store.futures
+    val signal    = Store.signal
+
+    fun deepWait x =
+    let
+        do Policy.Unit.check ("deepWait", "Store.deepWait", ())
+    in
+        Store.deepWait x
+    end
+    
+    structure Map = Store.Map
+end

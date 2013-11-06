@@ -1,0 +1,432 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD><TITLE>ICFP 2001 Programming Contest 
+Challenge Task 
+version 6</TITLE>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<META name="GENERATOR" content="hevea 1.06-5 of 2000-09-09">
+</HEAD>
+<BODY >
+<!--HEVEA command line is: hevea -fix task.tex -->
+<!--HTMLHEAD-->
+<!--ENDHTML-->
+<!--CUT DEF section 1 -->
+<BR>
+<BR>
+
+<H1 ALIGN=center>ICFP 2001 Programming Contest<BR>
+Challenge Task<BR>
+version 6</H1>
+
+<H3 ALIGN=center>Damien Doligez, Luc Maranget, Pierre Weis</H3>
+<DIV ALIGN=center><I>This document is also available as </I><A HREF="task.pdf"><I>PDF</I></A><I>, </I><A HREF="task.ps"><I>Postcript</I></A><I> and </I><A HREF="task.txt"><I>plain text</I></A><I>.</I></DIV><BR>
+<!--TOC section The SML/NG markup language-->
+
+<H2>1&nbsp;&nbsp; The SML/NG markup language</H2><!--SEC END -->
+The W4C (World Wide Wireless Web Consortium) has just published the
+specification of SML/NG (Simple Markup Language -- New Generation), a
+simplified version of XXHTML designed for the new generation of
+hypertext rendering micro-devices, running on hardware with reduced
+computational capacity such as wristtop computers, thumbnail-worn PDAs,
+and internet-enabled ice boxes.<BR>
+<BR>
+The programming task is to design and implement an optimiser for
+SML/NG that will simplify the source documents and reduce their size.<BR>
+<BR>
+<!--TOC section Description of SML/NG-->
+
+<H2>2&nbsp;&nbsp; Description of SML/NG</H2><!--SEC END -->
+A document is composed of text and tags. A tag is a sequence of
+characters (the tag's <EM>name</EM>) between <CODE>&lt;</CODE> and <CODE>&gt;</CODE>.
+Anything else in a document is called <EM>text</EM>. For example,
+<PRE>
+                foo&lt;b&gt;bar&lt;/b&gt;
+</PRE>is the text <CODE>foo</CODE> followed by tag <CODE>&lt;b&gt;</CODE>, text <CODE>bar</CODE>,
+and tag <CODE>&lt;/b&gt;</CODE>.<BR>
+<BR>
+The characters <CODE>&lt;</CODE>
+and <CODE>&gt;</CODE> can only appear in a document as part of a tag (but of course
+the strings <CODE>&amp;lt;</CODE> and <CODE>&amp;gt;</CODE> can appear in the text).<BR>
+<BR>
+<!--TOC subsection Tags-->
+
+<H3>2.1&nbsp;&nbsp; Tags</H3><!--SEC END -->
+A tag whose name begins with the character <CODE>/</CODE> is a closing tag. The
+corresponding open tag has the same name without the leading <CODE>/</CODE>.
+For instance, <CODE>&lt;/b&gt;</CODE> is the closing tag corresponding to the open
+tag <CODE>&lt;b&gt;</CODE>.<BR>
+<BR>
+All tags in a document appear in pairs, composed of an open tag and the
+corresponding closing tag (in this order). The region of the document
+between two matching tags (including the tags) is called the <EM>range</EM> of this pair.
+For example, in <CODE>foo&lt;b&gt;bar&lt;/b&gt;</CODE>, the range of the <CODE>&lt;b&gt;</CODE>,
+<CODE>&lt;/b&gt;</CODE> pair is <CODE>&lt;b&gt;bar&lt;/b&gt;</CODE>.<BR>
+<BR>
+Tags are properly nested: for any two ranges, either they are disjoint
+or one is entirely included in the other.<BR>
+<BR>
+Each tag changes the attributes of text within its range as described below:
+<DL COMPACT=compact>
+<DT>
+<TT>B</TT><DD> (bold) set the B attribute
+
+<DT><TT>EM</TT><DD> (emphasis) invert the EM attribute
+
+<DT><TT>I</TT><DD> (italic) set the I attribute
+
+<DT><TT>PL</TT><DD> (plain) reset the U level to 0 and unset the B, EM, I, S,
+ and TT attributes
+
+<DT><TT>S</TT><DD> (strong emphasis) set the S attribute
+
+<DT><TT>TT</TT><DD> (typewriter) set the TT attribute
+
+<DT><TT>U</TT><DD> (underline) increment the U level (but not above 3)
+
+<DT><TT>0</TT>...<TT>9</TT><DD> (size) set the size to 0...9
+
+<DT><TT>r</TT><DD> (color) set the color to red
+
+<DT><TT>g</TT><DD> set the color to green
+
+<DT><TT>b</TT><DD> set the color to blue
+
+<DT><TT>c</TT><DD> set the color to cyan
+
+<DT><TT>m</TT><DD> set the color to magenta
+
+<DT><TT>y</TT><DD> set the color to yellow
+
+<DT><TT>k</TT><DD> set the color to black
+
+<DT><TT>w</TT><DD> set the color to white
+</DL><B>Note:</B> case <EM>is</EM> significant in tag names.<BR>
+<BR>
+There is one additional interaction between the attributes: S hides the
+EM state
+(i.e. where the S attribute is set, the EM attribute is irrelevant).<BR>
+<BR>
+<!--TOC subsection White space-->
+
+<H3>2.2&nbsp;&nbsp; White space</H3><!--SEC END -->
+There are 4 non-printing characters: SPC (ASCII code 0x20), CR
+(ASCII code 0x0D), LF (ASCII code 0x0A), and TAB (ASCII code 0x09).
+Any sequence of these characters is called white space and is
+equivalent to one SPC character, except where the TT attribute is set
+(there are other conditions that prevent spaces from being collapsed,
+see section&nbsp;<A HREF="#spec">3</A>).
+In the parts of the document where TT is set,
+the whitespace characters
+are significant and must be preserved exactly.
+A document contains only these four characters and printable ASCII
+characters (codes 0x21 to 0x7E, included).<BR>
+<BR>
+There is another interaction between whitespace and flags: the EM, I,
+B, and S attributes are irrelevant for whitespace; moreover, color is
+irrelevant where U&nbsp;=&nbsp;0.<BR>
+<BR>
+<!--TOC subsection BNF grammar-->
+
+<H3>2.3&nbsp;&nbsp; BNF grammar</H3><!--SEC END -->
+The BNF grammar of documents is given below.<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<I>document</I> ::= <I>document document</I> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <I>textchar</I> * <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;B&gt;</CODE> <I>document</I> <CODE>&lt;/B&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;EM&gt;</CODE> <I>document</I> <CODE>&lt;/EM&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;I&gt;</CODE> <I>document</I> <CODE>&lt;/I&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;PL&gt;</CODE> <I>document</I> <CODE>&lt;/PL&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;S&gt;</CODE> <I>document</I> <CODE>&lt;/S&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;TT&gt;</CODE> <I>document</I> <CODE>&lt;/TT&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;U&gt;</CODE> <I>document</I> <CODE>&lt;/U&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;0&gt;</CODE> <I>document</I> <CODE>&lt;/0&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;1&gt;</CODE> <I>document</I> <CODE>&lt;/1&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;2&gt;</CODE> <I>document</I> <CODE>&lt;/2&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;3&gt;</CODE> <I>document</I> <CODE>&lt;/3&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;4&gt;</CODE> <I>document</I> <CODE>&lt;/4&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;5&gt;</CODE> <I>document</I> <CODE>&lt;/5&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;6&gt;</CODE> <I>document</I> <CODE>&lt;/6&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;7&gt;</CODE> <I>document</I> <CODE>&lt;/7&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;8&gt;</CODE> <I>document</I> <CODE>&lt;/8&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;9&gt;</CODE> <I>document</I> <CODE>&lt;/9&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;r&gt;</CODE> <I>document</I> <CODE>&lt;/r&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;g&gt;</CODE> <I>document</I> <CODE>&lt;/g&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;b&gt;</CODE> <I>document</I> <CODE>&lt;/b&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;c&gt;</CODE> <I>document</I> <CODE>&lt;/c&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;m&gt;</CODE> <I>document</I> <CODE>&lt;/m&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;y&gt;</CODE> <I>document</I> <CODE>&lt;/y&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;k&gt;</CODE> <I>document</I> <CODE>&lt;/k&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;w&gt;</CODE> <I>document</I> <CODE>&lt;/w&gt;</CODE><BR>
+<BR>
+<I>textchar</I> ::= any printable character except <CODE>&lt;</CODE> and <CODE>&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CR | LF | TAB | SPC<BR>
+<BR>
+<!--TOC section Specification-->
+
+<H2>3&nbsp;&nbsp; Specification<A NAME="spec"></A></H2><!--SEC END -->
+This section defines the <EM>meaning</EM> of a document.
+Two documents are said to be equivalent if they have the same meaning.<BR>
+<BR>
+The meaning of a document is a sequence of decorated characters;
+a decorated character is a character associated with a property record.
+A property record has 8 fields:
+<DL COMPACT=compact>
+<DT>
+<B>b</B><DD> a boolean
+
+<DT><B>em</B><DD> a boolean
+
+<DT><B>i</B><DD> a boolean
+
+<DT><B>s</B><DD> a boolean
+
+<DT><B>tt</B><DD> a boolean
+
+<DT><B>u</B><DD> an integer between 0 and 3 (included)
+
+<DT><B>size</B><DD> an integer between 0 and 9 (included)
+
+<DT><B>color</B><DD> an element of {<I>r</I>, <I>g</I>, <I>b</I>, <I>c</I>, <I>m</I>, <I>y</I>, <I>k</I>, <I>w</I>}
+</DL>To compute the meaning of a document given a current context (a
+context is a property record), consider the document as a 
+sequence of characters and tags. Treat each element of this sequence
+in turn as follows:
+<UL>
+<LI>
+if it is a printing character, output it, decorated by the current
+ context
+
+<LI>if it is a whitespace character, compute the current space context,
+ which is the current context modified in the
+ following way: the <B>s</B>, <B>em</B>, <B>i</B>, and <B>b</B> flags are
+ unset, and if <B>u</B> is
+ 0 then <B>color</B> is set to <I>w</I>. If the <B>tt</B> flag is true
+ in the current
+ context, then output the input character decorated by the current
+ space context; else if the previous output character was
+ a SPC decorated with the same space context then do nothing;
+ otherwise, output a SPC decorated with the current space context.
+
+<LI>if it is an open tag, save the current context and change it
+ according to the tag name as follows:
+ <DL COMPACT=compact>
+<DT>
+ <TT>B</TT><DD> set the <B>b</B> flag
+ 
+<DT><TT>EM</TT><DD> invert the <B>em</B> flag if the <B>s</B> flag is not set;
+ otherwise do nothing
+ 
+<DT><TT>I</TT><DD> set the <B>i</B> flag
+ 
+<DT><TT>PL</TT><DD> unset the <B>s</B>, <B>em</B>, <B>i</B>, <B>b</B>,
+ and <B>tt</B> flags, and set <B>u</B> = 0.
+ 
+<DT><TT>S</TT><DD> set the <B>s</B> flag and unset the <B>em</B> flag
+ 
+<DT><TT>TT</TT><DD> set the <B>tt</B> flag
+ 
+<DT><TT>U</TT><DD> if <B>u</B> is less than 3, increment it;
+ otherwise do nothing
+ 
+<DT><TT>0</TT>...<TT>9</TT><DD> set <B>size</B> accordingly
+ 
+<DT><TT>r</TT>, <TT>g</TT>, <TT>b</TT>, etc.<DD> set <B>color</B> accordingly
+ </DL>
+
+<LI>if it is a closing tag, restore the context that was saved at the
+ corresponding open tag
+</UL>The meaning of the document is the sequence of decorated characters
+output by the above algorithm.<BR>
+<BR>
+A root context is any context with <B>u</B> = 0 and <B>b</B> = <B>em</B> =
+<B>i</B> = <B>s</B> = <B>tt</B> = false (<B>size</B> and <B>color</B> can
+have any value).
+Two documents are <EM>equivalent</EM> if they have the same meaning in every
+possible root context (i.e. for all values of <B>size</B> and <B>color</B>).<BR>
+<BR>
+You can use the on-line document checker and equivalence tester at
+<A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/validator.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/validator.html</TT></A><BR>
+<BR>
+<!--TOC subsection Examples-->
+
+<H3>Examples</H3><!--SEC END -->
+For example, the following pairs of documents are equivalent:
+<PRE>
+    &lt;r&gt;  xxx &lt;/r&gt;&lt;b&gt; yyy  &lt;/b&gt;
+    &lt;r&gt; xxx  &lt;b&gt;  yyy &lt;/b&gt;&lt;/r&gt;
+    
+    &lt;EM&gt; xxx &lt;EM&gt; yyy &lt;/EM&gt; zzz &lt;/EM&gt;
+    &lt;EM&gt; xxx&lt;/EM&gt; yyy &lt;EM&gt;  zzz &lt;/EM&gt;
+    
+    &lt;B&gt; xxx &lt;B&gt; yyy &lt;/B&gt;&lt;/B&gt;
+    &lt;B&gt; xxx  yyy &lt;/B&gt;
+    
+    &lt;r&gt; xxx &lt;/r&gt;&lt;b&gt; &lt;/b&gt;&lt;r&gt; yyy &lt;/r&gt;
+    &lt;r&gt; xxx yyy &lt;/r&gt;
+    
+    &lt;EM&gt; xxx &lt;S&gt; yyy &lt;/S&gt;&lt;/EM&gt;
+    &lt;EM&gt; xxx &lt;/EM&gt;&lt;S&gt; yyy &lt;/S&gt;
+    
+    &lt;I&gt; xxx &lt;/I&gt; yyy &lt;I&gt; zzz &lt;/I&gt;
+    &lt;I&gt; xxx &lt;PL&gt; yyy &lt;/PL&gt; zzz &lt;/I&gt;
+    
+</PRE>The following pairs of documents are not equivalent:
+<PRE>
+    &lt;TT&gt;&lt;r&gt;  xxx &lt;/r&gt;&lt;b&gt; yyy  &lt;/b&gt;&lt;/TT&gt;
+    &lt;TT&gt;&lt;r&gt; xxx  &lt;b&gt;  yyy &lt;/b&gt;&lt;/r&gt;&lt;/TT&gt;
+</PRE>Reason: multiple spaces are significant within <CODE>TT</CODE>.<BR>
+<BR>
+<PRE>    
+    &lt;B&gt; xxx &lt;I&gt; yyy &lt;/I&gt; zzz &lt;/B&gt;
+    &lt;B&gt; xxx &lt;/B&gt;&lt;I&gt; yyy &lt;/I&gt;&lt;B&gt; zzz &lt;/B&gt;
+</PRE>Reason: <CODE>yyy</CODE> is both in italics and in bold in the first document
+but only in italics in the second one.<BR>
+<BR>
+<PRE>
+    &lt;U&gt; xxx &lt;U&gt; yyy &lt;/U&gt;&lt;/U&gt;
+    &lt;U&gt; xxx  yyy &lt;/U&gt;
+</PRE>Reason: <CODE>yyy</CODE> is underlined twice in the first document but only once
+in the second one.<BR>
+<BR>
+<PRE>    
+    &lt;U&gt;&lt;r&gt; xxx &lt;/r&gt;&lt;b&gt; &lt;/b&gt;&lt;r&gt; yyy &lt;/r&gt;&lt;/U&gt;
+    &lt;U&gt;&lt;r&gt; xxx   yyy &lt;/r&gt;&lt;/U&gt;
+</PRE>Reason: the first document has three underlined spaces between <CODE>xxx</CODE>
+and <CODE>yyy</CODE> because the middle one is in blue; the second document
+has only one red underlined space at that point.<BR>
+<BR>
+<!--TOC section The task-->
+
+<H2>4&nbsp;&nbsp; The task</H2><!--SEC END -->
+You must write a program to optimise SML/NG documents. Your program
+will be given a correct SML/NG document on its standard input, and it
+must output (on stdout) an equivalent document that is as small as
+possible. The size of a document is simply defined as its length in
+bytes.<BR>
+<BR>
+For example, opportunities for optimisation include the following:<BR>
+<BR>
+<UL>
+<LI>
+<B>whitespace compression</B><BR>
+replacing a white space sequence with a single space or newline<BR>
+<BR>
+
+<LI><B>redundancy elimination</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP>changing</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;&lt;B&gt;foo&lt;/B&gt;&lt;/I&gt;&lt;/B&gt;</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>into</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;B&gt;foo&lt;/B&gt;&lt;/I&gt;</TT></TD>
+</TR></TABLE><BR>
+
+<LI><B>overlap inversion</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP>changing</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;bla bla&lt;/I&gt;&lt;/B&gt;&lt;TT&gt;&lt;I&gt;&lt;B&gt;foo bar&lt;/B&gt;&lt;/I&gt; truc&lt;/TT&gt;</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>into</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;bla bla&lt;TT&gt;foo bar&lt;/TT&gt;&lt;/I&gt;&lt;/B&gt;&lt;TT&gt; truc&lt;/TT&gt;</TT></TD>
+</TR></TABLE><BR>
+
+<LI><B>PL shortcut</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP>changing</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;S&gt;&lt;TT&gt;foo&lt;/TT&gt;&lt;/S&gt;&lt;/I&gt; bar &lt;TT&gt;&lt;S&gt;&lt;I&gt; gee&lt;/I&gt;&lt;/S&gt;&lt;/TT&gt;</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>into</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;S&gt;&lt;TT&gt;foo&lt;PL&gt; bar &lt;/PL&gt; gee&lt;/TT&gt;&lt;/S&gt;&lt;/I&gt;</TT></TD>
+</TR></TABLE><BR>
+
+<LI><B>whitespace simplification</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP>changing</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;&lt;r&gt;bla bla &lt;/r&gt; &lt;/I&gt; &lt;/B&gt; &lt;r&gt;&lt;I&gt; barfoo&lt;/I&gt;&lt;/r&gt;</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>into</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;r&gt;&lt;B&gt;bla bla &lt;/B&gt;barfoo&lt;/r&gt;&lt;/I&gt;</TT></TD>
+</TR></TABLE><BR>
+
+<LI><B>EM elimination</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP>changing</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;S&gt; foo &lt;EM&gt; bar &lt;/EM&gt; &lt;/S&gt; &lt;EM&gt; &lt;EM&gt; foo &lt;/EM&gt; &lt;/EM&gt;.</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>into</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;S&gt; foo bar&lt;/S&gt; foo .</TT></TD>
+</TR></TABLE><BR>
+
+<LI><B>color nesting</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
+<TR><TD ALIGN=left NOWRAP>changing</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;r&gt;aaa&lt;/r&gt;&lt;g&gt;bbb&lt;/g&gt;&lt;b&gt;ccc&lt;/b&gt;&lt;g&gt;ddd&lt;/g&gt;&lt;r&gt;eee&lt;/r&gt;</TT></TD>
+</TR>
+<TR><TD ALIGN=left NOWRAP>into</TD>
+<TD ALIGN=left NOWRAP><TT>&lt;r&gt;aaa&lt;g&gt;bbb&lt;b&gt;ccc&lt;/b&gt;ddd&lt;/g&gt;eee&lt;/r&gt;</TT></TD>
+</TR></TABLE></UL>There will also be a limitation on the amount of time that your program
+may use to do its work. The time limit will depend on the input file and it
+will be given to your program as a number of seconds, both in its first
+command-line argument and in the <TT>TLIMIT</TT> environment variable. The
+limit will never be less that 180 (i.e. 3 minutes).<BR>
+<BR>
+Note that the limit is real time (a.k.a wall-clock time), not CPU time.<BR>
+<BR>
+<!--TOC section Judgement criteria-->
+
+<H2>5&nbsp;&nbsp; Judgement criteria</H2><!--SEC END -->
+Your programs will be ranked according to the following criteria:
+<OL type=1>
+<LI>
+Correctness. Every program that crashes or gives the wrong
+result (i.e. some output that is not equivalent to the input) on any
+one of our test inputs will be
+mercilessly eliminated from the competition.
+
+<LI>Stupidity. Every program that gives a result bigger than the
+input on any of the inputs will also be eliminated.
+
+<LI>Output size. The remaining programs will be ranked according
+to the size of their outputs on a well-chosen set of inputs. The
+inputs will be generated using a variety of techniques such as hand-writing,
+translation from HTML, random generation. These inputs can be big
+(up to five megabytes).
+
+<LI>Speed of optimisation. If the top programs are very close to
+each other using the previous criterion, we will use speed as a tie breaker.
+</OL><!--TOC section Online stuff-->
+
+<H2>6&nbsp;&nbsp; Online stuff</H2><!--SEC END -->
+The following Web pages may be of interest to you:
+<UL>
+<LI>
+Contest home page: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/</TT></A>
+
+<LI>FAQ: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/faq.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/faq.html</TT></A>
+
+<LI>News: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/news.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/news.html</TT></A>
+
+<LI>Document checker and equivalence tester:
+ <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/validator.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/validator.html</TT></A>
+
+<LI>Procedure for submitting entries:
+ <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/procedure.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/procedure.html</TT></A>
+</UL><!--TOC section Good luck-->
+
+<H2>7&nbsp;&nbsp; Good luck</H2><!--SEC END -->
+
+Have fun !<BR>
+<BR>
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+
+<!--FOOTER-->
+<HR SIZE=2>
+<BLOCKQUOTE><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.
+</EM></BLOCKQUOTE></BODY>
+</HTML>

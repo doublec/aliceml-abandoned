@@ -1,0 +1,43 @@
+import structure Simulator from "Simulator"
+
+val showStatus = ref false
+val showWorlds = ref false
+val drawWorlds = ref false
+val showAnts = ref false
+val visualize = ref false
+val visualizeEnd = ref false
+
+val rounds = ref 10000
+val delay = ref 0
+
+fun parseArgs (("-s"|"--status")::r) = (showStatus:=true; parseArgs r)
+  | parseArgs (("-w"|"--world")::r) = (showWorlds:=true; showAnts:=false;
+                                       parseArgs r)
+  | parseArgs (("-a"|"--ascii")::r) = (drawWorlds:=true; showAnts:=false;
+                                       parseArgs r)
+  | parseArgs (("-p"|"--position")::r) = (showAnts:=true; showWorlds:=false;
+                                          parseArgs r)
+  | parseArgs (("-r"|"--rounds")::roundsIn::r) =
+    (rounds:=valOf(Int.fromString roundsIn);
+     parseArgs r)
+  | parseArgs (("-d"|"--delay")::delayIn::r) =
+    (delay:=valOf(Int.fromString delayIn);
+     parseArgs r)
+  | parseArgs (("-v"|"--visual")::r) = (visualize := true; visualizeEnd := false; parseArgs r)
+  | parseArgs (("-f"|"--visual-finish")::r) = (visualizeEnd := true; visualize := false; parseArgs r)
+  | parseArgs r = r
+
+val args = parseArgs (CommandLine.arguments())
+val (ant1,ant2,world) = case args of [a,b,c] => (a,b,c)
+                                   | _ => (print "Illegal number of arguments.\n";
+                                           OS.Process.exit OS.Process.failure)
+
+
+val _ = Simulator.simulate(!showStatus, !showWorlds, !showAnts, !drawWorlds, 
+                            !visualize, !visualizeEnd, !delay, !rounds,ant1,ant2,world)
+
+val _ =
+    if !visualize orelse !visualizeEnd then
+        ()
+    else
+        OS.Process.exit OS.Process.success

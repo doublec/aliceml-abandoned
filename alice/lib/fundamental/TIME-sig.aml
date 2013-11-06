@@ -1,0 +1,66 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                             from "Pervasive"
+import __primitive type unit and int and char and string
+       type bool and order and option                    from "ToplevelTypes"
+import __primitive structure LargeInt                    from "LargeInt"
+import __primitive structure LargeReal                   from "LargeReal"
+import __primitive structure StringCvt                   from "StringCvt"
+
+signature TIME =
+sig
+    eqtype time
+    type t = time							(**)
+
+    exception Time
+
+    val zeroTime :		time
+(*
+    val now :			unit -> time
+    
+    is in system/Time
+
+*)
+
+    val fromReal :		LargeReal.real -> time
+    val toReal :		time -> LargeReal.real
+    val toSeconds :		time -> LargeInt.int
+    val toMilliseconds :	time -> LargeInt.int
+    val toMicroseconds :	time -> LargeInt.int
+    val toNanoseconds :		time -> LargeInt.int
+    val fromSeconds :		LargeInt.int -> time
+    val fromMilliseconds :	LargeInt.int -> time
+    val fromMicroseconds :	LargeInt.int -> time
+    val fromNanoseconds :	LargeInt.int -> time
+
+    val op + :			time * time -> time
+    val op - :			time * time -> time
+
+    val op < :			time * time -> bool
+    val op > :			time * time -> bool
+    val op <= :			time * time -> bool
+    val op >= :			time * time -> bool
+    val equal :			time * time -> bool			(**)
+    val compare :		time * time -> order
+    val hash :			time  -> int				(**)
+
+    val toString :	time -> string
+    val fromString :	string -> time option
+    val fmt :		int -> time -> string
+    val scan :		(char,'a) StringCvt.reader -> 'a -> (time * 'a) option
+end

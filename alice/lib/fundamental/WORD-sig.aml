@@ -1,0 +1,72 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive
+       structure Int and LargeInt and Word and LargeWord from "Pervasive"
+import __primitive type int and char and string
+       type bool and order and option                    from "ToplevelTypes"
+import __primitive structure StringCvt                   from "StringCvt"
+
+signature WORD =
+sig
+    eqtype word
+    type t = word							(**)
+
+    val wordSize :	int
+
+    val toLarge :	word -> LargeWord.word
+    val toLargeX :	word -> LargeWord.word
+    val fromLarge :	LargeWord.word -> word
+    val toLargeInt :	word -> LargeInt.int
+    val toLargeIntX :	word -> LargeInt.int
+    val fromLargeInt :	LargeInt.int -> word
+    val toInt :		word -> Int.int
+    val toIntX :	word -> Int.int
+    val fromInt :	Int.int -> word
+
+    val notb :		word -> word
+    val orb :		word * word -> word
+    val xorb :		word * word -> word
+    val andb :		word * word -> word
+    val << :		word * Word.word -> word
+    val >> :		word * Word.word -> word
+    val ~>> :		word * Word.word -> word
+
+    val ~ :		word -> word
+    val + :		word * word -> word
+    val - :		word * word -> word
+    val * :		word * word -> word
+    val div :		word * word -> word
+    val mod :		word * word -> word
+
+    val op > :		word * word -> bool
+    val op < :		word * word -> bool
+    val op >= :		word * word -> bool
+    val op <= :		word * word -> bool
+    val equal :		word * word -> bool				(**)
+    val compare :	word * word -> order
+    val hash :		word -> int					(**)
+
+    val min :		word * word -> word
+    val max :		word * word -> word
+
+    val fmt :		StringCvt.radix -> word -> string
+    val toString :	word -> string
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (word,'a) StringCvt.reader
+    val fromString :	string -> word option
+end

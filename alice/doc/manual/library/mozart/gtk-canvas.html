@@ -1,0 +1,524 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Canvas structure", "The <TT>Canvas</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature CANVAS
+    structure Canvas : CANVAS</PRE>
+
+ <P>
+   The <TT>Canvas</TT> structure provides access to a canvas implementation
+   based on the Tcl/Tk canvas widget.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gdk.html"><TT>Gdk</TT></A>
+ </P>
+
+  <?php section("import", "import"); ?>
+
+  <PRE>
+    import structure Core from "x-alice:/lib/gtk/Core"
+    import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
+    import structure GdkEnums from "x-alice:/lib/gtk/GdkEnums"
+    import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
+    import structure CanvasEnums from "x-alice:/lib/gtk/CanvasEnums"</PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature CANVAS =
+sig
+    type object = Core.object
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+    type callback_function = object * arg list -> unit
+    val signalConnect      : object * string * callback_function -> int
+    val signalConnectAfter : object * string * callback_function -> int
+    val signalDisconnect   : object * int -> unit
+    val canvasItemGetFieldCanvas : object -> object
+    val canvasItemGetFieldParent : object -> object
+    val canvasItemGetFieldXform : object -> object
+    val canvasItemGetFieldX1 : object -> real
+    val canvasItemGetFieldY1 : object -> real
+    val canvasItemGetFieldX2 : object -> real
+    val canvasItemGetFieldY2 : object -> real
+    val canvasItemSetFieldCanvas : object * object -> unit
+    val canvasItemSetFieldParent : object * object -> unit
+    val canvasItemSetFieldXform : object * object -> unit
+    val canvasItemSetFieldX1 : object * real -> unit
+    val canvasItemSetFieldY1 : object * real -> unit
+    val canvasItemSetFieldX2 : object * real -> unit
+    val canvasItemSetFieldY2 : object * real -> unit
+    val itemGetType : unit -> int
+    val itemConstruct : object * object * string * Core.arg list -> unit
+    val itemSet : object * string * Core.arg -> unit
+    val itemSetValist : object * string * Core.arg list -> unit
+    val itemMove : object * real * real -> unit
+    val itemAffineRelative : object * real vector -> unit
+    val itemAffineAbsolute : object * real vector -> unit
+    val itemRaise : object * int -> unit
+    val itemLower : object * int -> unit
+    val itemRaiseToTop : object -> unit
+    val itemLowerToBottom : object -> unit
+    val itemShow : object -> unit
+    val itemHide : object -> unit
+    val itemGrab : object * int * object * int -> int
+    val itemUngrab : object * int -> unit
+    val itemW2i : object -> real * real
+    val itemW2i' : object * real * real -> real * real
+    val itemI2w : object -> real * real
+    val itemI2w' : object * real * real -> real * real
+    val itemI2wAffine : object * real vector -> unit
+    val itemI2cAffine : object * real vector -> unit
+    val itemReparent : object * object -> unit
+    val itemGrabFocus : object -> unit
+    val itemGetBounds : object -> real * real * real * real
+    val itemGetBounds' : object * real * real * real * real -> real * real * real * real
+    val itemRequestUpdate : object -> unit
+    val canvasGroupGetFieldItemList : object -> object list
+    val canvasGroupGetFieldItemListEnd : object -> object list
+    val canvasGroupSetFieldItemList : object * object list -> unit
+    val canvasGroupSetFieldItemListEnd : object * object list -> unit
+    val groupGetType : unit -> int
+    val canvasGetFieldRoot : object -> object
+    val canvasGetFieldRedrawArea : object -> object
+    val canvasGetFieldCurrentItem : object -> object
+    val canvasGetFieldNewCurrentItem : object -> object
+    val canvasGetFieldGrabbedItem : object -> object
+    val canvasGetFieldFocusedItem : object -> object
+    val canvasGetFieldPixmapGc : object -> object
+    val canvasGetFieldScrollX1 : object -> real
+    val canvasGetFieldScrollY1 : object -> real
+    val canvasGetFieldScrollX2 : object -> real
+    val canvasGetFieldScrollY2 : object -> real
+    val canvasGetFieldPixelsPerUnit : object -> real
+    val canvasGetFieldIdleId : object -> int
+    val canvasGetFieldRootDestroyId : object -> int
+    val canvasGetFieldRedrawX1 : object -> int
+    val canvasGetFieldRedrawY1 : object -> int
+    val canvasGetFieldRedrawX2 : object -> int
+    val canvasGetFieldRedrawY2 : object -> int
+    val canvasGetFieldDrawXofs : object -> int
+    val canvasGetFieldDrawYofs : object -> int
+    val canvasGetFieldZoomXofs : object -> int
+    val canvasGetFieldZoomYofs : object -> int
+    val canvasGetFieldState : object -> int
+    val canvasGetFieldGrabbedEventMask : object -> int
+    val canvasGetFieldCloseEnough : object -> int
+    val canvasGetFieldCenterScrollRegion : object -> int
+    val canvasGetFieldNeedUpdate : object -> int
+    val canvasGetFieldNeedRedraw : object -> int
+    val canvasGetFieldNeedRepick : object -> int
+    val canvasGetFieldLeftGrabbedItem : object -> int
+    val canvasGetFieldInRepick : object -> int
+    val canvasGetFieldAa : object -> int
+    val canvasGetFieldDither : object -> GdkEnums.GdkRgbDither
+    val canvasSetFieldRoot : object * object -> unit
+    val canvasSetFieldRedrawArea : object * object -> unit
+    val canvasSetFieldCurrentItem : object * object -> unit
+    val canvasSetFieldNewCurrentItem : object * object -> unit
+    val canvasSetFieldGrabbedItem : object * object -> unit
+    val canvasSetFieldFocusedItem : object * object -> unit
+    val canvasSetFieldPixmapGc : object * object -> unit
+    val canvasSetFieldScrollX1 : object * real -> unit
+    val canvasSetFieldScrollY1 : object * real -> unit
+    val canvasSetFieldScrollX2 : object * real -> unit
+    val canvasSetFieldScrollY2 : object * real -> unit
+    val canvasSetFieldPixelsPerUnit : object * real -> unit
+    val canvasSetFieldIdleId : object * int -> unit
+    val canvasSetFieldRootDestroyId : object * int -> unit
+    val canvasSetFieldRedrawX1 : object * int -> unit
+    val canvasSetFieldRedrawY1 : object * int -> unit
+    val canvasSetFieldRedrawX2 : object * int -> unit
+    val canvasSetFieldRedrawY2 : object * int -> unit
+    val canvasSetFieldDrawXofs : object * int -> unit
+    val canvasSetFieldDrawYofs : object * int -> unit
+    val canvasSetFieldZoomXofs : object * int -> unit
+    val canvasSetFieldZoomYofs : object * int -> unit
+    val canvasSetFieldState : object * int -> unit
+    val canvasSetFieldGrabbedEventMask : object * int -> unit
+    val canvasSetFieldCloseEnough : object * int -> unit
+    val canvasSetFieldCenterScrollRegion : object * int -> unit
+    val canvasSetFieldNeedUpdate : object * int -> unit
+    val canvasSetFieldNeedRedraw : object * int -> unit
+    val canvasSetFieldNeedRepick : object * int -> unit
+    val canvasSetFieldLeftGrabbedItem : object * int -> unit
+    val canvasSetFieldInRepick : object * int -> unit
+    val canvasSetFieldAa : object * int -> unit
+    val canvasSetFieldDither : object * GdkEnums.GdkRgbDither -> unit
+    val getType : unit -> int
+    val new : unit -> object
+    val newAa : unit -> object
+    val root : object -> object
+    val setScrollRegion : object * real * real * real * real -> unit
+    val getScrollRegion : object -> real * real * real * real
+    val getScrollRegion' : object * real * real * real * real -> real * real * real * real
+    val setCenterScrollRegion : object * bool -> unit
+    val getCenterScrollRegion : object -> bool
+    val setPixelsPerUnit : object * real -> unit
+    val scrollTo : object * int * int -> unit
+    val getScrollOffsets : object -> int * int
+    val getScrollOffsets' : object * int * int -> int * int
+    val updateNow : object -> unit
+    val getItemAt : object * real * real -> object
+    val requestRedrawUta : object * object -> unit
+    val requestRedraw : object * int * int * int * int -> unit
+    val w2cAffine : object * real vector -> unit
+    val w2c : object * real * real -> int * int
+    val w2c' : object * real * real * int * int -> int * int
+    val w2cD : object * real * real -> real * real
+    val w2cD' : object * real * real * real * real -> real * real
+    val c2w : object * int * int -> real * real
+    val c2w' : object * int * int * real * real -> real * real
+    val windowToWorld : object * real * real -> real * real
+    val windowToWorld' : object * real * real * real * real -> real * real
+    val worldToWindow : object * real * real -> real * real
+    val worldToWindow' : object * real * real * real * real -> real * real
+    val getColor : object * string * object -> int
+    val getColorPixel : object * int -> int
+    val setStippleOrigin : object * object -> unit
+    val setDither : object * GdkEnums.GdkRgbDither -> unit
+    val getDither : object -> GdkEnums.GdkRgbDither
+    val canvasLineGetFieldCoords : object -> object
+    val canvasLineGetFieldFirstCoords : object -> object
+    val canvasLineGetFieldLastCoords : object -> object
+    val canvasLineGetFieldGc : object -> object
+    val canvasLineGetFieldStipple : object -> object
+    val canvasLineGetFieldFillSvp : object -> object
+    val canvasLineGetFieldFirstSvp : object -> object
+    val canvasLineGetFieldLastSvp : object -> object
+    val canvasLineGetFieldWidth : object -> real
+    val canvasLineGetFieldShapeA : object -> real
+    val canvasLineGetFieldShapeB : object -> real
+    val canvasLineGetFieldShapeC : object -> real
+    val canvasLineGetFieldCap : object -> GdkEnums.GdkCapStyle
+    val canvasLineGetFieldJoin : object -> GdkEnums.GdkJoinStyle
+    val canvasLineGetFieldLineStyle : object -> GdkEnums.GdkLineStyle
+    val canvasLineGetFieldFillPixel : object -> int
+    val canvasLineGetFieldFillRgba : object -> int
+    val canvasLineGetFieldNumPoints : object -> int
+    val canvasLineGetFieldFillColor : object -> int
+    val canvasLineGetFieldSplineSteps : object -> int
+    val canvasLineGetFieldWidthPixels : object -> int
+    val canvasLineGetFieldFirstArrow : object -> int
+    val canvasLineGetFieldLastArrow : object -> int
+    val canvasLineGetFieldSmooth : object -> int
+    val canvasLineSetFieldCoords : object * object -> unit
+    val canvasLineSetFieldFirstCoords : object * object -> unit
+    val canvasLineSetFieldLastCoords : object * object -> unit
+    val canvasLineSetFieldGc : object * object -> unit
+    val canvasLineSetFieldStipple : object * object -> unit
+    val canvasLineSetFieldFillSvp : object * object -> unit
+    val canvasLineSetFieldFirstSvp : object * object -> unit
+    val canvasLineSetFieldLastSvp : object * object -> unit
+    val canvasLineSetFieldWidth : object * real -> unit
+    val canvasLineSetFieldShapeA : object * real -> unit
+    val canvasLineSetFieldShapeB : object * real -> unit
+    val canvasLineSetFieldShapeC : object * real -> unit
+    val canvasLineSetFieldCap : object * GdkEnums.GdkCapStyle -> unit
+    val canvasLineSetFieldJoin : object * GdkEnums.GdkJoinStyle -> unit
+    val canvasLineSetFieldLineStyle : object * GdkEnums.GdkLineStyle -> unit
+    val canvasLineSetFieldFillPixel : object * int -> unit
+    val canvasLineSetFieldFillRgba : object * int -> unit
+    val canvasLineSetFieldNumPoints : object * int -> unit
+    val canvasLineSetFieldFillColor : object * int -> unit
+    val canvasLineSetFieldSplineSteps : object * int -> unit
+    val canvasLineSetFieldWidthPixels : object * int -> unit
+    val canvasLineSetFieldFirstArrow : object * int -> unit
+    val canvasLineSetFieldLastArrow : object * int -> unit
+    val canvasLineSetFieldSmooth : object * int -> unit
+    val lineGetType : unit -> int
+    val canvasTextGetFieldFontDesc : object -> object
+    val canvasTextGetFieldAttrList : object -> object
+    val canvasTextGetFieldUnderline : object -> PangoEnums.PangoUnderline
+    val canvasTextGetFieldStrikethrough : object -> bool
+    val canvasTextGetFieldRise : object -> int
+    val canvasTextGetFieldScale : object -> real
+    val canvasTextGetFieldText : object -> string
+    val canvasTextGetFieldStipple : object -> object
+    val canvasTextGetFieldGc : object -> object
+    val canvasTextGetFieldLayout : object -> object
+    val canvasTextGetFieldPixel : object -> int
+    val canvasTextGetFieldX : object -> real
+    val canvasTextGetFieldY : object -> real
+    val canvasTextGetFieldClipWidth : object -> real
+    val canvasTextGetFieldClipHeight : object -> real
+    val canvasTextGetFieldXofs : object -> real
+    val canvasTextGetFieldYofs : object -> real
+    val canvasTextGetFieldAnchor : object -> GtkEnums.GtkAnchorType
+    val canvasTextGetFieldJustification : object -> GtkEnums.GtkJustification
+    val canvasTextGetFieldCx : object -> int
+    val canvasTextGetFieldCy : object -> int
+    val canvasTextGetFieldClipCx : object -> int
+    val canvasTextGetFieldClipCy : object -> int
+    val canvasTextGetFieldClipCwidth : object -> int
+    val canvasTextGetFieldClipCheight : object -> int
+    val canvasTextGetFieldMaxWidth : object -> int
+    val canvasTextGetFieldHeight : object -> int
+    val canvasTextGetFieldRgba : object -> int
+    val canvasTextGetFieldClip : object -> int
+    val canvasTextGetFieldUnderlineSet : object -> int
+    val canvasTextGetFieldStrikeSet : object -> int
+    val canvasTextGetFieldRiseSet : object -> int
+    val canvasTextGetFieldScaleSet : object -> int
+    val canvasTextGetFieldPriv : object -> object
+    val canvasTextSetFieldFontDesc : object * object -> unit
+    val canvasTextSetFieldAttrList : object * object -> unit
+    val canvasTextSetFieldUnderline : object * PangoEnums.PangoUnderline -> unit
+    val canvasTextSetFieldStrikethrough : object * bool -> unit
+    val canvasTextSetFieldRise : object * int -> unit
+    val canvasTextSetFieldScale : object * real -> unit
+    val canvasTextSetFieldText : object * string -> unit
+    val canvasTextSetFieldStipple : object * object -> unit
+    val canvasTextSetFieldGc : object * object -> unit
+    val canvasTextSetFieldLayout : object * object -> unit
+    val canvasTextSetFieldPixel : object * int -> unit
+    val canvasTextSetFieldX : object * real -> unit
+    val canvasTextSetFieldY : object * real -> unit
+    val canvasTextSetFieldClipWidth : object * real -> unit
+    val canvasTextSetFieldClipHeight : object * real -> unit
+    val canvasTextSetFieldXofs : object * real -> unit
+    val canvasTextSetFieldYofs : object * real -> unit
+    val canvasTextSetFieldAnchor : object * GtkEnums.GtkAnchorType -> unit
+    val canvasTextSetFieldJustification : object * GtkEnums.GtkJustification -> unit
+    val canvasTextSetFieldCx : object * int -> unit
+    val canvasTextSetFieldCy : object * int -> unit
+    val canvasTextSetFieldClipCx : object * int -> unit
+    val canvasTextSetFieldClipCy : object * int -> unit
+    val canvasTextSetFieldClipCwidth : object * int -> unit
+    val canvasTextSetFieldClipCheight : object * int -> unit
+    val canvasTextSetFieldMaxWidth : object * int -> unit
+    val canvasTextSetFieldHeight : object * int -> unit
+    val canvasTextSetFieldRgba : object * int -> unit
+    val canvasTextSetFieldClip : object * int -> unit
+    val canvasTextSetFieldUnderlineSet : object * int -> unit
+    val canvasTextSetFieldStrikeSet : object * int -> unit
+    val canvasTextSetFieldRiseSet : object * int -> unit
+    val canvasTextSetFieldScaleSet : object * int -> unit
+    val canvasTextSetFieldPriv : object * object -> unit
+    val textGetType : unit -> int
+    val canvasRichTextGetFieldPriv : object -> object
+    val canvasRichTextSetFieldPriv : object * object -> unit
+    val richTextGetType : unit -> int
+    val richTextCutClipboard : object -> unit
+    val richTextCopyClipboard : object -> unit
+    val richTextPasteClipboard : object -> unit
+    val richTextSetBuffer : object * object -> unit
+    val richTextGetBuffer : object -> object
+    val richTextGetIterLocation : object * object * object -> unit
+    val richTextGetIterAtLocation : object * object * int * int -> unit
+    val pathDefNew : unit -> object
+    val pathDefNewSized : int -> object
+    val pathDefNewFromBpath : object -> object
+    val pathDefNewFromStaticBpath : object -> object
+    val pathDefNewFromForeignBpath : object -> object
+    val pathDefRef : object -> unit
+    val pathDefFinish : object -> unit
+    val pathDefEnsureSpace : object * int -> unit
+    val pathDefCopy : object * object -> unit
+    val pathDefDuplicate : object -> object
+    val pathDefConcat : object list -> object
+    val pathDefSplit : object -> object list
+    val pathDefOpenParts : object -> object
+    val pathDefClosedParts : object -> object
+    val pathDefCloseAll : object -> object
+    val pathDefUnref : object -> unit
+    val pathDefReset : object -> unit
+    val pathDefMoveto : object * real * real -> unit
+    val pathDefLineto : object * real * real -> unit
+    val pathDefLinetoMoving : object * real * real -> unit
+    val pathDefCurveto : object * real * real * real * real * real * real -> unit
+    val pathDefClosepath : object -> unit
+    val pathDefClosepathCurrent : object -> unit
+    val pathDefBpath : object -> object
+    val pathDefLength : object -> int
+    val pathDefIsEmpty : object -> bool
+    val pathDefHasCurrentpoint : object -> bool
+    val pathDefCurrentpoint : object * object -> unit
+    val pathDefLastBpath : object -> object
+    val pathDefFirstBpath : object -> object
+    val pathDefAnyOpen : object -> bool
+    val pathDefAllOpen : object -> bool
+    val pathDefAnyClosed : object -> bool
+    val pathDefAllClosed : object -> bool
+    val canvasShapeGetFieldPriv : object -> object
+    val canvasShapeSetFieldPriv : object * object -> unit
+    val shapeSetPathDef : object * object -> unit
+    val shapeGetPathDef : object -> object
+    val shapeGetType : unit -> int
+    val canvasPolygonGetFieldPathDef : object -> object
+    val canvasPolygonSetFieldPathDef : object * object -> unit
+    val polygonGetType : unit -> int
+    val canvasPixbufGetFieldPriv : object -> object
+    val canvasPixbufSetFieldPriv : object * object -> unit
+    val pixbufGetType : unit -> int
+    val canvasWidgetGetFieldWidget : object -> object
+    val canvasWidgetGetFieldX : object -> real
+    val canvasWidgetGetFieldY : object -> real
+    val canvasWidgetGetFieldWidth : object -> real
+    val canvasWidgetGetFieldHeight : object -> real
+    val canvasWidgetGetFieldAnchor : object -> GtkEnums.GtkAnchorType
+    val canvasWidgetGetFieldCx : object -> int
+    val canvasWidgetGetFieldCy : object -> int
+    val canvasWidgetGetFieldCwidth : object -> int
+    val canvasWidgetGetFieldCheight : object -> int
+    val canvasWidgetGetFieldDestroyId : object -> int
+    val canvasWidgetGetFieldSizePixels : object -> int
+    val canvasWidgetGetFieldInDestroy : object -> int
+    val canvasWidgetSetFieldWidget : object * object -> unit
+    val canvasWidgetSetFieldX : object * real -> unit
+    val canvasWidgetSetFieldY : object * real -> unit
+    val canvasWidgetSetFieldWidth : object * real -> unit
+    val canvasWidgetSetFieldHeight : object * real -> unit
+    val canvasWidgetSetFieldAnchor : object * GtkEnums.GtkAnchorType -> unit
+    val canvasWidgetSetFieldCx : object * int -> unit
+    val canvasWidgetSetFieldCy : object * int -> unit
+    val canvasWidgetSetFieldCwidth : object * int -> unit
+    val canvasWidgetSetFieldCheight : object * int -> unit
+    val canvasWidgetSetFieldDestroyId : object * int -> unit
+    val canvasWidgetSetFieldSizePixels : object * int -> unit
+    val canvasWidgetSetFieldInDestroy : object * int -> unit
+    val widgetGetType : unit -> int
+    val canvasREGetFieldX1 : object -> real
+    val canvasREGetFieldY1 : object -> real
+    val canvasREGetFieldX2 : object -> real
+    val canvasREGetFieldY2 : object -> real
+    val canvasREGetFieldPathDirty : object -> int
+    val canvasRESetFieldX1 : object * real -> unit
+    val canvasRESetFieldY1 : object * real -> unit
+    val canvasRESetFieldX2 : object * real -> unit
+    val canvasRESetFieldY2 : object * real -> unit
+    val canvasRESetFieldPathDirty : object * int -> unit
+    val reGetType : unit -> int
+    val rectGetType : unit -> int
+    val ellipseGetType : unit -> int
+    val bpathGetType : unit -> int
+    val pointsNew : int -> object
+    val pointsRef : object -> object
+    val pointsFree : object -> unit
+    val getMiterPoints : real * real * real * real * real * real * real -> int * real * real * real * real
+    val getMiterPoints' : real * real * real * real * real * real * real * real * real * real * real -> int * real * real * real * real
+    val getButtPoints : real * real * real * real * real * int -> real * real * real * real
+    val getButtPoints' : real * real * real * real * real * int * real * real * real * real -> real * real * real * real
+    val polygonToPoint : int * real * real -> real * real
+    val polygonToPoint' : real * int * real * real -> real * real
+    val renderSvp : object * object * int -> unit
+    val updateSvp : object * object -> object
+    val updateSvp' : object * object * object -> object
+    val updateSvpClip : object * object * object -> object
+    val updateSvpClip' : object * object * object * object -> object
+    val itemResetBounds : object -> unit
+    val itemUpdateSvp : object * object -> object
+    val itemUpdateSvp' : object * object * object -> object
+    val itemUpdateSvpClip : object * object * object -> object
+    val itemUpdateSvpClip' : object * object * object * object -> object
+    val itemRequestRedrawSvp : object * object -> unit
+    val updateBbox : object * int * int * int * int -> unit
+    val bufEnsureBuf : object -> unit
+    val pointsGetType : unit -> int
+    val pointsSetCoords : object * int * int -> unit
+    val itemNew : object * int -> object
+    val setBackgroundColor : object * object -> unit
+    val itemCreate : object * int * (string * arg) list -> object
+    val makePoints : int list -> object
+end
+</PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.href=">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>

@@ -1,0 +1,37 @@
+import structure Protocol   from "../common/Protocol"
+import structure Pos        from "../common/Pos"
+import structure Color      from "../common/Color"
+import structure Snake      from "Snake"
+
+signature ARENA =
+sig
+    type arena
+
+    type config = 
+	{
+	 dimensions: int * int,
+	 players: int,
+	 walls: int
+	 }
+    
+
+    val random :        config -> arena * (Pos.pos * Protocol.direction) list
+   
+    val removeSnake :   arena * Snake.snake -> unit
+
+    val moveSnakes :    arena * (Snake.snake * Protocol.direction) list 
+                            * Snake.snake list -> 
+        {   dead :          Snake.snake list, 
+            grown :         Snake.snake list,
+            gateEntered :   Snake.snake list,
+            finished :      Snake.snake list
+        }
+
+    val placeGoody :    arena * int -> bool
+
+    val openGate :      arena * Pos.pos -> unit
+    
+    val placeGate :     arena * Pos.pos * Color.color -> unit
+
+    val commit :        arena -> Protocol.diff list
+end

@@ -1,0 +1,90 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Signal       from "x-alice:/lib/system/Signal"
+import structure CoreToplevel from "CoreToplevel"
+import signature TOPLEVEL     from "TOPLEVEL-sig"
+
+structure TextToplevel : TOPLEVEL =
+struct
+    (* Signal handling *)
+
+    (* Global handler to avoid space leak (we cannot remove them) *)
+    val interrupt = ref NONE : CoreToplevel.signal Promise.promise option ref
+
+    fun translateSignal Signal.SIGINT  = CoreToplevel.INTERRUPT
+      | translateSignal Signal.SIGSTOP = CoreToplevel.STOP
+      | translateSignal _              = raise Domain
+
+    fun handler s =
+	case Ref.exchange (interrupt, NONE) of
+	    NONE => ()
+	  | SOME p =>
+		(Promise.fulfill (p, translateSignal s)
+		 handle (Promise.Promise | Domain) => ();
+		 Signal.register (s, handler))
+            (* Signal handlers are currently auto-removed after triggering *)
+
+    fun registerSignals () =
+	(
+	    Signal.register (Signal.SIGINT, handler);
+	    Signal.register (Signal.SIGSTOP, handler)
+	)
+
+
+    (* Input *)
+
+    fun readInput () =
+	case readInput' CoreToplevel.prompt of [] => NONE
+					     | ss => SOME(String.concat ss)
+    and readInput' prompt =
+	(TextIO.print prompt;
+	 case TextIO.inputLine TextIO.stdIn
+	  of NONE      => []
+	   | SOME "\n" => "\n" :: readInput' CoreToplevel.contPrompt
+	   | SOME line => if String.sub (line, String.size line - 2) = #";"
+			  then [line]
+			  else line :: readInput' CoreToplevel.contPrompt
+	)
+
+    fun loop () =
+	case readInput ()
+	 of NONE        => TextIO.print "\n"
+	  | SOME source =>
+	    let
+		val p = Promise.promise ()
+	    in
+		interrupt := SOME p;
+		CoreToplevel.eval (source, Promise.future p);
+		interrupt := NONE;
+		loop ()
+	    end
+
+
+    (* Main *)
+
+    fun run nil =
+	(
+	    TextIO.print CoreToplevel.banner;
+	    CoreToplevel.init ();
+	    registerSignals ();
+	    loop ();
+	    TextIO.print CoreToplevel.bye
+	)
+      | run files =
+	(
+	    TextIO.print CoreToplevel.banner;
+	    CoreToplevel.init ();
+	    List.app CoreToplevel.use files;
+	    CoreToplevel.eval ("", lazy CoreToplevel.STOP)
+	)
+end

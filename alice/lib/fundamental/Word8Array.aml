@@ -1,0 +1,36 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive type int and list and unit from "ToplevelTypes"
+import __primitive structure Word8Vector      from "Word8Vector"
+import functor MkMonoArray                    from "MkMonoArray"
+
+structure Word8Array = MkMonoArray(
+    structure Vector = Word8Vector
+    __primitive eqtype array = "''Word8Array.array"
+
+    __primitive val maxLen: int = "Word8Array.maxLen"
+
+    __primitive val array: int * Vector.elem -> array = "Word8Array.array"
+    __primitive val extract : array * int * int -> Vector.t =
+							 "Word8Array.extract"
+    __primitive val fromList: Vector.elem list -> array = "Word8Array.fromList"
+    __primitive val fromVector : Vector.t -> array = "Word8Array.fromVector"
+    __primitive val length: array -> int = "Word8Array.length"
+    __primitive val sub: array * int -> Vector.elem = "Word8Array.sub"
+    __primitive val tabulate: int * (int -> Vector.elem) -> array =
+							"Word8Array.tabulate"
+    __primitive val toList: array -> Vector.elem list = "Word8Array.toList"
+    __primitive val update: array * int * Vector.elem -> unit =
+							 "Word8Array.update"
+)

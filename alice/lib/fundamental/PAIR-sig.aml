@@ -1,0 +1,41 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type unit and bool and order from "ToplevelTypes"
+
+
+signature PAIR =							(**)
+sig
+    type ('a,'b) pair = 'a * 'b
+    type ('a,'b) t    = ('a,'b) pair
+
+    val fst :		('a,'b) pair -> 'a
+    val snd :		('a,'b) pair -> 'b
+
+    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) pair -> unit
+    val appFst :	('a -> unit) -> ('a,'b) pair -> unit
+    val appSnd :	('b -> unit) -> ('a,'b) pair -> unit
+    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) pair -> ('c,'d) pair
+    val mapFst :	('a -> 'c) -> ('a,'b) pair -> ('c,'b) pair
+    val mapSnd :	('b -> 'c) -> ('a,'b) pair -> ('a,'c) pair
+    val mapBoth :	('a -> 'b) -> ('a,'a) pair -> ('b,'b) pair
+
+    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
+			    ('a,'b) pair * ('a,'b) pair -> bool
+    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
+			    ('a,'b) pair * ('a,'b) pair -> order
+end

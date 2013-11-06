@@ -1,0 +1,62 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import structure Pickle from "../../system/Pickle"
+import signature PICKLE from "../../system/PICKLE-sig"
+import signature POLICY from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure Pickle : PICKLE =
+struct
+    exception Sited = Pickle.Sited
+    exception Corrupt = Pickle.Corrupt
+
+    val extension = Pickle.extension
+
+    fun save (file, package) =
+        let
+            val file' = Policy.File.check ("pickleSave", "Pickle.save", file)
+        in
+            Pickle.save (file', package)
+        end
+
+    fun load file =
+        let
+            val file' = Policy.File.check ("pickleLoad", "Pickle.load", file)
+        in
+            Pickle.load file'
+        end
+
+    functor Save(val file : string signature S structure X : S) =
+        let
+            val file' = Policy.File.check ("pickleSave", "Pickle.Save", file)
+        in
+            Pickle.Save (val file = file' signature S = S structure X : S = X)
+        end
+        
+    functor Load(val file : string signature S) =
+        let
+            val file' = Policy.File.check ("pickleLoad", "Pickle.Load", file)
+        in
+            Pickle.Load (val file = file' signature S = S)
+        end
+    
+    functor SaveVal(val file : string type t val x : t) : any  =
+        let
+            val file' = Policy.File.check ("pickleSave", "Pickle.SaveVal", file)
+        in
+            Pickle.SaveVal (val file = file' type t = t val x : t = x)
+        end
+        
+    functor LoadVal(val file : string type t) : (val x : t) =
+        let
+            val file' = Policy.File.check ("pickleLoad", "Pickle.LoadVal", file)
+        in
+            Pickle.LoadVal (val file = file' type t = t)
+        end
+end

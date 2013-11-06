@@ -1,0 +1,45 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature STACK from "STACK-sig"
+
+structure Stack :> STACK =
+struct
+    open Promise
+
+    type 'a stack	= 'a list ref
+    type t		= stack
+
+    exception Empty	= Empty
+
+    fun stack ()	= ref nil
+    fun clone s		= ref (!s)
+    fun push (s,x)	= let
+			      val p  = promise ()
+			      val xs = Ref.exchange (s, future p)
+			  in
+			      fulfill (p, x::xs)
+			  end
+    fun pop s		= let
+			      val p  = promise ()
+			  in
+			      case Ref.exchange (s, future p)
+			       of x::xs => (fulfill (p, xs); x)
+			        | nil   => (fulfill (p, nil); raise Empty)
+			  end
+    fun peek s		= case !s
+			   of x::_ => SOME x
+			    | nil  => NONE
+    fun purge s		= s := nil
+    fun isEmpty s	= List.null (!s)
+    fun size s		= List.length (!s)
+end

@@ -1,0 +1,51 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name  from "Name"
+import signature LABEL from "LABEL-sig"
+
+structure Label :> LABEL =
+struct
+    datatype lab			= NUM of int | ALPHA of string
+    type     t				= lab
+
+    (* Conversions *)
+
+    fun fromInt n			= if n < 0 then raise Domain else NUM n
+    fun fromString s			= case Int.fromString s
+					    of SOME n => fromInt n
+					     | NONE   => ALPHA s
+
+    fun fromName(Name.ExId s)		= fromString s
+      | fromName(Name.InId)		= raise Domain
+
+    fun toName(ALPHA s)			= Name.ExId s
+      | toName(NUM n)			= Name.ExId(Int.toString n)
+
+    fun toString(NUM n)			= Int.toString n
+      | toString(ALPHA s)		= s
+
+    fun toInt(NUM n)			= SOME n
+      | toInt(ALPHA s)			= NONE
+
+    (* Ordering and hashing *)
+
+    val equal				= op =
+
+    fun compare(NUM n1,   NUM n2)	= Int.compare(n1,n2)
+      | compare(ALPHA s1, ALPHA s2)	= String.compare(s1,s2)
+      | compare(NUM n1,   ALPHA s2)	= LESS
+      | compare(ALPHA s1, NUM n2)	= GREATER
+
+    fun hash(NUM n)			= Int.hash n
+      | hash(ALPHA s)			= String.hash s
+end

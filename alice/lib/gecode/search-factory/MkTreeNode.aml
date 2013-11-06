@@ -1,0 +1,58 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature PROBLEM     from "PROBLEM-sig"
+import signature TREENODE    from "TREENODE-sig"
+import structure Space       from "x-alice:/lib/gecode/Space"
+import functor   MkSpaceNode from "MkSpaceNode"
+
+functor MkTreeNode (Problem:PROBLEM where type space = Space.space)
+  :> TREENODE where type solution = Problem.solution =
+struct
+
+  val mask = Problem.mask
+
+  structure SpaceNode = MkSpaceNode Problem
+
+  type solution = Problem.solution
+  exception Child  = SpaceNode.Child
+
+  datatype tree_node = Node of node_rep
+  withtype node_rep = {spacenode : SpaceNode.t ,
+                       left      : tree_node ,
+                       right     : tree_node}
+  type t = tree_node
+
+  (* Given a space node, creates a new tree node. *)
+  fun fromSpaceNode spaceNode = 
+    Node {spacenode = spaceNode ,
+          left  = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 0)) ,
+          right = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 1)) }
+
+  val root = fromSpaceNode SpaceNode.root
+
+  fun fromPath path = fromSpaceNode (SpaceNode.fromPath path)
+
+  fun getLeft  (Node node) = #left node
+  fun getRight (Node node) = #right node
+                        
+  fun getSpace (Node node) = SpaceNode.getSpace (#spacenode node)
+  fun getPath  (Node node) = SpaceNode.getPath  (#spacenode node)
+  fun status   (Node node) = SpaceNode.status   (#spacenode node)
+
+  val addSolution = SpaceNode.addSolution
+
+end

@@ -1,0 +1,18 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive        from "Pervasive"
+import __primitive structure Word32 from "Word32"
+import __primitive signature WORD   from "WORD-sig"
+
+structure LargeWord : WORD = Word32

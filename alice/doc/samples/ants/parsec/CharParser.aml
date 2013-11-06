@@ -1,0 +1,132 @@
+import signature TOKEN          from "TOKEN-sig"
+import structure MkPrim         from "MkPrim"
+import structure MkCombinators  from "MkCombinators"
+
+structure CharToken :> (TOKEN where type token = char) =
+struct
+
+    type token  = char
+    type t      = token
+
+    type position = string * int * int
+
+    fun position file = (file, 1, 1)
+
+    fun nextPos ((file, line, col), #"\n")  = (file, line + 1, 1)
+      | nextPos ((file, line, col), c)      = (file, line, col + 1)
+
+    fun file (file, _, _)   = file
+
+    fun line (_, line, _)   = line
+
+    fun column (_, _, c)    = c
+
+    fun toString c = String.str c
+
+    fun equal (t1, t2) = t1 = t2
+
+end
+
+
+structure CharParser =
+struct
+
+    structure P = MkPrim (CharToken)
+    structure Comb  = MkCombinators (P)
+    open P
+    open Comb
+
+    fun string s = string' (s, return s, 0) <?> s
+
+    and string' (s, res, ndx) =
+        if ndx >= String.size s then
+            res
+        else
+            string' (s, res ignoreR char (String.sub (s, ndx)), ndx + 1)
+
+    fun ichar a =
+        satisfy (fn b => Char.toLower a = Char.toLower b)
+
+    fun istring s = istring' (s, return s, 0) <?> s
+        
+    and istring' (s, res, ndx) =
+        if ndx >= String.size s then    
+            res
+        else 
+            istring' (s, res ignoreR ichar (String.sub (s, ndx)), ndx + 1)
+
+    fun lower () =  satisfy Char.isLower <?> "'a' - 'z'"
+
+    fun upper () =  satisfy Char.isUpper <?> "'A' - 'Z'"
+
+    fun letter ()=  satisfy Char.isAlpha <?> "letter"
+
+    fun alphaNum () =
+        satisfy Char.isAlphaNum <?> "alphanumeric"
+
+    fun digit ()    =     
+        satisfy Char.isDigit <?> "digit"
+
+    fun oneCharOf s = 
+        satisfy (Char.contains s) 
+
+    fun noneCharOf s =
+        satisfy (Char.notContains s) 
+
+    fun hexDigit () = 
+        oneCharOf "0123456789abcdefABCDEF"
+
+    fun octDigit () = 
+        oneCharOf "0123456789"
+
+    fun newline ()  = char #"\n"
+
+    fun tab ()      = char #"\t"
+
+    fun space ()    = oneCharOf " \t\r\n\v"
+
+    fun spaces ()   = skipMany (space ()) <?> "whitespace"
+
+    fun explodeLazy s =
+        explodeLazy' (s, 0)
+
+    and lazy explodeLazy' (s, i) =
+        if i >= String.size s then []
+        else String.sub (s, i) :: explodeLazy' (s, i+1)
+ 
+    fun parseString p s str =
+        parse p s (explodeLazy str)
+
+    fun executeParserOnString p s str =
+        executeParser p s (explodeLazy str)
+ 
+    fun parseStdIn p s =
+        let
+            fun lazy stdInToList f =
+                case TextIO.input1 f of
+                    SOME c  => c :: stdInToList f
+                |   NONE    => []
+        in
+            parse p s (stdInToList TextIO.stdIn)
+        end
+ 
+    fun parseFile p s fname =
+        let
+            val file    = TextIO.openIn fname 
+
+            fun lazy fileToList f =
+                case TextIO.input1 f of
+                    SOME c  => c :: fileToList f
+                |   NONE    => 
+                    [] before TextIO.closeIn f
+        in
+            parse p s (fileToList file)
+        end
+
+
+    fun parseTest p s str =
+        case parse p s (explode str) of
+            FST e   => FST ("parse error at " ^ errorToString e ^ "\n")
+        |   SND x   => SND x
+end
+    

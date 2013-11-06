@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Source           from "../infrastructure/Source"
+import signature CONTEXT          from "../infrastructure/CONTEXT-sig"
+import structure BindEnv          from "BindEnv"
+import signature INPUT_GRAMMAR    from "INPUT_GRAMMAR-sig"
+import structure InputGrammar     from "InputGrammar"
+import signature ABSTRACT_GRAMMAR from "../frontend-common/ABSTRACT_GRAMMAR-sig"
+import structure AbstractGrammar  from "../frontend-common/AbstractGrammar"
+
+signature ABSTRACTION_PHASE =
+sig
+    structure C : CONTEXT          = BindEnv
+    structure I : INPUT_GRAMMAR    = InputGrammar
+    structure O : ABSTRACT_GRAMMAR = AbstractGrammar
+
+    val translate : Source.desc * BindEnv.t * I.Component -> BindEnv.t * O.com
+end

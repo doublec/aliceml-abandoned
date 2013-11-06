@@ -1,0 +1,30 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrimIO  from "PrimIO"
+import signature PRIM_IO from "PRIM_IO-sig"
+
+structure TextPrimIO :> PRIM_IO
+    where type array = CharArray.t
+      and type array_slice = CharArraySlice.t
+      and type vector = CharVector.t
+      and type vector_slice = CharVectorSlice.t
+      and type elem = char
+      and type pos = Position.int (*--** *) =
+    PrimIO(structure Array = CharArray
+	   structure Vector = CharVector
+	   structure ArraySlice = CharArraySlice
+	   structure VectorSlice = CharVectorSlice
+	   val someElem = #"\000"
+	   type pos = Position.int
+	   val compare = Position.compare)

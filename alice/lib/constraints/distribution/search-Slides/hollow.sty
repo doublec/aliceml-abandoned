@@ -1,0 +1,30 @@
+%%
+%% Hollow arrowheads for pstricks
+%% Usage : -|> instead of ->
+%%
+
+\makeatletter
+
+
+% PSTricks addon that allows hollow arrowheads
+\edef\pst@arrowtable{\pst@arrowtable,<|-|>}
+\def\tx@ArrowTriangleA{ArrowTriangleA }
+\def\tx@ArrowTriangleB{ArrowTriangleB }
+\@namedef{psas@|>}{% 
+  /ArrowTriangleA { CLW dup 3.5 div SLW mul add dup 2 div /w ED mul dup 
+    /h ED mul /a ED 
+    0 h a sub moveto w h L 0 0 L w neg h L 0 h a sub L 
+    gsave 1 setgray fill grestore gsave
+    stroke grestore } def 
+  \psk@arrowinset \psk@arrowlength \psk@arrowsize
+  \tx@ArrowTriangleA}
+\@namedef{psas@<|}{%
+  /ArrowTriangle { CLW dup 2 div SLW mul add dup 2 div 
+    /w ED mul dup /h ED mul /a ED 
+    { 0 h T 1 -1 scale } if w neg h moveto 0 0 L w h L w neg a neg
+    rlineto w neg a rlineto w 0 rmoveto gsave stroke grestore } def 
+  true \psk@arrowinset \psk@arrowlength \psk@arrowsize
+  \tx@ArrowTriangleB}
+% end of PSTricks addon
+
+\makeatother

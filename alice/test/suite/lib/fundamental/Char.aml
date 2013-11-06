@@ -1,0 +1,364 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestChar :> TESTSUITE = (* the char test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testMinChar () =
+	Test.test (fn c => Char.minChar = c) #"\^@"
+	
+    fun testMaxChar () =
+	Test.test (fn c => Char.maxChar = c) #"\255"
+
+    fun testMaxOrd () =
+	Test.test (fn i => Char.maxOrd = i) 255
+
+    fun testChr () =
+	(Test.test (fn n => Char.chr n = Char.minChar) 0;
+	 Test.test (fn n => Char.chr n = Char.maxChar) Char.maxOrd;
+	 Gen.try 1000 Gen.int
+		 (Test.test 
+		      (fn x => (Char.chr x; true) handle General.Chr => true)))
+
+    fun testOrd () =
+	let
+	    fun test' n = if n > 255 then true
+			  else if Char.ord (Char.chr n) = n 
+			       then test' (n + 1)
+			       else false
+	in
+	    Test.test (fn _ => test' 0) ()
+	end
+
+    fun testPred () = 
+	let
+	    fun t c = Char.chr (Char.ord c - 1)
+	in
+	    Gen.try 1000 Gen.char 
+	    (Test.test (fn c => t c = Char.pred c handle General.Chr => true))
+	end
+
+    fun testSucc () = 
+	let
+	    fun t c = Char.chr (Char.ord c + 1)
+	in
+	    Gen.try 1000 Gen.char 
+	    (Test.test (fn c => t c = Char.succ c handle General.Chr => true))
+	end
+
+    fun testArithmetics () = 
+	let
+	    fun t1 (c1, c2) = Int.< (Char.ord c1, Char.ord c2)
+	    fun t2 (c1, c2) = Int.> (Char.ord c1, Char.ord c2)
+	    fun t3 (c1, c2) = Int.<= (Char.ord c1, Char.ord c2)
+	    fun t4 (c1, c2) = Int.>= (Char.ord c1, Char.ord c2)
+	    fun getChar () = Gen.char (Random.int 256)
+	in
+	    Gen.try 1000 Gen.char 
+	     (Test.test (fn c =>let
+				    val c1 = getChar ()
+				    val c2 = getChar ()
+				in
+				    t1 (c1, c2) = Char.< (c1, c2) andalso
+				    t2 (c1, c2) = Char.> (c1, c2) andalso
+				    t3 (c1, c2) = Char.<= (c1, c2) andalso
+				    t4 (c1, c2) = Char.>= (c1, c2)
+				end))
+	end
+
+    fun testEqual () =
+	let
+	    fun t (c1, c2) = Int.equal (Char.ord c1, Char.ord c2)
+	    fun getChar () = Gen.char (Random.int 256)
+	in
+	    Gen.try 1000 Gen.char 
+	     (Test.test (fn c => (t (c, c) = Char.equal (c, c)) andalso
+			         (let
+				      val c1 = getChar ()
+				      val c2 = getChar ()
+				  in
+				      t (c1, c2) = Char.equal (c1, c2)
+				  end)))
+	end
+
+
+    fun testCompare () =
+	let
+	    fun t (c1, c2) = Int.compare (Char.ord c1, Char.ord c2)
+	    fun getChar () = Gen.char (Random.int 256)
+	in
+	    Gen.try 1000 Gen.char 
+	     (Test.test (fn c => let
+				     val c1 = getChar ()
+				     val c2 = getChar ()
+				 in
+				     t (c1, c2) = Char.compare (c1, c2)
+				 end))
+	end
+
+    fun testHash () =
+	let
+	    fun t c = Int.hash (Char.ord c)
+	in
+	    Gen.try 1000 Gen.char (Test.test (fn c => t c = Char.hash c))
+	end
+
+    fun testContains () = 
+	let
+	    fun t (s, c) = List.contains (String.explode s) c
+	    fun getString () = Gen.string (Random.int 10000)
+	in
+	    Gen.try 1000 Gen.char 
+	    (Test.test (fn c => let
+				    val s = getString ()
+				in 
+				    (t (s, c) = Char.contains s c) andalso
+				    Bool.not (Char.contains "" c)
+				end))
+	end
+    fun testNotContains () = 
+	let
+	    fun t (s, c) = Bool.not (Char.contains s c)
+	    fun getString () = Gen.string (Random.int 10000)
+	in
+	    Gen.try 1000 Gen.char 
+	    (Test.test (fn c => let
+				    val s = getString ()
+				in 
+				    (t (s, c) = Char.notContains s c) andalso
+				    (Char.notContains "" c)
+				end))
+	end
+    fun testToLower () = 
+	let
+	    fun t c = if Char.isUpper c then chr (ord c + 32) else c
+	in
+	    Gen.try 1000 Gen.char (Test.test (fn c => t c = Char.toLower c))
+	end
+
+    fun testToUpper () =
+	let
+	    fun t c = if Char.isLower c then chr (ord c - 32) else c
+	in
+	    Gen.try 1000 Gen.char (Test.test (fn c => t c = Char.toUpper c))
+	end
+
+    fun testIsLower () =
+	let
+	    fun t c = if #"a" <= c andalso c <= #"z" 
+			  then Char.isLower c = true 
+		      else Char.isLower c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsUpper () =
+	let
+	    fun t c = if #"A" <= c andalso c <= #"Z" 
+			  then Char.isUpper c = true 
+		      else Char.isUpper c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsAlpha () =
+	let
+	    fun t c = if Char.isUpper c orelse Char.isLower c
+			  then Char.isAlpha c = true 
+		      else Char.isAlpha c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsAlphaNum () =
+	let
+	    fun t c = if Char.isAlpha c orelse Char.isDigit c
+			  then Char.isAlphaNum c = true 
+		      else Char.isAlphaNum c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsDigit () =
+	let
+	    fun t c = if #"0" <= c andalso c <= #"9" 
+			  then Char.isDigit c = true 
+		      else Char.isDigit c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsBinDigit () =
+	let
+	    fun t c = if #"0" = c orelse c = #"1" 
+			  then Char.isBinDigit c = true 
+		      else Char.isBinDigit c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsOctDigit () =
+	let
+	    fun t c = if #"0" <= c andalso c <= #"7" 
+			  then Char.isOctDigit c = true 
+		      else Char.isOctDigit c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsHexDigit () =
+	let
+	    fun t c = if Char.isDigit c
+		         orelse (#"a" <= c andalso c <= #"f")
+			 orelse (#"A" <= c andalso c <= #"F")
+			  then Char.isHexDigit c = true 
+		      else Char.isHexDigit c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsPunct () =
+	let
+	    fun t c = if Char.isGraph c andalso Bool.not (Char.isAlphaNum c)
+			  then Char.isPunct c = true 
+		      else Char.isPunct c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+	    
+    fun testIsPrint () =
+	let
+	    fun t c = if Char.isGraph c orelse c = #" "
+			  then Char.isPrint c = true 
+		      else Char.isPrint c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsGraph () =
+	let
+	    fun t c = if #"!" <= c andalso c <= #"~"
+			  then Char.isGraph c = true 
+		      else Char.isGraph c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsSpace () =
+	let
+	    fun t c = if (#"\t" <= c andalso c <= #"\r") orelse c = #" "
+			  then Char.isSpace c = true 
+		      else Char.isSpace c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsCntrl () =
+	let
+	    fun t c = if Char.isAscii c andalso Bool.not (Char.isPrint c)
+			  then Char.isCntrl c = true 
+		      else Char.isCntrl c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testIsAscii () =
+	let
+	    fun t c = if 0 <= Char.ord c andalso Char.ord c <= 127
+			  then Char.isAscii c = true 
+		      else Char.isAscii c = false
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testToFromWide () =
+	let
+	    fun t c = c = Char.fromWide (Char.toWide c)
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testFromString () =
+	let
+	    fun t s = Char.fromString s = 
+		        StringCvt.scanString Char.scan s
+			 handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testToString () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()	
+
+    fun testFromCString () =
+	let
+	    fun t s = Char.fromCString s = 
+		        StringCvt.scanString Char.scanC s
+			 handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testToCString () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScan () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScanC () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    val suite = ("Char", [("minChar", testMinChar),
+			  ("maxChar", testMaxChar),
+			  ("maxOrd", testMaxOrd),
+			  ("chr", testChr),
+			  ("ord", testOrd),
+			  ("pred", testPred),
+			  ("succ", testSucc),
+			  ("hash", testHash),
+			  ("arithmetics", testArithmetics),
+			  ("equal", testEqual),
+			  ("compare", testCompare),
+			  ("contains", testContains),
+			  ("notContains", testNotContains),
+			  ("toLower", testToLower),
+			  ("toUpper", testToUpper),
+			  ("isLower", testIsLower),
+			  ("isUpper", testIsUpper),
+			  ("isAlpha", testIsAlpha),
+			  ("isAlphaNum", testIsAlphaNum),
+			  ("isDigit", testIsDigit),
+			  ("isBinDigit", testIsBinDigit),
+			  ("isOctDigit", testIsOctDigit),
+			  ("isHexDigit", testIsHexDigit),
+			  ("isPunct", testIsPunct),
+			  ("isPrint", testIsPrint),
+			  ("isGraph", testIsGraph),
+			  ("isSpace", testIsSpace),
+			  ("isCntrl", testIsCntrl),
+			  ("isAscii", testIsAscii),
+			  ("toFromWide", testToFromWide),
+			  ("fromString", testFromString),
+			  ("toString", testToString),
+			  ("fromCString", testFromCString),
+			  ("toCString", testToCString),
+			  ("scan", testScan),
+			  ("scanC", testScanC)])
+end

@@ -1,0 +1,352 @@
+<?php include("macros.php3"); ?>
+<?php heading("Distribution", "distribution") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>Alice supports distributed programming in the form of a number of
+processes communicating using <A href="pickling.html">picklable</A> Alice
+data structures.  In the context of distribution, we speak of <EM>sites</EM>
+instead of processes.  Sites can open a <EM>communication port</EM> to make
+data available to other sites, which serves as an endpoint to establish
+connections.  There are three ways in which sites can establish
+connections:</P>
+<UL>
+  <LI><P>A site can explicitly make a data structure available by
+    <EM>offering</EM> it as a package.  This operation returns a string,
+    called a <A href="#tickets"><EM>ticket</EM></A>, describing the reference
+    to the package via the site's communication port.  Sites that know
+    the ticket can convert the reference to a package via the <EM>take</EM>
+    operation.</P>
+  <LI><P>A site can create a <A href="#proxies"><EM>proxy</EM></A> to
+    a function.  A proxy is a picklable reference to a function.  If some
+    site unpickles a proxy, it obtains just the distributed reference,
+    not a clone of the function itself.  Applying a proxy results in the
+    function being applied on the site on which the proxy was created,
+    while arguments and results are passed as pickles over the communications
+    port.</P>
+  <LI><P>A site can <A href="#remote">explicitly create</A> another site on
+    a specified host, executing a specified computation.  Both sites connect
+    by opening communication ports.</P>
+</UL>
+<P>The operations mentioned in the following are part of the
+<A href="library/remote.html"><TT>Remote</TT></A> structure.</P>
+
+
+<?php section("tickets", "tickets") ?>
+
+<P>The first mechanism in which sites establish connections is the
+offer-and-take mechanism.  A site can explicitly create a distributed
+reference to one of its data structures using <TT>offer</TT>:</P>
+
+<PRE class=code>
+offer : package -> ticket</PRE>
+
+<P>Offering opens a communication port on the exporting site (or reuses the
+existing communications port if it has already been opened).  Currently, Alice
+communications ports take the form of HTTP servers; opening therefore amounts
+to starting a HTTP server on a TCP/IP port and to listening for incoming
+connections.  <TT>offer</TT> clones the data structure pickling it into a
+string, and registers the pickle as a document in the HTTP server under a
+generated URI.  (If the data structure is not picklable, <TT>offer</TT>
+raises an exception.)</P>
+
+<P><TT>offer</TT> returns a <EM>ticket</EM>, which is a string denoting a
+reference to the exported data structure usable from other sites.  The string
+identifies the protocol, the communications port, and the data structure on
+the site, in the form of a URL.  For example:</P>
+
+<PRE class=code>
+- val ticket = offer p;
+<I>val ticket : string = "http://kitten.ps.uni-sb.de:1234/export/1"</I></PRE>
+
+<P>This ticket can be transferred to other sites, say by email or voice
+conversation.  It could also be stored (for instance, as a pickle) in the
+web server's document root, to make it possible to be accessed under a
+well-known URL.  Other sites (or the same site) can then obtain the actual
+package denoted by the ticket using <TT>take</TT>:</P>
+
+<PRE class=code>
+take : ticket -> package</PRE>
+
+<P><TT>take</TT> establishes a connection to the communication port given
+in the ticket and retrieves, using the HTTP GET method, and unpickles the
+exported package.  For instance:</P>
+
+<PRE class=code>
+- val package = take ticket;
+<I>val package : package</I></PRE>
+
+
+<?php section("proxies", "proxies") ?>
+
+<P>In what has been presented so far, pickles as transferred between sites
+could only contain data that was cloned.  Proxies extend this mechanism to
+also allow for function references instead of the functions themselves.</P>
+
+<P>A proxy can be created from any function using the <TT>proxy</TT>
+operation:</P>
+
+<PRE class=code>
+proxy : ('a -> 'b) -> ('a -> 'b)</PRE>
+
+<P>Say that a site&nbsp;A evaluates</P>
+
+<PRE class=code>
+val f' = proxy f</PRE>
+
+<P>then <TT>f'</TT> is a <EM>proxy for</EM> <TT>f</TT>, and we call A the
+<EM>home site</EM> of&nbsp;<TT>f'</TT>.  An application <TT>f x</TT> proceeds
+as follows.  A clone <TT>x'</TT> of&nbsp;<TT>x</TT> is created using pickling,
+<TT>f</TT>&nbsp;is applied to&nbsp;<TT>x'</TT>, returning&nbsp;<TT>y</TT> (or
+raising an exception&nbsp;<TT>e</TT>).  <TT>y</TT>&nbsp;(resp.&nbsp;<TT>e</TT>)
+is cloned to yield <TT>y'</TT> (resp.&nbsp;<TT>e'</TT>), which is returned
+(resp. raised) as result of the application <TT>f x</TT>.</P>
+
+<P>Applications of proxies are always concurrent on the server.  Conceptually,
+they can be considered to happen in the same thread as the application of
+the proxy, which may actually happen in a thread on a different site.</P>
+
+<P>A proxy is always picklable, independently of whether the function it
+proxies is picklable or not.  If <TT>f'</TT> is transferred to another
+site&nbsp;B and applied there, instead of the function&nbsp;<TT>f</TT> only
+the proxy&nbsp;<TT>f'</TT> is transferred, which contains a distributed
+reference to&nbsp;<TT>f</TT>.  An application of&nbsp;<TT>f'</TT> causes
+the cloned argument to be transferred to <TT>f</TT>'s home site&nbsp;A,
+where <TT>f</TT> is applied and the result (or exception) cloned and
+transferred back to&nbsp;B.</P>
+
+<P>In order to conveniently create a <I>proxy module</I> where all functions are proxies in one go, a polymorphic library functor is provided:</P>
+
+<PRE class=code>
+Proxy : fct (signature S structure X : S) -> S</PRE>
+
+<?php subsection("proxies-example", "Example: Compute server") ?>
+
+<P>As an example, say you want to provide a simple compute service.  The
+compute server exports a function which clients can apply to computations
+that are then executed on the server.  We provide both server and client
+with the signature of the server:</P>
+
+<PRE class=code>
+signature COMPUTE_SERVER =
+sig
+    val apply : ('a -> 'b) * 'a -> 'b
+end</PRE>
+
+<P>The compute server makes the ticket under which it offers its service
+available through the local web server.  We assume the local server's
+document root is <TT>/docroot/</TT>.</P>
+
+<PRE class=code>
+structure ComputeServer =
+    Remote.Proxy (signature S = COMPUTE_SERVER
+                  structure X = (fun apply (f,x) = f x))
+val ticket = offer (pack ComputeServer : COMPUTE_SERVER)
+val _ = Pickle.save ("/docroot/computeServer",
+		     pack (val x = ticket) : (val x : string))</PRE>
+
+<P>Clients can use this service by acquiring the ticket from the well-known
+URL <TT>http://www/computeServer</TT>:</P>
+
+<PRE class=code>
+structure Ticket =
+    unpack Pickle.load "http://www/computeServer" : (val x : string)
+structure ComputeServer = unpack (take Ticket.x) : COMPUTE_SERVER
+fun fib (0 | 1) = 1
+  | fib n       = fib (n-1) + fib (n-2)
+val result = ComputeServer.apply (fib, 30)</PRE>
+
+<P>In the example, the (expensive) function <TT>fib</TT> and the argument
+<TT>30</TT> are cloned to the compute server, where the application is
+evaluated.  The result <TT>1346269</TT> is cloned back to the client.</P>
+
+
+<?php subsection("proxies-example2", "Example: Chat program") ?>
+
+<P>Here is a second example: a minimalistic, yet complete, chat application. It consists of a chat server, to which clients can connect. Again they need to agree on a signature for the server:</P>
+
+<PRE class=code>
+signature SERVER =
+sig
+    val register :  {send : string -> unit} -> unit
+    val broadcast : {name : string, message : string} -> unit
+end</PRE>
+
+<P>Clients can register, after which they will receive all messages sent by other clients, and they can broadcast messages themselves.</P>
+
+<P>Here is the full code for the server component:</P>
+
+<PRE class=code>
+val clients = ref nil
+fun register client = clients := client :: !clients
+fun broadcast {name, message} =
+    List.app (fn {send} => spawn send (name ^ ": " ^ message)) (!clients)
+
+structure Server = (val register = Remote.proxy (Lock.sync (Lock.lock ()) register)
+                    val broadcast = Remote.proxy broadcast)
+val ticket = Remote.offer (pack Server : SERVER)
+val _ = print (ticket ^ "\n")</PRE>
+
+<P>The server simply keeps a list of registered clients (represented by their <TT>send</TT> functions), and broadcasting iterates over this list and forwards the message to each. In order to avoid having to wait for each client in turn to receive the message, sending happens asynchronously, using <A href="futures.html#spawn"><TT>spawn</TT></A>. Moreover, since the client list is stateful, we have to avoid race conditions when several clients try to register at the same time. The exported <TT>register</TT> function is hence synchronised on a <A href="library/lock.html">lock</A>.</P>
+
+<P>The code for a client is even simpler:</P>
+
+<PRE class=code>
+val [ticket, name] = CommandLine.arguments ()
+
+structure Server = unpack Remote.take ticket : SERVER
+val _ = Server.register {send = Remote.proxy print}
+
+fun loop () =
+    case TextIO.inputLine TextIO.stdIn of
+        NONE => OS.Process.exit OS.Process.success
+      | SOME message => (Server.broadcast {name, message}; loop())
+val _ = loop ()</PRE>
+
+<P>It expects the server ticket and a user name on the command line, registers with the server, and simply forwards everything typed by the user to the server (if registered, the user will see his own messages as an echo).</P>
+
+<P>Obviously, this implementation is very Spartanic: there is no notification of other clients connecting or disconnecting, nor is there any error handling. However, the basic principles are there, and enriching the implementation accordingly is largely straightforward.</P>
+
+
+<?php section("remote", "remote execution") ?>
+
+<P>In the preceding sections, all parties in the distributed application were
+assumed to be already running.  Sometimes applications want to spawn new
+sites themselves.  To do this, Alice provides for <EM>remote execution</EM>.
+Given a host and a service, a new site is created on the remote host (using
+<TT>ssh</TT>) and the service is run there.  Both the spawning and the spawned
+site open communication ports to connect to each other.  Note that communication
+is done via pickling.  This implies that you must be careful not to use 
+sited values in a service!  Many interesting structures in  (e.g <TT>Remote</TT>) contain 
+Sited values.  In order to use these you would have to link them using on the
+spawned site.</P>
+
+<PRE class=code>
+run : string * component -> package</PRE>
+
+<!--
+<PRE class=code>
+Run : fct (val host : string
+	   signature S
+	   functor F : COMPONENT_MANAGER -> S) -> S</PRE>
+-->
+
+<?php subsection("remote-example", "Example") ?>
+
+<P>As an example, consider an application consisting of a manager and a number
+of identical worker sites, to parallelize a computation.  Say that the manager
+has access to a large database, which the workers need to execute their tasks.
+This database should reside on the manager and not be cloned to the workers
+because we expect only few lookups from each worker.  The code for the
+application is outlined below.  We first define a structure <TT>Database</TT>
+to represent the database, then repackage it as <TT>RemoteDatabase</TT> for use
+by workers, using a proxy to ensure that the database stays on the server only.
+Then follows the implementation of the workers:  The signature <TT>WORKER</TT>
+states that each worker provides for a function to execute a task.  The
+implementation sketch for <TT>MkWorker</TT>, which instantiates a worker,
+shows how this worker would access the database and use local resources of
+the worker's site to perform a task.  A proxy is used to ensure that the
+task is performed on the worker site (else the implementation of
+<TT>executeTask</TT> would be cloned back to the manager site, which would
+fail anyway because of references to <TT>TextIO.print</TT>).  Then five
+workers are spawned on different hosts, whereupon the manager can start
+to attend to its business.</P>
+
+<!--
+<PRE class=code>
+signature DATABASE =
+    sig
+	val lookup : string -> string
+    end
+structure Database : DATABASE =
+    struct
+	fun lookup key = ...
+    end
+structure RemoteDatabase : DATABASE =
+    struct
+	val lookup = proxy Database.lookup
+    end
+signature WORKER =
+    sig
+	val executeTask : (unit -> 'a) -> 'a
+    end
+
+(* create the urls here to avoid the Url structure to be
+ * transmitted 
+ *)
+val remoteUrl = Url.fromString "x-alice:/lib/distribution/Remote"
+val textIOUrl = Url.fromString "x-alice:/lib/system/TextIO"
+
+functor MkWorker (ComponentManager : COMPONENT_MANAGER) : WORKER =
+    struct
+	structure TextIOComp =
+	    ComponentManager.Link(val url = remoteUrl 
+				  signature S = (structure TextIO : TEXT_IO))
+	structure RemoteComp = 
+	    ComponentManager.Link(val url = textIOUrl
+                                  signature S = (structure Remote : REMOTE))
+	open TextIOComp
+	open RemoteComp
+
+	val executeTask = Remote.proxy
+	    (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
+    end
+val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
+val workers = List.map (fn oneHost =>
+			let
+			    structure Worker =
+				Run (val host = oneHost
+				     signature S = WORKER
+				     structure Start = MkWorker)
+			in
+			    Worker.executeTask
+			end) hosts
+... (* use workers *) ...</PRE>
+-->
+
+<PRE class=code>
+signature DATABASE =
+    sig
+	val lookup : string -> string
+    end
+structure Database : DATABASE =
+    struct
+	fun lookup key = ...
+    end
+structure RemoteDatabase : DATABASE =
+    struct
+	val lookup = proxy Database.lookup
+    end
+signature WORKER =
+    sig
+	val executeTask : (unit -> 'a) -> 'a
+    end
+
+val worker =
+    comp
+        import structure TextIO from "x-alice:/lib/system/TextIO"
+        import structure Remote from "x-alice:/lib/distribution/Remote"
+    in
+        include WORKER
+    with
+        val executeTask = Remote.proxy
+            (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
+    end
+
+val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
+val workers = List.map (fn host =>
+			let
+			    structure Worker =
+				unpack run(host, worker) : WORKER
+			in
+			    Worker.executeTask
+			end) hosts
+... (* use workers *) ...</PRE>
+
+<P>Note that it is essential for the worker component to import the
+<TT>TextIO</TT> and <TT>Remote</TT> structures on the host site, because the
+used functions are <A href="pickling.html#semantics">sited</A> resources
+and thus cannot be pickled and transferred from the original site.</P>
+
+<?php footing() ?>

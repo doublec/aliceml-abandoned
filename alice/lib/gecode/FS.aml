@@ -1,0 +1,146 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space        from "Space"
+import structure FD           from "FD"
+import signature FS           from "FS-sig"
+import structure UnsafeGecode from "UnsafeGecode"
+
+structure FS :> FS
+    where type space   = Space.space
+    where type intvar  = FD.intvar
+    where type boolvar = FD.boolvar =
+struct
+   type space   = Space.space
+   type intvar  = FD.intvar
+   type boolvar = FD.boolvar
+
+   datatype intrel =
+       EQ (* Equality         == *)
+     | NQ (* Disequality      != *)
+     | LQ (* Less or equal    <= *)
+     | LE (* Less             <  *)
+     | GQ (* Greater or equal >= *)
+     | GR (* Greater          >  *)
+       
+   datatype setrel = CMPL | DISJ | SEQ | SNQ | SUB | SUP
+   datatype setop = DUNION | INTER | MINUS | UNION
+
+   datatype fsb_var_sel =
+	    FSB_MAX_CARD
+	  | FSB_MIN_CARD
+          | FSB_MIN_UNKNOWN_ELEM
+	  | FSB_NONE
+	    
+   datatype fsb_val_sel =
+	    FSB_MAX
+	  | FSB_MIN
+
+   type domain = (int * int) vector
+
+   exception InvalidDomain = UnsafeGecode.InvalidDomain
+
+   eqtype setvar
+
+   val setvar = UnsafeGecode.new_setvar
+		      
+   fun setvarVec(space,n) = Vector.tabulate (n, fn _ => setvar(space))
+   fun bounds(space,lb,ub) =
+       let
+	   val v = setvar space
+       in
+	   UnsafeGecode.set_dom(space,v,SUP,lb);
+	   UnsafeGecode.set_dom(space,v,SUB,ub);
+	   v
+       end
+   fun lowerBound(space,lb) =
+       let
+	   val v = setvar space
+       in
+	   UnsafeGecode.set_dom(space,v,SUP,lb);
+	   v
+       end
+   fun upperBound(space,ub) =
+       let
+	   val v = setvar space
+       in
+	   UnsafeGecode.set_dom(space,v,SUB,ub);
+	   v
+       end
+
+   val dom = UnsafeGecode.set_dom
+   val domR = UnsafeGecode.set_domR
+   fun cardRange(space,min,max,s) = UnsafeGecode.set_cardRange(space,s,min,max)
+
+   val rel = UnsafeGecode.set_rel
+   val relR = UnsafeGecode.set_relR
+   val relOp = UnsafeGecode.set_relOp
+   val relI = UnsafeGecode.set_relI
+   val relIR = UnsafeGecode.set_relIR
+   val relII = UnsafeGecode.set_relII
+   val relN = UnsafeGecode.set_relN
+   val relNI = UnsafeGecode.set_relNI
+
+   val relCSS = UnsafeGecode.set_relCSS
+   val relSCS = UnsafeGecode.set_relSCS
+   val relSSC = UnsafeGecode.set_relSSC
+   val relCCS = UnsafeGecode.set_relCCS
+   val relCSC = UnsafeGecode.set_relCSC
+   val relSCC = UnsafeGecode.set_relSCC
+
+   val cardinality = UnsafeGecode.set_cardinality
+   val maxElement = UnsafeGecode.set_max
+   val minElement = UnsafeGecode.set_min
+   val match = UnsafeGecode.set_match
+
+   val convex = UnsafeGecode.set_convex
+   val convexHull = UnsafeGecode.set_convexHull
+   val sequence = UnsafeGecode.set_seq
+   val sequentialUnion = UnsafeGecode.set_seqU
+
+   val setvarbranch = UnsafeGecode.set_branch
+
+   structure Value =
+       struct
+          fun make(space,v) = bounds(space,v,v)
+	  fun empty space = bounds(space,#[],#[])
+	  fun single(space,i) = make(space,#[(i,i)])
+(*	  val universal = UnsafeGecodeFS.universal*)
+	  val is = UnsafeGecode.set_isAssigned
+       end
+
+   structure Selection =
+       struct
+           val setvar = UnsafeGecode.set_selectSets
+	   val union = UnsafeGecode.set_selectUnion
+	   val inter = UnsafeGecode.set_selectInter
+	   val interIn = UnsafeGecode.set_selectInterIn
+           val disjoint = UnsafeGecode.set_selectDisjoint
+       end
+
+   structure Reflect =
+       struct
+           fun card(s,v) = (UnsafeGecode.set_getCardinalityMin(s,v),
+                            UnsafeGecode.set_getCardinalityMax(s,v))
+	   val lowerBound = UnsafeGecode.set_getLowerBound
+	   val upperBound = UnsafeGecode.set_getUpperBound
+	   val unknown = UnsafeGecode.set_getUnknown
+	   val cardOfLowerBound = UnsafeGecode.set_getLowerBoundSize
+	   val cardOfUpperBound = UnsafeGecode.set_getUpperBoundSize
+	   val cardOfUnknown = UnsafeGecode.set_getUnknownSize
+           val assigned = UnsafeGecode.set_isAssigned
+       end
+end

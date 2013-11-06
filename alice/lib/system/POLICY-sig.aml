@@ -1,0 +1,30 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein and Andreas Rossberg, 2006-2007
+ *)
+
+import structure Url from "Url"
+
+signature POLICY =
+sig
+    datatype 'a action = ACCEPT of 'a | REJECT | PASS
+
+    signature ARG_TYPE =
+    sig
+	type t
+	val rule : string * (t -> t action) -> unit
+	val check : string * string * t -> t
+    end
+
+    functor MkArgType (type t) : ARG_TYPE where type t = t
+
+    structure Unit : ARG_TYPE where type t = unit
+    structure Int : ARG_TYPE where type t = int
+    structure Url : ARG_TYPE where type t = Url.t
+    structure String : ARG_TYPE where type t = string
+    structure File : ARG_TYPE where type t = string
+end

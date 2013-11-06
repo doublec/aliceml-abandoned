@@ -1,0 +1,83 @@
+import signature TRANSACTIONAL_ARRAY2   from "TRANSACTIONAL_ARRAY2-sig"
+
+
+signature ELEM = 
+sig
+    type t
+
+    val equal : t * t -> bool
+end
+
+
+functor MkTransactionalArray2 (E: ELEM) : 
+    TRANSACTIONAL_ARRAY2 where type elem = E.t  =
+struct
+    type elem   = E.t
+    type array  = elem Array2.array * elem option Array2.array
+    type t      = array
+    
+    type region = { 
+        base :  array,
+	row :   int,
+	col :   int,
+	nrows : int option,
+	ncols : int option 
+    }
+
+    datatype traversal =
+	RowMajor
+      | ColMajor
+
+
+    type difflist = ((int * int) * elem) list
+
+    fun array (rows, cols, v) = 
+        (Array2.array (rows, cols, v),
+         Array2.array (rows, cols, NONE))
+
+    fun dimensions (a, b) =
+        Array2.dimensions a
+
+    fun sub ((old, new), r, c) =
+        case Array2.sub (new, r, c) of
+            NONE    => Array2.sub (old, r, c)
+        |   SOME v  => v
+
+    fun update ((old, new), r, c, v) =
+        let val oldv    = Array2.sub (old, r, c) 
+        in
+            if E.equal (oldv, v) 
+                then Array2.update (new, r, c, NONE)
+                else Array2.update (new, r, c, SOME v)    
+        end
+
+    fun rollback (_, new) =
+        Array2.modify Array2.RowMajor (Fn.const NONE) new
+
+
+    fun commit (old, new) =
+        let
+            val diffs = ref []
+
+            fun commitField (r, c, oldv)    = 
+                case Array2.sub (new, r, c) of
+                    NONE        => oldv
+                |   SOME newv   =>
+                    (diffs := ((r, c), newv) :: !diffs;
+                     Array2.update (new, r, c, NONE);
+                     newv)
+        in
+            Array2.modifyi Array2.RowMajor commitField 
+                { base = old, row=0, col=0, nrows=NONE, ncols=NONE };
+            !diffs
+        end
+
+    fun alli trav pred { base=(old,new), row, col, nrows, ncols } = 
+        Array2.alli trav 
+            (fn (r, c, oldv) =>
+                case Array2.sub (new, r, c) of
+                    NONE        => pred (r, c, oldv)
+                |   SOME newv   => pred (r, c, newv) ) 
+            { base = old, row, col, nrows, ncols }
+
+end

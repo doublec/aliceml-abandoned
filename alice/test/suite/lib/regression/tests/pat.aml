@@ -1,0 +1,29 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Pat : REGRESSION =
+struct
+
+val name = "pat"
+
+val ok = SOME "pat.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val c: int as d: int = 13
+val c: unit -> unit as d: unit -> unit = fn () => ()
+val c: 'a -> unit as d: 'a -> unit = fn _ => ()
+
+val (f, hd::tail) = (fn x => x, [fn y => (y,y)])
+
+val (s,_) = f (hd "hello world\n")
+
+val _ = concatResult (s)
+
+val result = !result
+
+end
+
+

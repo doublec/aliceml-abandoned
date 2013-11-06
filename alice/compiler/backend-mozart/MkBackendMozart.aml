@@ -1,0 +1,84 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO            from "../../lib/system/TextIO"
+import structure Reflect           from "../../lib/system/Reflect"
+import signature COMPONENT_MANAGER from "../../lib/system/COMPONENT_MANAGER-sig"
+import structure Url               from "../../lib/system/Url"
+import structure Source            from "../infrastructure/Source"
+import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
+import structure MkTracingPhase    from "../infrastructure/MkTracingPhase"
+import structure Target            from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC  from "../infrastructure/BACKEND_SPECIFIC-sig"
+import structure FlatGrammar       from "../backend-common/FlatGrammar"
+import structure CodeGenPhase      from "CodeGenPhase"
+
+functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
+			structure Switches: SWITCHES): BACKEND_SPECIFIC =
+    let
+	fun parseUrl NONE = NONE
+	  | parseUrl (SOME url) =
+	    SOME (Url.toLocalFile url)
+	    handle Url.NotLocal => NONE
+
+	structure ThePhase =
+	    struct
+		structure C = struct type t open CodeGenPhase.C end
+		structure I = FlatGrammar
+		structure O = Target
+
+		fun translate (desc, env, component) =
+		    let
+			val (context, x) =
+			    CodeGenPhase.translate (desc, env, component)
+			val component = CodeGenPhase.component x
+			fun eval baseUrl =
+			    let
+				val package =
+				    ComponentManager.eval (baseUrl, component)
+				val str = #1 (Reflect.reflectPackage package)
+			    in
+				CodeGenPhase.eval (x, str);
+				package
+			    end
+		    in
+			if not (!Switches.Debug.dumpTarget) then () else
+			    case parseUrl (Source.anyUrl desc) of
+				SOME filename =>
+				    let
+					val q =
+					    TextIO.openOut (filename ^ ".ozm")
+				    in
+					TextIO.output
+					    (q, CodeGenPhase.dumpTarget x);
+					TextIO.closeOut q
+				    end
+			      | NONE =>
+				    TextIO.output (TextIO.stdOut,
+						   CodeGenPhase.dumpTarget x);
+			(context,
+			 Target.COMPONENT
+			     {component = fn () => CodeGenPhase.component x,
+			      eval})
+		    end
+	    end
+	structure TracingPhase =
+	    MkTracingPhase(structure Phase = ThePhase
+			   structure Switches = Switches
+			   val name = "Code Generation")
+    in
+	struct
+	    open TracingPhase
+	    structure O = Target
+	    val isCross = false
+	end
+    end

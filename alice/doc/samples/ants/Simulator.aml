@@ -1,0 +1,172 @@
+import structure Ant from "Ant"
+import structure Instructions from "Instructions"
+import structure World              from "World"
+import structure InstructionsParser from "SimpleInstructionsParser"
+import structure WorldParser        from "WorldParser"
+import structure Viewer             from "Viewer"
+
+
+structure Simulator :
+          (fun step : World.world *
+                      'a Instructions.ant * 
+                      'a Instructions.ant *
+                      Ant.id -> unit
+           fun simulate : bool * bool * bool * bool * bool * bool * int * int *
+                          string * string * string -> unit
+                                                      ) =
+  struct
+
+  open Ant
+  open Instructions
+  open World
+
+  val defSeed =  Word.fromInt 12345
+  local
+      val rands = ref defSeed
+      fun nextRand() = 
+          let
+              val seed = !rands
+              val res = Word.toInt (Word.andb(Word.>>(seed,0w16), 0wx3FFF ))
+          in
+              rands := (seed * 0w22695477)+0w1;
+              res
+          end
+  in
+    val _ = nextRand()
+    val _ = nextRand()
+    val _ = nextRand()
+    val _ = nextRand()
+    fun randomInt n = (nextRand()) mod n
+  end
+
+  fun instr(Sense(sensedir,st1,st2,cond,_),
+            w,id:int,x,y,a) =
+      let val (x',y') = sensedCell(x,y, Ant.getDirection a, sensedir)
+          val st = if cellMatches(w, x',y', cond, Ant.getColor a) then st1 else st2
+      in
+          Ant.setState(a,st)
+      end
+    | instr(Mark(i,st,_),
+            w,id,x,y,a) =
+      (setMarkerAt(w,x,y, Ant.getColor a, i);
+       Ant.setState(a,st))
+    | instr(Unmark(i, st, _),
+            w,id,x,y,a) =
+      (clearMarkerAt(w,x,y, Ant.getColor a, i);
+       Ant.setState(a,st))
+    | instr(PickUp(st1, st2, _),
+            w,id,x,y,a) =
+      if Ant.getHasFood a orelse foodAt(w, x,y)=0 then
+          Ant.setState(a,st2)
+      else (setFoodAt(w,x,y,foodAt(w, x,y)-1);
+            Ant.setHasFood(a,true);
+            Ant.setState(a,st1))
+    | instr(Drop(st, _),
+            w,id,x,y,a) =
+      (if Ant.getHasFood a then
+           (setFoodAt(w,x,y, foodAt(w,x,y)+1);
+            Ant.setHasFood(a,false))
+       else ();
+       Ant.setState(a,st))
+    | instr(Turn(lr, st, _),
+            w,id,x,y,a) =
+      (Ant.setDirection(a, turn(lr, Ant.getDirection a));
+       Ant.setState(a,st))
+    | instr(Move(st1, st2, _),
+            w,id,x,y,a) =
+      let val (x',y') = adjacentCell(x,y, Ant.getDirection a) in
+          if rocky(w, x',y') orelse someAntIsAt(w, x',y') then
+              Ant.setState(a,st2)
+          else
+              (clearAntAt(w, x,y);
+               setAntAt(w, x',y', a);
+               Ant.setState(a, st1);
+               Ant.setResting(a, 14);
+               checkForSurroundedAnts(w, x',y'))
+      end
+    | instr(Flip(n, st1, st2, _),
+            w,id,x,y,a) =
+      let val st = if randomInt n = 0 then st1 else st2 in
+          Ant.setState(a,st)
+      end
+
+  fun step(w, redAnt, blackAnt, id) =
+      let
+          val a = findAnt(w,id)
+          val (x,y) = Ant.getCoords a
+      in
+          if (x,y) = (~1,~1) then ()
+          else
+      let
+          val resting = Ant.getResting a
+      in
+          if resting > 0 then
+              Ant.setResting(a, resting - 1)
+          else instr (getInstruction(case Ant.getColor a of Red => redAnt
+                                                          | _ => blackAnt,
+                                     Ant.getState a),
+                      w, id, x,y, a)
+      end
+      end
+
+  fun simulate(showStatus, showWorlds, showAnts, drawWorlds,
+               visualize, visualizeEnd,
+               delay, rounds,
+               redAnt, blackAnt, world) =
+      let
+          val _ =
+            if visualize then
+                let val viewer = Viewer.viewer (redAnt, blackAnt)
+                in
+                    World.setUpdateCellV (Viewer.updateCell viewer)
+                end
+            else ()
+
+          val redBrain = InstructionsParser.parseFile redAnt
+          val blackBrain = InstructionsParser.parseFile blackAnt
+          val world = WorldParser.parseFile world
+          val noOfAnts = getNoOfAnts world
+
+          fun loop'(_, 0, _) = ()
+            | loop'(size, n, f) = (f (size-n); loop'(size,n-1,f))
+          fun loop n f = loop'(n,n,f)
+      in
+
+          if showStatus then
+              (print ("Starting with "^Int.toString noOfAnts^" ants\n");
+               print (Int.toString rounds^" rounds.\n");
+               print (Int.toString delay^" s delay.\n");
+               print ("\t red player: "^redAnt^"\n");
+               print ("\t black player: "^blackAnt^"\n"))
+          else ();
+          print ("random seed: "^(Int.toString(Word.toInt defSeed))^"\n");
+          loop rounds
+          (fn r => (if showWorlds orelse showAnts orelse drawWorlds then
+                        print ("\nAfter round "^Int.toString r^"...\n")
+                    else ();
+                    if showAnts then printOnlyAnts world else ();
+                    if showWorlds then printWorld world else ();
+                    if drawWorlds then drawWorld world else ();
+                    if showStatus then
+                        if r mod 1000 = 0 
+                        then print ("round "^Int.toString r^"\n")
+                        else ()
+                    else ();
+                    if delay>0 then
+                        Thread.sleep (Time.fromMilliseconds (Int.toLarge delay))
+                    else ();
+                    loop noOfAnts
+                         (fn i => step(world, redBrain, blackBrain, i))));
+          if showStatus then
+              (printOnlyAnts world;
+               printStats world)
+          else ();
+          if visualizeEnd then
+            let val viewer = Viewer.viewer (redAnt, blackAnt)
+            in
+                World.appWorld (world, Viewer.updateCell viewer) 
+            end
+          else ()
+      end
+
+  end

@@ -1,0 +1,91 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                       from "Pervasive"
+import __primitive
+       type int
+       datatype bool and order and option and list from "ToplevelTypes"
+import __primitive
+       infix 4 = < <= infixr 5 :: infix 6 + -
+       val op = and op < and op <=
+       val op + and op -                           from "ToplevelValues"
+import __primitive structure General               from "General"
+import __primitive structure Int                   from "Int"
+
+functor MkSlice(type 'a row
+		type 'a vector
+		type 'a elem
+		val rlength :  'a row -> int
+		val rsub :     'a row * int -> 'a elem
+		val rextract : 'a row * int * int -> 'a vector) =
+struct
+    type 'a slice		= 'a row * int * int
+    type 'a t			= 'a slice
+
+    fun base sl			= sl : 'a t
+    fun length(r,i,n)		= n
+    fun isEmpty(r,i,n)		= n = 0
+    fun sub((r,i,n), j)		= if j < 0 orelse n <= j
+				  then raise General.Subscript
+				  else rsub(r,i+j)
+
+    fun subslice(sl, i, NONE)	= subslice(sl, i, SOME(length(sl)-i))
+      | subslice(sl, i, SOME n)	= (if i < 0 orelse n < 0 orelse length sl < i+n
+				   then raise General.Subscript
+				   else (#1 sl, #2 sl + i, n)
+				  ) handle General.Overflow =>
+				    raise General.Subscript
+    fun full r			= (r,0,rlength r)
+    fun slice(r,i,n)		= subslice(full r,i,n)
+
+    val toVector		= rextract
+    val vector			= rextract
+
+    fun getItem sl		= if isEmpty sl then NONE else
+				  SOME(sub(sl,0), subslice(sl,1,NONE))
+    fun toList sl		= case getItem sl
+				   of NONE        => nil
+				    | SOME(x,sl') => x::toList sl'
+
+    fun triml k			= if k < 0 then raise General.Subscript else
+				  fn(r,i,n) => (r,i+Int.min(k,n),Int.max(n-k,0))
+    fun trimr k			= if k < 0 then raise General.Subscript else
+				  fn(r,i,n) => (r,i,Int.max(n-k,0))
+    fun splitAt((r,i,n), j)	= if j < 0 orelse n < j
+				  then raise General.Subscript
+				  else ((r,i,j), (r, i+j, n-j))
+
+    fun splitl f (r,i,n)	= splitl'(f, r, i, n, i)
+    and splitl'(f, r, i, n, j)	= if j = i+n then
+				      ((r,i,n), (r,j,0))
+				  else if f(rsub(r,j)) then
+				      splitl'(f, r, i, n, j+1)
+				  else
+				      ((r,i,j-i), (r, j, n-(j-i)))
+
+    fun splitr f (r,i,n)	= splitr'(f, r, i, n, i+n-1)
+    and splitr'(f, r, i, n, j)	= if j < i then
+				      ((r,i,0), (r,i,n))
+				  else if f(rsub(r,j)) then
+				      splitr'(f, r, i, n, j-1)
+				  else
+				      ((r,i,j-i+1), (r, j+1, n-(j-i+1)))
+
+    fun takel f sl		= #1(splitl f sl)
+    fun dropl f sl		= #2(splitl f sl)
+    fun taker f sl		= #2(splitr f sl)
+    fun dropr f sl		= #1(splitr f sl)
+end

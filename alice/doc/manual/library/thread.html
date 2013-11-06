@@ -1,0 +1,216 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Thread structure", "The <TT>Thread</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature THREAD
+    structure Thread : THREAD
+  </PRE>
+
+  <P>
+    The <TT>Thread</TT> structure provides access to first-class threads.
+    A thread encapsulates a concurrent computation.  The <TT>spawn</TT>
+    keyword starts a new thread, as does triggering a by-need future.
+  </P>
+
+  <P>
+    A thread is initially created in state <TT>RUNNABLE</TT>.  The
+    runnable threads are scheduled in a round-robin fashion.  When a
+    computation requests the value of a future, the thread becomes
+    <TT>BLOCKED</TT> until the future is bound, whereafter it becomes
+    <TT>RUNNABLE</TT> again.  When the computation has been fully
+    performed (or an exception is raised for which there is no handler),
+    the thread becomes <TT>TERMINATED</TT>.
+  </P>
+
+  <P>
+    The functions in this structure allow to observe a thread's status,
+    raise an exception in a thread, and to explicitly suspend and
+    resume threads.
+  </P>
+
+  <P>See also:
+    <A href="future.html"><TT>Future</TT></A>,
+    <A href="lock.html"><TT>Lock</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature THREAD =
+    sig
+	type <A href="#thread">thread</A>
+	type <A href="#t">t</A> = thread
+	datatype <A href="#state">state</A> = RUNNABLE | BLOCKED | TERMINATED
+
+	exception <A href="#Terminate-exn">Terminate</A>
+	exception <A href="#Terminated">Terminated</A>
+
+	val <A href="#thread">thread</A> :		(unit -> unit) -> thread
+	val <A href="#spawnThread">spawnThread</A> :	(unit -> 'a) -> thread * 'a
+
+	val <A href="#current">current</A> :		unit -> thread
+	val <A href="#state">state</A> :		thread -> state
+
+	val <A href="#yield">yield</A> :		thread -> unit
+	val <A href="#sleep">sleep</A> :		Time.time -> unit
+
+	val <A href="#raiseIn">raiseIn</A> :		thread * exn -> unit
+	val <A href="#terminate">terminate</A> :		thread -> unit
+
+	val <A href="#suspend">suspend</A> :		thread -> unit
+	val <A href="#resume">resume</A> :		thread -> unit
+	val <A href="#isSuspended">isSuspended</A> :	thread -> bool
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="thread">thread</A></TT><BR>
+      <TT>type <A name="t">t</A> = thread</TT>
+    </DT>
+    <DD>
+      <P>The type of first-class threads.  A reference to a first-class
+	thread can be used to observe and control execution of a
+	concurrent computation.</P>
+    </DD>
+
+    <DT>
+      <TT>datatype <A name="state">state</A> = RUNNABLE | BLOCKED | TERMINATED</TT>
+    </DT>
+    <DD>
+      <P>The type of thread states.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Terminate-exn">Terminate</A></TT>
+    </DT>
+    <DD>
+      <P>raised by <TT><A href="#terminate">terminate</A></TT> to
+	terminate a thread.  Should never be raised explicitly.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Terminated">Terminated</A></TT>
+    </DT>
+    <DD>
+      <P>indicates that a thread control operation was applied to
+	a terminated thread.  Should only be caught to perform cleanup
+	actions, and should always be re-raised.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="thread">thread</A> <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>spawns a new thread <TT><I>thr</I></TT> which computes
+	<TT><I>f</I>&nbsp;()</TT>.  Returns <TT><I>thr</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="spawnThread">spawnThread</A> <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>spawns a new thread <TT><I>thr</I></TT> which computes
+	<TT><I>f</I>&nbsp;()</TT>.  Returns a pair of <TT><I>thr</I></TT>
+	and the result of applying&nbsp;<TT><I>f</I></TT>, which is a
+	future which will be bound to the result of <TT><I>f</I
+	>&nbsp;()</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="current">current</A> ()</TT>
+    </DT>
+    <DD>
+      <P>returns the calling thread, that is, the thread
+	executing <TT>current&nbsp;()</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="state">state</A> <I>thr</I></TT>
+    </DT>
+    <DD>
+      <P>returns the current state of&nbsp;<TT><I>thr</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="yield">yield</A> <I>thr</I></TT>
+    </DT>
+    <DD>
+      <P>causes the scheduler to stop executing thread&nbsp;<TT><I>thr</I
+	></TT>, if it is currently being executed, and select another thread
+	for execution.  Has no effect if <TT><I>thr</I></TT> is not currently
+	being executed.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="sleep">sleep</A> <I>t</I></TT>
+    </DT>
+    <DD>
+      <P>causes the calling thread to stop executing and not be rescheduled
+	for the time specified by&nbsp;<TT><I>t</I></TT>.  If <TT><I>t</I
+	></TT> is zero or negative, immediately returns. Raises
+	<TT>Overflow</TT> if <TT><I>t</I></TT> is larger than the longest
+	possible time period that can be handled by the system.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="raiseIn">raiseIn</A> (<I>thr</I>, <I>ex</I>)</TT>
+    </DT>
+    <DD>
+      <P>raises the exception <TT><I>ex</I></TT> in thread <TT><I>thr</I></TT>.
+	If <TT><I>thr</I></TT> is terminated, instead raises <TT><A
+	href="#Terminated">Terminated</A></TT> in the calling thread.
+	If <TT><I>thr</I></TT> is blocked, makes <TT><I>thr</I></TT>
+	runnable again.  Requests <TT><I>exn</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="terminate">terminate</A> <I>thr</I></TT>
+    </DT>
+    <DD>
+      <P>attempts to terminate <TT><I>thr</I></TT> by raising exception
+	<TT><A href="#Terminate">Terminate</A></TT> in it.  Equivalent to</P>
+      <PRE><A href="#raiseIn">raiseIn</A> (<I>thr</I>, <A href="#Terminated"
+	>Terminated</A>)</PRE>
+    </DD>
+
+    <DT>
+      <TT><A name="suspend">suspend</A> <I>thr</I></TT>
+    </DT>
+    <DD>
+      <P>suspends <TT><I>thr</I></TT>.  If <TT><I>thr</I></TT> is being
+	executed, then it yields.  <TT><I>thr</I></TT> is not rescheduled
+	until resumed again.  Note that this does not change the status of
+	<TT><I>thr</I></TT>, that is, <TT><I>thr</I></TT> can be suspended
+	<EM>and</EM> at the same time be runnable, blocked, or terminated.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="resume">resume</A> <I>thr</I></TT>
+    </DT>
+    <DD>
+      <P>resumes <TT><I>thr</I></TT>.  If <TT><I>thr</I></TT> is runnable,
+	makes <TT><I>thr</I></TT> available for scheduling again.  Does not
+	change the status of <TT><I>thr</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="isSuspended">isSuspended</A> <I>thr</I></TT>
+    </DT>
+    <DD>
+      <P>returns <TT>true</TT> if <TT><I>thr</I></TT> is suspended,
+	<TT>false</TT> otherwise.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

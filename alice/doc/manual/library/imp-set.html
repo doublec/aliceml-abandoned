@@ -1,0 +1,395 @@
+<?php include("macros.php3"); ?>
+<?php heading("The IMP_SET signature", "The <TT>IMP_SET</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature IMP_SET
+    functor MkHashImpSet (Item : HASHABLE) :> IMP_SET where type item = Item.t
+    functor MkRedBlackImpSet (Item : ORDERED) :> IMP_SET where type item = Item.t
+  </PRE>
+
+  <P>
+    The <TT>SET</TT> signature provides an imperative interface to finite sets.
+    The <TT>MkHashImpSet</TT> functor provides an implementation of this
+    interface based on hash tables, while the <TT>MkRedBlackImpSet</TT> functor
+    provides an implementation based on red-black trees.
+  </P>
+
+  <P>
+    Note that imperative sets are not thread-safe. Explicit locking has to be
+    used if they need to be accessed concurrently. Also note that the behaviour
+    of iterator functionals is unspecified if the passed argument function
+    tries to modify the set.
+  </P>
+
+  <P>See also:
+    <A href="set.html"><TT>SET</TT></A>,
+    <A href="imp-map.html"><TT>IMP_MAP</TT></A>,
+    <A href="hashable.html"><TT>HASHABLE</TT></A>,
+    <A href="ordered.html"><TT>ORDERED</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature IMP_SET from "x-alice:/lib/data/IMP_SET-sig"
+    import functor MkHashImpSet from "x-alice:/lib/data/MkHashImpSet"
+    import functor MkRedBlackImpSet from "x-alice:/lib/data/MkRedBlackImpSet"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature IMP_SET =
+    sig
+	type item
+	eqtype set
+	type t = set
+
+	exception Unknown of item
+	exception Collision of item
+
+	val set :            unit -> set
+	val clone :          set -> set
+	val fromList :       item list -> set
+	val fromVector :     item vector -> set
+	val toList :         set -> item list
+	val toVector :       set -> item vector
+
+	val insert :         set * item -> unit
+	val insertDisjoint : set * item -> unit
+	val insertWith :     (item -> unit) -> set * item -> unit
+
+	val remove :         set * item -> unit
+	val removeExistent : set * item -> unit
+	val removeWith :     (item -> unit) -> set * item -> unit
+	val removeAll :      set -> unit
+
+	val union :          set * set  -> unit
+	val unionDisjoint :  set * set  -> unit
+	val unionWith :      (item -> unit) -> set * set -> unit
+
+	val intersect :      set * set -> unit
+	val difference :     set * set -> unit
+
+	val size :           set -> int
+	val isEmpty :        set -> bool
+
+	val member :         set * item -> bool
+	val choose :         set -> item option
+
+	val equal :          set * set -> bool
+	val subset :         set * set -> bool
+	val disjoint :       set * set -> bool
+	val compare :        set * set -> order
+
+	val app :            (item -> unit) -> set -> unit
+	val fold :           (item * 'a -> 'a) -> 'a -> set -> 'a
+	val all :            (item -> bool) -> set -> bool
+	val exists :         (item -> bool) -> set -> bool
+	val find :           (item -> bool) -> set -> item option
+	val filter :         (item -> bool) -> set -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type item</TT>
+    </DT>
+    <DD>
+      <P>The type of elements in the set.</P>
+    </DD>
+
+    <DT>
+      <TT>eqtype set</TT> <BR>
+      <TT>type t = set</TT>
+    </DT>
+    <DD>
+      <P>The type of sets over elements of type <TT>item</TT>. Only sets
+      created by the same function application are equal.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Unknown of item</TT>
+    </DT>
+    <DD>
+      <P>Indicates that an item could not be found in the set.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Collision of item</TT>
+    </DT>
+    <DD>
+      <P>Indicates an attempt to add an item that already is in the set
+      when using functions that disallow replacement.</P>
+    </DD>
+
+    <DT>
+      <TT>set ()</TT>
+    </DT>
+    <DD>
+      <P>Creates an empty set.</P>
+    </DD>
+
+    <DT>
+      <TT>clone <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a copy of the set <TT><I>s</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fromList <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a set containing the elements from list <TT><I>l</I></TT>.
+      Raises <TT>Collision</TT> <TT><I>x</I></TT> if <TT><I>x</I></TT> is an element in
+      the list that is followed by at least one other element equal to
+      <TT><I>x</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fromVector <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a set containing the elements from list <TT><I>v</I></TT>.
+      Raises <TT>Collision</TT> <TT><I>x</I></TT> if <TT><I>x</I></TT> is an element of
+      the vector that is followed by at least one other element equal to
+      <TT><I>x</I></TT>. Equivalent to
+      <TT>fromList(Vector.toList <I>v</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toList <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the list of items in the set <TT><I>s</I></TT>. For red-black
+      sets, the items are delivered in increasing order.</P>
+    </DD>
+
+    <DT>
+      <TT>toVector <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the vector of items in the set <TT><I>s</I></TT>. For red-black
+      sets, the items are delivered in increasing order. Equivalent to
+      <TT>Vector.fromList(toList <I>s</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>insert (<I>s</I>, <I>x</I>)</TT> <BR>
+      <TT>insertDisjoint (<I>s</I>, <I>x</I>)</TT> <BR>
+      <TT>insertWith <I>f</I> (<I>s</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>Extends the set <TT><I>s</I></TT> with element
+      <TT><I>x</I></TT>. In the first form, if <TT><I>s</I></TT> already
+      contains an element <TT><I>y</I></TT> equal to <TT><I>x</I></TT>, then it
+      gets replaced by <TT><I>x</I></TT>. In the second form,
+      <TT>Collision</TT> <TT><I>y</I></TT> will be raised. In the third form,
+      <TT><I>f</I></TT> is applied to <TT><I>y</I></TT> before the set is
+      modified. The following equivalences hold:</P>
+      <PRE>
+      insert         = insertWith ignore
+      insertDisjoint = insertWith (fn y => raise Collision y)</PRE>
+    </DD>
+
+    <DT>
+      <TT>remove (<I>s</I>, <I>x</I>)</TT> <BR>
+      <TT>removeExistent (<I>s</I>, <I>x</I>)</TT> <BR>
+      <TT>removeWith <I>f</I> (<I>s</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes the element
+      <TT><I>x</I></TT> from the set <TT><I>s</I></TT>. In the first form,
+      if no element equal to
+      <TT><I>x</I></TT> is contained in <TT><I>s</I></TT>, then the set is
+      left unchanged. In the second form, <TT>Unknown</TT>
+      <TT><I>x</I></TT> will be raised. In the third form, <TT><I>f</I></TT> is
+      applied to <TT><I>x</I></TT> before the set is modified.
+      The following equivalences hold:</P>
+      <PRE>
+      remove         = removeWith ignore
+      removeExistent = removeWith (fn y => raise Unknown y)</PRE>
+    </DD>
+
+    <DT>
+      <TT>removeAll <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Removes all elements from the set <TT><I>s</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>union (<I>s1</I>, <I>s2</I>)</TT> <BR>
+      <TT>unionDisjoint (<I>s1</I>, <I>s2</I>)</TT> <BR>
+      <TT>unionWith <I>f</I> (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Inserts all elements from set <TT><I>s2</I></TT> into <TT><I>s1</I></TT>.
+      In the first form, if <TT><I>s2</I></TT> contains an element
+      <TT><I>x2</I></TT> equal to an element <TT><I>x1</I></TT> in set
+      <TT><I>s1</I></TT>, then it will get replaced by
+      <TT><I>x2</I></TT>. In the second form,
+      <TT>Collision</TT> <TT><I>x2</I></TT> will be raised. In the third form,
+      <TT><I>f</I></TT> is applied to <TT><I>x2</I></TT> before the set is
+      modified as in the first form. The following equivalences hold:</P>
+      <PRE>
+      union         = unionWith ignore
+      unionDisjoint = unionWith (fn y => raise Collision y)</PRE>
+    </DD>
+
+    <DT>
+      <TT>intersect (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes all elements from set <TT><I>s1</I></TT> that are not contained
+      in <TT><I>s2</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>difference (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes all elements from set <TT><I>s1</I></TT> that are contained in
+      <TT><I>s2</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>size <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the cardinality of the set <TT><I>s</I></TT>, i.e. the number
+      of elements it contains.</P>
+    </DD>
+
+    <DT>
+      <TT>isEmpty <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>s</I></TT> is an empty set,
+      <TT>false</TT> otherwise. Equivalent to <TT>size <I>s</I> = 0</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>member (<I>s</I>, <I>x</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the set <TT><I>s</I></TT> contains an
+      element equal to <TT><I>x</I></TT>, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>choose <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>SOME</TT> <TT><I>x</I></TT>, where <TT><I>x</I></TT> is an element
+      of the set <TT><I>s</I></TT>. Returns <TT>NONE</TT> if <TT><I>s</I></TT>
+      is empty. For red-black sets, <TT><I>x</I></TT> will be the
+      smallest element in the set.</P>
+    </DD>
+
+    <DT>
+      <TT>equal (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>s1</I></TT> and <TT><I>s2</I></TT>
+      are sets with equal elements, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>subset (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>s1</I></TT> is a subset of
+      <TT><I>s2</I></TT>, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>disjoint (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>s1</I></TT> and <TT><I>s2</I></TT>
+      are disjoint sets, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>compare (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>EQUAL</TT> if <TT><I>s1</I></TT> and <TT><I>s2</I></TT>
+      are equal sets, <TT>LESS</TT> if <TT><I>s1</I></TT> is a subset of
+      <TT><I>s2</I></TT>, and <TT>GREATER</TT> if <TT><I>s2</I></TT> is a
+      subset of <TT><I>s1</I></TT>. Otherwise it raises <TT>Unordered</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>app <I>f</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Applies <TT><I>f</I></TT> to each element in set <TT><I>s</I></TT>.
+      For red-black trees, this happens in increasing order. Equivalent
+      to <TT>List.app <I>f</I> (toList <I>s</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>fold <I>f</I> <I>a</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Sequentially applies <TT><I>f</I></TT> to the pair of a set item and
+      the result of the previous application, starting with initial value
+      <TT><I>a</I></TT>.
+      For red-black trees, folding is performed in increasing order.
+      Equivalent to <TT>List.foldl <I>f</I> <I>a</I> (toList <I>s</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>all <I>f</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of set
+      <TT><I>s</I></TT> until <TT><I>f x</I></TT> delivers <TT>false</TT>.
+      Returns <TT>false</TT> if such an <TT><I>x</I></TT> exists, <TT>true</TT>
+      otherwise.
+      For red-black trees, <TT><I>f</I></TT> is applied in increasing order.
+      Equivalent to <TT>List.all <I>f</I> (toList <I>s</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>exists <I>f</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of set
+      <TT><I>s</I></TT> until <TT><I>f x</I></TT> delivers <TT>true</TT>.
+      Returns <TT>true</TT> if such an <TT><I>x</I></TT> exists, <TT>false</TT>
+      otherwise.
+      For red-black trees, <TT><I>f</I></TT> is applied in increasing order.
+      Equivalent to <TT>List.exists <I>f</I> (toList <I>s</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>find <I>f</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of set
+      <TT><I>s</I></TT> until <TT><I>f x</I></TT> delivers <TT>true</TT>.
+      Returns <TT>SOME</TT> <TT><I>x</I></TT> if such an <TT><I>x</I></TT> exists,
+      <TT>NONE</TT> otherwise.
+      For red-black trees, <TT><I>f</I></TT> is applied in increasing order.
+      Equivalent to <TT>List.find <I>f</I> (toList <I>s</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>filter <I>f</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of set
+      <TT><I>s</I></TT> and removes all elements for which
+      <TT><I>f x</I></TT> delivered <TT>false</TT>.
+      For red-black trees, <TT><I>f</I></TT> is applied in increasing order.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

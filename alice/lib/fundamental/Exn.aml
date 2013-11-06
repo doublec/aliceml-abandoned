@@ -1,0 +1,42 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type exn and unit and string from "ToplevelTypes"
+import __primitive signature EXN                from "EXN-sig"
+
+structure Exn : EXN =
+struct
+    type exn    = exn
+    type t      = exn
+    __primitive type packet = "Exn.packet"
+    type trace
+    type packet' = exn * trace
+
+    __primitive val name : exn -> string = "Exn.name"
+    val message = name
+
+    __primitive val seal :   packet' -> packet = "Unsafe.cast"
+    __primitive val unseal : packet -> packet' = "Unsafe.cast"
+
+    __primitive exception NoCurrentPacket = "Exn.NoCurrentPacket"
+
+    fun fromPacket p = #1 (unseal p)
+    fun update (p, e) = seal (e, #2 (unseal p))
+
+    __primitive val currentPacket : unit -> packet   = "Exn.currentPacket"
+    __primitive val trace :         packet -> string = "Exn.trace"
+    __primitive val dumpTrace :     packet -> unit   = "Exn.dumpTrace"
+    __primitive val reraise :       packet -> 'a     = "Exn.reraise"
+
+
+end

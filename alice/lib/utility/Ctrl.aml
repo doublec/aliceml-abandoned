@@ -1,0 +1,54 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature CTRL   from "CTRL-sig"
+import structure OS     from "../system/OS"
+import structure TextIO from "../system/TextIO"
+
+
+structure Ctrl :> CTRL =
+struct
+    infix 3 ++
+    infix 3 $
+
+    fun a ++ f = f a
+
+    fun f $ a = f a
+
+    fun doFor (lower, upper, f) =
+        if lower > upper then ()
+        else (f lower; doFor (lower + 1, upper, f))
+
+    fun repeat (n, f) = doFor (0, n - 1, f)
+
+    fun ispawn (file, line) f a = 
+        let
+            (* print error message and terminate process *)
+            fun crashWith (Assert (afile, aline)) =
+                (TextIO.output (TextIO.stdErr,
+                    "ispawn failed at " ^ file ^ ":" ^ Int.toString line ^
+                      " due to failed assert at " ^ afile ^ ":" ^ 
+                        Int.toString aline ^ "\n");
+                 OS.Process.exit OS.Process.failure)
+              | crashWith exn =
+                (TextIO.output (TextIO.stdErr,
+                    "ispawn failed with exception " ^ exnName exn ^ " at "
+                        ^ file ^ ":" ^ Int.toString line ^ "\n");
+                 OS.Process.exit OS.Process.failure)
+        in
+            (* spawn process.  returned unit is a future, discard it *)
+            spawn ( (f a) handle e => crashWith e); 
+            (* and return a strict one. *)
+            ()  
+        end
+end
+

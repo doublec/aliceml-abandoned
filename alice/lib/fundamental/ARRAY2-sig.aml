@@ -1,0 +1,80 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <Benedikt-Grundmann@web.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date: 2003/04/22 
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import __primitive
+      type unit and int and vector and bool
+      and option and list from "ToplevelTypes"
+
+
+signature ARRAY2 =
+sig
+    __eqeqtype 'a array
+    
+    type 'a t = 'a array    (**)
+
+    type 'a region = 
+	{ base : 'a array,
+	 row : int,
+	 col : int,
+	 nrows : int option,
+	 ncols : int option 
+	 }
+
+    datatype traversal =
+	RowMajor
+      | ColMajor
+
+
+    val array : int * int * 'a -> 'a array
+    val fromList : 'a list list -> 'a array
+    val toList : 'a array -> 'a list list
+
+    val tabulate : traversal -> int * int * ( int * int -> 'a ) -> 'a array
+
+    val sub : 'a array * int * int -> 'a           (* Subscript *)
+    val update : 'a array * int * int * 'a -> unit (* Subscript *)
+    
+    val dimensions : 'a array -> int * int
+    val nRows : 'a array -> int
+    val nCols : 'a array -> int
+    
+    val row : 'a array * int -> 'a vector
+    val column : 'a array * int -> 'a vector
+
+    val copy : { src : 'a region, dst: 'a array, 
+		dst_row: int, dst_col: int } -> unit
+
+    val appi : traversal -> (int * int * 'a -> unit) -> 'a region -> unit
+    val app : traversal -> ('a -> unit) -> 'a array -> unit
+
+    val foldi : traversal -> (int * int * 'a * 'b -> 'b) -> 'b -> 'a region
+	-> 'b
+    val fold : traversal -> ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+
+    val modifyi : traversal -> (int * int * 'a -> 'a) -> 'a region -> unit
+    val modify : traversal -> ('a -> 'a) -> 'a array -> unit
+
+    val exists : traversal -> ('a -> bool) -> 'a array -> bool (**)
+    val existsi : traversal -> (int * int * 'a -> bool) -> 'a region -> bool (**)
+
+    val all : traversal -> ('a -> bool) -> 'a array -> bool   (**)
+    val alli : traversal -> (int * int * 'a -> bool) -> 'a region -> bool (**)
+
+    val contains: traversal -> ''a array -> ''a -> bool     (**)
+    val notContains: traversal -> ''a array -> ''a -> bool  (**)
+
+    val equal: traversal -> ('a * 'a -> bool) -> 'a array * 'a array -> bool (**)
+end

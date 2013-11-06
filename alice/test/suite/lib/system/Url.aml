@@ -1,0 +1,122 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestUrl :> TESTSUITE = (* the url test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun testEmpty () =
+	Test.test (fn x => {absolute = false, 
+			    authority = NONE, 
+			    device = NONE, 
+			    fragment = NONE,
+			    path = [], 
+			    query = NONE, 
+			    scheme = NONE} = x) Url.empty
+
+    fun testIsAbsolute () =
+	let
+	    fun t' (u : Url.url) = isSome (#device u) orelse
+				   isSome (#scheme u) orelse
+				   (#absolute u) orelse 
+				   (case #path u of
+					nil     => false
+				      | ""::_   => false
+				      | "."::_  => true
+				      | ".."::_ => true
+				      | s::_    => String.sub (s, 0) = #"~")
+			       
+	    fun t x = Url.isAbsolute (Url.fromString x) = 
+		      t' (Url.fromString x)
+	in
+	    (Test.test t ".";
+	     Test.test t "..";
+	     Test.test t "c:/";
+	     Test.test t "/alice";
+	     Test.test t "~alice";
+	     Test.test t "x-alice:/lib")
+	end
+
+    fun testIsAbsolutePath () =
+	let
+	    fun t (x, y) = Url.isAbsolutePath (Url.fromString x) = y
+	in
+	    (Test.test t (".", false);
+	     Test.test t ("..", false);
+	     Test.test t ("c:/", true);
+	     Test.test t ("/alice", true);
+	     Test.test t ("~alice", false);
+	     Test.test t ("x-alice:/lib", true))
+	end
+
+(*
+        val setScheme : url * scheme -> url
+        val setAuthority : url * authority -> url
+        val setDevice : url * device -> url
+        val makeAbsolutePath : url -> url
+        val makeRelativePath : url -> url
+        val setPath : url * path -> url
+        val setQuery : url * query -> url
+        val setFragment : url * fragment -> url
+
+        val getScheme : url -> scheme
+        val getAuthority : url -> authority
+        val getDevice : url -> device
+        val isAbsolutePath : url -> bool
+        val getPath : url -> path
+        val getQuery : url -> query
+        val getFragment : url -> fragment
+
+        val fromString : string -> url
+        val toString : url -> string
+        val toStringRaw : url -> string
+        val toLocalFile : url -> string
+        val resolve : url -> url -> url
+        val equal : url * url -> bool
+        val compare : url * url -> order
+*)
+
+    fun testHash () = 
+	let
+	    fun t s = (Url.hash (Url.fromString s); true) 
+		               handle Url.Malformed => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testGetPath () =
+	let
+	   fun t s = (*if b 
+			  then Url.getPath (Url.fromString s) = s
+			  else (Url.fromString s; false) 
+			            handle Url.Malformed => true*) true
+	in
+	    (Test.test t "";
+	     Test.test t ".";
+	     Test.test t "..";
+	     Test.test t "/alice/")
+	end
+	
+
+    val suite = ("Url", [("empty", testEmpty),
+			 ("isAbsolute", testIsAbsolute),
+			 ("hash", testHash),
+			 ("isAbsolutePath", testIsAbsolutePath)])
+
+end

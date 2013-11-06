@@ -1,0 +1,139 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure DescParser =
+struct
+  exception ParseError of string
+
+  datatype var_types = IntVar | BoolVar | SetVar | List of var_types
+  datatype args =
+           Var of var_types | IntSet | IntRel | SetRel | SetOp | IntConLevel |
+           Int | IntArgs | UInt | Bool | Void | Iterator of string |
+           AvalSel | BvarSel | BvalSel | SetBvarSel | SetBvalSel | 
+           Space | Status | Description | Other of string
+           
+  type decl = string * (args list * args) * string
+  datatype desc = CLASS of string * decl list
+                | DECL of decl
+
+  fun stripWhitespace (s if (Char.isSpace(String.sub(s, String.size s - 1)))) =
+      stripWhitespace (String.substring(s, 0, String.size s - 1))
+    | stripWhitespace (s if (Char.isSpace(String.sub(s, 0)))) =
+      stripWhitespace (String.extract(s, 1, NONE))
+    | stripWhitespace s = s
+
+  fun removeTrailingN (s if (String.sub (s, String.size s - 1) = #"\n")) =
+      String.substring(s, 0, String.size s -2)
+    | removeTrailingN s = s
+
+  fun parseArg "IntVar" = Var IntVar
+    | parseArg "BoolVar" = Var BoolVar
+    | parseArg "SetVar" = Var SetVar
+    | parseArg "IntSet&" = IntSet
+    | parseArg "IntRelType" = IntRel
+    | parseArg "SetRelType" = SetRel
+    | parseArg "SetOpType" = SetOp
+    | parseArg "const IntVarArgs&" = Var (List IntVar)
+    | parseArg "const IntArgs&" = IntArgs
+    | parseArg "IntConLevel" = IntConLevel
+    | parseArg "const BoolVarArgs&" = Var (List BoolVar)
+    | parseArg "const SetVarArgs&" = Var (List SetVar)
+    | parseArg "BranchingDesc*" = Description
+    | parseArg "int" = Int
+    | parseArg "unsigned int" = UInt
+    | parseArg "void" = Void
+    | parseArg "bool" = Bool
+    | parseArg "AvalSel" = AvalSel
+    | parseArg "BvalSel" = BvalSel
+    | parseArg "BvarSel" = BvarSel
+    | parseArg "SetBvalSel" = SetBvalSel
+    | parseArg "SetBvarSel" = SetBvarSel
+    | parseArg (s as ("ViewRanges<IntView>" |
+                         "SetVarLubRanges" |
+                         "SetVarGlbRanges" |
+                         "SetVarUnknownRanges" |
+                         "I&"
+                         )) = Iterator s
+    | parseArg s = Other s
+
+  fun parseInArgs s =
+      case String.tokens (fn #"," => true | _ => false) s of
+          nil => raise ParseError "no arguments"
+        | args => List.map (parseArg o stripWhitespace) args
+
+  fun parseName s =
+      let
+          val ts = String.tokens (fn #" " => true | _ => false) s
+          val (ret, n) = List.split(ts, List.length ts - 1)
+          val ret = stripWhitespace (foldr (fn (s, ss) =>
+                                               s^" "^ss) "" ret)
+      in
+          case n of
+              [name] => (name, ret)
+            | _ => raise ParseError "more than one name!?!"
+      end
+
+  fun parseLine "" = NONE
+    | parseLine "\n" = NONE
+    | parseLine (s if (String.isPrefix "//" s)) = NONE
+    | parseLine s  =
+      case String.tokens (fn #";" => true | _ => false) (removeTrailingN s) of
+          [decl, aliceName] =>
+      (case String.tokens (fn #"(" => true | #")"=> true | _ => false)
+                          decl of
+           [nameAndRet, argTypes] =>
+           let
+               val (name, retType) = parseName nameAndRet
+           in
+               SOME (stripWhitespace name,
+                     (parseInArgs argTypes,
+                      parseArg retType),
+                     stripWhitespace aliceName)
+           end
+         | s => raise ParseError "not of structure name(args)")
+        | _ => raise ParseError "semicolon expected"
+
+  fun parseClass' f =
+      case TextIO.inputLine f of
+          NONE => raise ParseError "unexpected EOF"
+        | SOME s if (String.isPrefix "};" s) => nil
+        | SOME s => case parseLine s of NONE => parseClass' f
+                                      | SOME d => (
+             d::parseClass' f)
+
+  fun parseClass s f =
+      case String.tokens (fn #" " => true | _ => false) s of
+          "class"::name::_ =>
+          CLASS (name, parseClass' f)
+        | r => raise ParseError "not of structure class <name> {"
+
+  fun parseFile' f =
+      case TextIO.inputLine f
+       of NONE   => nil
+        | SOME s if (String.isPrefix "class " s) =>
+          (parseClass s f)::parseFile' f
+	| SOME s => case parseLine s of NONE => parseFile' f
+                                      | SOME s => (DECL s)::parseFile' f
+
+  fun parseFile filename =
+      let
+	  val f = TextIO.openIn filename
+      in
+	  parseFile' f
+	  before TextIO.closeIn f
+      end
+
+end

@@ -1,0 +1,35 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SPACE    from "SPACE-sig"
+import signature FD       from "FD-sig"
+import signature MODELING from "MODELING-sig"
+import signature FS       from "FS-sig"
+
+signature CONSTRAINTS =
+  sig
+      structure Space  : SPACE
+      structure FD     : FD
+                         where type space = Space.space
+      structure Modeling : MODELING
+                         where type space = Space.space
+                         where type intvar = FD.intvar
+                         where type boolvar = FD.boolvar
+      structure FS     : FS
+                         where type space  = Space.space
+                         where type intvar = FD.intvar
+                         where type boolvar = FD.boolvar
+  end

@@ -1,0 +1,17 @@
+Group
+
+    signature TARGET
+    signature CODE
+    signature ENGINE
+    functor MkEngine
+
+is
+
+    ../../lib/rtt/name.cm
+    ../infrastructure/target.cm
+    ../common/id-stamp.cm
+    flat-grammar.cm
+
+    CODE-sig.aml
+    ENGINE-sig.aml
+    MkEngine.aml

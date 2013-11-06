@@ -1,0 +1,70 @@
+<?php include("macros.php3"); ?>
+
+<?php heading("Features", "features") ?>
+
+
+<?php section("overview", "overview") ?>
+
+  <P>
+    <I>Alice</I> is a functional programming language based on
+    <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>,
+    extended with support for concurrent, distributed,
+    and constraint programming. The <A href="language.html">Alice ML
+    language</A> extends Standard ML with several new features:
+  </P>
+
+  <UL>
+    <LI> <A href="futures.html"><I>Futures</I></A>:
+	 laziness and light-weight concurrency with data-flow synchronisation
+    <LI> <A href="modules.html"><I>Higher-order modules</I></A>:
+	 higher-order functors and abstract signatures
+    <LI> <A href="packages.html"><I>Packages</I></A>:
+	 integrating static with dynamic typing and first class modules
+    <LI> <A href="pickling.html"><I>Pickling</I></A>:
+	 higher-order type-safe, generic & platform-independent persistence
+    <LI> <A href="components.html"><I>Components</I></A>:
+	 platform-independence and type-safe dynamic loading of modules
+    <LI> <A href="distribution.html"><I>Distribution</I></A>:
+	 type-safe cross-platform remote functions and network mobility
+    <LI> <A href="constraints.html"><I>Constraints</I></A>:
+	 solving combinatorical problems using constraint propagation and
+	 programmable search
+  </UL>
+
+  <P>
+    The Alice System is a rich open-source programming system
+    featuring the following tools:
+  </P>
+
+  <UL>
+    <LI> <A href="machine.html"><I>Virtual machine</I></A>:
+	 a portable VM with support for just-in-time compilation
+    <LI> <A href="interactive.html"><I>Interactive system</I></A>:
+	 an interpreter-like environment with graphical interface
+    <LI> <A href="compiler.html"><I>Batch compiler</I></A>:
+	 separate compilation
+    <LI> <A href="linker.html"><I>Static linker</I></A>:
+	 type-safe bundling of components
+    <LI> <A href="library/inspector.html"><I>Inspector</I></A>:
+	 a tool for interactively inspecting data structures
+    <LI> <A href="library/explorer.html"><I>Explorer</I></A>:
+	 a tool for interactively investigating search problems
+    <LI> <A href="library/gtk.html"><I>Gtk+</I></A>:
+	 a binding to the Gnome toolkit GUI library
+    <LI> <A href="library/sqlite.html"><I>SQL</I></A>:
+	 a library for accessing SQL databases
+    <LI> <A href="library/xml.html"><I>XML</I></A>:
+	 a simple library for parsing XML documents
+  </UL>
+
+<!--
+  <P>
+    Alice builds on our experience with developing the
+    <A href="http://www.mozart-oz.org/">Mozart</A> system.
+    The current version of Alice is based on the Mozart virtual machine.
+    Alice programs can therefore <A href="interop.html"
+    >interoperate</A> with Oz.
+  </P>
+-->
+
+<?php footing() ?>

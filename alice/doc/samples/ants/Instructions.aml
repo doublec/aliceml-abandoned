@@ -1,0 +1,82 @@
+structure Instructions =
+  struct
+
+  type state = int
+
+  type marker = int
+
+  datatype sense_dir = Here | Ahead | LeftAhead | RightAhead
+
+  datatype condition =
+           Friend
+         | Foe 
+         | FriendWithFood
+         | FoeWithFood
+         | Food
+         | Rock
+         | Marker of marker
+         | FoeMarker
+         | Home
+         | FoeHome
+
+  datatype leftorright = Left | Right
+
+  datatype 'a instruction =
+           Sense of sense_dir * state * state * condition * 'a
+         | Mark of marker * state * 'a
+         | Unmark of marker * state * 'a
+         | PickUp of state * state * 'a
+         | Drop of state * 'a
+         | Turn of leftorright * state * 'a
+         | Move of state * state * 'a
+         | Flip of int * state * state * 'a
+
+  type 'a ant = 'a instruction vector
+
+  fun getInstruction(ant, state) = Vector.sub(ant, state)
+
+
+  val int = Int.toString
+  fun int n = if Future.isFuture n then raise Fail "Ouch!!\n" else Int.toString n
+
+  fun turn Left			= "left"
+    | turn Right		= "right"
+
+  fun dir Here			= "here"
+    | dir Ahead			= "ahead"
+    | dir LeftAhead		= "leftahead"
+    | dir RightAhead		= "rightahead"
+
+  fun cond Friend		= "friend"
+    | cond Foe			= "foe"
+    | cond FriendWithFood	= "friendwithfood"
+    | cond FoeWithFood		= "foewithfood"
+    | cond Food			= "food"
+    | cond Rock			= "rock"
+    | cond (Marker marker)	= "marker " ^ int marker
+    | cond FoeMarker		= "foemarker"
+    | cond Home			= "home"
+    | cond FoeHome		= "foehome"
+
+  fun outputInstruction outputAnn os (n, i) =
+      let
+	 fun out a ss = (TextIO.output (os, String.concatWith " " ss);
+			 TextIO.output (os, "\t; [" ^ int n ^ "] ");
+			 outputAnn (os, a);
+			 TextIO.output (os, "\n"))
+      in
+	 case i
+	  of Sense(d,s1,s2,c,a)	=> out a ["sense", dir d, int s1, int s2, cond c]
+	   | Mark(m,s,a)	=> out a ["mark", int m, int s]
+	   | Unmark(m,s,a)	=> out a ["unmark", int m, int s]
+	   | PickUp(s1,s2,a)	=> out a ["pickup", int s1, int s2]
+	   | Drop(s,a)		=> out a ["drop", int s]
+	   | Turn(t,s,a)	=> out a ["turn", turn t, int s]
+	   | Move(s1,s2,a)	=> out a ["move", int s1, int s2]
+	   | Flip(n,s1,s2,a)	=> out a ["flip", int n, int s1, int s2]
+      end
+
+  fun output outputAnn (os, is) =
+	Vector.appi (outputInstruction outputAnn os) is
+
+  end

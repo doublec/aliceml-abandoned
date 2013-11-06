@@ -1,0 +1,29 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_SPACE_COMPONENT =
+    sig
+	structure UnsafeSpace :
+		sig
+		    val space : 'a
+
+		    val ask : 'a
+		    val askVerbose : 'a
+		    val clone : 'a
+		    val commit : 'a
+		    val inject : 'a
+		    val merge : 'a
+		    val kill : 'a
+		    val waitStable : 'a
+		end
+    end

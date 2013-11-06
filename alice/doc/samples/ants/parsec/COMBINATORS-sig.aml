@@ -1,0 +1,37 @@
+import signature PRIM   from "PRIM-sig"
+
+signature COMBINATORS =
+sig
+    (* same problem as in PRIM 
+    structure Prim: PRIM
+    
+    type parser = Prim.parser
+    *)
+    type ('a, 'd) parser
+
+    val many : ('a, 'd) parser -> ('a list, 'd) parser
+    val many1 : ('a, 'd) parser -> ('a list, 'd) parser
+
+    val chainl :    ('a, 'd) parser * ('a * 'a -> 'a, 'd) parser * 'a -> 
+                        ('a, 'd) parser
+    val chainl1 :   ('a, 'd) parser * ('a * 'a -> 'a, 'd) parser -> 
+                        ('a, 'd) parser
+    
+    val skipMany : ('a, 'd) parser -> (unit, 'd) parser
+    val skipMany1 : ('a, 'd) parser -> (unit, 'd) parser
+
+    val sepBy : ('a, 'd) parser * ('b, 'd) parser -> ('a list, 'd) parser
+    val sepBy1 : ('a, 'd) parser * ('b, 'd) parser -> ('a list, 'd) parser
+
+    val endBy : ('a, 'd) parser * ('b, 'd) parser -> ('a list, 'd) parser
+    val endBy1 : ('a, 'd) parser * ('b, 'd) parser -> ('a list, 'd) parser
+
+(*
+    val sepEndBy : ('a, 'd) parser * ('b, 'd) parser -> ('a list, 'd) parser
+    val sepEndBy1 : ('a, 'd) parser * ('b, 'd) parser -> ('a list, 'd) parser
+*)
+
+    val between : ('a, 'd) parser * ('b, 'd) parser -> ('v, 'd) parser -> 
+                    ('v, 'd) parser
+
+end

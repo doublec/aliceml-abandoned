@@ -1,0 +1,104 @@
+#!/usr/bin/make -f
+
+# Seam for Debian/GNU
+# Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+
+export DH_COMPAT=3
+export DH_OPTIONS
+
+# needed if dpkg-buildpackage is not used
+
+export DEB_HOST_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+# cross-compilation
+
+ifeq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
+  configure_options += --build $(DEB_BUILD_GNU_TYPE)
+else
+  configure_options += --host $(DEB_HOST_GNU_TYPE) --build $(DEB_BUILD_GNU_TYPE)
+endif
+
+# generic Debian directories
+
+package_name = alice-runtime
+package_version = $(alicetool --package-version)
+
+DEB_BASE_DIR = $(PWD)
+DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian
+DEB_SOURCE_DIR = $(DEB_BASE_DIR)
+DEB_BUILD_DIR = $(DEB_DEBIAN_DIR)/build
+DEB_INSTALL_DIR = $(DEB_DEBIAN_DIR)/$(package_name)
+
+# generic targets
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+	mkdir $(DEB_BUILD_DIR) || true
+	cd $(DEB_BUILD_DIR) && \
+	$(DEB_SOURCE_DIR)/configure $(configure_options) \
+		--prefix=/usr \
+		--infodir=/usr/share/info \
+		--mandir=/usr/share/man
+	echo > $@
+
+build: build-stamp
+build-stamp: configure-stamp 
+	dh_testdir
+	$(MAKE) -C $(DEB_BUILD_DIR) $(build_options)
+	echo > $@
+
+install: install-stamp
+install-stamp: build-stamp
+	dh_testdir
+	dh_testroot
+	dh_clean
+	dh_installdirs
+	mkdir $(DEB_INSTALL_DIR) || true
+	$(MAKE) -C $(DEB_BUILD_DIR) $(install_options) \
+		install DESTDIR=$(DEB_INSTALL_DIR)
+	echo > $@
+	mkdir -p $(DEB_INSTALL_DIR)/usr/share/doc/alice || true
+#	mkdir -p $(DEB_INSTALL_DIR)/usr/share/applications || true
+#	mkdir -p $(DEB_INSTALL_DIR)/usr/share/pixmaps || true
+#	mv $(DEB_INSTALL_DIR)/usr/debian/alice.desktop \
+#	   $(DEB_INSTALL_DIR)/usr/share/applications
+#	mv $(DEB_INSTALL_DIR)/usr/debian/alice.png \
+#	   $(DEB_INSTALL_DIR)/usr/share/pixmaps
+#	rmdir $(DEB_INSTALL_DIR)/usr/debian
+	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/examples
+	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/html
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f configure-stamp build-stamp install-stamp
+	rm -rf $(DEB_BUILD_DIR) $(DEB_INSTALL_DIR)
+	dh_clean
+
+# package-specific targets
+
+binary-indep: build install
+	dh_testdir
+	dh_testroot
+	dh_install --sourcedir=$(DEB_SOURCE_DIR)
+	dh_installdocs $(DEB_SOURCE_DIR)/README
+	dh_installchangelogs
+	dh_strip
+	dh_fixperms
+	dh_installmenu
+	dh_installdeb
+	dh_compress --exclude=*.alc
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary-arch: build install
+
+binary: binary-arch binary-indep
+
+.PHONY: configure build install clean binary-arch binary-indep binary

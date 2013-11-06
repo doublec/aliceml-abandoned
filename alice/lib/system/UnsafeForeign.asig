@@ -1,0 +1,22 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2003
+ *   Leif Kornstaedt, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFE_FOREIGN_COMPONENT =
+sig
+   structure UnsafeForeign :
+   sig
+     val catch : (unit -> 'a) * ('exn -> 'a) -> 'a
+     val exnMessage : 'exn -> string
+   end
+end

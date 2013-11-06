@@ -1,0 +1,131 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Search structure", "The <TT>Search</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature SEARCH
+    structure Search : SEARCH</PRE>
+
+   <P>This section describes the search engines found in the structure
+      <TT>Search</TT>. 
+   </P>
+
+   <P>
+      Constraint problems have to be formulated as a script, a unary
+      function taking as argument a computation space and posting the
+      necessary constraints in this space. This script can then be
+      passed to different search engines, which will return none, one
+      or several solutions of the problem.
+   </P>
+
+   <P>Scripts which create a large number of variables or
+      propagators or scripts for which the search tree is very deep might
+      use too much memory to be feasible. The search engines described
+      in this section feature support for so-called <EM>recomputation</EM>.
+      Recomputation reduces the space requirements for these scripts
+      in that it trades space for time. 
+   </P>
+   <P>Search engines that do not use recomputation create a copy of
+      a computation space in each distribution step.
+      This copy is needed such that the engine is able to follow more
+      than one alternative of a choice. 
+   </P>
+   <P>If, for instance, a single solution search engine finds a
+      solution after 200 distribution steps (i. e. the search tree has
+      a depth of 201), 200 copies are created and stored by the engine. 
+   </P>
+   <P>Recomputation reduces the number of copies needed:
+      Instead of creating a copy in each distribution step,
+      only every <I>n</I>-th distribution step a copy is created.
+      A space for which no copy has been created can be recomputed
+      from a copy located higher above in the search tree by
+      recomputing some distribution steps. In the worst case, <I>n</I>-1
+      distribution steps have to be recomputed. The parameter <I>n</I>
+      is the so-called <EM>recomputation distance</EM>.
+   </P>
+   <P>The following search engines take the recomputation distance
+      as an argument (it is denoted by <I>rcd</I>).
+      A value of <I>2</I> for <I>rcd</I> means that
+      only each second distribution step a copy is created.
+      The value <I>1</I> for <I>rcd</I> means that in each
+      distrbution step a copy is created, that is no recomputation is used.
+      Values less than <I>1</I> mean that none but an initial copy is created:
+      from this initial copy all other spaces are recomputed. 
+   </P>
+   <P>Recomputation can also <EM>reduce</EM> both space and time requirements.
+      Searching a single solution of a script which features a good heuristic
+      (i. e. there are only very few failures) creates copies which are
+      not used. Recomputation avoids this, resulting in improvement
+      with respect to both space and time. 
+   </P>
+   <P>
+     To get an idea on how search engines are programmed in Alice,
+     take a look at the example given
+     <A HREF="space.html">here</A>.
+   </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature SEARCH from "x-alice:/lib/gecode/SEARCH-sig"
+    import structure Search from "x-alice:/lib/gecode/Search"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature SEARCH =
+sig
+    val searchOne : (Space.space -> 'a) -> (Space.space * 'a) option
+    val searchAll : (Space.space -> 'a) -> Space.space list * 'a
+
+    val searchBest :
+        (Space.space -> 'a * (Space.space * Space.space -> unit)) ->
+        (Space.space * 'a) option
+
+    structure Recompute : sig
+      val searchOne : (Space.space -> 'a) * int -> (Space.space * 'a) option
+      val searchAll : (Space.space -> 'a) * int -> Space.space list * 'a
+    end
+end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>searchOne <I>script</I></TT>
+    </DT>
+    <DD>
+      <P>returns the first solution of <I>script</I> obtained by depth-first
+         search. If no solution exists, <TT>NONE</TT> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchAll <I>script</I></TT>
+    </DT>
+    <DD>
+      <P>returns the list of all solutions of <I>script</I> obtained by
+         depth-first search.
+      </P>
+    </DD>
+  
+    <DT>
+      <TT>searchBest (<I>script</I>, <I>better</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the best solution of <I>script</I> obtained by depth-first
+         branch and bound search. If no solution exists, <TT>NONE</TT>
+         is returned. <I>better</I> takes the current space and the
+         space of the previous solution and posts constraints that ensure that the
+         current space has to yield a better solution.
+      </P>
+    </DD>
+  </DL>
+
+  <P>
+    The search engines in the <TT>Recompute</TT> structure take the <I>mrd</I>
+    (maximum recomputation distance) as an additional integer argument.
+    Otherwise, they behave just like the search engines without recomputation.
+  </P>
+  
+<?php footing(); ?>

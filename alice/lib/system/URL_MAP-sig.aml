@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url from "Url"
+
+signature URL_MAP =
+    sig
+	type 'a map
+	type 'a t = 'a map
+
+	datatype 'a lookup_result =
+	    EXISTING of 'a
+	  | NEW of 'a Promise.promise
+
+	val map: (Url.t * 'a) vector -> 'a map
+
+	val lookup: 'a map * Url.t -> 'a option
+	val lookupNew: 'a map * Url.t -> 'a lookup_result
+    end

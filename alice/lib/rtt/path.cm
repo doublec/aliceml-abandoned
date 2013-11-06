@@ -1,0 +1,25 @@
+Group
+	signature NAME
+	structure Name
+	signature LABEL
+	structure Label
+	signature PATH
+	structure Path
+	structure PathSet
+	structure PathMap
+
+	signature PP_PATH
+	structure PPPath
+is
+	../utility/sources.cm
+	pp-misc.cm
+	name.cm
+	label.cm
+
+	PATH-sig.aml
+	Path.aml
+	PathSet.aml
+	PathMap.aml
+
+	PP_PATH-sig.aml
+	PPPath.aml

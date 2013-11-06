@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature MAIN_WINDOW =
+    sig
+	type explorer_state
+	val updateInspectionActionsMenu :
+	    ('a * string) list * ((unit -> unit) -> unit) *
+	    explorer_state option ref -> unit
+	val setStatusMsg : explorer_state option ref * string * bool -> unit
+	val refresh :
+	    ((unit -> unit) -> unit) * explorer_state option ref -> unit
+	val createMainWindow :
+	    ((unit -> unit) -> unit) -> explorer_state option ref
+	val setWindowTitle : string -> unit
+    end

@@ -1,0 +1,48 @@
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+
+structure Gdk =
+struct
+    open Gdk
+end
+
+structure Gtk =
+struct
+    open Gtk
+    type GtkAnchorType = int
+
+    val GtkAnchorTypeToInt = id
+
+    val NULL = Gtk.null ()
+end
+
+structure Canvas =
+struct
+    open GtkCanvas
+
+    val itemCreate = itemNew
+    fun REAL r = DOUBLE r
+
+    val new = fn () => new 0
+end
+
+(* 
+structure Gdk =
+struct
+    open Gdk
+end
+
+structure Gtk =
+struct
+    open Gtk
+end
+
+structure Canvas =
+struct
+    open GtkCanvas
+
+    fun POINTS p = OBJECT (Canvas.makePoints p)
+end
+*)
+

@@ -1,0 +1,28 @@
+Group is
+
+#if defined(NEW_CM)
+	$/ml-yacc-lib.cm
+#else
+	ml-yacc-lib.cm
+#endif
+
+	../../lib/utility/sources.cm
+	../infrastructure/sources.cm
+	../infrastructure/pp-misc.cm
+
+	input-grammar.cm
+
+	LEXER_ERROR-sig.aml
+	MkLexerError.aml
+	PARSING_ERROR-sig.aml
+	ParsingError.aml
+
+	Lexer.lex
+	MkCountPosLexer.aml
+	Parser.grm
+
+	DERIVED_FORMS-sig.aml
+	MkDerivedForms.aml
+
+	PARSING_PHASE-sig.aml
+	MkParsingPhase.aml

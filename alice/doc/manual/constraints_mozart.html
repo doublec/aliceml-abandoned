@@ -1,0 +1,147 @@
+<!--mozart-->
+<?php include("macros.php3"); ?>
+
+<?php heading("Constraints", "constraint\nprogramming") ?>
+
+
+<?php section("introduction", "introduction") ?>
+
+<P>Constraint-based problem solving is a technique for solving hard
+combinatorial problems that can be stated as variables ranging over a finite
+domain of non-negative integers, or sets thereof. Problems in this class range
+from puzzles to real world applications as diverse as scheduling, ware house
+allocation, configuration and placement.</P>
+
+<P>The two basic techniques of constraint programming are <EM>constraint
+propagation</EM> and <EM>constraint distribution</EM>. Constraint propagation
+is an efficient inference mechanism obtained with concurrent propagators
+accumulating information in a <EM>constraint store</EM>. Constraint
+distribution splits a problem into complementary cases once constraint
+propagation cannot advance further. By iterating propagation and distribution,
+propagation will eventually determine the solutions of a problem.</P>
+
+<P>Constraint distribution can easily lead to an exponential growth of the
+number of subproblems to be considered. Fortunately, this potential
+combinatorial explosion can often be contained by combining strong propagation
+mechanisms with problem specific heuristics for selecting distribution
+steps.</P>
+
+<P>The Alice constraint programming features are inherited directly from <A
+href="http::/www.mozart-oz.org">Mozart</A>. We refer to its <A
+href="http://www.mozart-oz.org/documentation/fdt/">Finite Domain Programming</A>
+and <A
+href="http://www.mozart-oz.org/documentation/fst/">Finite Set Programming</A>
+tutorials for a thorough introduction.</P>
+
+
+<?php subsection("introduction-example", "Example") ?>
+
+<P>The following classic puzzle gives a first idea of the combinatorial
+problems constraint programming can solve.</P>
+
+<P>The <EM>Send More Money</EM> problem consists in finding distinct digits for
+the letters <TT>S</TT>, <TT>E</TT>, <TT>N</TT>, <TT>D</TT>, <TT>M</TT>,
+<TT>O</TT>, <TT>R</TT>, <TT>Y</TT> such that <TT>S</TT> and <TT>M</TT> are
+different from zero (no leading zeros) and the equation</P>
+
+<PRE class=code>
+SEND + MORE = MONEY</PRE>
+
+<P>is satisfied. The unique solution of the problem is 9567 + 1085 = 10652.</P>
+
+
+<?php section("overview", "overview") ?>
+
+<P>Alice provides most of the constraint functionality available in
+<A href="http::/www.mozart-oz.org">Mozart</A>, but in a typeful way. For linear
+finite domain constraints there is a convenient library abstraction that allows
+for easy constraint construction and leaves the decision of choosing the best
+constraint to the system.</P>
+
+<P>The constraint programming functionality of Alice is provided through a
+library interface, containing the following <A
+href="components.html">components</A>:</P>
+
+<UL>
+  <LI> <TT>structure <A href="library/fd.html">FD</A></TT> -
+	<A href="#fd">finite domain constraints</A> </LI>
+  <LI> <TT>structure <A href="library/linear.html">Linear</A></TT> -
+	<A href="#fd">linear finite domain constraints</A> </LI>
+  <LI> <TT>structure <A href="library/fs.html">FS</A></TT> -
+	<A href="#fs">finite set constraints</A> </LI>
+  <LI> <TT>structure <A href="library/space.html">Space</A></TT> -
+	<A href="#spaces">spaces</A> </LI>
+  <LI> <TT>structure <A href="library/search.html">Search</A></TT> -
+	predefined search engines </LI>
+</UL>
+
+
+<?php section("fd", "finite domain constraints") ?>
+
+<P><EM>Finite domains constraints</EM> describe the set of values a
+non-negative integer variable may take.</P>
+
+<P>As an example of finite domain constraint solving, consider the
+<TT>SEND + MORE = MONEY</TT> problem. It may be solved in Alice by the following
+program:</P>
+
+<PRE class=code>
+fun money () =
+    let
+	val V as #[S,E,N,D,M,O,R,Y] = vec(8, [0`#9])
+    in
+	distinct V; 
+	post (S `&lt;&gt; `0); 
+	post (M `&lt;&gt; `0); 
+	post (             `1000`*S `+ `100`*E `+ `10`*N `+ D `+
+	                   `1000`*M `+ `100`*O `+ `10`*R `+ E `=
+              `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y ); 
+	distribute (FD.FIRSTFAIL, V); 
+	{S,E,N,D,M,O,R,Y}
+    end</PRE>
+
+<P>Constraint problems have to be formulated as a script, a nullary function
+posting the necessary constraints to the constraint store. The script makes use
+of the <TT>Linear</TT> component to formulate the constraints conveniently. See
+the description of the <A href="library/fd.html"><TT>FD</TT></A> and <A
+href="library/linear.html"><TT>Linear</TT></A> structures for a detailed
+description of the meaning of the above constraints.</P>
+
+<P>Once written, the script can be passed to different search engines. For
+example, we can search for all possible solutions, using the <A
+href="library/search.html"><TT>Search</TT></A> structure:</P>
+
+<PRE class=code>
+inspect (Search.searchAll money)</PRE>
+
+<P>Or we can search for the first solution, using the interactive
+<A href="library/explorer.html">Explorer</A>:</P>
+
+<PRE class=code>
+Explorer.exploreOne money</PRE>
+
+<P>To learn more about constraint programming with Mozart, we refer to the <A
+href="http://www.mozart-oz.org/documentation/fdt/index.html">Mozart
+tutorial</A>.</P>
+
+
+<?php section("fs", "finite set constraints") ?>
+
+<P><EM>Finite set constraints</EM> describe the possible elements that can be
+contained in the set denoted by a set variable.</P>
+
+<P>Alice supports the full range of <A href="library/fs.html">finite set
+constraints</A>, as available in <A
+href="http://www.mozart-oz.org/documentation/fdt/">Mozart
+tutorial</A>.</P>
+
+
+<?php section("spaces", "spaces") ?>
+
+<P>Like Mozart, Alice supports the unique concept of first-class
+<EM>computation spaces</EM> that can be used to program inference engines for
+problem solving. See the <A href="library/space.html"><TT>Space</TT></A>
+component for details.</P>
+
+
+<?php footing() ?>

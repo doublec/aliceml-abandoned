@@ -1,0 +1,49 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive             from "Pervasive"
+import __primitive type int and list     from "ToplevelTypes"
+import __primitive functor   MkVector    from "MkVector"
+import __primitive signature MONO_VECTOR from "MONO_VECTOR-sig"
+
+functor MkMonoVector(type elem
+		     type vector
+		     val maxLen :   int
+		     val length :   vector -> int
+		     val sub :      vector * int -> elem
+		     val tabulate : int * (int -> elem) -> vector
+		     val fromList : elem list -> vector
+		     val toList :   vector -> elem list
+		     val concat :   vector list -> vector) : MONO_VECTOR =
+struct
+    type elem   = elem
+    type vector = vector
+    type t      = vector
+
+    structure Vector = MkVector(type 'a vector  = vector
+				type dst_vector = vector
+				type 'a elem    = elem
+				val maxLen      = maxLen
+				val length      = length
+				val sub         = sub
+				val uSub        = sub
+				val tabulate    = tabulate
+				val fromList    = fromList
+				val toList      = toList
+				val concat      = concat)
+    open Vector
+end

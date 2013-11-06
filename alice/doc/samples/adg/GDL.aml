@@ -1,0 +1,76 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+import signature BACKEND from "BACKEND-sig"
+import structure Depend  from "Depend"
+
+structure Backend :> BACKEND =
+struct
+
+    val name = "GDL (Graph Description Language)"
+	       
+    val program = "http://www.absint.com/aisee/download/index_de.htm"
+
+    val header = "graph: {title: \"Alice Dependency Graph\"\n" ^
+		 "        layoutalgorithm  : minbackward\n" ^
+		 "        node.textcolor   : black\n" ^
+		 "        node.fontname    : \"helvB08\"\n" ^
+		 "        node.height      : 28\n" ^
+		 "        node.borderwidth : 2\n" ^
+		 "        edge.color       : 31\n" ^
+		 "        splines          : yes\n" ^
+		 "        portsharing      : yes\n\n\n\n"
+
+    val fileEnding = ".gdl"
+
+    fun writeFile (nodes, edges, stream) =
+	let
+	    fun node (t, p, f, a) =
+		(TextIO.output (stream, 
+				"node: { title: \"" ^ t ^ "\" label: \"" ^ p ^ 
+				"\\n" ^ f ^ "\" "); 
+		 List.app (fn (a, b) => TextIO.output (stream, a ^ ": " ^ 
+							       b ^ " ")) a;
+		 TextIO.output (stream, "}\n"))
+		
+	    fun edge (s, t, a)    =
+		(TextIO.output (stream, 
+				"edge: { source: \"" ^ s ^ "\" target: \"" ^ 
+				t ^ "\" "); 
+		 List.app (fn (a, b) => TextIO.output (stream, a ^ ": " ^ 
+							       b ^ " ")) a;
+		 TextIO.output (stream, "}\n"))
+	in
+	    List.app node nodes;
+	    TextIO.output (stream, "\n\n");
+	    List.app edge edges;
+	    TextIO.output (stream, "\n}");
+	    TextIO.output (TextIO.stdOut, "\n\ndone.\n")
+	end 
+	
+
+    fun output (inFile, regex, stream) = 
+	let
+	    val path = if OS.Path.isAbsolute inFile
+		       then OS.Path.dir inFile
+		       else OS.Path.mkCanonical 
+				(OS.Path.dir ((OS.FileSys.getDir ()) ^ "\\" ^ 
+					      inFile))
+	    val file = OS.Path.file inFile
+	    val parent = OS.Path.mkCanonical (path ^ "/" ^ file)
+	    val (nodes, edges) = 
+		           Depend.tree (inFile, regex, stream, parent)
+	in
+	    writeFile (nodes, edges, stream)
+	end
+
+end

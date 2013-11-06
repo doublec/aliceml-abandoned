@@ -1,0 +1,266 @@
+<?php include("macros.php3"); ?>
+<?php heading("The VectorSlice structure", "The <TT>VectorSlice</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature VECTOR_SLICE
+    structure VectorSlice : VECTOR_SLICE
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/vector-slice.html"><TT>VectorSlice</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="vector.html"><TT>Vector</TT></A>,
+    <A href="vector-pair.html"><TT>VectorPair</TT></A>,
+    <A href="array-slice.html"><TT>ArraySlice</TT></A>,
+    <A href="mono-vector-slice.html"><TT>MONO_VECTOR_SLICE</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature VECTOR_SLICE =
+    sig
+	type 'a slice
+	type 'a t = 'a slice
+
+	val full :        'a vector -> 'a slice
+	val slice :       'a vector * int * int option -> 'a slice
+	val subslice :    'a slice * int * int option -> 'a slice
+	val vector :      'a slice -> 'a vector
+	val toVector :    'a slice -> 'a vector
+	val toList :      'a slice -> 'a list
+
+	val length :      'a slice -> int
+	val isEmpty :     'a slice -> bool
+	val base :        'a slice -> 'a vector * int * int
+	val sub :         'a slice * int -> 'a
+	val getItem :     'a slice -> ('a * 'a slice) option
+
+	val triml :       int -> 'a slice -> 'a slice
+	val trimr :       int -> 'a slice -> 'a slice
+	val splitAt :     'a slice * int -> 'a slice * 'a slice
+	val splitl :      ('a -> bool) -> 'a slice -> 'a slice * 'a slice
+	val splitr :      ('a -> bool) -> 'a slice -> 'a slice * 'a slice
+	val dropl :       ('a -> bool) -> 'a slice -> 'a slice
+	val dropr :       ('a -> bool) -> 'a slice -> 'a slice
+	val takel :       ('a -> bool) -> 'a slice -> 'a slice
+	val taker :       ('a -> bool) -> 'a slice -> 'a slice
+
+	val concat :      'a slice list -> 'a vector
+	val rev :         'a slice -> 'a vector
+
+	val app :         ('a -> unit) -> 'a slice -> unit
+	val appr :        ('a -> unit) -> 'a slice -> unit
+	val map :         ('a -> 'b) -> 'a slice -> 'b vector
+	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+	val all :         ('a -> bool) -> 'a slice -> bool
+	val exists :      ('a -> bool) -> 'a slice -> bool
+	val find :        ('a -> bool) -> 'a slice -> 'a option
+
+	val appi :        (int * 'a -> unit) -> 'a slice -> unit
+	val appri :       (int * 'a -> unit) -> 'a slice -> unit
+	val mapi :        (int * 'a -> 'b) -> 'a slice -> 'b vector
+	val foldli :      (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+	val foldri :      (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+	val alli :        (int * 'a -> bool) -> 'a slice -> bool
+	val existsi :     (int * 'a -> bool) -> 'a slice -> bool
+	val findi :       (int * 'a -> bool) -> 'a slice -> (int * 'a) option
+
+	val contains :    ''a slice -> ''a -> bool
+	val notContains : ''a slice -> ''a -> bool
+
+	val equal :       ('a * 'a -> bool) -> 'a slice * 'a slice -> bool
+	val collate :     ('a * 'a -> order) -> 'a slice * 'a slice -> order
+
+	val isSorted :    ('a * 'a -> order) -> 'a slice -> bool
+	val sort :        ('a * 'a -> order) -> 'a slice -> 'a vector
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/vector-slice.html"><TT>VectorSlice</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = slice</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>slice</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toVector <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a vector of the elements of <TT><I>sl</I></TT>.
+      Equivalent to <TT>vector <I>sl</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toList <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a list of the elements of <TT><I>sl</I></TT> in order of
+      increasing indices. Equivalent to
+      <TT>Vector.toList (toVector <I>sl</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>rev <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a vector that contains the elements of <TT><I>sl</I></TT>
+      in reverse order. Equivalent to
+      <TT>Vector.rev (toVector <I>sl</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>triml <I>k</I> <I>sl</I></TT> <BR>
+      <TT>trimr <I>k</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>These functions remove <TT><I>k</I></TT> elements from the left
+      (respectively, right) of the slice <TT><I>sl</I></TT>. If
+      <TT><I>k</I></TT> is greater than the size of the slice, an empty
+      slice is returned. Specifically, for a slice
+      <TT><I>sl</I> = slice(<I>vec</I>,<I>i</I>,<I>j</I>)</TT> and
+      <TT><I>k</I></TT> &le; <TT><I>j</I></TT>, we have:</P>
+      <PRE>
+        triml <I>k sl</I> = slice(<I>vec</I>, <I>i</I>+<I>k</I>, <I>j</I>-<I>k</I>)
+        trimr <I>k sl</I> = slice(<I>vec</I>, <I>i</I>, <I>j</I>-<I>k</I>)</PRE>
+      <P>The exception <TT>Subscript</TT> is raised if <TT><I>k</I></TT> < 0.
+      This exception is raised when <TT>triml <I>k</I></TT> or
+      <TT>trimr <I>k</I></TT> is evaluated.</P>
+    </DD>
+
+    <DT>
+      <TT>splitAt (<I>sl</I>, <I>i</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns the pair of slices <TT>(<I>sl1</I>, <I>sl2</I>)</TT>,
+      where <TT><I>sl1</I></TT> contains the first <TT><I>i</I></TT> characters
+      of <TT><I>sl</I></TT> and <TT><I>sl2</I></TT> contains the rest, assuming
+      0 &le; <TT><I>i</I></TT> &le; <TT>size <I>sl</I></TT>. Otherwise, it
+      raises <TT>Subscript</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>splitl <I>f</I> <I>sl</I></TT> <BR>
+      <TT>splitr <I>f</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>These functions scan <TT><I>sl</I></TT> from left to right
+      (respectively, right to left) looking for the first element that does not
+      satisfy the predicate <TT><I>f</I></TT>. They return the pair 
+      <TT>(<I>sl1</I>, <I>sl2</I>)</TT> giving the split of the slice into the
+      span up to that element and the rest. The slice <I>sl1</I> is the left
+      side of the split, <I>sl2</I>the right side.</P>
+    </DD>
+
+    <DT>
+      <TT>dropl <I>f</I> <I>sl</I></TT> <BR>
+      <TT>dropl <I>f</I> <I>sl</I></TT> <BR>
+      <TT>takel <I>f</I> <I>sl</I></TT> <BR>
+      <TT>taker <I>f</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>These routines scan the slice <TT><I>sl</I></TT> for the first
+      element not satisfying the predicate <TT><I>f</I></TT>. The functions
+      <TT>dropl</TT> and <TT>takel</TT> scan left to right (i.e., increasing
+      indices), while <TT>dropr</TT> and <TT>taker</TT> scan from the right.
+      The drop functions drop the maximal subslice consisting of elements
+      satisfying the predicate, while the take functions return the maximal
+      such subslice. These can be defined in terms of the split operations:</P>
+      <PRE>
+        takel <I>f</I> <I>sl</I> = #1(splitl <I>f</I> <I>sl</I>)
+        dropl <I>f</I> <I>sl</I> = #2(splitl <I>f</I> <I>sl</I>)
+        taker <I>f</I> <I>sl</I> = #2(splitr <I>f</I> <I>sl</I>)
+        dropr <I>f</I> <I>sl</I> = #1(splitr <I>f</I> <I>sl</I>)</PRE>
+    </DD>
+
+    <DT>
+      <TT>appr <I>f</I> <I>sl</I></TT> <BR>
+      <TT>appri <I>f</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>app</TT> and <TT>appi</TT>, but apply <TT><I>f</I></TT> in
+      right to left order (i.e., decreasing indices). The expression
+      <TT>appr <I>f sl</I></TT> is equivalent to:</P>
+      <PRE>
+        appri (<I>f</I> o #2) <I>sl</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>alli <I>f</I> <I>sl</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>.
+      The index of each element is passed to <TT><I>f</I></TT> as an additional
+      argument. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>sl</I>    = alli (<I>f</I> o #2) <I>sl</I>
+        exists <I>f</I> <I>sl</I> = existsi (<I>f</I> o #2) <I>sl</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>contains <I>sl</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      slice <TT><I>sl</I></TT>; otherwise <TT>false</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>notContains <I>sl</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      slice <TT><I>sl</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>sl a</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>eq</I> (<I>sl1</I>, <I>sl2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an equality function on slices given an equality on the
+      element type.</P>
+    </DD>
+
+    <DT>
+      <TT>isSorted <I>f</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> iff the elements in <TT><I>sl</I></TT> are sorted
+      with respect to the ordering function <TT><I>f</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>sort <I>f</I> <I>sl</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a vector that contains the same elements as
+      <TT><I>sl</I></TT>, but sorted with respect to the ordering function
+      <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
+      elements.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

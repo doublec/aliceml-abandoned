@@ -1,0 +1,10 @@
+signature READ_WRITE_LOCK =
+sig
+    type lock
+    type t = lock
+    
+    val lock : unit -> lock
+
+    val sync : lock -> ('a -> 'b) -> ('a -> 'b)
+    val syncWrite : lock -> ('a -> 'b) -> ('a -> 'b)
+end

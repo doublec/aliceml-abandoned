@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature NAME =
+sig
+    datatype name = ExId of string | InId
+    type t        = name
+
+    val compare :	name * name -> order
+    val hash :		name -> int
+    val toString :	name -> string
+end

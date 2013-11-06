@@ -1,0 +1,115 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestPickle :> TESTSUITE = (* the pickle test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    signature SIG =
+    sig
+	val x : int
+	val g : unit -> unit
+    end
+
+    structure Normal = 
+    struct 
+      val x = 5
+      fun g () = ()
+    end
+
+
+    structure WithFutures =
+    struct
+      val x = lazy 5
+      fun g () = ()
+    end
+
+    structure Sited =
+    struct
+      val x = lazy 5
+      val str = TextIO.openIn "Makefile"
+      fun g () = ()
+    end
+(*
+-------------------------------------------
+*)
+
+
+    fun testExtension () =
+	Test.test (fn x => x = Component.extension) Pickle.extension
+
+
+    fun testSave () =
+	let
+	    val packages = [(pack Normal : SIG, "normal", true),
+			    (pack WithFutures : SIG, "withf", true),
+			    (pack Sited : SIG, "sited", false)]
+	    
+	    fun t pps = 
+		List.foldl (fn ((p, n, b), x) => 
+			     ((Pickle.save ("test/suite/" ^ n ^ ".alc", p); b)
+			      handle _ => not b) andalso x) true pps
+	in 
+	    Test.test t packages;
+	    Test.test (fn p => (Pickle.save ("notexisting/notexisting", p); 
+				false) 
+			              handle _ => true) (#1 (List.hd packages))
+	end
+
+    fun testLoad () =
+	let
+	    val packages = [(pack Normal : SIG, "normal", true),
+			    (pack WithFutures : SIG, "withf", true),
+			    (pack Sited : SIG, "sited", false)]
+	    val pLost = pack Normal : SIG
+	    val _ = Pickle.save ("test/suite/lost", pLost)
+	    val _ = OS.FileSys.remove ("test/suite/lost")
+	    
+	    fun t pps = 
+		List.foldl (fn ((p, n, b), x) => 
+			       if b 
+			       then ((Pickle.save ("test/suite/" ^ 
+						   n ^ ".alc", p);
+				      Pickle.load ("test/suite/" ^ 
+						   n ^ ".alc"); b)
+				     handle _ => not b)
+			       else ((Pickle.save ("test/suite/" ^ 
+						   n ^ ".alc", p)
+				                            handle _ => ();
+				      Pickle.load ("test/suite/" ^ 
+						   n ^ ".alc"); b)
+				     handle _ => not b) andalso x) true pps
+
+	    fun cleanUp () =
+		(OS.FileSys.remove "test/suite/normal.alc";
+		 OS.FileSys.remove "test/suite/sited.alc";
+		 OS.FileSys.remove "test/suite/withf.alc"; true)
+	in 
+	    Test.test t packages;
+	    Test.test (fn s => (Pickle.load s; false) handle _ => true) 
+		                                            "lost";
+	    Test.test (fn s => (Pickle.load s; false) handle _ => true) 
+		                                            "notexisting/not";
+	    Test.test cleanUp ()
+	end
+
+
+    val suite = ("Pickle", [("extension", testExtension),
+			    ("save", testSave),
+			    ("load", testLoad)])
+end

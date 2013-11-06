@@ -1,0 +1,125 @@
+(* -*- sml -*- *)
+
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* This file is executed on startup of interactive toplevel. *)
+(*
+import signature ORDERED from "x-alice:/lib/data/ORDERED-sig"
+import signature HASHABLE from "x-alice:/lib/data/HASHABLE-sig"
+import signature STAMP from "x-alice:/lib/data/STAMP-sig"
+import functor MkStamp from "x-alice:/lib/data/MkStamp"
+import signature GLOBAL_STAMP from "x-alice:/lib/data/GLOBAL_STAMP-sig"
+import structure GlobalStamp from "x-alice:/lib/data/GlobalStamp"
+import signature STACK from "x-alice:/lib/data/STACK-sig"
+import structure Stack from "x-alice:/lib/data/Stack"
+import signature STREAM from "x-alice:/lib/data/STREAM-sig"
+import structure Stream from "x-alice:/lib/data/Stream"
+import signature SET from "x-alice:/lib/data/SET-sig"
+import signature MAP from "x-alice:/lib/data/MAP-sig"
+import functor MkRedBlackSet from "x-alice:/lib/data/MkRedBlackSet"
+import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import signature IMP_SET from "x-alice:/lib/data/IMP_SET-sig"
+import signature IMP_MAP from "x-alice:/lib/data/IMP_MAP-sig"
+import functor MkRedBlackImpSet from "x-alice:/lib/data/MkRedBlackImpSet"
+import functor MkRedBlackImpMap from "x-alice:/lib/data/MkRedBlackImpMap"
+import functor MkHashImpSet from "x-alice:/lib/data/MkHashImpSet"
+import functor MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+*)
+
+import structure Print' from "x-alice:/lib/system/Print"
+(*import signature CONFIG from "x-alice:/lib/system/CONFIG-sig"
+import signature HTTP from "x-alice:/lib/system/HTTP-sig"
+import signature HTTP_CLIENT from "x-alice:/lib/system/HTTP_CLIENT-sig"
+import signature HTTP_SERVER from "x-alice:/lib/system/HTTP_SERVER-sig"
+import signature SOCKET from "x-alice:/lib/system/SOCKET-sig"
+import signature STORE from "x-alice:/lib/system/STORE-sig"
+import structure Config from "x-alice:/lib/system/Config"
+import structure Http from "x-alice:/lib/system/Http"
+import structure HttpClient from "x-alice:/lib/system/HttpClient"
+import structure HttpServer from "x-alice:/lib/system/HttpServer"
+import structure Socket from "x-alice:/lib/system/Socket"
+import structure Store from "x-alice:/lib/system/Store"
+*)
+(*
+import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"
+*)
+import structure Remote from "x-alice:/lib/distribution/Remote"
+(*
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+*)
+(* import signature INSPECTOR from "x-alice:/lib/tools/INSPECTOR-sig" *)
+(* import signature EXPLORER from "x-alice:/lib/tools/EXPLORER-sig" *)
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+(*import structure Explorer from "x-alice:/lib/tools/Explorer"
+*)
+
+import val use : string -> unit
+       val reset : unit -> unit
+       val exit : unit -> 'a from "x-alice-toplevel:/Ops"
+
+import val it : unit -> unit from "x-alice:/tools/ToplevelIt"
+
+(* We need to repeat overloading declarations here,
+   because mere reliance on reexport-import will default the types! *)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op ~ : 'num -> 'num = (Int.~, IntInf.~, Word.~, Word8.~, Word32.~, Real.~)
+__overload (int, IntInf.t, real) as 'realint
+    op abs : 'realint -> 'realint = (Int.abs, IntInf.abs, Real.abs)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op + : 'num * 'num -> 'num =
+    (Int.+, IntInf.+, Word.+, Word8.+, Word32.+, Real.+)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op - : 'num * 'num -> 'num =
+   (Int.-, IntInf.-, Word.-, Word8.-, Word32.-, Real.-)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
+    op * : 'num * 'num -> 'num =
+    (Int.*, IntInf.*, Word.*, Word8.*, Word32.*, Real.* )
+__overload (int, IntInf.t, word, Word8.t, Word32.t) as 'wordint
+    op div : 'wordint * 'wordint -> 'wordint =
+    (Int.div, IntInf.div, Word.div, Word8.div, Word32.div)
+__overload (int, IntInf.t, word, Word8.t, Word32.t) as 'wordint
+    op mod : 'wordint * 'wordint -> 'wordint =
+    (Int.mod, IntInf.mod, Word.mod, Word8.mod, Word32.mod)
+__overload (real) as 'real
+    op / : 'real * 'real -> 'real = (Real./)
+
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
+    op < : 'numtxt * 'numtxt -> bool =
+    (Int.<, IntInf.<, Word.<, Word8.<, Word32.<, Real.<, Char.<, String.<)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
+    op > : 'numtxt * 'numtxt -> bool =
+    (Int.>, IntInf.>, Word.>, Word8.>, Word32.>, Real.>, Char.>, String.>)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
+    op <= : 'numtxt * 'numtxt -> bool =
+    (Int.<=, IntInf.<=, Word.<=, Word8.<=, Word32.<=,
+     Real.<=, Char.<=, String.<=)
+__overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
+    as 'numtxt
+    op >= : 'numtxt * 'numtxt -> bool =
+    (Int.>=, IntInf.>=, Word.>=, Word8.>=, Word32.>=,
+     Real.>=, Char.>=, String.>=)
+
+__overload 'a printVal :  'a -> unit = Print'.printVal'
+__overload 'a printType : 'a -> unit = Print'.printType'
+__overload 'a inspect : 'a -> unit = Inspector.inspectVal
+
+val use = use
+val reset = reset
+val exit = exit

@@ -1,0 +1,27 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Fast : REGRESSION =
+struct
+
+val name = "fast"
+
+val ok = SOME "fast.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+fun loop (left: Int.int): unit =
+	case Int.compare (left, 0) of
+	LESS => ()
+	| EQUAL => ()
+	| GREATER => loop (left + ~1)
+
+val _ = loop 100000000
+
+val _ = concatResult "All ok\n"
+
+val result = !result
+
+end

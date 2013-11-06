@@ -1,0 +1,18 @@
+import structure Protocol from "../common/Protocol"
+
+signature LOADER =
+sig
+    exception Error of string
+
+    type start_pos = Protocol.direction * Protocol.pos
+
+    type level = 
+	{ arena: Protocol.arena_info,
+	 walls: Protocol.pos list,
+	 startPos: start_pos vector,
+	 cookiePos: Protocol.pos vector,
+	 exitPos: Protocol.pos
+	 }
+			   
+    val load : string -> level 	(* Error, IO.Io *)
+end

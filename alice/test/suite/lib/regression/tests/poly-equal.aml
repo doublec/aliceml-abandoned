@@ -1,0 +1,22 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure PolyEqual : REGRESSION =
+struct
+
+val name = "poly-equal"
+
+val ok = SOME "poly-equal.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val _ =
+   concatResult(if ([1, 2, 3], [4, 5]) = ([1, 2, 3], [4])
+	    then "true\n"
+	 else "false\n")
+
+val result = !result
+
+end

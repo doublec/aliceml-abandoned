@@ -1,0 +1,106 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Explorer structure", "The <TT>Explorer</TT> structure"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis") ?>
+  <PRE>
+    signature EXPLORER
+    structure Explorer : Explorer</PRE>
+
+  <P>
+    The <I>Alice Explorer</I> is a graphical tool of the Alice programming
+    environment. It can run scripts and display the explored search trees.
+    It can also display the information in the constraint stores associated
+    with the nodes of the search tree.
+  <P>
+    For example, the expression
+    <PRE>Explorer.exploreAll money</PRE>
+  </P>
+  <P>
+    tells the Explorer to run the script <TT>money</TT> and explore the
+    entire search tree. The Explorer will pop up a window
+    and display the explored nodes of the search tree.
+    Choice nodes appear as blue circles, failure nodes as red boxes,
+    and solution nodes as green diamonds.
+    Fully explored subtrees not containing solution nodes are collapsed
+    into a single red triangle. 
+  </P>
+  <P>See also:
+    <A href="search.html"><TT>Search</TT></A>,
+    <A href="space.html"><TT>Space</TT></A>,
+    <A href="fd.html"><TT>FD</TT></A>,
+    <A href="linear.html"><TT>Linear</TT></A>,
+    <A href="fs.html"><TT>FS</TT></A>
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature EXPLORER from "x-alice:/lib/tools/EXPLORER-sig"
+    import structure Explorer from "x-alice:/lib/tools/Explorer"</PRE>
+
+<?php section("interface", "interface"); ?>
+
+  <PRE>
+    signature EXPLORER =
+    sig
+	val exploreOne : (unit -> 'a) -> unit
+	val exploreOneBAB : (unit -> 'a) * ('a * 'a -> unit) -> unit
+	val exploreAll : (unit -> 'a) -> unit
+	val exploreAllBAB : (unit -> 'a) * ('a * 'a -> unit) -> unit
+	val exploreBest : (unit -> 'a) * ('a * 'a -> unit) -> unit
+    end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>exploreOne <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>initializes the Explorer with script <I>p</I> and explores the
+         search tree up to the first solution.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreOneBAB (<I>p</I>, <I>o</I>)</TT>
+    </DT>
+    <DD>
+      <P>initializes the Explorer with script <I>p</I> and explores the
+         search tree up to the first solution. The explorer runs in branch
+         and bound mode using order <I>o</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreAll <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>initializes the Explorer with script <I>p</I> and starts exploration
+         of the entire search tree.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreAllBAB (<I>p</I>, <I>o</I>)</TT>
+    </DT>
+    <DD>
+      <P>initializes the Explorer with script <I>p</I> and starts exploration
+         of the entire search tree. The explorer runs in branch
+         and bound mode using order <I>o</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exploreBest (<I>p</I>, <I>o</I>)</TT>
+    </DT>
+    <DD>
+      <P>initializes the Explorer with script <I>p</I> and starts exploration
+         of the entire search tree following a branch and bound strategy.
+         Best solution search is performed with respect to order <I>o</I>. 
+      </P>
+    </DD>
+  </DL>
+
+<?php footing(); ?>

@@ -1,0 +1,18 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IntermediateGrammar from "IntermediateGrammar"
+
+signature CHECK_INTERMEDIATE =
+sig
+    val check : IntermediateGrammar.t -> unit
+end

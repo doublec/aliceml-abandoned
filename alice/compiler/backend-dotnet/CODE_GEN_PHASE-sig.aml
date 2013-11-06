@@ -1,0 +1,48 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    signature FLAT_GRAMMAR
+from "../backend-common/FLAT_GRAMMAR-sig"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    signature IL
+from "IL-sig"
+
+import
+    structure IL
+from "IL"
+
+signature CODE_GEN_PHASE =
+    sig
+	structure C: CONTEXT = EmptyContext
+	structure I: FLAT_GRAMMAR = FlatGrammar
+	structure O: IL = IL
+
+	val translate: Source.desc * C.t * I.component -> C.t * O.t
+    end

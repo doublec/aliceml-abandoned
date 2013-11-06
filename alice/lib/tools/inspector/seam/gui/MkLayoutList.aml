@@ -1,0 +1,229 @@
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Common        from "../Common"
+import structure AbsTree       from "../AbsTree"
+import structure GrTypes       from "GrTypes"
+import signature GR_TREE       from "GR_TREE-sig"
+import signature LAYOUT_LIST   from "LAYOUT_LIST-sig"
+import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
+import signature UPDATE        from "UPDATE-sig"
+
+functor MkLayoutList (Driver : CANVAS_DRIVER)
+		     (GrTree : GR_TREE) 
+		     (Update : UPDATE) :> LAYOUT_LIST =
+struct
+
+  datatype tree = datatype GrTypes.tree
+
+  val undefinedLE = Common.undefined "List abstree element."
+  val undefinedTE = Common.undefined "List tree element."
+
+  val emptyArray = Array.array (0, undefinedLE)
+
+  (* Find the length of the list and check if it is complete. *)
+  fun getListArray (AbsTree.Container {kids, ...}, flag) = (kids, flag)
+    | getListArray _ = assert false
+
+  fun getListInfo abstree =
+      case abstree of 
+	(AbsTree.Simple _) => (emptyArray, true) (* It is the empty list. *)
+      | (AbsTree.Container {desc, limit, kids}) =>
+	(case desc of
+             AbsTree.Value (tt, vv, (AbsTree.Future _) as ff) =>
+	         (* Tail replaced by a future. *)
+	         let val desc     = AbsTree.ListTail (tt, Reflect.reify vv, ff)
+		     val abstree' = AbsTree.Container {desc, limit, kids}
+		 in
+	             (Array.array (1, abstree'), false)
+		 end
+	   | AbsTree.Value _ => (kids, false) (* It is an uncomplete list. *)
+           | _ => assert false)
+	
+      (* Then it must be a complete list with brackets. *)
+      | (AbsTree.Concat {tree, ...}) => getListArray (tree, true)
+      | _ => assert false
+
+  (* Add an open bracket before the given tree. *)
+  fun addOpenBracket (tree, realgroup) =
+    case tree of
+      Container {parent = ref parent, index, group, delta, depth, kids, ...} =>
+        let
+          val xpos = Int.max (0, !delta)
+
+          val prefix = AbsTree.openSBracketL
+          val (prefix, xpos1, pheight) = GrTree.fromTexts (realgroup, xpos,
+                                                           0, prefix, [])
+          val prefixWidth = xpos1 - xpos
+
+	  val index = !index
+          val tree' = Prefix {group, parent, depth, prefix, tree = ref tree,
+			      index, delta = ref (!delta),
+                              orient = AbsTree.orientSon, prefixWidth,
+                              prefixHeight = pheight}
+        in
+	  if index < 0
+	    then Common.warning "MkLayoutList : added hidden brackets.\n"
+            else () ;
+          Update.substitute (tree, tree', parent, index) ;
+          delta := xpos
+        end
+
+    | _ => assert false
+
+  fun mapSuffix suffix =
+    List.map (fn (l, orient, depth) => (GrTypes.mapSuffix l, orient, depth))
+             suffix
+
+  fun destroySuffix (s, _, _) = List.app (fn (ob, _) => Gtk.Object.destroy ob) s
+
+  (* Replace the last suffix of the given object. *)
+  fun replaceLastSuffix (tree, newSuffix) =
+    case tree of
+      Container {kids, ...} =>
+        let
+          val size = Array.length (!kids)
+          val last = Array.sub (!kids, size - 1)
+        in
+          replaceLastSuffix (last, newSuffix)
+        end
+    | Prefix {tree, ...} => replaceLastSuffix (!tree, newSuffix)
+    | Simple {textItem, parent, index, delta, desc, depth, width, height,
+              content, suffix, ...} =>
+        let
+	  val xpos = Int.max (0, !delta)
+          val suffixTail = case suffix of [] => assert false
+                                        | _ :: tl => tl
+	  val _ = List.app destroySuffix suffix
+          val suffixTail = mapSuffix suffixTail
+          val suffixes = suffixTail @ newSuffix
+          val group = Driver.getParent textItem
+          val (suffix, suffixWidth, height) =
+            GrTree.makeSuffix (group, suffixes, xpos + width, height)
+
+          val subtree = Simple {textItem, delta, desc, parent, index, depth,
+                                width, height, content, suffix, suffixWidth}
+        in
+          Update.substitute (tree, subtree, parent, index)
+        end
+
+  (* Replace the last suffix of the given tree by a coma. *)
+  fun colonToComa depth =
+    let
+      val comma = [(AbsTree.commaL, AbsTree.orientSonStrict, depth + 1)]
+    in
+      fn (tree, _) => replaceLastSuffix (tree, comma)
+    end
+
+  (* Replace the last suffix of the given tree by a coma,
+   * except for the last one which becomes a close bracket. *)
+  fun colonToComaLast (lastIndex, depth, extraSuffix) =
+    let 
+      val newSuffix = (AbsTree.closeSBracketL, AbsTree.orientSon, depth)
+                      :: extraSuffix
+      val comma = [(AbsTree.commaL, AbsTree.orientSonStrict, depth + 1)]
+    in
+      fn (tree, index) =>
+      if index = lastIndex
+        then replaceLastSuffix (tree, newSuffix)
+        else replaceLastSuffix (tree, comma)
+    end
+
+  (* Update the separators of the given tree until the given index. *)
+  fun updSeparators (tree, index, emptyList, depth, extraSuffix) =
+    case tree of
+      Container {kids, ...} =>
+        let val f = if emptyList
+                    then colonToComaLast (index - 1, depth, extraSuffix)
+                    else colonToComa depth
+        in
+          Common.app {src = !kids, isrc = 0, length = index, f}
+        end
+
+    | _ => assert false
+
+  (* Replace the given tree (which must represent the end of the list)
+   * by the given abstree. *)
+  fun replaceListTail (abstree, parent, index, tree) =
+      let
+	val _ = assert index >= 0
+	val (listArray, complete) = getListInfo abstree
+      in
+	(GrTypes.destroy tree ;
+         
+	 case parent of
+	  Container {parent = grandpa, kids, depth, mode, group, delta, ...} =>
+	  let 
+	    (* Build the new container using old one and new abstree. *)
+	    val kidsa = !kids
+	    val size  = Array.length kidsa
+	    val _ = assert index = size - 1
+	    val listSize = Array.length listArray
+			   
+	    (* The new array, initialised with kidsa. *)
+	    val newSize = size + listSize - 1
+	    val newarray =
+		if listSize = 1 then kidsa
+		else Common.copy {src = kidsa, length = index,
+				  dst = Array.array (newSize, undefinedTE) }
+		     
+	    val lastSuf = GrTypes.getSuffixes (Array.sub (kidsa, index), depth)
+	    val depth' = depth + 1
+	    val xpos  = Int.max (!delta, 0)
+	    val delta = 0
+	    val groupX = case !mode of
+			   GrTypes.Horizontal => 0
+			 | GrTypes.Vertical _ => xpos
+			 | GrTypes.AlwaysVertical => xpos
+
+	    (* The group we use changes if this tree is folded. *)
+	    val _ = assert index > 0
+	    val firstKidGroup = GrTypes.getGroup (Array.sub (kidsa, 0))
+	    val realParentGroup = Driver.getParent firstKidGroup
+	    val group =
+		if realParentGroup = group then group
+		else (* We must be in a folded container. *)
+		  (case !grandpa of
+		     Container {group, index, ...} =>
+		            (assert (!index) = ~1 ;
+		             assert group = realParentGroup ;
+			     group)
+			 | _ => assert false)
+
+            (* Add new elements to the new array. *)
+	    fun mapAbsTree (abstree, idst) =
+		let
+		  val index = idst
+		  val suffixes = if idst = newSize - 1
+                                 then if complete
+                                      then (AbsTree.closeSBracketL,
+                                            AbsTree.orientSon, depth)
+                                        :: lastSuf
+                                      else lastSuf
+                                 else [] 
+		  val group = Driver.newGroupX (group, groupX)
+		  val (tree, _,_) =
+		      GrTree.fromAbsTree {group, delta, abstree, parent, index,
+					  depth = depth', suffixes, id = NONE}
+		  val isCon = GrTree.Layout.isContainer tree
+		in
+		  GrTree.Layout.replaced (parent, index, false, isCon) ;
+		  tree
+		end
+	  in
+	    kids := newarray ;
+	    Common.map {src = listArray, isrc = 0,
+			dst = newarray, idst = index,
+			length = listSize, f = mapAbsTree} ;
+
+            (* If the list is complete, we have to update the separators
+             * and add some brackets. (great) *)
+            if complete
+              then (addOpenBracket (parent, group) ;
+                    updSeparators(parent, index, listSize = 0, depth, lastSuf))
+            else ()
+	  end
+
+	| _ => assert false)
+      end
+
+end

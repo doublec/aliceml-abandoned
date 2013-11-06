@@ -1,0 +1,714 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Channel from "x-alice:/lib/data/Channel"
+import structure FileDialog from "FileDialog"
+import structure Config from "Config"
+import structure BufferHighlight from "BufferHighlight"
+import structure BufferAnnotate from "BufferAnnotate"
+
+structure Buffer =
+   struct
+      open Config
+
+      structure Map = MkHashImpMap(Int)
+
+      datatype undo = INSERT of (int * int)
+                    | DELETE of (int * string)
+                    | WAIT_INSERT of (int * int)
+                    | WAIT_DELETE of (int * string)
+	            | BEGIN_ACTION
+	            | END_ACTION
+	            | SAVE_MARKER
+
+      type buffer = {id: int,
+                     file: string option ref,
+		     timeStamp: Time.time ref,
+                     fileLabel: Gtk.object,
+                     view: Gtk.object,
+                     buf: Gtk.object,
+                     tags: tags,
+		     annotTags: (Gtk.object * (string * string * string)) vector ref,
+                     undo: undo list ref,
+                     lastSearchPos: int ref,
+		     highlightActive : bool ref,
+		     highlight: int option Channel.channel}
+
+      val bufferMap : buffer Map.map = Map.map()
+
+      fun shortName s = Gtk.latin1ToUtf8 (OS.Path.file s)
+
+      (* Concurrent highlighting *)
+
+      val delay = Time.fromMilliseconds(Int.toLarge 400)
+      val never = Promise.future(Promise.promise())
+      val infinity = Option.getOpt(Int.maxInt, 1073741823)
+
+      fun highlightGuard'(buf, plaintag, chan, signal, offset, active) =
+	  case Future.awaitEither(spawn Channel.peek chan, signal)
+	   of FST NONE => () (* buffer closed *)
+	    | FST(SOME offset') =>  (* wakeup by change before delay is over *)
+	         (Channel.pop chan;
+		  highlightGuard'(buf, plaintag, chan, Future.alarm delay, Int.min(offset,offset'), active))
+	    | SND _ => (* delay over *)
+	      if !active then
+	      let
+		  val inter = spawn Channel.peek chan
+		  val kill = ref false
+	      in
+		  spawn (await inter; kill := true);
+		  BufferHighlight.highlightOffset(buf, offset, plaintag, kill);
+		  highlightGuard'(buf, plaintag, chan, never, infinity, active)
+	      end
+	      else
+                  highlightGuard'(buf, plaintag, chan, never, infinity, active)
+
+      fun highlightGuard(buf, plaintag, chan, active) =
+          highlightGuard'(buf, plaintag, chan, never, infinity, active)
+
+      (* Cursor *)
+      fun getCursorIter buf =
+          let
+              val cursor = Gtk.TextBuffer.getInsert buf
+              val iter = Gtk.TextIter.new()
+          in
+              Gtk.TextBuffer.getIterAtMark(buf, iter, cursor);
+              iter
+          end
+
+      fun scrollToCursor id =
+          let
+              val {view,buf,...} = Map.lookupExistent(bufferMap, id)
+	  in
+              Gtk.TextView.scrollToMark(view, Gtk.TextBuffer.getInsert buf,
+                                       0.1, false, 0.0, 0.0)
+	  end
+
+      fun selectRange(buf, startiter, enditer) =
+	  (Gtk.TextBuffer.placeCursor(buf, enditer);
+	   Gtk.TextBuffer.moveMarkByName(buf, "selection_bound", startiter))
+
+      fun modifiedChanged id _ =
+          let
+              val {fileLabel,file,buf,...} = Map.lookupExistent(bufferMap, id)
+              val fileName = shortName (Option.getOpt(!file, "New file "^Int.toString id))
+          in
+              if Gtk.TextBuffer.getModified buf then
+                  Gtk.Label.setText(fileLabel, fileName^"*")
+              else
+                  Gtk.Label.setText(fileLabel, fileName)
+          end
+
+      fun deleteText' (id, (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt])) =
+          let
+              val {undo,highlight,...} = Map.lookupExistent(bufferMap, id)
+          in
+              case (!undo) of
+                  ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
+                  undo := ur
+                | _ =>
+                  undo := DELETE(off, txt) :: (!undo);
+	      Channel.put (highlight, SOME off)
+          end
+        | deleteText' _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: delete\n")
+
+      fun deleteText id args = Lock.sync Gtk.lock deleteText' (id, args)
+
+      fun findStartOfLine iter =
+	  if Gtk.TextIter.getChar iter = Char.ord #"\n" then
+	      ignore (Gtk.TextIter.forwardChar iter)
+	  else if Gtk.TextIter.isStart iter then
+	      ()
+	  else
+	      (Gtk.TextIter.backwardChar iter; findStartOfLine iter)
+
+      fun findNonSpace iter =
+	  let
+	      val c = Char.chr (Gtk.TextIter.getChar iter)
+	  in
+	      if c = #" " orelse c = #"\t" then
+	          (Gtk.TextIter.forwardChar iter; findNonSpace iter)
+	      else ()
+	  end
+
+      fun insertText' (id, (buf,[Gtk.INT off, Gtk.STRING txt, Gtk.INT length])) =
+          let
+              val {undo,highlight,...} = Map.lookupExistent(bufferMap, id)
+          in
+              case (!undo) of
+                  ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
+                  undo := ur
+                | _ =>
+                  undo := INSERT(off, off+length) :: (!undo);
+	      Channel.put (highlight, SOME off);
+	      if txt <> "\n" orelse off = 0 then () else
+	      let
+		  val startiter = Gtk.TextIter.new()
+		  val _ = Gtk.TextBuffer.getIterAtOffset(buf, startiter, off-1)
+		  val _ = findStartOfLine startiter
+		  val enditer = Gtk.TextIter.copy startiter
+		  val _ = findNonSpace enditer
+		  val indent = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
+	      in
+		  Gtk.TextBuffer.getIterAtOffset(buf, startiter, off+1);
+		  Gtk.TextBuffer.insert(buf, startiter, indent, ~1)
+	      end
+          end
+        | insertText' _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: insert\n")
+
+      fun insertText id args = Lock.sync Gtk.lock insertText' (id,args)
+
+      fun userAction (id,begin) _ =
+          let
+              val {undo,...} = Map.lookupExistent(bufferMap, id)
+	      val action = if begin then BEGIN_ACTION else END_ACTION
+          in
+	      undo := action::(!undo)
+	  end
+
+      fun getSelection id =
+          let
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
+	      val (txt,equal) = Lock.sync Gtk.lock
+		  (fn () =>
+		   let
+		       val startiter = Gtk.TextIter.new()
+		       val enditer = Gtk.TextIter.new()
+		   in
+		       Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer);
+		       (Gtk.TextBuffer.getText(buf,startiter,enditer,false),
+			Gtk.TextIter.equal(startiter, enditer))
+		   end) ()
+          in
+              if equal then NONE else SOME txt
+          end
+
+      exception Off = BufferAnnotate.Off
+      val moveToCol = BufferAnnotate.moveToCol
+
+
+      fun getColFromOffset(iter, 0, col) = col
+	| getColFromOffset(iter, offset, col) =
+	  let
+	      val c = Gtk.TextIter.getChar iter
+	  in
+	      if c = Char.ord #"\t" then
+		  let
+		      val tabjump = 8 - col mod 8
+		  in
+		      Gtk.TextIter.forwardChar iter;
+		      getColFromOffset(iter, offset-1, col+tabjump)
+		  end
+	      else
+		  (Gtk.TextIter.forwardChar iter;
+		   getColFromOffset(iter, offset-1, col+1))
+	  end
+      fun getColumn iter =
+	  let
+	      val line = Gtk.TextIter.getLine iter
+	      val offset = Gtk.TextIter.getLineOffset iter
+	      val iter' = Gtk.TextIter.copy iter
+	  in
+	      Gtk.TextIter.setLineOffset(iter', 0);
+	      getColFromOffset(iter', offset, 0)
+	  end
+      fun getLine iter = Gtk.TextIter.getLine iter + 1
+
+      fun indentString n =
+	  if !Config.useTabs
+	  then String.tabulate(n div 8, Fn.const #"\t") ^
+	       String.tabulate(n mod 8, Fn.const #" ")
+	  else String.tabulate(n, Fn.const #" ")
+
+      fun findNonSpace iter =
+          let
+              val c = Gtk.TextIter.getChar iter
+          in
+              if c = ord #" " orelse c = ord #"\t"
+              then (Gtk.TextIter.forwardChar iter; findNonSpace iter)
+              else ()
+          end
+
+      fun doIndent(buf, line, endline, indent) =
+	  if line = endline then ()
+	  else
+	      let
+		  val startiter = Gtk.TextIter.new()
+		  val _ = Gtk.TextBuffer.getIterAtLine(buf, startiter, line)
+		  val enditer = Gtk.TextIter.copy startiter
+		  val _ = findNonSpace enditer
+		  val col = getColumn enditer
+		  val col' = if indent then col+1 else Int.max(0, col-1)
+	      in
+		  Gtk.TextBuffer.delete(buf, startiter, enditer);
+		  Gtk.TextBuffer.getIterAtLine(buf, startiter, line);
+		  Gtk.TextBuffer.insert(buf, startiter, indentString col', ~1);
+		  doIndent(buf, line+1, endline, indent)
+	      end
+	  
+      fun selectWholeLines buf =
+	  let
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
+	  in
+	      Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer);
+	      Gtk.TextIter.setLineOffset(startiter, 0);
+	      Gtk.TextIter.getLineOffset enditer = 0
+	      orelse Gtk.TextIter.forwardLine enditer;
+	      selectRange(buf, startiter, enditer)
+	  end
+
+      fun indentSelection(id, indent) =
+	  Lock.sync Gtk.lock
+	  (fn () =>
+	  let
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
+	      val _ = selectWholeLines buf
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
+	      val _ = Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer)
+	      val startline = Gtk.TextIter.getLine startiter
+	      val endline = Gtk.TextIter.getLine enditer
+	      val endline = if Gtk.TextIter.getLineOffset enditer = 0
+			    then endline else endline+1
+	  in
+	      Gtk.TextBuffer.beginUserAction buf;
+	      doIndent(buf, startline, endline, indent);
+	      selectWholeLines buf;
+	      Gtk.TextBuffer.endUserAction buf
+	  end) ()
+
+      fun setUndoSaveMarker undo =
+	  undo := SAVE_MARKER::List.filter (fn x => x<>SAVE_MARKER) (!undo)
+
+      fun undo' (undoBuf, buf, rollBack) =
+          let
+              fun checkUnmodified (SAVE_MARKER::_) =
+                  Gtk.TextBuffer.setModified(buf, false)
+                | checkUnmodified _ = ()
+          in
+              case (!undoBuf) of nil => ()
+                            | (DELETE(off,txt)::ur) =>
+                              let
+                                  val startiter = Gtk.TextIter.new()
+				  val enditer = Gtk.TextIter.new()
+				  val len = String.size txt
+                              in
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
+                                                                startiter,
+                                                                off);
+                                  Gtk.TextBuffer.insert(buf, startiter, txt, len);
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
+                                                                startiter,
+                                                                off);
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
+                                                                enditer,
+                                                                off + len);
+                                  selectRange(buf, startiter, enditer);
+				  checkUnmodified ur;
+				  undoBuf := ur;
+				  if rollBack then undo'(undoBuf, buf, true) else ();
+                                  undoBuf := WAIT_DELETE(off,txt) :: (!undoBuf)
+                              end
+                            | (INSERT(off1,off2)::ur) =>
+                              let
+                                  val startiter = Gtk.TextIter.new()
+                                  val enditer = Gtk.TextIter.new()
+                              in
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
+                                                                startiter,
+                                                                off1);
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
+                                                                enditer,
+                                                                off2);
+                                  Gtk.TextBuffer.placeCursor(buf, startiter);
+                                  Gtk.TextBuffer.delete(buf, startiter,
+                                                       enditer);
+				  checkUnmodified ur;
+				  undoBuf := ur;
+				  if rollBack then undo'(undoBuf, buf, true) else ();
+                                  undoBuf := WAIT_INSERT(off1,off2) :: (!undoBuf)
+                              end
+		            | (END_ACTION::usr) =>
+			      (undoBuf := usr;
+			       undo' (undoBuf, buf, true))
+		            | (BEGIN_ACTION::usr) =>
+			      (checkUnmodified usr;
+			       undoBuf := usr)
+		            | (SAVE_MARKER::usr) =>
+			      (undoBuf := usr;
+			       undo' (undoBuf, buf, rollBack))
+                            | _ =>
+			      if rollBack then undo'(undoBuf, buf, true) else ()
+
+          end
+
+      fun undo id =
+	  let
+              val {undo=undoBuf,buf,...} = Map.lookupExistent(bufferMap, id)
+	  in
+	      Lock.sync Gtk.lock undo' (undoBuf, buf, false);
+	      scrollToCursor id
+	  end
+
+      fun getFileName id =
+          !(#file (Map.lookupExistent(bufferMap, id)))
+
+      fun getBuffer id =
+          #buf (Map.lookupExistent(bufferMap, id))
+
+      fun getAnnotTags id =
+          #annotTags (Map.lookupExistent(bufferMap, id))
+
+      fun getSyntaxHighlighting id =
+          !(#highlightActive (Map.lookupExistent(bufferMap, id)))
+
+      fun forallBuffers f =
+	  Map.all f bufferMap
+
+      fun setSyntaxHighlighting(id, active) =
+	  let
+	      val {buf,highlightActive,highlight,...} =
+		  Map.lookupExistent(bufferMap, id)
+	  in
+	      highlightActive := active;
+	      if active then () else
+		  Lock.sync Gtk.lock
+		  (fn () =>
+		   let
+		       val startiter = Gtk.TextIter.new()
+		       val enditer = Gtk.TextIter.new()
+		   in
+		       Gtk.TextBuffer.getStartIter(buf, startiter);
+		       Gtk.TextBuffer.getEndIter(buf, enditer);
+		       BufferHighlight.uncolor(buf, startiter, enditer)
+		   end) ();
+	      Channel.put (highlight, SOME 0)
+	  end
+
+      fun getBufferByName f =
+	  case Map.find
+	      (fn {file,...} => case !file of SOME f' => f' = f | _ => false) bufferMap of
+	      NONE => (NONE, ~1)
+	    | SOME {buf,id,...} => (SOME buf, id)
+
+      fun getView id =
+          #view (Map.lookupExistent(bufferMap, id))
+
+      fun getFileNames () =
+	  List.map #2
+	  (List.sort (Int.compare o Pair.mapBoth #1)
+	   (Map.fold (fn ({file,id,...},fs) => 
+			  case !file of NONE => fs
+			   | SOME f => (id,f)::fs) nil bufferMap))
+
+      fun haveModified () =
+	  Map.exists (fn {buf,...} => Gtk.TextBuffer.getModified buf)
+	  bufferMap
+
+      exception Abort of {quit:bool}
+
+      datatype load_mode = NEW | EXPLICIT | COMMANDLINE | SESSION
+
+      fun buffer {notebook,id,file,mode} =
+          let
+	      val file = Option.map
+		  (fn f => OS.Path.mkAbsolute {path=f, relativeTo=OS.FileSys.getDir()})
+		  file
+
+	      val (text, timeStamp) =
+		  if mode = NEW then ("", Time.zeroTime) else
+                  case file of NONE => ("", Time.zeroTime)
+                             | SOME f =>
+		  let
+		      val timeStamp = OS.FileSys.modTime f
+		      val fileD = TextIO.openIn f
+		  in
+		      (Gtk.latin1ToUtf8(TextIO.inputAll fileD), timeStamp)
+		      finally TextIO.closeIn fileD
+		  end
+		  handle (IO.Io _ | OS.SysErr _) =>
+		    if mode = SESSION then raise Abort{quit=false} else
+		    case Gtk.ResponseType.fromInt (FileDialog.fileNotFound(mode=COMMANDLINE, f)) of
+		       Gtk.ResponseType.OK => ("", Time.zeroTime)
+		     | Gtk.ResponseType.CANCEL => raise Abort{quit=false}
+		     | Gtk.ResponseType.CLOSE => raise Abort{quit=true}
+		     | _ => ("", Time.zeroTime)
+
+              val fileName = Option.getOpt(file, "New file "^Int.toString id)
+              val scrolledwindow2_xa = Gtk.Adjustment.new(0.0,0.0,0.0,1.0,0.0,0.0)
+              val scrolledwindow2_ya = Gtk.Adjustment.new(0.0,0.0,0.0,1.0,0.0,0.0)
+              val scrolledwindow2 = Gtk.ScrolledWindow.new(scrolledwindow2_xa,scrolledwindow2_ya)
+              val _ = Gtk.ScrolledWindow.setShadowType(scrolledwindow2,Gtk.ShadowType.NONE)
+              val _ = Gtk.Widget.show scrolledwindow2
+                      
+              val newSource = Gtk.TextView.new()
+              val _ = Gtk.Widget.show newSource
+              val _ = Gtk.TextView.setEditable(newSource,true)
+              val _ = Gtk.TextView.setJustification(newSource,Gtk.Justification.LEFT)
+              val _ = Gtk.TextView.setWrapMode(newSource,Gtk.WrapMode.NONE)
+              val _ = Gtk.TextView.setCursorVisible(newSource,true)
+              val _ = Gtk.TextView.setPixelsAboveLines(newSource,0)
+              val _ = Gtk.TextView.setPixelsBelowLines(newSource,0)
+              val _ = Gtk.TextView.setPixelsInsideWrap(newSource,0)
+              val _ = Gtk.TextView.setLeftMargin(newSource,0)
+              val _ = Gtk.TextView.setRightMargin(newSource,0)
+              val _ = Gtk.TextView.setIndent(newSource,0)
+              val buf = Gtk.TextView.getBuffer newSource
+              val _ = Gtk.Container.add(scrolledwindow2,newSource)
+              val label1 = Gtk.Label.new (shortName fileName)
+              val _ = Gtk.Widget.show label1
+	      val _ = Gtk.Notebook.appendPage(notebook, scrolledwindow2, label1)
+              val page = Gtk.Notebook.pageNum(notebook, scrolledwindow2)
+              val _ = Gtk.Notebook.setCurrentPage(notebook, page)
+              val _ = Gtk.Widget.modifyFont(newSource, !stdFont)
+
+	      val highlightActive =
+		  case file of
+		      NONE => true
+		    | SOME f =>
+			  String.isSuffix ".aml" f orelse
+			  String.isSuffix ".sml" f orelse
+			  String.isSuffix ".asig" f
+
+              val ret = {id=id,file=ref file,
+                         fileLabel=label1,
+			 timeStamp=ref timeStamp,
+                         view=newSource,buf=buf,
+                         tags=makeTags buf,
+			 annotTags=ref #[],
+                         undo=ref [SAVE_MARKER],
+                         lastSearchPos=ref 0,
+			 highlightActive = ref highlightActive,
+			 highlight=Channel.channel()}
+          in
+	      Lock.sync Gtk.lock
+	      (fn () =>
+	       let
+		   val iter = Gtk.TextIter.new()
+	       in
+                   Gtk.TextBuffer.setText(buf, text, ~1);
+                   Gtk.TextBuffer.setModified(buf, false);
+                   Gtk.TextBuffer.getStartIter(buf, iter);
+                   Gtk.TextBuffer.placeCursor(buf, iter)
+	       end) ();
+              Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
+              Gtk.TextBuffer.connectSpecialSignals buf; 
+              Gtk.signalConnect(buf, "delete-text", deleteText id);
+              Gtk.signalConnect(buf, "insert-text", insertText id);
+              Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
+              Gtk.signalConnect(buf, "end-user-action", userAction(id,false));
+              Map.insertDisjoint(bufferMap, id, ret);
+	      spawn highlightGuard (buf, #plain(#tags ret), #highlight ret,
+				    #highlightActive ret);
+              ret
+          end
+
+      fun canClose id =
+          let
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
+	  in
+              not (Gtk.TextBuffer.getModified buf)
+          end
+
+      fun close id =
+          let
+              val {file,buf,highlight,...} = Map.lookupExistent(bufferMap, id)
+          in
+              Map.removeExistent(bufferMap, id);
+	      Channel.put(highlight, NONE)
+          end
+
+      fun revert id =
+          let
+              val {id,file,timeStamp,buf,undo,...} =
+		  Map.lookupExistent(bufferMap, id)
+          in
+              case !file of NONE => ()
+                          | SOME f =>
+		  let
+		      val file = TextIO.openIn f
+		  in 
+		      Lock.sync Gtk.lock
+			  (fn () =>
+                           let
+			      do timeStamp := OS.FileSys.modTime f
+			      val text = Gtk.latin1ToUtf8(TextIO.inputAll file)
+					 finally TextIO.closeIn file
+                           in
+                              Gtk.TextBuffer.setText(buf, text, ~1);
+	                      Gtk.TextBuffer.setModified(buf, false)
+			   end) ()
+		  end handle (IO.Io _ | OS.SysErr _) =>
+			     FileDialog.message ("I/O error: Could not load file " ^ f)
+          end
+
+      fun maySave(f, modified, timeStamp) =
+	  let
+	      val fTimeStamp = OS.FileSys.modTime f
+		  handle OS.SysErr _ => Time.zeroTime
+	  in
+	      if Time.equal(fTimeStamp, timeStamp) then
+		  modified
+	      else
+		  let
+		      val saveAnyway = ref false
+		  in
+		      FileDialog.overwriteWarning(
+                       "File exists or was modified on disk.",
+		       "Overwrite or cancel?", fn _ => saveAnyway := true, ());
+		      !saveAnyway
+		  end
+	  end
+
+      fun save id =
+          let
+              val {id,file,timeStamp,buf,undo,...} =
+		  Map.lookupExistent(bufferMap, id)
+              val modified = Gtk.TextBuffer.getModified buf
+          in
+              case !file of NONE => false
+                          | SOME f =>
+	     (if maySave(f, modified, !timeStamp) then
+		  let
+		      val file = TextIO.openOut f
+		      val str = Lock.sync Gtk.lock
+			  (fn () =>
+                           let
+                              val startiter = Gtk.TextIter.new()
+                              val _ = Gtk.TextBuffer.getStartIter(buf,startiter)
+                              val enditer = Gtk.TextIter.new()
+                              val _ = Gtk.TextBuffer.getEndIter(buf,enditer)
+                           in
+                              Gtk.TextBuffer.getText(buf, startiter, enditer, false)
+			   end) ()
+		      val str = Gtk.utf8ToLatin1 str
+		  in 
+		      TextIO.output(file, str);
+		      TextIO.closeOut file;
+		      timeStamp := OS.FileSys.modTime f;
+		      Gtk.TextBuffer.setModified (buf, false);
+		      setUndoSaveMarker undo
+		  end handle (IO.Io _ | OS.SysErr _) =>
+			     FileDialog.message ("I/O error: Could not save file " ^ f)
+	      else ();
+		  true)
+          end
+		  
+      fun saveAs (id, fileName) =
+          let
+              val {id,file,fileLabel,buf,...} = Map.lookupExistent(bufferMap, id)
+          in
+              file := SOME fileName;
+              Gtk.Label.setText(fileLabel, shortName fileName);
+              Gtk.TextBuffer.setModified(buf, true);
+              save id;
+	      ()
+          end
+
+      fun match (iter, back, txt, i, caseSensitive) =
+          if (if caseSensitive then
+                  Gtk.TextIter.getChar iter = ord (String.sub(txt,i))
+              else
+                  let
+                      val c = Gtk.TextIter.getChar iter
+                      val c = if c<=Char.maxOrd then
+                                  ord (Char.toLower (chr c))
+                              else c
+                  in
+                      c = ord (Char.toLower (String.sub(txt,i)))
+                  end)
+          then if i=String.size txt - 1 then 
+                   (Gtk.TextIter.setOffset(iter,back);
+                    true)
+               else if Gtk.TextIter.forwardChar iter 
+               then match (iter, back, txt, i+1, caseSensitive)
+               else (Gtk.TextIter.setOffset(iter,back);
+                     false)
+          else (Gtk.TextIter.setOffset(iter,back);
+                false)
+
+      fun find' (iter, off, txt, caseSensitive, wrapAround) =
+          match (iter, off, txt, 0, caseSensitive) orelse
+	   (if Gtk.TextIter.forwardChar iter then
+                find' (iter, off+1, txt, caseSensitive, wrapAround)
+	    else
+	        not wrapAround andalso
+		(Gtk.TextIter.setOffset(iter, 0);
+		 find' (iter, 0, txt, caseSensitive, true)))
+
+      fun find(id, txt, caseSensitive) =
+	  Lock.sync Gtk.lock
+	  (fn () =>
+          let
+              val {view,buf,lastSearchPos,...} = Map.lookupExistent(bufferMap, id)
+              val iter = getCursorIter buf
+              val off = Gtk.TextIter.getOffset iter
+              val off = if (off = (!lastSearchPos)) andalso Gtk.TextIter.forwardChar iter
+                        then off + 1
+                        else off
+          in
+              if find' (iter, off, txt, caseSensitive, false) then
+                  let
+                      val iter' = Gtk.TextIter.copy iter
+                  in
+                      Gtk.TextIter.forwardChars(iter',size txt);
+                      lastSearchPos := Gtk.TextIter.getOffset iter;
+                      selectRange(buf,iter,iter');
+		      scrollToCursor id;
+		      true
+                  end
+              else false
+          end) ()
+
+      fun replace(id, replaceString) =
+	  Lock.sync Gtk.lock
+	  (fn () =>
+          let
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
+          in
+              Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer);
+	      Gtk.TextBuffer.beginUserAction buf;
+	      Gtk.TextBuffer.delete(buf, startiter, enditer);
+	      Gtk.TextBuffer.insert(buf, startiter, replaceString, ~1);
+	      Gtk.TextBuffer.endUserAction buf
+          end) ()
+
+      fun changeFonts() =
+          Map.app (fn {view,...} =>
+                            Gtk.Widget.modifyFont(view, !Config.stdFont))
+                        bufferMap
+
+      fun changeColors() =
+	  Map.app (fn {buf,...} => Config.changeColors buf) bufferMap
+
+      fun annotate(id, entries) =
+	  Lock.sync Gtk.lock
+	  (fn () =>
+	  let
+	      val {buf,annotTags,...} = Map.lookupExistent(bufferMap, id)
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
+	  in
+	      Gtk.TextBuffer.getStartIter(buf, startiter);
+	      Gtk.TextBuffer.getEndIter(buf, enditer);
+	      Vector.app (fn (tag, _) =>
+	          Gtk.TextBuffer.removeTag(buf, tag, startiter, enditer)
+	      ) (!annotTags);
+	      annotTags := BufferAnnotate.applyAnnots(buf, entries, !annotTags)
+	  end) ()
+   end

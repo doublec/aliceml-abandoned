@@ -1,0 +1,74 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+import structure Random    from "x-alice:/lib/utility/Random";
+
+structure TestGeneral :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun testInverse () =
+	(Test.test (fn x => General.inverse x = GREATER) LESS;
+	 Test.test (fn x => General.inverse x = LESS)    GREATER;
+	 Test.test (fn x => General.inverse x = EQUAL)   EQUAL)
+
+    fun testIgnore () =
+	Test.test (fn n => General.ignore n = ()) 0
+
+    fun testBefore () = 
+	let
+	    val n = ref 0
+	    fun b () = (n := !n + 1; !n) 
+	    fun a () = n := !n + 1
+	in
+	    Test.test (fn x => ((b x before a x) = 1 andalso !n = 2)) ()
+	end
+
+    fun testUnref () =
+	Test.test (fn x => !(ref x) = x) 0
+
+    fun testO () = 
+	let
+	    fun gen () = Gen.int (Random.int (valOf Int.maxInt) - 1)
+	    val t1 = Real.round
+	    val t2 = Real.fromInt
+	in
+	    Test.test (fn x => General.o (t1, t2) x = x) (gen ())
+	end
+
+    fun testSwap () =
+	let
+	    val x = ref 0
+	    val y = ref 1
+	in
+	    (General.:=: (x, y);
+	     Test.test (fn _ => !x = 1 andalso !y = 0) ())
+	end
+
+    fun testRef () =
+	(Test.test (fn x => (!(ref x) = !(ref x))) ();
+	 Test.test (fn x => not (ref x = ref x)) ())
+
+    val suite = ("General", [("inverse", testInverse),
+			     ("ignore", testIgnore),
+			     ("before", testBefore),
+			     ("unref", testUnref),
+			     ("o", testO),
+			     ("ref", testRef),
+			     ("swap", testSwap)])
+end

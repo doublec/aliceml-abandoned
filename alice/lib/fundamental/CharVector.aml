@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                             from "Pervasive"
+import __primitive type string and char and int and list from "ToplevelTypes"
+import functor MkMonoVector                              from "MkMonoVector"
+
+structure CharVector = MkMonoVector(
+    type vector = string
+    type elem = char
+
+    __primitive val maxLen: int = "CharVector.maxLen"
+    __primitive val fromList: elem list -> vector = "CharVector.fromList"
+    __primitive val toList: vector -> elem list = "CharVector.toList"
+    __primitive val length: vector -> int = "CharVector.length"
+    __primitive val sub: vector * int -> elem = "CharVector.sub"
+    __primitive val concat: vector list -> vector = "CharVector.concat"
+    __primitive val tabulate: int * (int -> elem) -> vector =
+		    "CharVector.tabulate"
+)

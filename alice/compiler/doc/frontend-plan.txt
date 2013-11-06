@@ -1,0 +1,28 @@
+- move alpha renaming to translation phase
+  1. do alpha renaming in translation phase
+  2. implement symbols (internalised strings)
+  3. implement proper scoping in elaborator
+  4. remove renaming from abstraction phase
+
+- implement datatypes and include properly
+  - dec "datatype t = C" becomes
+    type t = [C : ()]
+    interface 't = (val C : t)
+    module 't = (val C = `C())
+    open 't
+  - spec "datatype t = C" becomes
+    type t = [C : ()]
+    interface 't = (val C : t)
+    module 't : 't
+    include 't
+  - dec "datatype t = datatype u" becomes
+    type t = u
+    interface 't = 'u
+    module 't = 'u
+    open 't
+  - spec "datatype t = datatype u" becomes
+    type t = u
+    interface 't = 'u
+    module 't : 't
+    include 't
+  - datatype replication is forbidden for non-datatypes (or treated specially)

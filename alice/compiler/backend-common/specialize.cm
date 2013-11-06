@@ -1,0 +1,12 @@
+Group
+
+    structure Specialize
+
+is
+
+    ../../bootstrap/value.cm
+    ../../lib/rtt/type.cm
+    flat-grammar.cm
+
+    SPECIALIZE-sig.aml
+    Specialize.aml

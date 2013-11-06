@@ -1,0 +1,10 @@
+Group is
+
+	../../lib/utility/sources.cm
+	../../lib/rtt/type.cm
+	../infrastructure/sources.cm
+	intermediate-grammar.cm
+	id-stamp.cm
+
+	CHECK_INTERMEDIATE-sig.aml
+	CheckIntermediate.aml

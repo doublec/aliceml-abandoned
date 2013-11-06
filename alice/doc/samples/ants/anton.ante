@@ -1,0 +1,31 @@
+fun seek_food deliver_food =
+    loop (
+	sense here home ifnot (
+	    pick ifyes (
+		times 3 (turn left) ++
+		deliver_food
+	    ) ++
+	    turnto food ifnot nop
+	) ++
+	mark 0 ++
+	move ifnot (turn left)
+    )
+
+fun deliver_food seek_food =
+    loopx (fn break =>
+	unmark 0 ++
+	sense here home ifyes break ++
+	turnto (marker 0) ifnot nop ++
+	move ifnot nop
+    ) ++
+    drop ++
+    times 3 (turn left) ++
+    seek_food
+
+val ant =
+    proc "seek" (
+	seek_food (goto "deliver")
+    ) ++
+    proc "deliver" (
+	deliver_food (goto "seek")
+    )

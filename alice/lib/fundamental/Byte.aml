@@ -1,0 +1,43 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive type string                from "ToplevelTypes"
+import __primitive infix 6 + val op +         from "ToplevelValues"
+import __primitive structure Word8            from "Word8"
+import __primitive structure Char             from "Char"
+import __primitive structure CharVectorSlice  from "CharVectorSlice"
+import __primitive structure Word8Vector      from "Word8Vector"
+import __primitive structure Word8VectorSlice from "Word8VectorSlice"
+import __primitive structure Word8Array       from "Word8Array"
+import __primitive structure Word8ArraySlice  from "Word8ArraySlice"
+import __primitive signature BYTE             from "BYTE-sig"
+
+structure Byte : BYTE =
+struct
+    fun byteToChar w = Char.chr(Word8.toInt w)
+    fun charToByte c = Word8.fromInt(Char.ord c)
+
+    __primitive val bytesToString : Word8Vector.t -> string = "Byte.bytesToString"
+    __primitive val stringToBytes : string -> Word8Vector.t = "Byte.stringToBytes"
+
+    fun unpackStringVec sl = bytesToString(Word8VectorSlice.vector sl)
+    fun unpackString sl    = bytesToString(Word8ArraySlice.vector sl)
+
+    fun packString(a,i,ss) =
+	CharVectorSlice.appi
+	    (fn(j,c) => Word8Array.update(a, i+j, charToByte c)) ss
+end

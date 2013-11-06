@@ -1,0 +1,4 @@
+*.ozf *.ozm
+*.log *.aux *.dvi
+*.o *.so-*
+runme

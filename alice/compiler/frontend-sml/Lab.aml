@@ -1,0 +1,30 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * Standard ML label identifiers
+ *
+ * Definition, section 2.4
+ *)
+
+import signature LAB from "LAB-sig"
+
+structure Lab :> LAB =
+struct
+    type Lab = string
+    type t   = Lab
+
+    fun fromString s   = s
+    fun fromInt n      = Int.toString n
+    fun fromLargeInt n = LargeInt.toString n
+    fun toString s     = s
+end

@@ -1,0 +1,79 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_FS_COMPONENT =
+    sig
+	structure UnsafeFS :
+	    sig
+	        (* Implementation dependent FS limits *)
+	        val inf : int
+		val sup : int
+
+		(* Allocation Function *)
+		val unsafeFS : 'a
+		val unsafeFSVec : 'a
+
+		(* Standard Propagators *)
+		val compl : 'a
+		val complIn : 'a
+		val incl : 'a
+		val excl : 'a
+		val card : 'a
+		val cardRange : 'a
+		val isIn : 'a
+
+		val difference : 'a
+		val intersect : 'a
+		val intersectN : 'a
+		val union : 'a
+		val unionN : 'a
+		val subset : 'a
+		val disjoint : 'a
+		val disjointN : 'a
+		val distinct : 'a
+		val distinctN : 'a
+		val partition : 'a
+
+		(* Values *)
+		val unsafeValue : 'a
+		val emptyValue : 'a
+		val singletonValue : 'a
+		val universalValue : 'a
+		val isValue : 'a
+
+		(* Integer FS *)
+		val int_min : 'a
+		val int_max : 'a
+		val int_convex : 'a
+		val int_match : 'a
+		val int_minN : 'a
+		val int_maxN : 'a
+		    
+		(* Reified Propagators *)
+		val reified_isIn : 'a
+		val reified_areIn : 'a
+		val reified_incl : 'a
+		val reified_equal : 'a
+		val reified_partition : 'a
+
+		(* Reflection *)
+		val reflect_card : 'a
+		val reflect_lowerBound : 'a
+		val reflect_unknown : 'a
+		val reflect_upperBound : 'a
+		    
+		val reflect_cardOfLowerBound :'a
+		val reflect_cardOfUnknown : 'a
+		val reflect_cardOfUpperBound : 'a
+	    end
+    end

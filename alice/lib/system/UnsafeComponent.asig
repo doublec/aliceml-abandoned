@@ -1,0 +1,53 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Contributor:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Inf from "../rtt/Inf"
+import structure Url from "Url"
+
+signature UNSAFE_COMPONENT_COMPONENT =
+    sig
+	structure UnsafeComponent:
+	    sig
+		exception SitedInternal
+		exception CorruptInternal
+		exception Sited
+		exception Corrupt
+		exception NotFound
+
+		exception Mismatch of {component : Url.t,
+				       request : Url.t option,
+				       cause : Inf.mismatch}
+		exception Eval of exn
+		exception Failure of Url.t * exn
+
+		exception Native of string
+
+		val extension: string
+		val counter: unit -> int
+
+		val getInitialTable: unit -> (string * 'sign * 'str) vector
+
+		val save: string * 'component -> unit   (* OS.SysErr,
+							   SitedInternal *)
+		val load: string -> 'component          (* OS.SysErr, NotFound,
+							   CorruptInternal *)
+		val linkNative: string -> 'component    (* Native *)
+
+		val pack_: 'component -> string         (* SitedInternal *)
+		val unpack_: string -> 'component       (* CorruptInternal *)
+
+                val unzip : string -> string            (* Corrupt *)
+	    end
+    end

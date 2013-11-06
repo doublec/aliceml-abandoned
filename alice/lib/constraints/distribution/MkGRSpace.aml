@@ -1,0 +1,77 @@
+(*
+ * GRSpace = Graphical Recomputable Space
+ *)
+
+import structure Space  from "x-alice:/lib/gecode/Space"
+
+import signature RSPACE from "RSPACE-sig"
+import structure Path   from "Path"
+
+(* Related to the Explorer. *)
+import structure ExplorerNode from "x-alice:/tools/explorer/ExplorerNode"
+import structure ExplorerMain from "x-alice:/tools/explorer/ExplorerMain"
+import structure MainWindow   from "x-alice:/tools/explorer/MainWindow"
+import structure Types        from "x-alice:/tools/explorer/Types"
+
+functor MkGRSpace (val name : string) :> RSPACE = 
+  fct (type a
+       val order  : Space.space * a -> unit
+       val root   : Space.space
+       val rdist  : int) =>
+  struct
+
+    val expl = ExplorerMain.initWithSpace (root, name)
+    val state = valOf (!expl)
+
+    val _ = Types.setHideFailed expl false
+    val _ = Types.setZoomFollows expl true
+
+    fun serve (f,a) = 
+      let
+        val res = Promise.promise ()
+        fun p () = Promise.fulfill (res,f a)
+        val () = ExplorerMain.serve p
+        val f = Promise.future res
+      in
+        Future.await f
+      end
+
+    type rspace = (Types.tree * a Path.t)
+
+    fun getQLeft  tree = ExplorerNode.getLeftChild tree
+    fun getQRight tree = ExplorerNode.getRightChild tree
+
+    fun qStatus tree = 
+      let val _ = ExplorerNode.noOfChildren (expl, tree)
+        val r = ExplorerNode.nodeStatus (expl, tree)
+        val _ = MainWindow.refresh (ExplorerMain.serve, expl)
+      in
+        case r of
+          Types.FAILED => Space.FAILED
+        | Types.SOLVED => Space.SOLVED
+        | Types.CHOICE => Space.BRANCH
+        | Types.UNKNOWN => assert false
+      end
+
+    fun status (tree, _) = serve (qStatus, tree)
+
+    fun applyPath (tree, []) = tree
+      | applyPath (tree, Path.Better _ :: l) =  tree (* Better is ignored. *)
+      | applyPath (tree, Path.Commit 1 :: l) = (qStatus tree ;
+                                                applyPath (getQLeft tree, l))
+      | applyPath (tree, Path.Commit 2 :: l) = (qStatus tree ;
+                                                applyPath (getQRight tree, l))
+      | applyPath (tree, _) = assert false
+
+    fun getLeft (tree, p) = (serve (getQLeft, tree), Path.Commit 1 :: p)
+    fun getRight (tree, p) = (serve (getQRight, tree), Path.Commit 2 :: p)
+
+    fun space path =
+      (serve (applyPath, (Types.getTree expl, path)), List.rev path)
+
+    fun path (tree, p) = List.rev p
+
+    fun getSpace (tree, _) = ExplorerNode.getSpace tree
+
+    fun best ((tree, p), sol) = (tree, p) (* Ignored. *)
+  end

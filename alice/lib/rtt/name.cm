@@ -1,0 +1,8 @@
+Group
+	signature NAME
+	structure Name
+is
+	../utility/sources.cm
+
+	NAME-sig.aml
+	Name.aml

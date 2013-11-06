@@ -1,0 +1,24 @@
+<!--
+	Install this file by copying to /usr/share/mime/packages and
+	then running update-mime-database /usr/share/mime
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+	<mime-type type="text/x-aliceml-aml">
+		<sub-class-of type="text/plain"/>
+		<comment>AliceML source code</comment>
+		<glob pattern="*.aml"/>
+	</mime-type>
+
+	<mime-type type="text/x-aliceml-alc">
+		<comment>AliceML compiled code</comment>
+		<glob pattern="*.alc"/>
+	</mime-type>
+
+	<mime-type type="text/x-aliceml-asig">
+		<sub-class-of type="text/plain"/>
+		<comment>AliceML native signature</comment>
+		<glob pattern="*.asig"/>
+	</mime-type>
+
+</mime-info>

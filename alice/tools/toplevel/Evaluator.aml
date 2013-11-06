@@ -1,0 +1,81 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Compiler     from "x-alice:/lib/system/Compiler"
+import structure CoreToplevel from "CoreToplevel"
+import signature EVALUATOR    from "EVALUATOR-sig"
+
+structure Evaluator : EVALUATOR =
+struct
+    open CoreToplevel
+
+    fun setWarnings w   = warnings := w
+    fun setOutWidth n   = outWidth := n
+    fun setErrWidth n   = errWidth := n
+    fun setTraceWidth n = traceWidth := n
+    fun setOutStream os = TextIO.setOutstream (outStream, os)
+    fun setErrStream os = TextIO.setOutstream (errStream, os)
+    fun setTraceStream os = TextIO.setOutstream (traceStream, os)
+    fun setAnnotStream os = TextIO.setOutstream (annotStream, os)
+    fun setAnnotActive b = annotActive := b
+
+    fun prompt () =
+	(TextIO.output (outStream, "> ");
+	 TextIO.flushOut outStream)
+
+    fun compile' file =
+	Compiler.withStreams {out = SOME outStream, err = SOME errStream,
+			      trace = SOME traceStream,
+			      annot = if !annotActive then SOME annotStream
+				      else NONE}
+	(Compiler.withWidths {out = !outWidth, err = !errWidth,
+			      trace = !traceWidth}
+	 Compiler.compileFile) (file, NONE)
+
+    fun compileFile file =
+	((TextIO.output (outStream, "\n");
+	  compile' file;
+	  TextIO.output (outStream, "### compiled " ^ file ^ "\n"))
+	 handle Compiler.Error => ())
+	finally prompt ()
+
+    fun init () =
+	let
+	    val annotSave = !annotActive
+	in
+	    TextIO.output (outStream, CoreToplevel.banner);
+	    annotActive := false;
+	    CoreToplevel.init ();
+	    annotActive := annotSave;
+	    prompt ()
+	end
+
+    fun reset () =
+	let
+	    val annotSave = !annotActive
+	in
+	    TextIO.output (outStream, "\n");
+	    annotActive := false;
+	    CoreToplevel.init ();
+	    annotActive := annotSave;
+	    prompt ()
+	end
+
+    fun eval s =
+	CoreToplevel.eval s
+	finally	prompt ()
+
+    fun evalFile file =
+	(TextIO.output (outStream, "\n");
+	 CoreToplevel.evalFile file)
+	finally	prompt ()
+end

@@ -1,0 +1,55 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO    from "TextIO"
+import structure Inf       from "../rtt/Inf"
+import structure Url       from "Url"
+import structure Resolver  from "Resolver"
+import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
+
+local
+    __primitive type component = "Component.component"
+in
+    signature COMPONENT =
+    sig
+	type component = component
+	type t = component
+
+	exception Sited
+	exception Corrupt
+	exception NotFound
+
+	exception Mismatch of {component : Url.t,
+			       request : Url.t option,
+			       cause : Inf.mismatch}
+	exception Eval of exn
+	exception Failure of Url.t * exn
+	exception Internal of exn
+
+	val extension: string
+
+	val defaultResolver: Resolver.t
+
+	val fromPackage: package -> component
+	functor Create(signature S
+		       functor F(CM: COMPONENT_MANAGER): S):
+		(val component: component)
+
+	val load: Url.t -> component                      (* IO.Io *)
+	val save: string * component -> unit              (* IO.Io *)
+	val inf: component -> Inf.t option
+	val imports: component -> (Url.t * Inf.t option) vector
+
+	functor MkManager(val resolver: Resolver.t): COMPONENT_MANAGER
+    end
+end

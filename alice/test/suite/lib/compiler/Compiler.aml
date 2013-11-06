@@ -1,0 +1,46 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE         from "../../src/TESTSUITE-sig"
+
+import structure Test              from "../../src/Test"
+
+import signature GEN               from "x-alice:/lib/test/GEN-sig"
+import structure Url               from "x-alice:/lib/system/Url"
+import structure Component         from "x-alice:/lib/system/Component"
+import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
+
+structure TestCompiler :> TESTSUITE = (* the compiler test suite *)
+struct
+
+    fun randomize () = ()
+
+    val url = Url.fromString "x-alice:/lib/test/Gen"
+
+    val com = Component.load url
+    
+    fun testEval' () = 
+	let
+	    structure X = ComponentManager.Eval (
+		                       val component = com 
+				       val url = url
+				       signature S = (structure Gen : GEN))
+	in
+	    true
+	end
+	       
+    fun testEval () = 
+	(Test.test (fn _ => testEval' ()) ())
+
+
+    val suite = ("Compiler", [("Eval", testEval)])
+end

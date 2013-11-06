@@ -1,0 +1,41 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * Standard ML infix resolution
+ *
+ * Definition, section 2.6
+ *)
+
+import structure VId           from "Ids"
+import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
+import structure InputGrammar  from "InputGrammar"
+
+
+signature INFIX =
+sig
+    (* Import *)
+
+    structure Grammar: INPUT_GRAMMAR = InputGrammar
+
+    (* Infix environment *)
+
+    datatype Assoc = LEFT | RIGHT
+    type InfStatus = (Assoc * int) option
+
+    type InfEnv    = VId.t -> InfStatus
+
+    (* Resolving phrases containing infixed identifiers *)
+
+    val exp :	InfEnv -> Grammar.Exp -> Grammar.Exp
+    val pat :	InfEnv -> Grammar.Pat -> Grammar.Pat
+end

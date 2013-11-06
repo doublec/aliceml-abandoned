@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature SITED =
+sig
+    eqtype 'a sited
+    type 'a t = 'a sited
+
+    val sited : 'a -> 'a sited
+    val value : 'a sited -> 'a
+end

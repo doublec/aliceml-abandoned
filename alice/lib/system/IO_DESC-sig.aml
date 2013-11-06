@@ -1,0 +1,61 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS from "OS"
+
+signature IO_DESC =
+    sig
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) reader =
+	    {name: string,
+	     chunkSize: int,
+	     readVec: (int -> 'vector) option,
+	     readArr: ('array_slice -> int) option,
+	     readVecNB: (int -> 'vector option) option,
+	     readArrNB: ('array_slice -> int option) option,
+	     block: (unit -> unit) option,
+	     canInput: (unit -> bool) option,
+	     avail: unit -> int option,
+	     getPos: (unit -> 'pos) option,
+	     setPos: ('pos -> unit) option,
+	     endPos: (unit -> 'pos) option,
+	     verifyPos: (unit -> 'pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) writer =
+	    {name: string,
+	     chunkSize: int,
+	     writeVec: ('vector_slice -> int) option,
+	     writeArr: ('array_slice -> int) option,
+	     writeVecNB: ('vector_slice -> int option) option,
+	     writeArrNB: ('array_slice -> int option) option,
+	     block: (unit -> unit) option,
+	     canOutput: (unit -> bool) option,
+	     getPos: (unit -> 'pos) option,
+	     setPos: ('pos -> unit) option,
+	     endPos: (unit -> 'pos) option,
+	     verifyPos: (unit -> 'pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	val mkReader : OS.IO.iodesc -> (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) reader
+	val mkWriter : OS.IO.iodesc -> (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer				       
+
+	val stdIn: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) reader
+	val stdOut: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer
+	val stdErr: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer
+
+	val openIn: string -> ('v, 'a, 'vsl, 'asl, 'pos) reader
+	val openOut: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
+	val openAppend: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
+	val openOverwrite: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
+    end

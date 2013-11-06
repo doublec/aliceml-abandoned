@@ -1,0 +1,23 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure Lex : REGRESSION =
+struct
+
+val name = "lex"
+
+val ok = NONE
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+  fun token0(tokFn) = tokFn
+
+  and token1(tokFn, value) = tokFn(value)
+
+  val a = token1(fn _ => "1", 2)
+
+val result = !result
+
+end

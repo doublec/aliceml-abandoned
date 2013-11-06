@@ -1,0 +1,75 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature BIN_IO from "../../system/BIN_IO-sig"
+import structure BinIO  from "../../system/BinIO"
+import signature POLICY from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure BinIO : BIN_IO =
+    struct
+    structure StreamIO = BinIO.StreamIO
+    
+    type instream = BinIO.instream
+    type outstream = BinIO.outstream
+    type vector = BinIO.vector
+    type elem = BinIO.elem
+
+    val input = BinIO.input
+    val input1 = BinIO.input1
+    val inputN = BinIO.inputN
+    val inputAll = BinIO.inputAll
+    val canInput = BinIO.canInput
+    val lookahead = BinIO.lookahead
+    val closeIn = BinIO.closeIn
+    val endOfStream = BinIO.endOfStream
+    val mkInstream = BinIO.mkInstream
+    val getInstream = BinIO.getInstream
+    val setInstream = BinIO.setInstream
+
+    val output = BinIO.output
+    val output1 = BinIO.output1
+    val flushOut = BinIO.flushOut
+    val closeOut = BinIO.closeOut
+    val mkOutstream = BinIO.mkOutstream
+    val getOutstream = BinIO.getOutstream
+    val setOutstream = BinIO.setOutstream
+    val getPosOut = BinIO.getPosOut
+    val setPosOut = BinIO.setPosOut
+        
+    fun openIn file =
+        let
+            val file' = Policy.File.check ("readFile", "BinIO.openIn", file)
+        in
+            BinIO.openIn file'
+        end
+
+    fun openOut file =
+        let
+            val file' = Policy.File.check ("writeFile", "BinIO.openOut", file)
+        in
+            BinIO.openOut file'
+        end
+
+    fun openAppend file =
+        let
+            val file' = Policy.File.check ("writeFile", "BinIO.openAppend", file)
+        in
+            BinIO.openAppend file'
+        end
+
+    fun openOverwrite file =
+        let
+            val file' = Policy.File.check ("writeFile", "BinIO.openOverwrite", file)
+        in
+            BinIO.openOverwrite file'
+        end
+
+    val seekIn = BinIO.seekIn
+    val seekOut = BinIO.seekOut
+end

@@ -1,0 +1,7 @@
++ Type-Interface mit zwei Maps für den PrettyPrinter ausstatten für Variablen
+   und Typen getrennt
+
++ Kind Matching in Assertions packen
+
++ die Implementierung von existential und universal quantifier überprüfen: sie
+   müssen kind star sein

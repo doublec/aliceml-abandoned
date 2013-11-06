@@ -1,0 +1,26 @@
+TODO list for the Alice IDE
+===========================
+
+Bugs:
+
+* on startup, shortcuts for cycling thru buffers are disabled (and syntax hilite)
+* aliceglade ignores packing flags
+  (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields
+   in search dialog to span full window)
+* in/outdent shortcuts don't work on Windows (german keyboard)
+* context menu doesn't display correctly (chinese Windows)
+* Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
+
+* reconsider implicit imports
+
+Missing Features:
+
+* extend `use' to support compiled components
+* completion
+* bookmarks?
+* configure autoindent, tab expansion?
+* propagate output width on init and after resize (requires Pango binding)
+* comment/uncomment region?
+* cumulative undo?
+* redo?
+* incremental search?

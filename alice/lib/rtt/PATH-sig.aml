@@ -1,0 +1,66 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name  from "Name"
+import structure Label from "Label"
+
+signature PATH =
+sig
+  (* Types *)
+
+    type name	= Name.t
+    type lab	= Label.t
+    type path
+    type t	= path
+
+  (* Creation *)
+
+    val invent :	unit -> path
+    val pervasive :	string -> path
+    val name :		name -> path
+    val hidden :	name -> path
+    val dot :		path * lab -> path
+    val instance :	path -> path
+
+  (* Inspection *)
+
+    datatype desc =
+	  Name   of name
+	| Hidden of name
+	| Dot    of path * lab
+
+    val inspect :	path -> desc
+
+    exception Path
+
+    val isPervasive :	path -> bool
+
+    val isName :	path -> bool
+    val isHidden :	path -> bool
+    val isDot :		path -> bool
+    val asName :	path -> name				(* Path *)
+    val asHidden :	path -> name				(* Path *)
+    val asDot :		path -> path * lab			(* Path *)
+
+    val fromString :	string -> path
+    val fromLab :	lab  -> path
+    val toLab :		path -> lab				(* Path *)
+
+  (* Comparison and hashing *)
+
+    val equal :		path * path -> bool
+    val hash :		path -> int
+
+  (* Transformation *)
+
+    val hide :		path -> unit				(* Path *)
+end

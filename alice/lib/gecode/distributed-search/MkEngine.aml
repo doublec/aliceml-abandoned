@@ -1,0 +1,345 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature COMPONENT_MANAGER
+                             from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import signature CONSTRAINTS from "x-alice:/lib/gecode/CONSTRAINTS-sig"
+import structure Constraints from "x-alice:/lib/gecode/Constraints"
+import structure Remote      from "x-alice:/lib/distribution/Remote"
+import structure Channel     from "x-alice:/lib/data/Channel"
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Debug       from "Debug"
+import structure Utils       from "Utils"
+import signature INTERFACE   from "INTERFACE-sig"
+import structure Path        from "x-alice:/lib/gecode/search-factory/Path"
+import signature PROBLEM  from "x-alice:/lib/gecode/search-factory/PROBLEM-sig"
+import signature SEARCH   from "x-alice:/lib/gecode/search-factory/SEARCH-sig"
+import signature DEBUG    from "x-alice:/lib/gecode/search-factory/DEBUG-sig"
+import signature REMOTE   from "x-alice:/lib/distribution/REMOTE-sig"
+import signature ENGINE   from "ENGINE-sig"
+
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+functor RemoteRun (val host : string
+		   signature S
+                   structure F : COMPONENT_MANAGER -> S) = F ComponentManager
+
+
+functor MkEngine (type solution val toString : solution -> string)
+		 (MkProblem : fct (Constraints:CONSTRAINTS)
+			      -> PROBLEM
+				 where type space = Constraints.Space.space
+				 where type solution = solution)
+:> ENGINE where type solution = solution
+= struct
+  
+val url = Url.fromString
+val gecodeUrl = url "x-alice:/lib/gecode/Constraints"
+val searchUrl = url "x-alice:/lib/gecode/search-factory/MkSearch"
+val textioUrl = url "x-alice:/lib/system/TextIO"
+val osUrl     = url "x-alice:/lib/system/OS"
+val remoteUrl = url "x-alice:/lib/distribution/Remote"
+val debugUrl  = url "x-alice:/lib/gecode/search-factory/Debug"
+
+(* Array access *)
+infix 0 %
+fun a % b = Array.sub (a,b)
+
+(* Take one local instance of the problem. *)
+structure LProblem = MkProblem Constraints
+
+type solution = solution
+
+signature INTERFACE = INTERFACE where type solution = LProblem.solution
+
+open Debug
+val verbosity = LProblem.mask || dbExc (* Always print exceptions. *)
+fun dbPrint (l, msg) = Debug.dbPrint (verbosity, l, msg)
+
+(* Current best solution. *)
+val best = ref NONE
+
+(***************************************************************************
+ *                Connect and start the search on given hosts. 
+ ***************************************************************************)
+fun connectTo hosts =
+let
+  (* Sequential servers. *)
+  structure Seq = Utils.NewSequence ()
+		    
+  fun llog (level, msg) = Debug.dbPrint (verbosity, level, msg)
+			  
+  (* A new channel for solutions *)
+  val solutions = Channel.channel ()  
+
+  val dummyInterface =
+      {id       = ~1 ,
+       name     = "Dummy" ,
+       share    = fn _ => assert false ,
+       explore  = fn _ => assert false ,
+       bestMsg  = fn _ => () ,
+       start    = fn () => () ,
+       stop     = fn () => () ,
+       shutdown = fn () => () }
+
+  (* An array of all worker interfaces. *)
+  val workers = Array.array (List.length hosts, dummyInterface)
+  val _ = List.appi (fn (index, (_, name)) => 
+			let val dummy = {dummyInterface where name}
+			in
+			  Array.update (workers, index, dummy)
+			end)
+		    hosts
+		
+  (* Returns the name of Worker #id *)
+  fun name id = #name (workers%id)
+
+  (* List of workers not known to be idle,
+   * that is, workers that received 'explore',
+   * and that have not sent 'idle' *)
+  (* This list is empty at the beginning,
+   * and at the end, when the problem is solved. *)
+  val notIdle = ref []
+		
+  fun setNotIdle id =
+      (assert(List.notContains (!notIdle) id) ;
+       notIdle := id :: !notIdle)
+      
+  fun setIdle id = notIdle := Utils.revFilter ((fn x => x <> id), !notIdle)
+		   
+  (* The status of the search:
+   *   not started yet == not (!searchStarted)
+   *       in progress == !searchStarted && (!notIdle <> [])
+   *          finished == !searchStarted && (!notIdle = [])
+   *)
+  val searchStarted = ref false
+  fun isFinished () = !searchStarted andalso List.null (!notIdle)
+
+  (* The search is done. *)
+  fun terminate () =
+      (llog (dbSearch || dbCom, "Search finished. Stopping workers.\n") ;
+       Array.app (fn w => #stop w ()) workers ;
+       Seq.stop () ;
+       Channel.close solutions ;
+       ())
+
+  (* Ask Worker #id if it has some work to share. *)
+  fun askForWork id = #share (workers%id) ()
+			  
+  (* Send the work w to Worker #id. *)
+  fun sendWork id w = (setNotIdle id ; spawn (#explore (workers%id) w))
+
+  (* Find work and send it to Worker #id. *)
+  fun findWorkFor id =
+      if not (!searchStarted) then
+          (* Ah ah our first client. Give him all the work. *)
+          (searchStarted := true ;
+           sendWork id Path.root)
+      (* If nobody is known to be working, we are finished. *)
+      else if List.null (!notIdle) then terminate ()
+      else
+          (* We ask every non-idle worker for some work to share. *)
+          case Utils.findSome askForWork (!notIdle) of
+              NONE => spawn (* spawn because of sleep. *)
+              (Utils.sleepms 800 ;
+               Seq.app findWorkFor id) (* Loop, but later. I! *)
+            | SOME w => 
+              (llog (dbCom, name id ^ " gets work " ^ Path.toString w ^ "\n");
+               sendWork id w)
+
+  fun updateBest sol =
+      if LProblem.bab then
+          let
+              val p = Promise.promise ()
+              val oldbest = Ref.exchange (best, Promise.future p)
+          in
+              if isNone oldbest orelse LProblem.compare (valOf oldbest, sol)
+	      then
+		  (Promise.fulfill (p, SOME sol) ;
+		   spawn (Array.app (fn w => #bestMsg w sol) workers) ;
+		   true)
+              else (Promise.fulfill (p, oldbest) ; false)
+          end         
+      else true
+
+  (**************************************************************************
+   *                       Proxies of the Engine
+   **************************************************************************)
+        
+  (* COLLECT a solution *)
+  fun collect (id, sol, path) =
+      (llog (dbCom, name id ^ " has sent a solution at path " ^
+		    (Path.toString path) ^ ".\nNamely " ^
+		    (toString sol) ^ "\n") ;
+       if updateBest sol then Channel.put (solutions, sol) else ())
+
+  (* Worker #id is idle. *)
+  fun idle id = (setIdle id ; (* We know that id is idle. *)
+		 llog (dbCom, name id ^ " wants some work.\n") ;
+		 Seq.app findWorkFor id)
+
+  (* LOG a message. *)
+  fun log (id, msg) = print (name id ^ " says : " ^ msg)
+
+  (* Create proxies. *)
+  val idle     = Remote.proxy idle
+  val collect  = Remote.proxy collect
+  val mlog     = Remote.proxy log
+
+  (**************************************************************************
+   *                          A Remote Worker
+   **************************************************************************)
+  functor MkWorker (val name : string val id : int) (CM : COMPONENT_MANAGER)
+	     :> INTERFACE =
+  struct
+
+  (* Get Local Components. *)
+  structure CC1 = CM.Link (val url = osUrl
+			   signature S = (structure OS : OS))
+  structure CC2 = CM.Link (val url = textioUrl
+			   signature S = (structure TextIO : TEXT_IO))
+  structure CC3 = CM.Link (val url = gecodeUrl
+			   signature S = (structure Constraints : CONSTRAINTS))
+  structure CC4 = CM.Link (val url = remoteUrl
+			   signature S = (structure Remote : REMOTE))
+  structure CC5 = CM.Link (val url = debugUrl
+			   signature S = (structure Debug : DEBUG))
+
+  structure OS          = CC1.OS
+  structure TextIO      = CC2.TextIO
+  structure Constraints = CC3.Constraints
+  structure Remote      = CC4.Remote
+  structure LocalDebug  = CC5.Debug
+
+  (* Log *)		     
+  structure Seq = Utils.NewSequence () (* For sequential logging. *)
+  val filename = OS.FileSys.tmpName ()
+    
+  val log =
+    let 
+      val prefix = name ^ " (#" ^ (Int.toString id) ^ "): "
+      val logfile = TextIO.openOut filename
+
+      fun logIt (out, msg) = (TextIO.output (out, msg) ;
+			      TextIO.flushOut out)
+    in
+     fn msg => let val msg' = prefix ^ msg
+	       in
+		 logIt (logfile, msg') ;
+		 logIt (TextIO.stdOut, msg') ;
+		 Seq.app mlog (id, msg)
+	       end
+    end
+
+  val _ = LocalDebug.localPrint := log
+
+  structure Problem = MkProblem Constraints
+		      
+  signature MK_SEARCH =
+    fct (Problem : PROBLEM where type space = Constraints.Space.space) 
+    -> SEARCH where type solution = Problem.solution
+				     
+  structure CC4 = CM.Link (val url = searchUrl
+			   signature S = (structure MkSearch : MK_SEARCH))
+  structure MkSearch = CC4.MkSearch
+
+  structure Search = MkSearch Problem
+
+  type solution = solution
+
+  fun shutdown () =
+      (spawn (Utils.sleepms 500 ;
+	      OS.Process.exit OS.Process.success) ;
+       ())
+      
+  fun getSolutions () =
+      case Search.getOneSolution () of
+	  NONE => idle id
+	| SOME (sol, p) => (collect (id, sol, p) ; getSolutions ())
+		      
+  fun explore path = (Search.init path ; getSolutions ())
+		     
+  (* Handle exceptions. *)
+  fun wrapHandle f =
+      fn args =>
+	 (f args handle 
+                       (Assert (file, ln)) as ex =>
+		        (log ("Assert false, " ^ file ^ " line " ^ 
+			      (Int.toString ln) ^ "\n");
+			 raise ex)
+	             | ex => 
+			(log ("Exception " ^ (Exn.name ex) ^ " raised.\n") ;
+			 log ("Message : " ^ (Exn.message ex) ^ "\n") ;
+			 raise ex))
+
+  fun start () = idle id
+
+  val share    = Remote.proxy (wrapHandle Search.getUnexploredPath)
+  val explore  = Remote.proxy (wrapHandle explore)
+  val stop     = Remote.proxy (wrapHandle Search.stopSearch)
+  val start    = Remote.proxy (wrapHandle start)
+  val bestMsg  = Remote.proxy (wrapHandle Search.betterThan)
+  val shutdown = Remote.proxy shutdown
+
+  val interface = {id, name, share, explore, start, stop, bestMsg, shutdown}
+  end
+
+  (**************************************************************************
+   *         Create a new remote worker and register its interface
+   **************************************************************************)
+  fun connect (id, (host, name)) =
+      let
+	  val _ = dbPrint (dbCom || dbManag,"Connecting " ^ host
+					    ^ " (" ^ name ^ ")\n")
+		  
+	  structure Worker = MkWorker (val name = name val id = id)
+	  structure Interface = Remote.Run (val host = host
+					    signature S = INTERFACE
+					    structure F = Worker)
+	  val interface = Interface.interface
+      in
+	 (* We check that the remote worker is not completely stupid. *)
+	  assert (#id interface = id) ;
+	  assert (#name interface = name) ;
+	  
+	  llog (dbCom, name^" (#"^(Int.toString id)^") has registered.\n");
+
+	  (* We register this interface. *)
+          Array.update (workers, id, interface) ;
+	  
+	  if isFinished () then #stop interface ()
+          else (if isSome (!best) then #bestMsg interface (valOf (!best))
+		else () ;
+		#start interface ())
+      end
+
+  (* Shutdown all workers. *)
+  fun shutdown () = Array.app (fn w => spawn(#shutdown w ())) workers
+
+in
+  (* Connect to all workers. *)
+  List.appi connect hosts ;
+  (shutdown, solutions)
+end
+
+fun start hosts =
+    connectTo hosts
+    handle Remote.Proxy ex => (print "*** PROXY exception ***\n" ; raise ex)
+    handle IO.Io {name, function, cause} =>
+	   (print ("**** IO Exception : name = " ^ name ^
+		   " function = " ^ function ^ " ****\n") ;
+	    raise cause)
+
+end

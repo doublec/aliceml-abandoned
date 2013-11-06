@@ -1,0 +1,100 @@
+open Hole
+type 'a promise = 'a
+val promise = hole
+val fulfill = fill
+val future = Fn.id
+
+datatype 'a queue = Queue of int * 'a list promise * 'a list promise
+
+fun delay n = Thread.sleep(Time.fromMilliseconds(Int.toLarge n))
+
+fun newQueue () =
+  let
+     val p = promise()
+  in
+     Queue(0, p, p)
+  end
+
+fun insertQ (Queue(n, s, e), x) where (n >= 0) =
+     let
+        val e1 = promise()
+        val px = promise()
+     in
+        inspect ("insertA");
+        fulfill(px, x);
+        fulfill(e, px::(future e1));
+        Queue(n+1, s, e1)
+     end
+ | insertQ (Queue(n, s, e), x) =
+     let
+        val e1 = promise()
+        val px = hd(future e)
+     in
+        inspect ("insertB");
+        fulfill(px, x);
+        fulfill(e1, tl(future e));
+        Queue(n+1, s, e1)
+     end
+
+fun deleteQ (Queue(n, s, e), px) where (n > 0) =
+     let
+        val s1 = promise()
+     in
+        inspect ("deleteA");
+        fulfill(px, future (hd(future s)));
+        fulfill(s1, tl(future s));
+        Queue(n-1, s1, e)
+     end
+ | deleteQ (Queue(n, s, e), px) =
+     let
+        val s1 = promise()
+     in
+        inspect ("deleteB");
+        (* Promise exception occurs here when:
+         *    n  = 0,
+         *    s  = promise{|_future14|},
+         *    e  = promise{|_future14|},
+         *    px = promise{|_future15|},
+         *    s1 = promise{|_future16|}
+         *)
+        inspect (n, s, e, px, s1);
+        fulfill(s, px::(future s1));
+        Queue(n-1, s1, e)
+     end
+
+(* works when all inserts first *)
+val p4 = promise()
+val p5 = promise()
+val p6 = promise()
+val q0 = newQueue();            inspect ("A-q0", q0);      delay 1000;
+val q1 = insertQ(q0, "peter");  inspect ("A-q1", q1);      delay 1000;
+val q2 = insertQ(q1, "mary");   inspect ("A-q2", q2);      delay 1000;
+val q3 = insertQ(q2, "peter");  inspect ("A-q3", q3);      delay 1000;
+val q4 = deleteQ(q3, p4);       inspect ("A-q4", q4, p4);  delay 1000;
+val q5 = deleteQ(q4, p5);       inspect ("A-q5", q5, p5);  delay 1000;
+val q6 = deleteQ(q5, p6);       inspect ("A-q6", q6, p6);  delay 1000;
+
+(* works when all deletes first *)
+val p1 = promise()
+val p2 = promise()
+val p3 = promise()
+val q0 = newQueue();            inspect ("B-q0", q0);      delay 1000;
+val q1 = deleteQ(q0, p1);       inspect ("B-q1", q1, p1);  delay 1000;
+val q2 = deleteQ(q1, p2);       inspect ("B-q2", q2, p2);  delay 1000;
+val q3 = deleteQ(q2, p3);       inspect ("B-q3", q3, p3);  delay 1000;
+val q4 = insertQ(q3, "peter");  inspect ("B-q4", q4);      delay 1000;
+val q5 = insertQ(q4, "mary");   inspect ("B-q5", q5);      delay 1000;
+val q6 = insertQ(q5, "peter");  inspect ("B-q6", q6);      delay 1000;
+
+(* problems when go back and forth *)
+val p2 = promise()
+val p3 = promise()
+val p6 = promise()
+val q0 = newQueue();            inspect ("C-q0", q0);      delay 1000;
+val q1 = insertQ(q0, "peter");  inspect ("C-q1", q1);      delay 1000;
+val q2 = deleteQ(q1, p2);       inspect ("C-q2", q2, p2);  delay 1000;
+(* this next one produces a Promise exception *)
+val q3 = deleteQ(q2, p3);       inspect ("C-q3", q3, p3);  delay 1000;
+val q4 = insertQ(q3, "mary");   inspect ("C-q4", q4);      delay 1000;
+val q5 = insertQ(q4, "peter");  inspect ("C-q5", q5);      delay 1000;
+val q6 = deleteQ(q5, p6);       inspect ("C-q6", q6, p6);  delay 1000;

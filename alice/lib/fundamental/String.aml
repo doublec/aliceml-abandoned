@@ -1,0 +1,154 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                          from "Pervasive"
+import __primitive type char and string and int
+       datatype bool and order and option and list    from "ToplevelTypes"
+import __primitive infix 4 = <> <= infixr 5 :: infix 6 + - ^
+       val op = and op <> and op <= and op + and op - from "ToplevelValues"
+import __primitive structure Char                     from "Char"
+import __primitive structure List                     from "List"
+import __primitive structure StringCvt                from "StringCvt"
+import __primitive structure CharVector               from "CharVector"
+import __primitive signature STRING                   from "STRING-sig"
+
+structure String : STRING =
+struct
+    type char   = char
+    type string	= string
+    type t	= string						(**)
+
+    val maxSize		= CharVector.maxLen
+    val size		= CharVector.length
+    val sub		= CharVector.sub
+    val implode		= CharVector.fromList
+    val explode		= CharVector.toList
+    val tabulate	= CharVector.tabulate
+    val concat		= CharVector.concat
+    val map		= CharVector.map
+
+    __primitive val str : char -> string = "String.str"
+
+    __primitive val sub' : string * int -> char = "Unsafe.String.sub"
+    __primitive val substring : string * int * int -> string
+						= "CharVector.extract"
+    fun extract(s, i, NONE)   = substring(s, i, size s - i)
+      | extract(s, i, SOME j) = substring(s, i, j)
+
+    __primitive val op ^ :    string * string -> string = "String.^"
+
+    fun isPrefix s1 s2		= isPrefix'(s1,s2,0)
+    and isPrefix'(s1,s2,i)	= i = size s1 orelse
+				  i <> size s2 andalso
+				  sub'(s1,i) = sub'(s2,i)
+				  andalso isPrefix'(s1,s2,i+1)
+
+    fun isSuffix s1 s2		= isSuffix'(s1,s2,size s1-1,size s2-1)
+    and isSuffix'(s1,s2,i1,i2)	= i1 = ~1 orelse
+				  i2 <> ~1 andalso
+				  sub'(s1,i1) = sub'(s2,i2)
+				  andalso isSuffix'(s1,s2,i1-1,i2-1)
+
+    fun isSubstring s1 s2	= isSubstring'(s1,s2,0)
+    and isSubstring'(s1,s2,i)	= i + size s1 <= size s2 andalso
+				  (isSubstring''(s1,s2,i,0)
+				  orelse isSubstring'(s1,s2,i+1))
+    and isSubstring''(s1,s2,i,j)= j = size s1 orelse
+				  sub'(s1,j) = sub'(s2,i+j) andalso
+				  isSubstring''(s1,s2,i,j+1)
+
+    __primitive val op < :	string * string -> bool  = "String.<"
+    __primitive val op > :	string * string -> bool  = "String.>"
+    __primitive val op <= :	string * string -> bool  = "String.<="
+    __primitive val op >= :	string * string -> bool  = "String.>="
+    __primitive val equal :	string * string -> bool  = "String.equal"
+    __primitive val compare :	string * string -> order = "String.compare"
+    __primitive val hash :	string -> int            = "String.hash"
+
+    val collate			= CharVector.collate
+
+    fun translate  f s		= translate'(f,s,0,nil)
+    and translate'(f,s,i,ss) if (i = size s)
+			    	= concat(List.rev ss)
+      | translate'(f,s,i,ss)	= translate'(f,s,i+1, f(sub'(s,i))::ss)
+
+    fun fields  f s		= fields'(f,s,0,0,nil)
+    and fields'(f,s,i,j,ss) if (j = size s)
+				= List.rev(substring(s,i,j-i)::ss)
+      | fields'(f,s,i,j,ss) if (f(sub'(s,j)))
+      				= fields'(f,s,j+1,j+1, substring(s,i,j-i)::ss)
+      | fields'(f,s,i,j,ss)	= fields'(f,s,i,j+1,ss)
+
+    fun tokens  f s		= tokens'(f,s,0,0,nil)
+    and tokens'(f,s,i,j,ss) if (j = size s)
+				= List.rev(if i = j then ss
+					   else substring(s,i,j-i)::ss)
+      | tokens'(f,s,i,j,ss) if (f(sub'(s,j)))
+      				= tokens'(f,s,j+1,j+1, if i = j then ss
+					  else substring(s,i,j-i)::ss)
+      | tokens'(f,s,i,j,ss)	= tokens'(f,s,i,j+1,ss)
+
+    fun concatWith s' ss	= concat(concatWith'(s', ss))
+    and concatWith'(s', nil)	= nil
+      | concatWith'(s', s::nil)	= s::nil
+      | concatWith'(s', s::ss)	= s::s'::concatWith'(s', ss)
+
+    fun toWide s		= s					(**)
+    fun fromWide s		= s						(**)
+
+    fun toString s		= translate Char.toString s
+    fun toCString s		= translate Char.toCString s
+
+
+    (* Scanning *)
+
+    fun scan getc src		= scan' getc src [] false
+    and scan' getc src cs b	= case Char.scan getc src
+				    of SOME(c, src') =>
+				       scan' getc src' (c::cs) true
+				     | NONE => scanTrGap getc src cs b
+    and scanTrGap getc src cs b	= case getc src
+				    of SOME(#"\\", src') =>
+				       (case scanGap getc src'
+					  of SOME src'' =>
+						scanTrGap getc src'' cs true
+					   | NONE => scan'' src cs b
+				       )
+				     | SOME _ => scan'' src cs b
+				     | NONE   => scan'' src cs true
+    and scanGap getc src	= case getc src
+				    of NONE              => NONE
+				     | SOME(#"\\", src') => SOME src'
+				     | SOME(c, src') =>
+				       if Char.isSpace c
+				       then scanGap getc src'
+				       else NONE
+    and scan'' src cs true	= SOME(implode(List.rev cs), src)
+      | scan'' src cs false	= NONE
+
+    fun scanC getc src		= scanC' getc src [] false
+    and scanC' getc src cs b	= case Char.scanC getc src
+				    of SOME(c, src') =>
+				       scanC' getc src' (c::cs) true
+				     | NONE =>
+				  case getc src
+				    of SOME _ => scan'' src cs b
+				     | NONE   => scan'' src cs true
+
+    val fromString		= StringCvt.scanString scan
+    val fromCString		= StringCvt.scanString scanC
+end

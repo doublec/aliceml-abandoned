@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature SEARCH =
+    sig
+	type tree
+	type explorer_state
+
+	val explore : tree * explorer_state option ref * (unit -> unit) -> unit
+	val step : tree * explorer_state option ref -> unit
+    end

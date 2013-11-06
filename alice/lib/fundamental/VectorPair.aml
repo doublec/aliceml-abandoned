@@ -1,0 +1,110 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                from "Pervasive"
+import __primitive
+       type int and vector datatype option  from "ToplevelTypes"
+import __primitive
+       infix 4 = <> infix 6 + -
+       val op = and op <>
+       val op + and op -                    from "ToplevelValues"
+import __primitive structure Int            from "Int"
+import __primitive structure Vector         from "Vector"
+import __primitive signature VECTOR_PAIR    from "VECTOR_PAIR-sig"
+
+structure VectorPair : VECTOR_PAIR =					(**)
+struct
+    __primitive val sub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
+
+    fun length (v1,v2)		= Int.min(Vector.length v1, Vector.length v2)
+
+    fun zip(v1,v2)		= Vector.tabulate(length(v1,v2),
+				     fn i => (sub'(v1,i), sub'(v2,i)))
+    fun unzip(v: ('a*'b)vector)	= (Vector.map #1 v, Vector.map #2 v)
+
+    fun map f (v1,v2)		= Vector.tabulate(length(v1,v2),
+				     fn i => f(sub'(v1,i), sub'(v2,i)))
+    fun mapi f (v1,v2)		= Vector.tabulate(length(v1,v2),
+				     fn i => f(i, sub'(v1,i), sub'(v2,i)))
+
+    fun app f (v1,v2)		= app'(f, v1, v2, 0, length(v1,v2))
+    and app'(f,v1,v2,i,0)	= ()
+      | app'(f,v1,v2,i,n)	= (f(sub'(v1,i), sub'(v2,i)) ;
+				   app'(f,v1,v2,i+1,n-1))
+
+    fun appi f (v1,v2)		= appi'(f, v1, v2, 0, length(v1,v2))
+    and appi'(f,v1,v2,i,0)	= ()
+      | appi'(f,v1,v2,i,n)	= (f(i, sub'(v1,i), sub'(v2,i)) ;
+				   appi'(f,v1,v2,i+1,n-1))
+
+    fun appr f (v1,v2)		= appr'(f, v1, v2, length(v1,v2)-1)
+    and appr'(f,v1,v2,~1)	= ()
+      | appr'(f,v1,v2,i)	= (f(sub'(v1,i),sub'(v2,i)); appr'(f,v1,v2,i-1))
+
+    fun appri f (v1,v2)		= appri'(f,v1,v2, length(v1,v2)-1)
+    and appri'(f,v1,v2,~1)	= ()
+      | appri'(f,v1,v2,i)	= (f(i, sub'(v1,i), sub'(v2,i)) ;
+  				   appri'(f,v1,v2,i-1))
+
+    fun foldl f x (v1,v2)	= foldl'(f, x, v1, v2, 0, length(v1,v2))
+    and foldl'(f,x,v1,v2,i,0)	= x
+      | foldl'(f,x,v1,v2,i,n)	= foldl'(f, f(sub'(v1,i), sub'(v2,i), x),
+					 v1, v2, i+1, n-1)
+
+    fun foldli f x (v1,v2)	= foldli'(f,x,v1,v2, 0, length(v1,v2))
+    and foldli'(f,x,v1,v2,i,0)	= x
+      | foldli'(f,x,v1,v2,i,n)	= foldli'(f, f(i, sub'(v1,i), sub'(v2,i), x),
+					  v1, v2, i+1, n-1)
+
+    fun foldr f x (v1,v2)	= foldr'(f, x, v1, v2, length(v1,v2)-1)
+    and foldr'(f,x,v1,v2,~1)	= x
+      | foldr'(f,x,v1,v2,i)	= foldr'(f, f(sub'(v1,i), sub'(v2,i), x),
+					 v1, v2, i-1)
+
+    fun foldri f x (v1,v2)	= foldri'(f, x, v1, v2, length(v1,v2)-1)
+    and foldri'(f,x,v1,v2,~1)	= x
+      | foldri'(f,x,v1,v2,i)	= foldri'(f, f(i, sub'(v1,i), sub'(v2,i), x),
+					  v1, v2, i-1)
+
+    fun all f (v1,v2)		= all'(f, v1, v2, 0, length(v1,v2))
+    and all'(f,v1,v2,i,n) 	= n = 0 orelse ( f(sub'(v1,i), sub'(v2,i))
+					andalso  all'(f,v1,v2,i+1,n-1) )
+
+    fun alli f (v1,v2)		= alli'(f, v1, v2, 0, length(v1,v2))
+    and alli'(f,v1,v2,i,n) 	= n = 0 orelse ( f(i, sub'(v1,i), sub'(v2,i))
+					andalso  alli'(f,v1,v2,i+1,n-1) )
+
+    fun exists f (v1,v2)	= exists'(f, v1, v2, 0, length(v1,v2))
+    and exists'(f,v1,v2,i,n)	= n <> 0 andalso ( f(sub'(v1,i), sub'(v2,i))
+					 orelse  exists'(f,v1,v2,i+1,n-1) )
+
+    fun existsi f (v1,v2)	= existsi'(f, v1, v2, 0, length(v1,v2))
+    and existsi'(f,v1,v2,i,n)	= n <> 0 andalso ( f(i, sub'(v1,i), sub'(v2,i))
+					 orelse  existsi'(f,v1,v2,i+1,n-1) )
+
+    fun find  f (v1,v2)		= find'(f, v1, v2, 0, length(v1,v2))
+    and find'(f,v1,v2,i,0)	= NONE
+      | find'(f,v1,v2,i,n) withval xy = (sub'(v1,i), sub'(v2,i)) end if (f xy)
+				= SOME xy
+      | find'(f,v1,v2,i,n)	= find'(f,v1,v2,i+1,n-1)
+
+    fun findi  f (v1,v2)	= findi'(f, v1, v2, 0, length(v1,v2))
+    and findi'(f,v1,v2,i,0)	= NONE
+      | findi'(f,v1,v2,i,n) withval ixy = (i, sub'(v1,i), sub'(v2,i)) end
+				if (f ixy)
+				= SOME ixy
+      | findi'(f,v1,v2,i,n)	= findi'(f,v1,v2,i+1,n-1)
+end

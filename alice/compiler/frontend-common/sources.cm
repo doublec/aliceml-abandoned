@@ -1,0 +1,7 @@
+Group is
+
+	../infrastructure/phase.cm
+	elaboration-phase.cm
+	translation-phase.cm
+
+	MkFrontendCommon.aml

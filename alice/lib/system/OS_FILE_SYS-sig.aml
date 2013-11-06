@@ -1,0 +1,54 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature OS_FILE_SYS =
+sig
+    type dirstream
+    eqtype file_id
+    datatype access_mode = A_READ | A_WRITE | A_EXEC
+
+    val openDir :	string -> dirstream
+    val readDir :	dirstream -> string option
+    val rewindDir :	dirstream -> unit
+    val closeDir :	dirstream -> unit
+
+    val chDir :		string -> unit				(* OS.SysErr *)
+    val getDir :	unit -> string				(* OS.SysErr *)
+    val mkDir :		string -> unit				(* OS.SysErr *)
+    val rmDir :		string -> unit				(* OS.SysErr *)
+    val isDir :		string -> bool				(* OS.SysErr *)
+
+(*  val isLink :	string -> bool				(* OS.SysErr *)
+    val readLink :	string -> string			(* OS.SysErr *)
+*)
+(*TODO
+    val fullPath :	string -> string
+    val realPath :	string -> string *)
+
+    val fileSize :	string -> Position.int			(* OS.SysErr *)
+(*  val access :	string * access_mode list -> bool *)
+    val modTime :	string -> Time.time			(* OS.SysErr *)
+(*  val setTime :	string * Time.time option -> unit *)
+
+    val remove :	string -> unit				(* OS.SysErr *)
+(*  val rename :	{old : string, new : string} -> unit *)
+
+    val tmpName :	unit -> string				(* OS.SysErr *)
+
+    val getHomeDir :                 unit -> string
+    val getApplicationConfigDir :    string -> string
+(*TODO
+    val fileId :	string -> file_id
+    val hash :		file_id -> word
+    val compare :	file_id * file_id -> order
+*)
+end

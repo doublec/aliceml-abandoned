@@ -1,0 +1,8 @@
+Group
+	signature FIXITY
+	structure Fixity
+is
+	../../bootstrap/sources.cm
+
+	FIXITY-sig.aml
+	Fixity.aml

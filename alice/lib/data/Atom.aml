@@ -1,0 +1,28 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature ATOM from "ATOM-sig"
+
+structure Atom :> ATOM where type string = string =
+struct
+    type string = string
+    eqtype atom
+    type t = atom
+
+    __primitive val atom :     string -> atom = "UniqueString.unique"
+    __primitive val toString : atom -> string = "UniqueString.string"
+    __primitive val hash :     atom -> int    = "UniqueString.hash"
+
+    val equal		= op =
+    fun compare(a1,a2)	= if a1 = a2 then EQUAL
+			  else String.compare(toString a1, toString a2)
+end

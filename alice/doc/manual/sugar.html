@@ -1,0 +1,767 @@
+<?php include("macros.php3"); ?>
+
+<?php heading("Syntactic enhancements", "syntactic\nenhancements") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>The extensions listed here are mostly syntactic sugar that is also
+expressible by other, less convenient means:</P>
+
+<UL>
+  <LI> <A href="#lexical">Lexical syntax</A> </LI>
+  <LI> <A href="#longids">Long identifiers</A> </LI>
+  <LI> <A href="#sourcepos">Source position</A> </LI>
+  <LI> <A href="#vectors">Vector expressions and patterns</A> </LI>
+  <LI> <A href="#records">Records</A> </LI>
+  <LI> <A href="#patterns">Pattern language</A> </LI>
+  <LI> <A href="#optional">Optional bars and semicolons</A> </LI>
+  <LI> <A href="#rec">Recursive definitions</A> </LI>
+  <LI> <A href="#if">Conditionals</A> </LI>
+  <LI> <A href="#finally">Finalization</A> </LI>
+  <LI> <A href="#assert">Assertions</A> </LI>
+  <LI> <A href="#do">Statements</A> </LI>
+</UL>
+
+
+<?php section("lexical", "lexical syntax extensions") ?>
+
+<?php subsection("comments", "Line comments") ?>
+
+<P>The comment marker <TT>(*)</TT> introduces a comment that stretches to the end of line:</P>
+
+<PRE class=code>
+fun myf x = bla    (*) my function
+fun myg x = blo    (*) my second function</PRE>
+
+<P>Line comments properly nest into conventional comments, so the following is one single comment, even though the inner line comment contains a closing comment delimiter:</P>
+
+<PRE class=code>
+(*
+fun myf x = bla    (*) my function *)
+*)</PRE>
+
+<?php subsection("literals", "Literals") ?>
+
+<P>Numeric literals may contain underscores to group digits:</P>
+
+<PRE class=code>
+val pi = 3.141_592_653_596
+val billion = 1_000_000_000
+val nibbles = 0wx_f300_4588</PRE>
+
+<P>Moreover, binary integer and word literals are supported:</P>
+
+<PRE class=code>
+val ten  = 0b1010
+val bits = 0wb1101_0010_1111_0010</PRE>
+
+
+<?php subsection("longids", "Long identifiers") ?>
+
+<P>Long identifiers are not part of the lexical syntax, but of the context-free
+grammar. Consequently, there may be arbitrary white space separating the dots
+from the identifiers:</P>
+
+<PRE class=code>
+mod . submod (*Here!*) . subsub
+    . f</PRE>
+
+
+<?php subsection("sourcepos", "Source position") ?>
+
+<P>For debugging purposes, Alice supports two special expression derived forms:</P>
+
+<PRE class=code>
+_file_
+_line_</PRE>
+
+<P>Occurrences of these keywords are replaced by the file name and the line number of their respective occurrence in the source file. For example,</P>
+
+<PRE class=code>
+print ("Error in file " ^ _file_ ", line " ^ Int.toString _line_ ^ "\n")</PRE>
+
+
+<?php section("vectors", "vectors") ?>
+
+<P>Following SML/NJ, Alice provides vector expressions and patterns:</P>
+
+<PRE class=code>
+val v = #[1, 2, 4, 1, 2]
+
+fun f #[]  = 0
+  | f #[n] = n
+  | f  v   = 1</PRE>
+
+
+<?php subsection("vectors-syntax", "Vector syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>#[</TT> <I>exp</I><SUB>1</SUB> <TT>,</TT> ... <TT>,</TT>
+                     <I>exp</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
+    <TD> vector (<I>n</I>&ge;0) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>atpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>#[</TT> <I>pat</I><SUB>1</SUB> <TT>,</TT> ... <TT>,</TT>
+                     <I>pat</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
+    <TD> vector (<I>n</I>&ge;0) </TD>
+  </TR>
+</TABLE>
+  
+
+
+<?php section("records", "records") ?>
+
+<?php subsection("records-punning", "Record punning") ?>
+
+<P>While SML allows punning in record patterns (so that the left hand side of
+the former example is legal), it does not allow punning in record expressions.
+In Alice, the latter is also available as a simple derived form, dualing the
+derived form for patterns. For example, the declaration
+
+<PRE class=code>
+fun f {a,b,c} = {a,b}</PRE>
+
+<P>is understood as an abbreviation for</P>
+
+<PRE class=code>
+fun f {a = a, b = b, c = c} = {a = a, b = b}</PRE>
+
+<P>The labels may have type annotations, i.e. <TT>{a : int, b}</TT> abbreviates
+<TT>{a = a : int, b = b}</TT>.</P>
+
+
+<?php subsection("records-extension", "Record extension") ?>
+
+<P>Ellipses in a record pattern may be followed by a pattern that will be matched against the "remaining" record. For example,</P>
+
+<PRE class=code>
+val r = {a = 1, b = true, c = "hello"}
+val {a = n, ... = r'} = r</PRE>
+
+<P>will bind <TT>r'</TT> to the record <TT>{b=true, c="hello"}</TT>.
+
+<P>Analogously, records can be constructed as extension of other records using ellipses:</P>
+
+<PRE class=code>
+val r'' = {d = 3.14, ... = r'}</PRE>
+
+<P>This example will bind <TT>r''</TT> to the record <TT>{b=true, c="hello", d=3.14}</TT>. Note that the ellipses expression must have record type, but this record may not contain any of the added labels.</P>
+
+<P>Record extension can also be used in type expressions:</P>
+
+<PRE class=code>
+type 'a t = {a : 'a, b : bool}
+type u = {c : char, d : string, ... : int t}</PRE>
+
+<P>Now the type <TT>u</TT> is equivalent to <TT>{a:int, b:bool, c:char, d:string}</TT>. Again, the label sets of the ellipses type and the explicit fields must be disjoint.</P>
+
+<P>In all three forms, the ellipses may appear anywhere in the row, but a row may not have multiple occurences of ellipses.</P>
+
+<?php subsection("records-update", "Functional record update") ?>
+
+<P>There also is syntax for functional record update. For example,</P>
+
+<PRE class=code>
+let
+    val r = {a = 1, b = true, c = "hello"}
+in
+    {r where a = 3, c = "bye"}
+end</PRE>
+
+<P>evaluates to</P>
+
+<PRE class=code>
+{a = 3, b = true, c = "bye"}</PRE>
+
+<P>Here, the updated record must have a type containing all labels being updated. However, the types of these fields may change with the update.</P>
+
+<?php subsection("records-syntax", "Record syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
+    <TD> record update </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>exprow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt;
+                    &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> label as expression </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>=</TT> <I>exp</I> &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> ellipses </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>patrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> &lt;<TT>=</TT> <I>pat</I>&gt; &lt;<TT>,</TT> <I>patrow</I>&gt; </TD>
+    <TD> ellipses </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>tyrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>:</TT> <I>ty</I> &lt;<TT>,</TT> <I>tyrow</I>&gt; </TD>
+    <TD> ellipses </TD>
+  </TR>
+</TABLE>
+
+<!--
+<P>The expression <I>atexp</I> in a record update must have a record type that
+includes all fields contained in <I>exprow</I>. The types of the fields must
+match. The result of evaluating a record update is a record of the same type
+but with the fields occuring in <I>exprow</I> replacing the corresponding
+values of the original record.</P>
+-->
+
+<P>Labels as expressions are a derived form. Likewise is record update:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt; &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> ==> </TD>
+    <TD> <I>vid</I> <TT>=</TT> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt; &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+  </TR>
+  <TR>
+    <TD> <TT>{</TT><I>atexp</I> <TT>where</TT> <I>exprow</I><TT>}</TT> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>let</TT> <TT>val</TT> <TT>{</TT><I>patrow</I><TT>,</TT> <TT>...</TT> <TT>=</TT> <I>vid</I><TT>}</TT> <TT>=</TT> <I>atexp</I> <BR>
+         <TT>in</TT> <TT>{</TT><I>exprow</I><TT>,</TT> <TT>...</TT> <TT>=</TT> <I>vid</I><TT>}</TT> <TT>end</TT> </TD>
+  </TR>
+</TABLE>
+
+<P>In the rewritten form of record update, <I>vid</I> is a fresh identifier, and <I>patrow</I> is obtained from <I>exprow</I> by replacing all right-hand sides with wildcards.</P>
+
+
+<?php section("patterns", "patterns") ?>
+
+<?php subsection("patterns-alt", "Alternative patterns") ?>
+
+<P>Alternative patterns (also called <EM>or patterns</EM>) are present in SML/NJ
+as well and allow more compact case analysis:</P>
+
+<PRE class=code>
+fun fac (0|1) = 1
+  | fac   n   = n * fac(n-1)</PRE>
+
+<P>The syntax subsumes multiple or-patterns and multiple matches:</P>
+
+<PRE class=code>
+case exp of
+  | A | B | C => 1
+  | D | E     => 2</PRE>
+
+<P>The patterns nested inside an alternative pattern may bind variables, but
+all patterns must bind exactly the same set of variables with the same
+type.</P>
+
+
+<?php subsection("patterns-layered", "Layered patterns") ?>
+
+<P>Layered patterns (also called <EM>as patterns</EM>) have been generalized to
+allow arbitrary patterns on both sides (in contrast to just an identifier on
+the left hand side as in SML). This is useful as it allows to put the
+identifier on either side:</P>
+
+<PRE class=code>
+fun f(xs as x::xr) = bla
+fun g(x::xr as xs) = blo</PRE>
+
+<!--
+<?php subsection("patterns-negated", "Negated patterns") ?>
+
+<P>Negated patterns are a more special feature. A negated pattern matches
+exactly when the operand pattern does not match. This sometimes allows
+specifying cases in a more natural order, in particular in combination with or
+patterns:</P>
+
+<PRE class=code>
+fun f(non(1 | 2 | 3)) = 0
+  | f n               = n</PRE>
+
+<P>The nested pattern may bind variables, but these are not visible outside.
+(They may be useful for a local guard, for example.)</P>
+-->
+
+<?php subsection("patterns-guard", "Guard patterns") ?>
+
+<P>The most important extension are pattern guards. These allow decorating
+patterns with boolean conditions. A guarded pattern matches, if the pattern
+matches and the guard expression evaluates to <TT>true</TT>. The guard
+expression can refer to variables bound by the nested pattern:</P>
+
+<PRE class=code>
+fun f(x,y) if (x = y) = g x
+  | f(x,y)            = h y</PRE>
+
+<P>Guards can be nested into other patterns. Any side effect produced by the
+guard expression occurs whenever the pattern is tried to be matched.</P>
+
+
+<?php subsection("patterns-syntax", "Pattern syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>pat</I><SUB>1</SUB> <TT>|</TT> ... <TT>|</TT>
+                    <I>pat</I><SUB><I>n</I></SUB> <TT>)</TT> </TD>
+    <TD> alternative (<I>n</I>&ge;2) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>pat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>pat</I> <TT>as</TT> <I>pat</I> </TD>
+    <TD> layered (R) </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>non</TT> <I>pat</I> </TD>
+    <TD> negated </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>pat</I> <TT>if</TT> <I>atexp</I> </TD>
+    <TD> guarded (L) </TD>
+  </TR>
+  <TR></TR>
+
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I> <TT>handle</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> handle exception </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>case</TT> <I>exp</I> <TT>of</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> case analysis </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> function </TD>
+  </TR>
+  <TR></TR>
+
+  <TR>
+    <TD> <I>datbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>conbind</T> &lt;<TT>and</TT> <I>datbind</I>&gt; </TD>
+  </TR>
+  <TR>
+    <TD> <I>datdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>condesc</T> &lt;<TT>and</TT> <I>datdesc</I>&gt; </TD>
+  </TR>
+
+</TABLE>
+
+
+<?php section("optional", "bars and semicolons") ?>
+
+<?php subsection("optional-bar", "Optional bar") ?>
+
+<P>An optional bar is allowed before the first rule of a match, yielding more regular and editing-friendly notation:</P>
+
+<PRE class=code>
+case f n of
+   | LESS => f(n-1)
+   | EQUAL => n
+   | GREATER => f(n+1)</PRE>
+
+<P>This is also supported for <TT>fn</TT> and <TT>handle</TT>, and for function declarations using <TT>fun</TT>.</P>
+
+<P>Optional bars are also allowed with datatype declarations and specifications:</P>
+
+<PRE class=code>
+datatype order =
+   | LESS
+   | EQUAL
+   | GREATER</PRE>
+
+<?php subsection("optional-semicolon", "Optional semicolon") ?>
+
+<P>In a similar vein, a terminating semicolon optionally is allowed in sequence expressions:</P>
+
+<PRE class=code>
+(
+    print "[";
+    print(Int.toString n);
+    print "]";
+)</PRE>
+
+<P>and</P>
+
+<PRE class=code>
+let
+    val s = Int.toString n
+in
+    print "[";
+    print s;
+    print "]";
+end</PRE>
+
+
+<?php section("rec", "recursive definitions") ?>
+
+<?php subsection("rec-declaration", "Recursive declarations") ?>
+
+<P>SML only allows function expressions on the right hand side of <TT>val</TT>
+<TT>rec</TT>. Alice is a bit more permissive. For example, one can construct
+cyclic lists:</P>
+
+<PRE class=code>
+val rec xs = 1::2::xs</PRE>
+
+<P>Or regular trees:</P>
+
+<PRE class=code>
+datatype tree = LEAF | BRANCH of tree * tree
+
+val rec tree = BRANCH(BRANCH(tree,LEAF), tree)</PRE>
+
+<P>The right-hand sides of recursive bindings may be any expressions that are
+<EM>non-expansive</EM> (i.e. syntactic values) and match the corresponding
+left-hand side patterns (statically). Unfounded recursion is legal, but
+evaluates to <A href="futures.html">futures</A> that cannot be eliminated:</P>
+
+<PRE class=code>
+val rec (x,y) = (y,x)</PRE>
+
+<P>Note that the same data structures are constructable by explicit use of <A
+href="futures.html#promises">promises</A>.</P>
+
+
+<?php subsection("rec-expression", "Recursive expressions") ?>
+
+<P>Recursive values may be constructed directly without resorting to recursive 
+declarations:</P>
+
+<PRE class=code>
+val l = rec xs => 1::2::xs</PRE>
+
+
+<?php subsection("rec-syntax", "Recursive expression syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
+    <TD> recursion </TD>
+  </TR>
+</TABLE>
+
+<P>Such <TT>rec</TT> expressions are expanded as a derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>let</TT> <TT>val</TT> <TT>rec</TT> <I>vid</I> <TT>as</TT> <I>pat</I>
+    <TT>=</TT> <I>exp</I> <TT>in</TT> <I>vid</I> <TT>end</TT></TD>
+  </TR>
+</TABLE>
+
+<P>where <I>vid</I> is a new identifier.</P>
+
+
+<?php section("if", "Conditionals") ?>
+
+<P>For imperative code it is sometimes convenient to have a conditional without an obligatory <TT>else</TT> branch. Alice ML provides this as a trivial derived form.</P>
+
+
+<?php subsection("if-syntax", "Conditional syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> &lt;<TT>else</TT> <I>exp</I><SUB>3</SUB>&gt; </TD>
+    <TD> conditional </TD>
+  </TR>
+</TABLE>
+
+<P>A conditional with an omitted branch is a derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> <TT>else</TT> <TT>()</TT> </TD>
+</TABLE>
+
+<P>Note that the expansion implies that <I>exp</I><SUB>2</SUB> must have type <TT>unit</TT>.</P>
+
+
+<?php section("finally", "Finalization") ?>
+
+<P>Cleaning up resources after a computation usually has to be done even if the computation exits abnormally, with an exception. To make this convenient,
+Alice ML has syntactic sugar for performing a finalization action after evaluating another expression, regardless of whether this other expression terminates regularly or exceptionally.</P>
+
+
+<?php subsection("finally-syntax", "Finalization syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I><SUB>1</SUB> <TT>finally</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> finalization (L) </TD>
+  </TR>
+</TABLE>
+
+<P>Finalization is a derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I><SUB>1</SUB> <TT>finally</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>let</TT> <BR>
+         &nbsp;&nbsp;&nbsp;&nbsp;<TT>val</TT> <I>vid</I><SUB>2</SUB> <TT>=</TT>
+              <TT>fn</TT> <TT>_</TT> <TT>=></TT> <I>exp</I><SUB>2</SUB> <BR>
+         &nbsp;&nbsp;&nbsp;&nbsp;<TT>val</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT>
+              <I>exp</I><SUB>1</SUB> <TT>handle</TT> <I>vid</I><SUB>3</SUB> <TT>=></TT> <TT>(</TT><I>vid</I><SUB>2</SUB><TT>();</TT> <TT>raise</TT> <I>vid</I><SUB>3</SUB><TT>)</TT> <BR>
+         <TT>in</TT> <BR>
+         &nbsp;&nbsp;&nbsp;&nbsp;<I>vid</I><SUB>2</SUB><TT>();</TT> <I>vid</I><SUB>1</SUB> <BR>
+         <TT>end</TT>
+    </TD>
+</TABLE>
+
+<P>where <I>vid</I><SUB>1</SUB>,...,<I>vid</I><SUB>3</SUB> are new identifiers.</P>
+
+<P>Note that <TT>finally</TT> can be conveniently combined with <TT>handle</TT>, to achieve an effect similar to the <TT>try</TT>...<TT>catch</TT>...<TT>finally</TT> syntax known from other languages, e.g.:</P>
+
+<PRE class=code>
+exp0
+handle p1 => exp1
+     | p2 => exp2
+finally exp3</PRE>
+
+
+<?php section("assert", "Assertions") ?>
+
+<P>Syntactic sugar is provided for expressing preconditions and other assertions conveniently. If an assertion fails, the exception <A href="library/toplevel.html#interface"><TT>Assert</TT></A> is raised, indicating the location of the failed assertion. Assertions can be activated selectively with the <A href="compiler.html#options"><TT>--assert</TT></A> compiler switch.</P>
+
+
+<?php subsection("assert-syntax", "Assertion syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> </TD>
+    <TD> boolean assertion </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> pattern assertion </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> exception assertion </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> boolean precondition </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> pattern precondition </TD>
+  </TR>
+</TABLE>
+
+<P>Assertions are derived forms:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I><SUB>1</SUB> <TT>do</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> <TT>else</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I><SUB>1</SUB> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <TT>(case</TT> <I>exp</I><SUB>1</SUB> <TT>of</TT> <I>pat</I> <TT>=></TT> <TT>true</TT> <TT>|</TT> <TT>_</TT> <TT>=></TT> <TT>false)</TT> <TT>do</TT> <I>exp</I><SUB>2</SUB> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>do</TT> <TT>lazy</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>of</TT> <I>pat</I> <TT>do</TT> <TT>()</TT> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <TT>((</TT><I>exp</I><TT>;</TT> <TT>false)</TT> <TT>handle</TT> <I>pat</I> <TT>=></TT> <TT>true</TT> <TT>|</TT> <TT>_</TT> <TT>=></TT> <TT>false)</TT> <TT>do</TT> <TT>()</TT> </TD>
+  </TR>
+</TABLE>
+
+<P>Here, <TT>_line_</TT> will be on the same line where the <TT>assert</TT> keyword occurred.</P>
+
+<P>Assertions can be assigned an explicit level by appending a digit to the <TT>assert</TT> keyword. Such assertions can be controlled via the <A href="compiler.html#options"><TT>--assert</TT></A> compiler switch that specifies the assertion level (0-9) of the compiled code. Any assertion that has a level annotation higher then that assertion level will be disabled. Note that level 0 assertions cannot be disabled. An unannotated assertion defaults to level 0.</P>
+
+<P>When an assertion is disabled, the basic derived form is resolved differently:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp<SUB>1</SUB></I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> ==> </TD>
+    <TD> <I>exp<SUB>2</SUB></I> </TD>
+  </TR>
+</TABLE>
+
+<P>From this, the other expansions follow:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp<SUB>1</SUB></I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> ==> </TD>
+    <TD> <I>exp<SUB>2</SUB></I> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>lazy</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>()</TT> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>()</TT> </TD>
+  </TR>
+</TABLE>
+
+<P>Note that boolean assertions of the form <TT>assert</TT> <I>exp</I> are fully polymorphic. This enables the following idiom for indicating "impossible" cases:</P>
+
+<PRE class=code>
+fun f (x::xs) = g x
+  | f  nil    = assert false  (* we know the list is non-empty *)</PRE>
+
+<P>The value of such an assert expression should never be used and is thus represented by a <A href="futures.html#failed">failed future</A>. Accessing it will also raise an <TT>Assert</TT> exception.</P>
+
+<?php section("do", "Statements") ?>
+
+<P>The common SML idiom of writing a declaration</P>
+
+<PRE class=code>
+val _ = exp</PRE>
+
+<P>for causing a side effect can be abbreviated to</P>
+
+<PRE class=code>
+do exp</PRE>
+
+<P>This is a simple derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>do</TT> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>val</TT> <TT>_</TT> <TT>:</TT> <TT>{}</TT> <TT>=</TT> <I>exp</I> </TD>
+  </TR>
+</TABLE>
+
+<P>I.e. the expression must have type <TT>unit</TT>.</P>
+
+<?php footing() ?>

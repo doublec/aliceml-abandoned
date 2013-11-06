@@ -1,0 +1,108 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Convert a lexer into a lexer which counts soure position. *)
+
+import signature LEXER       from "../../lib/ml-yacc/base-sig"
+import structure LrParser    from "../../lib/ml-yacc/parser2"
+import signature LEXER_ERROR from "LEXER_ERROR-sig"
+
+
+functor MkCountPosLexer(
+	structure Lexer: LEXER
+	where type UserDeclarations.pos = int
+	where type ('a,'b) UserDeclarations.token = ('a,'b) LrParser.Token.token
+	structure LexerError: LEXER_ERROR
+	where type token =
+		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
+	val error : ((int * int) * (int * int)) * LexerError.error -> 'a
+	val startLine : int
+) : LEXER =
+struct
+
+    structure UserDeclarations =
+    struct
+	open Lexer.UserDeclarations
+	type pos = int * int
+    end
+
+    fun queue () = (ref [], ref [])
+    fun enqueue((_, back as ref xs), x) = back := x::xs
+    fun dequeue(front as ref (x::xs), _) = (front := xs; x)
+      | dequeue(ref [], ref []) = raise Empty
+      | dequeue(front as ref [], back as ref xs) =
+	(front := List.rev xs; back := []; dequeue(front, back))
+
+    fun makeLexer yyinput =
+	let
+	    val lin  = ref startLine
+	    val col  = ref 0
+	    val pos  = ref 0
+	    val buf  = ref ""	(* current buffer *)
+	    val off  = ref 0	(* offset to start of current buffer *)
+	    val que  = queue ()	(* buffer queue *)
+	    val offE = ref 0	(* end offset *)
+
+	    fun count(i, i', lin, col) =
+		if i = i' then
+		    (lin,col)
+		else (case String.sub(!buf, i)
+		    of #"\n" => count(i+1, i', lin+1, 0)
+		     | #"\t" => count(i+1, i', lin, col+8-(col mod 8))
+		     |  _    => count(i+1, i', lin, col+1)
+		) handle Subscript =>
+		let
+		    val n = String.size(!buf)
+		    val (buf',off') = dequeue que
+		in
+		    buf := buf' ;
+		    off := off' ;
+		    count(0, i'-n, lin, col)
+		end
+
+	    fun transform(pos1, pos2) =
+		let
+		    val n0 = !off
+		    val pos1' as (l1,c1) = count(!pos-n0, pos1-n0, !lin, !col)
+		    val n0 = !off
+		    val pos2' as (l2,c2) = count(pos1-n0, pos2-n0, l1, c1)
+		in
+		    lin := l2 ;
+		    col := c2 ;
+		    pos := pos2 ;
+		    (pos1',pos2')
+		end
+
+	    fun yyinput' n =
+		let
+		    val s = yyinput n
+		in
+		    enqueue(que, (s, !offE)) ;
+		    offE := !offE + String.size s ;
+		    s
+		end
+
+	    val lexer = Lexer.makeLexer yyinput'
+	in
+	    fn () =>
+		let
+		    val LrParser.Token.TOKEN(term, (svalue,pos1,pos2)) =
+			lexer() handle LexerError.EOF f => f(!offE, !offE)
+		    val (pos1', pos2') = transform(pos1, pos2)
+		in
+		    LrParser.Token.TOKEN(term, (svalue, pos1', pos2'))
+		end
+		handle LexerError.Error(position, e) =>
+		    error(transform position, e)
+	end
+
+end

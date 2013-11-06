@@ -1,0 +1,37 @@
+import structure Tag from "Tag"
+
+signature DOC =
+sig
+    datatype item =
+	  TEXT   of string list	(* reversed *)
+	| TAGGED of Tag.tag * doc
+    withtype doc = item list
+
+    val size :  doc -> int
+    val print : doc -> unit
+end
+
+structure Doc : DOC =
+struct
+    datatype item =
+	  TEXT   of string list	(* reversed *)
+	| TAGGED of Tag.tag * doc
+    withtype doc = item list
+
+    fun size doc                   = size'(doc, 0)
+    and size'(items, n)            = List.foldl sizeItem n items
+    and sizeItem(TEXT ss, n)       = List.foldl sizeString n ss
+      | sizeItem(TAGGED(t,doc), n) = size'(doc, n + Tag.cost t)
+    and sizeString(s, n)           = String.size s + n
+
+    fun print items              = List.app printItem items
+    and printItem(TEXT ss)       = List.appr TextIO.print ss
+      | printItem(TAGGED(t,doc)) =
+	let
+	    val tag = Tag.toString t
+	in
+	    TextIO.print("<" ^ tag ^ ">");
+	    print doc;
+	    TextIO.print("</" ^ tag ^ ">")
+	end
+end

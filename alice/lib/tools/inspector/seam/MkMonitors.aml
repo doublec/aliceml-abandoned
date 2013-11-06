@@ -1,0 +1,269 @@
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure MkHashImpMap  from "x-alice:/lib/data/MkHashImpMap"
+import structure RefMap        from "x-alice:/lib/data/RefMap"
+import structure UnsafeValue   from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure GrTypes       from "gui/GrTypes"
+import signature MONITORS      from "MONITORS-sig"
+import structure Common        from "Common"
+import structure Prefs         from "Prefs"
+import structure TypeMappers   from "TypeMappers"
+import structure AbsTree       from "AbsTree"
+
+functor MkMonitors (QueuePut : Common.QUEUE_PUT) :> MONITORS =
+struct
+
+  (* Counter for cleaning phase. *)
+  val passCounter = ref 0
+
+  val refCounter = ref 1
+  fun newRef () = (refCounter := !refCounter + 1 ; !refCounter)
+
+  fun getDesc [] = assert false
+    | getDesc (x :: _) =
+            case GrTypes.getDesc x of
+              AbsTree.NestedRow _ => assert false
+            | AbsTree.TopLevel    => assert false
+	    | AbsTree.Struct      => assert false
+	    | AbsTree.Decl _      => assert false
+            | AbsTree.Value (t, v, _)    => Common.Value (t, v)
+            | AbsTree.Module (s, m, _)   => Common.Module (s, m)
+            | AbsTree.ListTail (t, v, _) => Common.Value (t, Reflect.reflect v)
+
+  fun isContainer (GrTypes.Container _) = true
+    | isContainer _ = false
+
+  (****************** REFERENCES **********************)
+
+  (* Each references is mapped to another reference holding the
+   * previous known value of the reference,
+   * an id
+   * and a pass number
+   * and a list of trees representing that reference. *)
+  val references = RefMap.map ()
+
+  fun launchMonitor () =
+      spawn (Thread.sleep Prefs.monitorPeriod ;
+	     if RefMap.isEmpty references then ()
+	     else QueuePut.put Common.Monitor)
+
+  fun ifChanged replace (newref, (oldref, id, pass, trees)) =
+      if UnsafeValue.same (!oldref, !newref) then ()
+      else
+	let
+	  val oldtrees = !trees
+          (* Get the description of the first tree and build an
+	   * abstract tree, to be used for all elements of the list. *)
+	  val desc = getDesc oldtrees
+          (* The following depth limit is not satisfactory. *)
+	  val abstree = TypeMappers.map (!Prefs.depthLimit, desc)
+	in
+	  oldref := !newref ; 
+	  List.app (replace abstree) oldtrees
+	end
+
+  fun monitor replace =
+      let val appChanged = ifChanged replace
+      in
+	fn () => (RefMap.appi appChanged references ;
+		  launchMonitor ())
+      end
+
+  fun addReference (r, tree) =
+    let
+      (* We do not care about the type of the reference. *)
+      val r = (UnsafeValue.cast r : Reflect.value ref)
+      val _ = assert (isContainer tree)
+    in
+      case RefMap.lookup (references, r) of
+        SOME (old, id, _, trees) => (trees := tree :: (!trees) ; id)
+      | NONE => 
+	let (* Start a new monitoring thread if this is the first element. *)
+	  val isFirst = RefMap.isEmpty references
+          val id = newRef ()
+	in
+          RefMap.insert (references, r, (ref (!r), id, ref 0, ref [tree])) ;
+	  (if isFirst then launchMonitor () else ()) ;
+          id
+	end
+    end 
+    
+  (****************** FUTURES ***********************)
+  (* Including Lazy futures. *)
+  (* The map maps future ids to a tuple :
+   *     (value, id, passNb ref, trees ref)
+   *)
+
+  datatype tree = datatype GrTypes.tree
+  datatype flag = datatype GrTypes.flag
+  datatype content = datatype GrTypes.content
+
+  structure IntMap = MkHashImpMap Int
+  val futureCounter = ref 2 (* 0 and 1 are reserved. *)
+  fun futureNewId () = (futureCounter := !futureCounter + 1 ; !futureCounter)
+
+  val futures = IntMap.map ()
+
+  fun findFutureId v =
+      IntMap.find (fn (f, _, _, _) => UnsafeValue.same (f, v)) futures
+     
+  fun updateFuture replace id =
+      case IntMap.lookup (futures, id) of
+	NONE => () (* It has been removed. *)
+      | SOME (_, _, _, trees) =>
+	let 
+	  val trees = !trees
+	  val desc  = getDesc trees
+          (* The following depth limit is not satisfactory. *)
+	  val abstree = TypeMappers.map (!Prefs.depthLimit, desc)
+	in
+	  IntMap.remove (futures, id) ;
+	  List.app (replace abstree) trees
+	end
+
+  fun monitorFuture (f, id) =
+      spawn (if Hole.isHole f
+	     then ignore(Future.await(Hole.future f)) handle _ => ()
+	     else if Future.isLazy f
+	     then ignore(UnsafeValue.awaitRequest f) handle _ => ()
+	     else ignore(Future.await f) handle _ => () ; 
+	     QueuePut.put (Common.Future id))
+
+  fun addFuture (v, tree) =
+      (assert (isContainer tree) ;
+       case findFutureId v of
+	   SOME (f, id, _, trees) => (trees := tree :: (!trees) ; id)
+	 | NONE =>
+	   let
+	       val newid = futureNewId ()
+	       val trees = ref [tree]
+	   in
+	       IntMap.insert (futures, newid, (v, newid, ref 0, trees)) ;
+	       monitorFuture (v, newid) ;
+	       newid
+	   end)
+
+  fun purge () = (IntMap.removeAll futures ;
+		  RefMap.removeAll references)
+  (************* DO not forget to kill threads. *************)
+
+  fun mark (Simple {content = Fold (SOME {tree, ...}), ...}) = mark tree
+    | mark (Simple _) = ()
+    | mark (Prefix {tree, ...}) = mark (!tree)
+    | mark (Container {desc, height, kids, ...}) =
+      let
+        (* Is is a reference or a future ? *)
+	val _ = case desc of
+		  AbsTree.NestedRow _ => ()
+		| AbsTree.TopLevel    => ()
+                | AbsTree.Struct      => ()
+                | AbsTree.Decl _      => ()
+		| AbsTree.Value (_, _, Reference)    => height := ~1
+		| AbsTree.Value (_, _, Future ir)    => height := ~(!ir)
+		| AbsTree.ListTail (_, _, Future ir) => height := ~(!ir)
+		| AbsTree.Module (_, _, Future ir)   => height := ~(!ir)
+		| _ => ()
+      in
+	Array.app mark (!kids)
+      end
+
+  fun isNotMarked (Container {height, ...}) = !height >= 0
+    | isNotMarked _ = assert false
+
+  fun filter trees = (trees := List.filter isNotMarked (!trees) ;
+		      List.null (!trees))
+
+  fun removeReference (AbsTree.Value (_, v, Reference)) =
+            let val r = (Reflect.reify v : Reflect.value ref)
+	    in
+	      case RefMap.lookup (references, r) of
+		SOME (old, _, oldcounter, trees) =>
+		        if !oldcounter = !passCounter then ()
+			else (oldcounter := !passCounter ;
+			      if filter trees
+			        then RefMap.remove (references, r)
+			        else ())
+			      
+	      | NONE => ()
+	    end
+    | removeReference _ = assert false
+
+  fun removeFuture id =
+      case IntMap.lookup (futures, id) of
+	NONE => ()
+      | SOME (_, _, oldcounter, trees) =>
+	               if !oldcounter = !passCounter then ()
+		       else (oldcounter := !passCounter ;
+			     if filter trees
+			       then IntMap.remove (futures, id)
+			       else ())
+
+  fun removeMarked (Simple {content = Fold (SOME {tree, group, ...}), ...}) =
+                            (Gtk.Object.destroy group ; removeMarked tree)
+    | removeMarked (Simple _) = ()
+    | removeMarked (Prefix {tree, ...}) = removeMarked (!tree)
+    | removeMarked (Container {desc, height, kids, ...}) =
+      let
+        (* Is it marked ? *)
+	val height = !height
+        val _ = if height = ~1 then removeReference desc
+		else if height < 0 then removeFuture (~height)
+		else ()
+      in
+	Array.app removeMarked (!kids)
+      end
+
+  fun printMap' (v, id, p, trees) =
+      (print ("Future #" ^ (Int.toString id) ^ "  pass " ^ (Int.toString (!p))
+	      ^ "/" ^ (Int.toString (!passCounter)) ^ "  ==  " ^ 
+	      (Int.toString (List.length (!trees))) ^ " elements " ^
+	      (Int.toString (List.length (List.filter isNotMarked (!trees))))
+	      ^ " of them are not marked.\n"))
+
+  fun printMap () = (print "======== Future map ========== \n" ;
+		     IntMap.app printMap' futures ;
+		     print "\n")
+
+  fun printRefMap' (_, id, p, trees) =
+      (print ("Reference "
+	      ^ "  pass " ^ (Int.toString (!p))
+	      ^ "/" ^ (Int.toString (!passCounter)) ^ "  ==  " ^ 
+	      (Int.toString (List.length (!trees))) ^ " elements " ^
+	      (Int.toString (List.length (List.filter isNotMarked (!trees))))
+	      ^ " of them are not marked.\n"))
+
+
+  fun printRefMap () = (print "======== References map ========== \n" ;
+		     RefMap.app printRefMap' references ;
+		     print "\n")
+
+  fun dump () = (printMap () ; printRefMap ())
+
+  fun destroy tree =
+      case tree of
+	(* Optimization. *)
+	(Simple {content = Fold (SOME {tree = tree', group = group', ...}),
+		 ...}) => (destroy tree' ;
+			   GrTypes.destroy tree ;
+			   Gtk.Object.destroy group')
+	(* Optimization. *)
+      | Simple _ => GrTypes.destroy tree
+
+      | _ =>
+	(
+	 (* Traverse the tree and mark all the references / futures
+	  * that need to be removed from the dictionnaries. *)
+	 mark tree ;
+	 
+	 (* Traverse the tree again, and remove the marked elements. *)
+	 passCounter := !passCounter + 1 ;
+	 removeMarked tree ;
+	 
+	 (* Last, destroy the graphical elements of the tree. *)
+	 GrTypes.destroy tree)
+
+  fun identifiers (updr, updf) =
+      (RefMap.app (fn (_,n,_,trees) => List.app (updr n) (!trees)) references ;
+       IntMap.app (fn (_,n,_,trees) => List.app updf (!trees)) futures)
+
+end

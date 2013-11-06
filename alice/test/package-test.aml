@@ -1,0 +1,88 @@
+val p = pack (type t = int val x = 5) : (type t val x : t);
+structure M = unpack p : (val x : int);
+structure M = unpack p : (type t = int val x : int);
+
+import "x-alice:/lib/rtt/Name";
+import "x-alice:/lib/rtt/Label";
+import "x-alice:/lib/rtt/Path";
+import "x-alice:/lib/rtt/PathMap";
+import "x-alice:/lib/rtt/Type";
+import "x-alice:/lib/rtt/Inf";
+import "x-alice:/lib/system/Reflect";
+import "x-alice:/lib/system/DynMatch";
+import "x-alice:/lib/utility/PrettyPrint"
+import "x-alice:/lib/rtt/PPPath"
+import "x-alice:/lib/rtt/PPType"
+import "x-alice:/lib/rtt/PPInf"
+fun prInf j = (PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 79); 
+	       TextIO.print "\n");
+
+signature S = (type t val x : t);
+structure M = (type t = int val x = 5);
+
+val j = let structure X = Reflect.ReflectSig(signature S = S) in X.x end;
+val m = let structure X = Reflect.Reflect(signature S = S structure X = M) in X.x end;
+val rea = DynMatch.match(m,j);
+val j' = Inf.realise(rea,j);
+prInf j';
+
+
+
+signature S1 = (type t type u = t);
+val j1 = let structure X = Reflect.ReflectSig(signature S = S1) in X.x end;
+val p = case Inf.inspectItem(List.nth(Inf.items(Inf.asSig j1),1)) of Inf.TypItem(p,_) => p;
+
+val ti = let structure X = Reflect.ReflectType(type t = int) in X.x end;
+val rea = Inf.rea();
+PathMap.insert(#typ_rea rea, p, ti);
+val j1' = Inf.realise(rea,j1);
+prInf j1';
+
+val s = Inf.emptySig();
+Inf.extendTyp(s,p,Type.singKind(Type.con(p,Type.starKind())));
+Inf.extendTyp(s, Path.fromLab(Label.fromString "u"), Type.singKind(Type.con(p,Type.starKind())));
+
+
+
+val p = pack (signature S = () structure X = ()) : (signature S structure X : S);
+structure M = unpack p : (structure X : ());
+structure M = unpack p : (signature S = () structure X : ());
+
+structure SS = (signature S = (type t val x:t) structure X = (type t = int val x=5));
+signature SS = (signature S = (type t val x:t) structure X:S);
+signature SS' = (signature S structure X:S);
+val p = pack SS : SS;
+prInf(#2(Reflect.reflectPackage p));
+val p' = pack SS : SS';
+prInf(#2(Reflect.reflectPackage p'));
+structure X = unpack p : SS';
+structure X = unpack p : SS;
+structure X = unpack p : SS where type X.t = int;
+structure X = unpack p' : SS';
+structure X = unpack p' : SS;
+structure X = unpack p' : SS where type X.t = int;
+
+
+
+functor Seal (signature S) (X:S) = X:>S;
+structure M = Seal (signature S = (type t val x:t)) (type t = int val x = 5);
+structure _ = unpack (pack (type t=M.t) : (type t=M.t)) : (type t=M.t);
+
+
+
+
+
+signature T = (type t; val x:t);
+structure M = (type t=int; val x=4);
+functor F(signature S)(X:(structure A:S structure B:S)) = X:(structure A:S structure B:S);
+functor G(signature S)(X:(structure A:S structure B:S)) = X:>(structure A:S structure B:S);
+(*This hangs the elaborator!*)
+fn () => let structure X = F(signature S=T)(structure A=M structure B=M) in [X.A.x,X.B.x] end;
+fn () => let structure X = G(signature S=T)(structure A=M structure B=M) in [X.A.x,X.B.x] end;
+
+
+(*This hangs the elaborator!*)
+signature T = (type t);
+structure M = (type t=int);
+functor F(signature S)(structure A:S structure B:S) = ();
+structure X = F(signature S=T)(structure A=M structure B=M);

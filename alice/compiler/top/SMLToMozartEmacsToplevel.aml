@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure MkEmacsToplevel
+from "MkEmacsToplevel"
+
+import
+    structure SMLToMozartRecursiveCompiler
+from "SMLToMozartRecursiveCompiler"
+
+structure SMLToMozartEmacsToplevel =
+    MkEmacsToplevel(structure RecursiveCompiler =
+			SMLToMozartRecursiveCompiler)

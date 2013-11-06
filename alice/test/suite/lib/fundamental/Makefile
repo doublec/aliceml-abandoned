@@ -1,0 +1,3 @@
+SOURCES=IntInf.aml Alt.aml String.aml Bool.aml General.aml Option.aml IEEEReal.aml Integer.aml Char.aml Byte.aml List.aml Array.aml Vector.aml Pair.aml Array2.aml Ref.aml ListPair.aml VectorPair.aml Real.aml Word.aml Word32.aml Word8.aml ArraySlice.aml VectorSlice.aml Substring.aml Word8Array.aml CharArray.aml Word8ArraySlice.aml CharArraySlice.aml WideCharArray.aml WideCharArraySlice.aml Word8Vector.aml CharVector.aml WideCharVector.aml Word8VectorSlice.aml CharVectorSlice.aml WideCharVectorSlice.aml Math.aml Exn.aml Future.aml Promise.aml Hole.aml Package.aml Thread.aml StringCvt.aml
+
+-include ../../AliceMakefile

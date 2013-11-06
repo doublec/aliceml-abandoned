@@ -1,0 +1,60 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                            from "Pervasive"
+import __primitive
+       type unit and bool and int and real datatype ref from "ToplevelTypes"
+
+
+(* Fixity *)
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  3  :=:								(**)
+infix  0  before
+
+
+(* References *)
+
+__primitive val op := : 'a ref * 'a -> unit	= "Ref.:="
+
+fun !(ref v)					= v
+fun (r1 as ref x1) :=: (r2 as ref x2)		= (r1 := x2 ; r2 := x1)	(**)
+						  (*TODO: better be atomic *)
+
+(* Generic and overloaded Identifiers (but we don't overload them :-P) *)
+
+__primitive val op =  :	''a * ''a -> bool	= "op="
+__primitive val op <> :	''a * ''a -> bool	= "op<>"
+
+__primitive val ~ :	int -> int		= "Int.~"
+__primitive val op + :	int * int -> int	= "Int.+"
+__primitive val op - :	int * int -> int	= "Int.-"
+__primitive val op * :	int * int -> int	= "Int.*"
+__primitive val op / :	real * real -> real	= "Real./"
+__primitive val op div:	int * int -> int	= "Int.div"
+__primitive val op mod:	int * int -> int	= "Int.mod"
+
+__primitive val abs :	int -> int		= "Int.abs"
+
+__primitive val op < :	int * int -> bool	= "Int.<"
+__primitive val op > :	int * int -> bool	= "Int.>"
+__primitive val op <= :	int * int -> bool	= "Int.<="
+__primitive val op >= :	int * int -> bool	= "Int.>="

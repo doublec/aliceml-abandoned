@@ -1,0 +1,270 @@
+//
+// Authors:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus, 2000
+//   Leif Kornstaedt, 2000-2002
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
+#include <cstdio>
+#include "alice/Authoring.hh"
+
+
+#define STRINGIFY(x) #x
+#define XSTRINGIFY(x) STRINGIFY(x)
+#define CONCAT(x,y) x##y
+#define XCONCAT(x,y) CONCAT(x,y)
+
+#define ArrayTabulateFrame XCONCAT(XArray,TabulateFrame)
+#define ArrayTabulateWorker XCONCAT(XArray,TabulateWorker)
+
+#define DECLARE_XARRAY(array, x) DECLARE_BLOCKTYPE(XArray, array, x)
+#define DECLARE_XVECTOR(vector, x) DECLARE_BLOCKTYPE(XVector, vector, x)
+
+
+namespace {
+
+  //
+  // ArrayTabulateWorker
+  //
+  class ArrayTabulateWorker: public Worker {
+  private:
+    static ArrayTabulateWorker *self;
+
+    ArrayTabulateWorker(): Worker() {}
+  public:
+    static void Init() {
+      self = new ArrayTabulateWorker();
+    }
+
+    static void PushFrame(XArray *array, word closure, u_int i, u_int n);
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    virtual Result Run(StackFrame *sFrame);
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
+  };
+
+  class ArrayTabulateFrame: private StackFrame {
+  private:
+    enum { ARRAY_POS, CLOSURE_POS, INDEX_POS, NUMBEROFELEMENTS_POS, SIZE };
+  public:
+    static ArrayTabulateFrame *New(Worker *worker, XArray *array,
+				  word closure, u_int index,
+				  u_int numberOfElements) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(ARRAY_POS, array->ToWord());
+      frame->InitArg(CLOSURE_POS, closure);
+      frame->InitArg(INDEX_POS, index);
+      frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
+      return static_cast<ArrayTabulateFrame *>(frame);
+    }
+
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    XArray *GetArray() {
+      return XArray::FromWord(GetArg(ARRAY_POS));
+    }
+    word GetClosure() {
+      return GetArg(CLOSURE_POS);
+    }
+    u_int GetIndex() {
+      return Store::WordToInt(GetArg(INDEX_POS));
+    }
+    void UpdateIndex(u_int i) {
+      ReplaceArg(INDEX_POS, i);
+    }
+    u_int GetNumberOfElements() {
+      return Store::WordToInt(GetArg(NUMBEROFELEMENTS_POS));
+    }
+  };
+
+  ArrayTabulateWorker *ArrayTabulateWorker::self;
+
+  void ArrayTabulateWorker::PushFrame(XArray *array,
+				      word closure, u_int i, u_int n) {
+    ArrayTabulateFrame::New(self, array, closure, i, n);
+  }
+
+  u_int ArrayTabulateWorker::GetFrameSize(StackFrame *sFrame) {
+    ArrayTabulateFrame *frame = reinterpret_cast<ArrayTabulateFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
+  }
+
+  Worker::Result ArrayTabulateWorker::Run(StackFrame *sFrame) {
+    ArrayTabulateFrame *frame = reinterpret_cast<ArrayTabulateFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    XArray *array = frame->GetArray();
+    word closure    = frame->GetClosure();
+    u_int i         = frame->GetIndex();
+    u_int n         = frame->GetNumberOfElements();
+    Construct();
+    word wValue = Scheduler::GetCurrentArg(0);
+#if REQUEST_ELEMS_INT
+    if (Store::WordToInt(wValue) == INVALID_INT) {
+      Scheduler::SetCurrentData(wValue);
+      return Worker::REQUEST;
+    }
+#endif
+    array->Update(i, wValue);
+    if (++i == n) {
+      Scheduler::PopFrame(frame->GetSize());
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, array->ToWord());
+      return Worker::CONTINUE;
+    } else {
+      frame->UpdateIndex(i);
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, Store::IntToWord(i));
+      return Scheduler::PushCall(closure);
+    }
+  }
+
+  const char *ArrayTabulateWorker::Identify() {
+    return "ArrayTabulateWorker";
+  }
+
+  void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    ArrayTabulateFrame *frame = reinterpret_cast<ArrayTabulateFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    out << STRINGIFY(XArray)".tabulate " << frame->GetIndex() << " of " << frame->GetNumberOfElements() << std::endl;
+  }
+
+}
+
+
+//
+// Primitives
+//
+DEFINE2(Array_array) {
+  DECLARE_INT(length, x0);
+#if REQUEST_ELEMS_INT
+  if (Store::WordToInt(x1) == INVALID_INT) {
+    Scheduler::SetCurrentData(x1);
+    return Worker::REQUEST;
+  }
+#endif
+  if (static_cast<u_int>(length) > XArray::maxLen)
+    RAISE(PrimitiveTable::General_Size);
+  XArray *array = XArray::New(length);
+  for (u_int i = length; i--; )
+    array->Init(i, x1);
+  RETURN(array->ToWord());
+} END
+
+DEFINE3(Array_extract) {
+  DECLARE_XARRAY(array, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_INT(n, x2);
+  if (i < 0 || n < 0 || static_cast<u_int>(i + n) > array->GetLength())
+    RAISE(PrimitiveTable::General_Subscript);
+  XVector *vector = XVector::New(n);
+#if REQUEST_ELEMS_INT
+  vector->InitChunk(0, n, array->GetValue() + i);
+#else
+  for (u_int j = n; j--; ) vector->Init(j, array->Sub(i + j));
+#endif
+  RETURN(vector->ToWord());
+} END
+
+DEFINE1(Array_fromList) {
+#if REQUEST_ELEMS_INT
+  DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
+#else
+  DECLARE_LIST(tagVal, length, x0);
+#endif
+  if (length > XArray::maxLen)
+    RAISE(PrimitiveTable::General_Size);
+  XArray *array = XArray::New(length);
+  u_int i = 0;
+  while (tagVal != INVALID_POINTER) {
+    array->Init(i++, tagVal->Sel(0));
+    tagVal = TagVal::FromWord(tagVal->Sel(1));
+  }
+  Assert(i == length);
+  RETURN(array->ToWord());
+} END
+
+DEFINE1(Array_fromVector) {
+  DECLARE_XVECTOR(vector, x0);
+  Assert(XArray::maxLen == XVector::maxLen);
+  u_int length = vector->GetLength();
+  XArray *array = XArray::New(length);
+#if REQUEST_ELEMS_INT
+  array->InitChunk(0, length, vector->GetValue());
+#else
+  for (u_int i = length; i--; ) array->Init(i, vector->Sub(i));
+#endif
+  RETURN(array->ToWord());
+} END
+
+DEFINE1(Array_length) {
+  DECLARE_XARRAY(array, x0);
+  RETURN_INT(array->GetLength());
+} END
+
+DEFINE2(Array_sub) {
+  DECLARE_XARRAY(array, x0);
+  DECLARE_INT(index, x1);
+  if (static_cast<u_int>(index) >= array->GetLength())
+    RAISE(PrimitiveTable::General_Subscript);
+  RETURN(array->Sub(index));
+} END
+
+DEFINE2(Array_tabulate) {
+  DECLARE_INT(length, x0);
+  if (length == 0) {
+    RETURN(XArray::New(0)->ToWord());
+  } else if (length < 0 || static_cast<u_int>(length) > XArray::maxLen) {
+    RAISE(PrimitiveTable::General_Size);
+  } else {
+    word wClosure = x1;
+    XArray *array = XArray::New(length);
+    ArrayTabulateWorker::PushFrame(array, wClosure, 0, length);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
+    return Scheduler::PushCall(wClosure);
+  }
+} END
+
+DEFINE1(Array_toList) {
+  DECLARE_XARRAY(array, x0);
+  word list = Store::IntToWord(Types::nil);
+  for (u_int i = array->GetLength(); i--; ) {
+    TagVal *cons = TagVal::New(Types::cons, 2);
+    cons->Init(0, array->Sub(i));
+    cons->Init(1, list);
+    list = cons->ToWord();
+  }
+  RETURN(list);
+} END
+
+DEFINE3(Array_update) {
+  DECLARE_XARRAY(array, x0);
+  DECLARE_INT(index, x1);
+  if (static_cast<u_int>(index) >= array->GetLength())
+    RAISE(PrimitiveTable::General_Subscript);
+  array->Update(index, x2);
+  RETURN_UNIT;
+} END
+
+void PrimitiveTable::XCONCAT(Register,XArray)() {
+  ArrayTabulateWorker::Init();
+  Register(XSTRINGIFY(XArray)".array", Array_array, 2);
+  Register(XSTRINGIFY(XArray)".extract", Array_extract, 3);
+  Register(XSTRINGIFY(XArray)".fromList", Array_fromList, 1);
+  Register(XSTRINGIFY(XArray)".fromVector", Array_fromVector, 1);
+  Register(XSTRINGIFY(XArray)".length", Array_length, 1);
+  Register(XSTRINGIFY(XArray)".maxLen", Store::IntToWord(XArray::maxLen));
+  Register(XSTRINGIFY(XArray)".sub", Array_sub, 2);
+  Register(XSTRINGIFY(XArray)".tabulate", Array_tabulate, 2);
+  Register(XSTRINGIFY(XArray)".toList", Array_toList, 1);
+  Register(XSTRINGIFY(XArray)".update", Array_update, 3);
+}

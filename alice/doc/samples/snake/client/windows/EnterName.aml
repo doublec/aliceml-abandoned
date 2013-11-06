@@ -1,0 +1,144 @@
+(* Alice Snake 2.0 - PlayerSettingsWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature ENTERNAME from "ENTERNAME-sig"
+
+import structure Gtk       from "GtkSupport"
+import structure Gdk       from "GtkSupport"
+
+import structure Config    from "../../common/Config"
+import structure Color     from "../../common/Color"
+
+import structure Text      from "Text"
+
+
+structure EnterName :> ENTERNAME =
+struct
+
+    type ready_cb = (string * Color.color) option * Config.config ->
+	                                                       string option
+
+    type cancel_cb = unit -> unit
+
+    val colormap = Gdk.Colormap.getSystem ()
+
+    (* converts a Color.color into a Gdk.color *)
+    fun colorToGdkColor c =
+	let
+	    val (r, g, b) = Color.rgb c
+	    fun conv n = Real.round (65535.0 * n)
+	    val color = Gdk.Color.new { red = conv r, green = conv g, blue = conv b }
+	in
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
+	    color
+	end
+
+
+    (* builds the player settings window *)
+    fun mkEnterName (parent, readyCB, cancelCB) = 
+	let
+
+	    val enterName     = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+ 	    val colorCombo    = Gtk.ComboBox.newText ()
+	    val nameLabel     = Gtk.Label.new "Name : "
+	    val nameText      = Gtk.Entry.new ()
+	    val nameHBox      = Gtk.HBox.new (false, 0)
+	    val separator1    = Gtk.HSeparator.new ()
+	    val colorLabel    = Gtk.Label.new "Color : "
+	    val colorHBox     = Gtk.HBox.new (false, 5)
+	    val readyButton   = Gtk.Button.newWithLabel "Ready "
+	    val cancelButton  = Gtk.Button.newWithLabel "Cancel"
+	    val buttonHBox    = Gtk.HBox.new (true, 10)
+	    val settingsVBox  = Gtk.VBox.new (false, 5)
+
+	    (* an alterable list which contains all colors that are
+	     still selectabel *)
+	    val allColors = ref (List.map Color.toString Color.all)
+
+	    (* inserts all colors into the color combo *)
+	    fun insertColors colors = 
+                List.app (fn c =>
+                    Gtk.ComboBox.appendText (colorCombo, c)) colors
+
+	    (* the mainQuit procedure. returns to the main window *)
+	    fun mainQuit () = (Gtk.Widget.destroy enterName;
+			       cancelCB ())
+
+
+	    (* called, if the client has changed the nameText widget.
+	       if nameText = "" -> you can't press the ready-button,
+	       else the ready-button is set sensitive *)
+	    fun changedNameText () =
+		if Gtk.Entry.getText nameText = ""
+		    then Gtk.Widget.setSensitive (readyButton, false)
+		else Gtk.Widget.setSensitive (readyButton, true)
+
+	    fun okClickedCB () = 
+		let
+		    val name  = Gtk.Entry.getText nameText
+		    val color = Gtk.ComboBox.getActiveText colorCombo
+		    val color = Color.fromString color
+		    fun result () = 
+			readyCB (SOME (name, color), Config.defaultSingle)
+		in
+		    case result () of
+			NONE     => Gtk.Widget.destroy enterName
+		      | SOME msg => 
+			    (Text.mkTextWindow (parent, "ERROR!", msg);())
+		end
+
+	in
+
+	    (* inserts all available colors into the color combo *)
+	    insertColors (!allColors);
+	    Gtk.Window.setModal (enterName, true);
+	    Gtk.Window.setTitle (enterName, "Please choose name and color");
+	    Gtk.Window.setPosition (enterName, Gtk.WindowPosition.CENTER);
+	    
+	    Gtk.signalConnect (enterName,
+			       "delete-event", 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (nameText, 
+			       "changed",
+			       fn _ => changedNameText ());
+	    Gtk.signalConnect (readyButton, 
+			       "clicked", 
+			       fn _ => okClickedCB ());
+	    Gtk.signalConnect (cancelButton, 
+			       "clicked",
+			       fn _ => mainQuit ());
+	    
+	    (* setting some useful values *)
+	    Gtk.Container.setBorderWidth (enterName, 10);
+	    Gtk.Entry.setMaxLength (nameText, 11);
+	    Gtk.Widget.setSensitive (readyButton, false);
+
+	    (* packing everything in boxes and later in enterName *)
+	    Gtk.Box.packStart (nameHBox, nameLabel, false, false, 0);
+	    Gtk.Box.packStart (nameHBox, nameText, true, false, 0);
+
+	    Gtk.Box.packStart (colorHBox, colorLabel, false, false, 0);
+	    Gtk.Box.packStart (colorHBox, colorCombo, true, false, 0);
+
+	    Gtk.Box.packStart (buttonHBox, readyButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, cancelButton, true, true, 5);
+
+	    Gtk.Box.packStart (settingsVBox, nameHBox, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, colorHBox, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, separator1, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, buttonHBox, false, false, 5);
+	    
+	    Gtk.Container.add (enterName, settingsVBox);
+
+	    Gtk.Widget.showAll enterName
+
+	end
+end

@@ -1,0 +1,91 @@
+(*
+ * Lazy streams demo.
+ *)
+
+import val print        from "x-alice:/TextIO"
+import structure OS     from "x-alice:/OS"
+import structure Tools  from "x-alice:/Tools"
+import val readLine     from "x-alice:/Dialog"
+
+open Promise
+
+
+fun build f x =
+    let
+	val p = promise()
+    in
+	concur(fn() => f(x,p)) ;
+	future p
+    end
+
+fun continue x p =
+    let
+	val p' = promise()
+    in
+	fulfill(p, x::future p') ;
+	p'
+    end
+
+fun finish p = fulfill(p, nil)
+
+
+fun plus xsys			= build plus' xsys
+and plus'((x::xs, y::ys), p)	= plus'((xs,ys), continue (x+y) p)
+  | plus'(      _,        p)	= finish p
+
+fun zip xsys			= build zip' xsys
+and zip'((x::xs, ys), p)	= zip'((ys,xs), continue x p)
+  | zip'(      _,     p)	= finish p
+
+fun map f xs			= build (map' f) xs
+and map' f (x::xs, p)		= map' f (xs, continue (f x) p)
+  | map' f ( nil,  p)		= finish p
+
+
+fun loop(p1, p2) =
+    case readLine ()
+      of ""   => ()
+       | "\n" => loop(p1,p2)
+       | s    =>
+    case String.tokens Char.isSpace s
+      of nil     => loop(p1,p2)
+       | [s1,s2] =>
+	     (case (Int.fromString s1, Int.fromString s2)
+	        of (SOME k, SOME n) =>
+		    let
+		        val p' = promise()
+		    in
+		        case k
+			  of 1 => (fulfill(p1, n :: future p') ; loop(p',p2))
+			   | 2 => (fulfill(p2, n :: future p') ; loop(p1,p'))
+		           | _ => (print "error parsing input\n"; loop(p1,p2))
+		    end
+	         | _ => (print "error parsing input\n"; loop(p1,p2)))
+       | _ => (print "error parsing input\n"; loop(p1,p2))
+and main() =
+    let
+	val p1		= promise()
+	val p2		= promise()
+
+	val A		= future p1
+	val B		= future p2
+	val AplusB	= plus(A, B)
+	val AzipB	= zip(A, B)
+	val AtoChar	= map (str o chr) A
+	val Bdiv10	= map (fn n => real n / 10.0) B
+
+	open Tools
+	val ty		= RecordTy #[("A",	ListTy IntTy),
+				     ("AplusB",	ListTy IntTy),
+				     ("AtoChar",ListTy CharTy),
+				     ("AzipB",	ListTy IntTy),
+				     ("B",	ListTy IntTy),
+				     ("Bdiv10",	ListTy RealTy)
+				    ]
+    in
+	Tools.inspect({A, B, AplusB, AtoChar, AzipB, Bdiv10}, ty) ;
+	loop(p1,p2);
+	OS.Process.exit OS.Process.success
+    end
+
+val _ = main()

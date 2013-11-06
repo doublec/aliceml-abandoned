@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label from "../../lib/rtt/Label"
+
+signature DYN_MATCH_LIB =
+sig
+    val modlab_dynmatch :	Label.t
+    val typlab_module :		Label.t
+
+    val lab_match :		Label.t
+    val lab_strengthen :	Label.t
+    val lab_thin :		Label.t
+    val lab_seal :		Label.t
+    val lab_unpackMatch :	Label.t
+end

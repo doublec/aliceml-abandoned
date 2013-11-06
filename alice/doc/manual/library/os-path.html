@@ -1,0 +1,118 @@
+<?php include("macros.php3"); ?>
+<?php heading("The OS.Path structure", "The <TT>OS.Path</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature OS_PATH
+    structure Path : OS_PATH
+  </PRE>
+
+  <P>
+    An extension of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/os-path.html"><TT>OS.Path</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="os.html"><TT>OS</TT></A>,
+    <A href="url.html"><TT>Url</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature OS_PATH =
+    sig
+	exception Path
+	exception InvalidArc
+
+	val parentArc :     string
+	val currentArc :    string
+
+	val fromString :    string -> {isAbs : bool, vol : string, arcs : string list}
+	val toString :      {isAbs : bool, vol : string, arcs : string list} -> string
+
+	val validVolume :   {isAbs : bool, vol : string} -> bool
+	val getVolume :     string -> string
+	val getParent :     string -> string
+
+	val concat :        string * string -> string
+
+	val splitDirFile :  string -> {dir : string, file : string}
+	val joinDirFile :   {dir : string, file : string} -> string
+	val dir :           string -> string
+	val file :          string -> string
+
+	val splitBaseExt :  string -> {base : string, ext : string option}
+	val joinBaseExt :   {base : string, ext : string option} -> string
+	val base :          string -> string
+	val ext :           string -> string option
+
+	val mkCanonical :   string -> string
+	val isCanonical :   string -> bool
+
+	val mkAbsolute :    {path : string, relativeTo : string} -> string
+	val mkRelative :    {path : string, relativeTo : string} -> string
+	val isAbsolute :    string -> bool
+	val isRelative :    string -> bool
+	val isRoot :        string -> bool
+
+	val fromUnixPath :  string -> string
+	val toUnixPath :    string -> string
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Like the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/os-path.html"><TT>OS.Path</TT></A> structure.
+  </P>
+
+  <P>
+    <I>Note:</I> Due to the platform independence of Alice the behaviour of
+    <TT>OS.Path</TT> is <EM>not</EM> dependent on the host operating system.
+    Instead, both <TT>/</TT> and <TT>\</TT> are interpreted as arc separators,
+    and paths starting with <TT>&quot;<I>x</I>:&quot;</TT> are always considered to
+    have a volume of <TT>&quot;<I>x</I>&quot;</TT>. Paths returned by functions in
+    this structure will always use <TT>/</TT> as the arc separator.
+  </P>
+
+  <P>
+    For the following function, semantics differs slightly from the official specification:
+  </P>
+
+  <DL>
+    <DT>
+      <TT>mkRelative {path = <I>path</I>, relativeTo = <I>rel</I>}</TT>
+    </DT>
+    <DD>
+      <P>Does not raise <TT>Path</TT> if both arguments are relative paths on
+      the same volume. Instead, resolution is performed as for absolute paths.
+      Here are some examples:</P>
+      <TT>
+      <TABLE>
+        <TR>
+	  <TH><I>path</I>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TH>
+	  <TH><I>relativeTo</I>&nbsp;&nbsp;</TH>
+	  <TH>mkRelative{<I>path</I>, <I>relativeTo</I>}</TH>
+	</TR>
+	<TR><TD>"a"</TD><TD>""</TD><TD>"a"</TD></TR>
+	<TR><TD>"a"</TD><TD>"."</TD><TD>"a"</TD></TR>
+	<TR><TD>"a"</TD><TD>"a"</TD><TD>"."</TD></TR>
+	<TR><TD>"a"</TD><TD>"c/d"</TD><TD>"../../a"</TD></TR>
+	<TR><TD>"a"</TD><TD>"./a"</TD><TD>"."</TD></TR>
+	<TR><TD>"a/"</TD><TD>""</TD><TD>"a/"</TD></TR>
+	<TR><TD>"a/b/c"</TD><TD>"a"</TD><TD>"b/c"</TD></TR>
+      </TABLE>
+      </TT>
+    </DD>
+  </DL>
+
+<?php footing() ?>

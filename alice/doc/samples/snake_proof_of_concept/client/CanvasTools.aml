@@ -1,0 +1,99 @@
+import signature CANVASTOOLS from "CANVASTOOLS-sig"
+import structure Canvas structure Gtk structure Gdk from "Gtk"
+
+structure CanvasTools :> CANVASTOOLS =
+struct
+    datatype color =
+	C_RGB of int * int * int 
+      | C_RGBA of int * int * int * int
+      | C_NAMED of string
+      | C_COLOR of Canvas.object
+      | C_TRANSPARENT
+
+
+    fun packRGBA (r, g, b, a) = r * 256 * 256 * 256 + 
+	                        g * 256 * 256 +
+				b * 256 * 256 +
+				a 
+	
+    fun fillColor (C_RGB (r, g, b)) = 
+	("fill_color_rgba", Gtk.INT (packRGBA (r, g, b, 255)))
+      | fillColor (C_RGBA (r, g, b, a)) =
+	("fill_color_rgba", Gtk.INT (packRGBA (r, g, b, a)))
+      | fillColor (C_NAMED s) =
+	("fill_color", Gtk.STRING s)
+      | fillColor (C_COLOR c) =
+	("fill_color_gdk", Gtk.OBJECT c)
+      | fillColor C_TRANSPARENT =
+	("fill_color_gdk", Gtk.OBJECT Gtk.NULL)
+
+
+    fun outlineColor (C_RGB (r, g, b)) = 
+	("outline_color_rgba", Gtk.INT (packRGBA (r, g, b, 255)))
+      | outlineColor (C_RGBA (r, g, b, a)) =
+	("outline_color_rgba", Gtk.INT (packRGBA (r, g, b, a)))
+      | outlineColor (C_NAMED s) =
+	("outline_color", Gtk.STRING s)
+      | outlineColor (C_COLOR c) =
+	("outline_color_gdk", Gtk.OBJECT c)
+      | outlineColor C_TRANSPARENT =
+	("outline_color_gdk", Gtk.OBJECT Gtk.NULL)
+
+    fun drawGroup (ob, x, y) =
+	Canvas.itemCreate (ob, Canvas.GROUP,  
+			   [("x", Canvas.REAL (real x)),
+			    ("y", Canvas.REAL (real y))])
+
+    fun drawText (ob, x, y, anchor, string, font, fill) =
+	Canvas.itemCreate (ob, Canvas.TEXT,
+			   [("x", Canvas.REAL (real x)),
+			    ("y", Canvas.REAL (real y)),
+			    ("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt anchor)),
+			    ("text", Gtk.STRING string),
+			    ("font", Gtk.STRING font),
+			    fillColor fill])
+			    
+    fun drawLine (ob, x1, y1, x2, y2, color) =
+	Canvas.itemCreate (ob, Canvas.LINE, 
+			   [("points", Canvas.POINTS [x1, y1, x2, y2]),
+			    fillColor color,
+			    ("width_units", Canvas.REAL 1.0)])
+
+    fun drawEllipse (ob, x1, y1, x2, y2, outlc, fillc) =
+	let val outl = outlineColor outlc
+	    val fill = fillColor fillc
+	in
+	    Canvas.itemCreate (ob, Canvas.ELLIPSE,
+			       [("x1", Canvas.REAL (real x1)),
+				("y1", Canvas.REAL (real y1)),
+				("x2", Canvas.REAL (real x2)),
+				("y2", Canvas.REAL (real y2)),
+				fill,
+				outl,
+				("width_units", Canvas.REAL 1.0)])
+	end
+
+    fun drawRectangle (ob, x1, y1, x2, y2, outlc, fillc) =
+	let val outl = outlineColor outlc
+	    val fill = fillColor fillc
+	in
+	    Canvas.itemCreate (ob, Canvas.RECTANGLE,
+			       [("x1", Canvas.REAL (real x1)),
+				("y1", Canvas.REAL (real y1)),
+				("x2", Canvas.REAL (real x2)),
+				("y2", Canvas.REAL (real y2)),
+				fill,
+				outl,
+				("width_units", Canvas.REAL 1.0)])
+	end
+			     
+				 
+    fun drawTransient (group, f, liveTime) =
+	let 
+	    val res = f (group)
+	in
+	    spawn (Thread.sleep liveTime; Gtk.objectDestroy res);
+	    res
+	end
+end
+

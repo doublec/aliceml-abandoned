@@ -1,0 +1,617 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IO                 from "../../lib/system/IO"
+import structure BinIO              from "../../lib/system/BinIO"
+import structure TextIO             from "../../lib/system/TextIO"
+import structure OS                 from "../../lib/system/OS"
+import structure Config             from "../../lib/system/Config"
+import structure Url                from "../../lib/system/Url"
+import structure Resolver           from "../../lib/system/Resolver"
+import structure Reflect            from "../../lib/system/Reflect"
+import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
+import structure Component          from "../../lib/system/Component"
+import structure Store              from "../../lib/system/Store"
+import structure MkHashImpMap       from "../../lib/data/MkHashImpMap"
+
+import structure Inf                from "../../lib/rtt/Inf"
+import structure Type               from "../../lib/rtt/Type"
+import structure Path               from "../../lib/rtt/Path"
+import structure Label              from "../../lib/rtt/Label"
+import structure PathMap            from "../../lib/rtt/PathMap"
+
+import structure Crash              from "../infrastructure/Crash"
+import structure Source             from "../infrastructure/Source"
+import structure Target             from "../infrastructure/Target"
+import structure Dependency         from "Dependency"
+import signature COMPILER           from "COMPILER-sig"
+import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
+
+(*DEBUG*)
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure PPInf from "../../lib/rtt/PPInf"
+import structure PPPath from "../../lib/rtt/PPPath"
+
+structure InfLoader = struct type t = Source.desc * Url.t -> Inf.sign end
+structure ModLoader = struct type t = Source.desc * Url.t -> Reflect.module end
+structure ImportLoader = struct type t = Source.desc * Url.t -> (Url.t * Inf.sign) vector end
+
+functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
+			    structure Compiler: COMPILER
+			    val extension: string): RECURSIVE_COMPILER =
+    struct
+	structure Switches = Compiler.Switches
+	structure Context = Compiler.Context
+	val isCrossCompiler = Compiler.isCrossCompiler
+
+	datatype target = datatype Target.t
+
+	exception Error = Compiler.Error
+	exception Crash = Crash.Crash
+
+	val extension = extension
+
+	val errOut = Switches.Global.errOut
+	fun error message =
+	    (TextIO.output (errOut, "### error: " ^ message ^ "\n");
+	     raise Error)
+	fun warn message =
+	    TextIO.output (errOut, "### warning: " ^ message ^ "\n")
+
+	fun trace message =
+	    if !Switches.Global.traceComponentAccess
+	    then TextIO.output (Switches.Global.logOut, "### " ^ message ^ "\n")
+	    else ()
+
+	fun resolveWrtCwd url =
+	    let
+		val base =
+		    Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+				   SOME "file")
+	    in
+		Url.resolve base url
+	    end
+
+	val sourceResolver =
+	    Resolver.resolver
+	    {name = "source",
+	     handlers = case OS.Process.getEnv "ALICE_SOURCE_PATH" of
+			     SOME s => Resolver.Handler.parse s
+			   | NONE => [Resolver.Handler.default],
+	     memoize = false}
+
+	fun readUrl url =
+	    case Resolver.localize sourceResolver url of
+		SOME (Resolver.FILE name) =>
+		    let
+			val name' = Url.toStringRaw url
+			val f = TextIO.openIn name handle IO.Io _ =>
+				    error("could not open " ^ name')
+			val s = TextIO.inputAll f handle IO.Io _ =>
+				    error("error reading " ^ name')
+			val _ = TextIO.closeIn f handle IO.Io _ =>
+				    error("error reading " ^ name')
+		    in
+			SOME s
+		    end
+	      | SOME (Resolver.STRING s) => SOME s
+	      | _ => NONE
+
+	fun loadDependencyFiles () =
+	    List.foldl (fn (filename, dep) =>
+			Dependency.load (dep, filename)
+			handle IO.Io _ =>
+			    error("error reading dependency file " ^ filename)
+			  | Dependency.Format =>
+			    error("syntax error in dependency file " ^ filename)
+		       )
+		       Dependency.empty
+		       (!Switches.Language.dependencyFiles)
+
+	local
+	    val implicitImportRef = ref NONE	(* poor man's laziness *)
+	in
+	    fun implicitImport() =
+		case !Switches.Language.implicitImportFile
+		  of NONE => "\n"
+		   | SOME "--" => "" (* hack for bootstrapping! *)
+		   | SOME url =>
+		case !implicitImportRef
+		  of SOME s => s
+		   | NONE =>
+		let
+		    val s = String.map (fn #"\n" => #" " | c => c)
+				       (valOf (readUrl (Url.fromString url)))
+			    ^ "\n"
+		in
+		    implicitImportRef := SOME s;
+		    s
+		end handle (Url.NotLocal | Option.Option) =>
+			error ("could not locate implicit import file " ^ url)
+	end
+
+	fun isBaseSig desc =   (*--** only needed for .NET backend *)
+	    case Source.sourceUrl desc of
+		SOME url =>
+		    ((Url.toLocalFile url =
+		      Url.toLocalFile
+			  (resolveWrtCwd (Url.fromString (Config.homeDir () ^
+							  "Base.asig"))))
+		     handle Url.NotLocal => false)
+	      | NONE => false
+
+	fun processBasic process (desc, s) =
+	    let
+		val prefix = if isBaseSig desc then "\n" else implicitImport()
+	    in
+		process(desc, prefix ^ s)
+	    end
+
+	fun processString process source =
+	    processBasic process (Source.stringDesc, source)
+
+	fun processFile process (filename, targetFilenameOpt) =
+	    let
+		val url = resolveWrtCwd (Url.fromString filename)
+		val targetUrlOpt =
+		    Option.map (resolveWrtCwd o Url.fromString) targetFilenameOpt
+		val s = valOf (readUrl url)
+		val s' = if not (String.isSuffix ".sml" filename orelse
+				 String.isSuffix ".sig" filename) then s else
+			 let
+			     val filename' =
+				 String.substring (filename, 0,
+						   String.size filename - 3)
+				 ^ "import"
+			     val url' = resolveWrtCwd (Url.fromString filename')
+			 in
+			     case readUrl url' of
+			         NONE => s
+			       | SOME s' =>
+				 String.map (fn #"\n" => #" " | c => c) s'
+				 ^ "\n" ^ s
+			 end
+		val d = loadDependencyFiles ()
+		val s'' = List.foldr (fn (f, s) =>
+				      "import \"" ^ f ^ "\" " ^ s)
+				     s' (Dependency.lookup
+					 (d, OS.Path.base (Url.toString (Url.setScheme (url, NONE)))))
+		val desc = Source.urlDesc {source = url, target = targetUrlOpt}
+	    in
+		processBasic process (desc, s'')
+	    end handle (Url.NotLocal | Option.Option) =>
+		    error ("could not locate source file " ^ filename)
+
+	local
+	    fun compileSign' (desc, s) =
+		let
+		    val sigFilename =
+			Url.toStringRaw (valOf (Source.sourceUrl desc))
+		    val _ = trace ("reading signature from " ^ sigFilename)
+		    val switch =
+			Ref.exchange (Switches.Warn.unusedImport, false)
+		    val (_, target) =
+			Compiler.compile (desc, Context.empty,
+					  Source.fromString s)
+		    val _ = Switches.Warn.unusedImport := switch
+		    val _ = trace ("finished reading signature from " ^ sigFilename)
+		    val {export, imports} =
+			case target of
+			    Target.COMPONENT {component, ...} =>
+			    let
+				val component = component ()
+			    in
+				{export = valOf (Component.inf component),
+				 imports = Vector.map (Pair.mapSnd valOf)
+					   (Component.imports component)}
+			    end
+			  | Target.FOREIGN {inf, ...} =>
+				{export = inf, imports = #[]} (*--** *)
+		    val export' =
+			Inf.asSingKind
+			(#2 (Inf.asInfItem
+			     (List.hd (Inf.items (Inf.asSig export)))))
+			handle e as ( Inf.Interface | Inf.Kind | Inf.Item
+				    | List.Empty | Option.Option) =>
+			   error ("signature file " ^ sigFilename ^
+				  " does not contain a proper\
+				  \ signature declaration")
+		in
+		    {isRealised = false, export = export', imports = imports}
+		end
+	in
+	    fun compileSign filename = processFile compileSign' (filename, NONE)
+	end
+
+	local
+	    fun compile' outFilename (desc, s) =
+		case Compiler.compile (desc, Context.empty,
+				       Source.fromString s) of
+		    (_, Target.COMPONENT {component, ...}) =>
+			let
+			    val component = component ()
+			    val component =
+				if !Switches.Global.minimizeComponent
+				then Store.minimize component
+				else component
+			in
+			    Component.save (outFilename, component);
+			    {isRealised = true,
+			     export = valOf (Component.inf component),
+			     imports = Vector.map (Pair.mapSnd valOf)
+				       (Component.imports component)}
+			end
+		  | (_, Target.FOREIGN {save, inf}) =>
+			(save outFilename;
+			 {isRealised = true, export = inf, imports = #[]}) (*--** *)
+
+	    val fileStack: string list ref = ref nil
+	in
+	    fun compileFileToFile' (sourceFilename, targetFilename) =
+		(trace ("compiling file " ^ sourceFilename);
+		 fileStack := sourceFilename::(!fileStack);
+		 processFile (compile' targetFilename)
+			     (sourceFilename, SOME targetFilename)
+		 before (trace ("wrote file " ^ targetFilename);
+			 case !fileStack of
+			     _::(rest as resumeFilename::_) =>
+				 (fileStack := rest;
+				  trace ("resuming compilation of " ^
+					 resumeFilename))
+			   | [_] => fileStack := nil
+			   | nil => ()))
+	end
+
+	(* Define signature acquisition via recursive compiler invocation *)
+
+	fun existsFile filename = (*--** use OS.FileSys.access *)
+	    (BinIO.closeIn (BinIO.openIn filename); true)
+	    handle IO.Io {...} => false
+
+	fun pathCeil filename =
+	    let
+		val fro = "." ^ extension
+		val n = String.size filename
+		val m = String.size fro
+	    in
+		if n > m andalso String.substring (filename, n - m, m) = fro
+		then filename
+		else filename ^ fro
+	    end
+
+	fun pathFloor filename =
+	    let
+		val fro = "." ^ extension
+		val n = String.size filename
+		val m = String.size fro
+	    in
+		if n > m andalso String.substring (filename, n - m, m) = fro
+		then String.substring (filename, 0, n - m)
+		else filename
+	    end
+
+	fun urlCeil url =
+	    case List.rev (Url.getPath url) of
+		last::rest => Url.setPath (url, List.rev (pathCeil last::rest))
+	      | nil => url
+
+	(* Try to find a compiled component or source file - search order:
+	 *
+	 * A              component known to composer, get signature
+	 * ceil(A)        component known to composer, get signature
+	 * A              pickled component, read signature from pickle
+	 * ceil(A)        pickled component, read signature from pickle
+	 * -- from here on only if Switches.Global.recursiveCompilation
+	 * floor(A).asig  compile as signature for native component
+	 * floor(A).aml   compile as new component, write to ceil(A)
+	 * floor(A).sml   compile as new component, write to ceil(A)
+	 * floor(A).sig   compile as new component, write to ceil(A)
+	 *
+	 * where ceil(A) = A, if A has the component extension, else A.ozf
+	 * where floor(A) = A, if A has not component extension,
+	 *                  else A without the component extension
+	 *)
+
+	exception Inconsistency of Url.t * Url.t
+
+	structure UrlMap = MkHashImpMap(Url)
+	type import_entry =
+	    {export: Inf.t,
+	     imports: (Url.t * Inf.t) vector,
+	     isRealised: bool}
+
+	val importTable: import_entry UrlMap.t = UrlMap.map ()
+
+	fun loadInfs url =
+	    let
+		val component = ComponentManager.load url
+		val dummyInf = Inf.sign (Inf.emptySig ())
+		val s = Url.toStringRaw url
+	    in
+		{isRealised = String.isPrefix "x-alice:/lib/fundamental/" s
+		       orelse String.isSuffix "/lib/fundamental/Pervasive" s,
+		 export = valOf (Component.inf component),
+		 imports = Vector.map (fn (url, infOpt) =>
+				       (url, Option.getOpt (infOpt, dummyInf)))
+				      (Component.imports component)}
+	    end
+
+	val buildReaFwd : (Url.t * (Url.t * Inf.t) vector * Inf.t -> Inf.rea) ref =
+	    ref (fn _ => raise Fail "buildRea")
+
+	fun acquireInfs (baseUrlOpt, url, realised) =
+	    let
+		val url' =
+		    case baseUrlOpt of
+			SOME base => Url.resolve base url
+		      | NONE => resolveWrtCwd url
+		val ceilUrl = urlCeil url'
+		val infs as {isRealised, export, imports} =
+		    case UrlMap.lookup (importTable, ceilUrl) of
+			SOME infs => infs
+		      | NONE =>
+			let
+			    val infs =
+				(loadInfs url'
+				 before
+				 trace ("loaded signature from " ^
+					Url.toStringRaw url'))
+				handle ( Component.Failure (_, exn as IO.Io _)
+				       | exn as Option.Option ) =>
+				    acquireFromSigFile (url', exn)
+			in
+			    UrlMap.insert (importTable, ceilUrl, infs);
+			    infs
+			end
+	    in
+		if isRealised orelse not realised then infs else
+		let
+		    (*
+		    val _ = trace ("computing up-to-date signature of " ^
+				   Url.toStringRaw url')
+		    *)
+		    val rea = !buildReaFwd (url', imports, export)
+		    val export' = Inf.realise(rea, export)
+		    val imports' =
+			Vector.map (fn (u,j) => (u, Inf.realise (rea, j))) imports
+		    val infs' =
+			{isRealised=true, export=export', imports=imports'}
+		in
+		    (*
+		    trace ("gathered up-to-date signature of " ^
+			   Url.toStringRaw url');
+		    *)
+		    UrlMap.insert (importTable, ceilUrl, infs');
+		    infs'
+		end
+		handle Inconsistency (baseUrl, url) =>
+		    error ("inconsistent assumptions in component\n   " ^
+			   Url.toStringRaw baseUrl ^
+			   "\nabout signature of its import component\n   " ^
+			   Url.toStringRaw url ^
+			   "\nPlease try to recompile the former!")
+	    end
+	and acquireFromSigFile (url, exn) =
+	    let
+		val targetFilename = Url.toLocalFile url
+		    handle Url.NotLocal =>
+			error ("could not locate component " ^
+			       Url.toStringRaw url)
+		val sigFilename = pathFloor targetFilename ^ ".asig"
+	    in
+		if existsFile sigFilename then
+		    compileSign sigFilename
+		else if !Switches.Global.recursiveCompilation then
+		    acquireFromSource targetFilename
+		else
+		    error ((case exn of
+				IO.Io _ => "could not locate component "
+			      | Option.Option => "no signature found in "
+			      | _ => "unknown error while accessing ") ^
+			   targetFilename)
+	    end
+	and acquireFromSource targetFilename =
+	    case acquireFromSource' (targetFilename, ".aml") of
+		SOME infs => infs
+	      | NONE =>
+	    case acquireFromSource' (targetFilename, ".sml") of
+		SOME infs => infs
+	      | NONE =>
+	    case acquireFromSource' (targetFilename, ".sig") of
+		SOME infs => infs
+	      | NONE =>
+	    error ("could not locate source for " ^ targetFilename)
+	and acquireFromSource' (targetFilename, to) =
+	    let
+		val sourceFilename = pathFloor targetFilename ^ to
+	    in
+		if existsFile sourceFilename then
+		    SOME (compileFileToFile' (sourceFilename,
+					      pathCeil targetFilename))
+		else NONE
+	    end
+
+	fun acquireSig (desc, url) =
+	    let
+		val {export, ...} = acquireInfs (Source.anyUrl desc, url, true)
+	    in
+		Inf.asSig export handle Inf.Interface =>
+(*DEBUG*)
+(PrettyPrint.output(errOut, PPInf.ppInf export,79);
+TextIO.print"\n";
+		    error ("higher-order content found in " ^ Url.toStringRaw url)
+)
+	    end
+
+	fun acquireImports (desc, url) =
+	    Vector.map (Pair.mapSnd Inf.asSig)
+		       (#imports (acquireInfs (Source.anyUrl desc, url, true)))
+	    handle Inf.Interface =>
+		error ("higher-order import found in " ^ Url.toStringRaw url)
+
+	fun acquireMod (desc, url) =
+	    let
+		val url' =
+		    case Source.anyUrl desc of
+			SOME base => Url.resolve base url
+		      | NONE => resolveWrtCwd url
+	    in
+		if Compiler.isCrossCompiler then
+		    raise IO.Io {name = Url.toStringRaw url',
+				 function = "load",
+				 cause = Component.NotFound}
+		else
+		    (*--** support evaluation during recursive compilation; *)
+		    #1 (Reflect.reflectPackage (ComponentManager.link url'))
+	    end
+
+	local
+	    fun compile' context (desc, s) =
+		Compiler.compile (desc, context, Source.fromString s)
+
+	    fun annotsEnd () =
+		if not(!Switches.Global.dumpAnnotations) then () else
+		TextIO.output(Switches.Global.annotOut, "##\n")
+	in
+	    val compileFileToFile = ignore o compileFileToFile'
+
+	    fun compileFile (context, sourceFilename) =
+		(processFile (compile' context) (sourceFilename, NONE)
+		 before annotsEnd ())
+		handle e => (annotsEnd(); raise e)
+
+	    fun compileString (context, sourceText) =
+		(processString (compile' context) sourceText
+		 before annotsEnd ())
+		handle e => (annotsEnd(); raise e)
+	end
+
+	(*
+	 * Realisation of types transitively imported. This is necessary to
+	 * make diamond imports check correctly, even when both intermediate
+	 * components have been compiled against different versions of the
+	 * root component!
+	 *
+	 * In general, realisation with concrete types requires transitive
+	 * realisation, which compromises separate compilation. We hence
+	 * avoid transitive realisation unless we see a concrete type, in which
+	 * case we realise recursively and restart.
+	 *)
+
+	fun extractMods(s, ps) =
+	    case Vector.foldr
+		    (fn (p, ([],js')) => ([], Inf.top()::js')
+		      | (p, (its as it::its', js')) =>
+			let
+			    val (p',j') = Inf.asModItem it
+			in
+			    if Path.equal(p,p')
+			    then (its', j'::js')
+			    else (its, Inf.top()::js')
+			end
+		    ) (Inf.items s, []) ps
+	     of ([], js) => Vector.fromList js
+	      | _ => raise Crash.Crash "RecursiveCompiler.extractMods"
+
+
+	fun thinImports(js, j) =
+	    let
+		val s  = Inf.emptySig()
+		val ps = Vector.mapi (fn(i,j) =>
+			    let val p = Path.fromLab(Label.fromInt i)
+			    in
+				Inf.extendMod(s,p,j); p
+			    end) js
+		val j' = Inf.exist(Path.invent(), Inf.sign s,
+				   Inf.arrow(Path.invent(), j, Inf.top()))
+	    in
+		case Inf.inspect j'
+		 of Inf.Exist(_,j'',_) => extractMods(Inf.asSig j'', ps)
+		  | _ => Vector.map (Inf.top o ignore) js
+	    end
+
+	exception Concrete
+
+	fun buildReaInf(realised, rea : Inf.rea, j, j') =
+	    case Inf.inspect j
+	     of Inf.Sig s => buildReaSig(realised, rea, Inf.items s, Inf.asSig j')
+	      | (Inf.Top | Inf.Con _ | Inf.Apply _ | Inf.Arrow _ | Inf.Sing _) => ()
+	      | Inf.Exist _ => raise Crash.Crash "RecursiveCompiler.buildReaInf"
+	      | Inf.Lambda _ => raise Inf.Interface
+
+	and buildReaSig(realised, rea, [], s') = ()
+	  | buildReaSig(realised, rea, item::items, s') =
+	    case Inf.inspectItem item
+	     of (Inf.FixItem _ | Inf.ValItem _) =>
+	            buildReaSig(realised, rea, items, s')
+	      | Inf.TypItem(p,k) =>
+		if Type.isSingKind k then buildReaSig(realised, rea, items, s') else
+		let
+		    val l = Path.toLab p
+		    val k = Inf.lookupTyp(s',l)
+		in
+		    if Type.isSingKind k andalso not realised then
+			raise Concrete
+		    else if Path.equal(p, Inf.pathTyp(s',l)) then
+			() (* optimise realisation *)
+		    else
+			PathMap.insert(#typ_rea rea, p, Inf.lookupTyp'(s',l));
+		    buildReaSig(realised, rea, items, s')
+		end
+	      | Inf.ModItem(p,j) =>
+		let
+		    val j' = Inf.lookupMod(s', Path.toLab p)
+		in
+		    buildReaInf(realised, rea, j, j');
+		    buildReaSig(realised, rea, items, s')
+		end
+	      | Inf.InfItem(p,k) =>
+		if Inf.isSingKind k then buildReaSig(realised, rea, items, s') else
+		let
+		    val l = Path.toLab p
+		    val k = Inf.lookupInf(s',l)
+		in
+		    if Inf.isSingKind k andalso not realised then
+			raise Concrete
+		    else if Path.equal(p, Inf.pathInf(s',l)) then
+			() (* optimise realisation *)
+		    else
+			PathMap.insert(#inf_rea rea, p, Inf.lookupInf'(s',l));
+		    buildReaSig(realised, rea, items, s')
+		end
+	      | Inf.HiddenItem _ =>
+		raise Crash.Crash "RecursiveCompiler.buildReaSig"
+
+	fun buildRea(url, imports, export) =
+	    let
+		val (urls,js) = VectorPair.unzip imports
+		val js'       = thinImports(js, export)
+		val rea       = Inf.rea()
+	    in
+		VectorPair.app (fn(url',j) =>
+		    if Inf.isTop j then () else
+		    buildImportRea(false, rea, url, url', Inf.realise(rea,j))
+		) (urls,js');
+		rea
+	    end
+	and buildImportRea(realised, rea, baseUrl, url, j) =
+	    let
+		val j' = #export (acquireInfs (SOME baseUrl, url, realised))
+	    in
+		buildReaInf(realised, rea, j, j')
+		handle Inf.Interface => raise Inconsistency (baseUrl, url)
+		     | Concrete => buildImportRea(true, rea, baseUrl, url, j)
+	    end
+
+	val _ = buildReaFwd := buildRea
+    end

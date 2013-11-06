@@ -1,0 +1,33 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Reflect     from "../../lib/system/Reflect"
+import structure Component   from "../../lib/system/Component"
+import structure Source      from "../infrastructure/Source"
+import structure FlatGrammar from "../backend-common/FlatGrammar"
+
+signature CODE_GEN_PHASE_COMPONENT =
+    sig
+	structure CodeGenPhase:
+	    sig
+		structure C:
+		    sig
+			val empty: 't
+		    end
+
+		val translate: Source.desc * 'C_t * FlatGrammar.component ->
+			       'C_t * 't
+		val dumpTarget: 't -> string
+		val eval: 't * Reflect.module -> unit
+		val component: 't -> Component.t
+	    end
+    end

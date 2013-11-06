@@ -1,0 +1,37 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2002
+ * 
+ *  See the file "LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature NATIVE_XML =
+    sig
+	structure NativeXML:
+	    sig
+	        exception XMLError of string
+		val parse : string -> 'xml_node_ptr
+		val parseString : string -> 'xml_node_ptr
+		val isNull : 'xml_node_ptr -> bool
+		val children : 'xml_node_ptr -> 'xml_node_ptr
+		val parent : 'xml_node_ptr -> 'xml_node_ptr
+		val next : 'xml_node_ptr -> 'xml_node_ptr
+		val prev : 'xml_node_ptr -> 'xml_node_ptr
+		val properties : 'xml_node_ptr -> 'xml_node_ptr
+		val name : 'xml_node_ptr -> string
+		val getType : 'xml_node_ptr -> 'xml_node_type
+		val getProp : 'xml_node_ptr * string -> string option
+		val nodeListGetString :
+		    'xml_node_ptr * int -> string option
+	    end
+    end

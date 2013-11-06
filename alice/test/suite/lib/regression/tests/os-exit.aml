@@ -1,0 +1,20 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure OSExit : REGRESSION =
+struct
+
+val name = "os-exit"
+
+val ok = SOME "os-exit.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val _ = (concatResult "hello\n"
+	 ; OS.Process.exit OS.Process.success)
+
+val result = !result
+
+end

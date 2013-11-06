@@ -1,0 +1,29 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure KnownCase0 : REGRESSION =
+struct
+
+val name = "known-case0"
+
+val ok = SOME "known-case0.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+fun nlist 0 = 0::nil
+  | nlist n = n::(nlist (n-1))
+
+val rec last =
+   fn nil => 0
+    | x::nil => x
+    | _ :: l => last l
+
+val n = 1 + (last (nlist (10)))
+
+val _ = concatResult ((Int.toString n) ^ "\n")
+
+val result = !result
+
+end

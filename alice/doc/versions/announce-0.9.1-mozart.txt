@@ -1,0 +1,15 @@
+We are happy to announce the release of version 0.9.1 of
+the Alice Programming System. It is available from the
+Alice home page:
+
+        http://www.ps.uni-sb.de/alice/
+
+This version is mainly a bug fix release. It now runs with
+the official Mozart 1.2.5 release. For a detailed list of
+changes, see:
+
+        http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Enjoy,
+
+	- The Alice Team

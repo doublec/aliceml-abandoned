@@ -1,0 +1,28 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Packer       from "x-alice:/lib/distribution/Packer"
+import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+import signature WORKER_DICT  from "WORKER_DICT-sig"
+
+structure WorkerDict :> WORKER_DICT =
+    struct
+	structure Map = MkHashImpMap(Int)
+
+	type dict = Packer.package Map.map
+
+	fun new ()                        = Map.new () : dict
+	fun put(map : dict, key, package) = Map.insert(map, key, package)
+	fun get (map : dict, key)         = Map.lookupExistent(map, key)
+	fun keys (map : dict)             = Map.foldi (fn (k, _, e) => k::e) nil map
+    end

@@ -1,0 +1,64 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import structure Resolver          from "../../system/Resolver"
+import signature COMPONENT         from "../../system/COMPONENT-sig"
+import signature COMPONENT_MANAGER from "../../system/COMPONENT_MANAGER-sig"
+import structure Component         from "../../system/Component"
+import signature POLICY            from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure Component : COMPONENT =
+struct
+    __primitive type component = "Component.component"
+    type t = component
+
+    exception Sited = Component.Sited       
+    exception Corrupt = Component.Corrupt
+    exception NotFound = Component.NotFound
+
+    exception Mismatch = Component.Mismatch
+    exception Eval = Component.Eval
+    exception Failure = Component.Failure
+    exception Internal = Component.Internal
+
+    val extension = Component.extension
+
+    val defaultResolver = Component.defaultResolver
+
+    val fromPackage = Component.fromPackage
+        functor Create (signature S  functor F (CM: COMPONENT_MANAGER): S) =
+                Component.Create(signature S = S
+                                 functor F (CM: COMPONENT_MANAGER) = F CM)
+
+    fun load url =
+        let 
+            val url' = Policy.Url.check ("componentLoad", "Component.load", url)
+            val url' = Policy.Url.check ("readUrl", "Component.load", url')
+        in
+            Component.load url'
+        end
+
+    fun save (file, com) =
+        let
+            val file' = Policy.File.check ("componentSave", "Component.save", file)
+            val file' = Policy.File.check ("writeFile", "Component.save", file')
+        in
+            Component.save (file', com)
+        end
+    
+    val inf = Component.inf
+    val imports = Component.imports
+
+    functor MkManager(val resolver : Resolver.t) =
+            let
+                do Policy.Unit.check ("MkManager", "Component.MkManager", ())
+            in
+                Component.MkManager(val resolver : Resolver.t = resolver)
+            end
+end

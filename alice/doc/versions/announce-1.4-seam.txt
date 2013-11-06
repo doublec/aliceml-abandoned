@@ -1,0 +1,61 @@
+We are happy to announce version 1.4 of the Alice Programming
+System:
+
+     http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with extensive
+support for type-safe programming of concurrent, distributed
+and open systems. It also features cutting-edge constraint
+programming technology based on the Gecode library.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and entire modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     constraint propagation and programmable search for
+     solving hard combinatorial problems with Gecode
+  Virtual Machine
+     portable implementation with just-in-time compilation
+  Interactive tools
+     easy to use interactive toplevel with graphical interface
+     and graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  First-class Components and Sandboxing
+     Alice ML now features syntax for first-class components and
+     an experimental sandboxing infrastructure
+  Improved SML Conformance
+     the most significant gaps regarding SML conformance have been
+     closed, particularly signature inclusion and equality types
+  Potential Successor ML Features
+     integrated additional proposals for Successor ML
+  Improved Toplevel
+     a number of additions to the toplevel's GUI meant to improve
+     "user experience", especially for beginners
+
+For a detailed list of changes please see:
+
+     http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Alice is open source under a BSD-style license. Source and binary
+packages are currently available for Linux, Mac OS, and Windows.
+
+Enjoy,
+
+        - The Alice Team

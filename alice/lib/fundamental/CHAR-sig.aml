@@ -1,0 +1,77 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and WideChar                 from "Pervasive"
+import __primitive type int and bool and order and option from "ToplevelTypes"
+import __primitive structure StringCvt                    from "StringCvt"
+
+signature CHAR =
+sig
+    eqtype char
+    eqtype string
+    type t = char							(**)
+
+    val minChar :	char
+    val maxChar :	char
+    val maxOrd :	int
+
+    val chr :		int -> char
+    val ord :		char -> int
+
+    val pred :		char -> char
+    val succ :		char -> char
+
+    val op < :		char * char -> bool
+    val op <= :		char * char -> bool
+    val op > :		char * char -> bool
+    val op >= :		char * char -> bool
+    val equal :		char * char -> bool				(**)
+    val compare :	char * char -> order
+    val hash :		char -> int					(**)
+
+    val contains :	string -> char -> bool
+    val notContains :	string -> char -> bool
+
+    val toLower :	char -> char
+    val toUpper :	char -> char
+
+    val isLower :	char -> bool
+    val isUpper :	char -> bool
+    val isAlpha :	char -> bool
+    val isAlphaNum :	char -> bool
+    val isDigit :	char -> bool
+    val isBinDigit :	char -> bool					(**)
+    val isOctDigit :	char -> bool					(**)
+    val isHexDigit :	char -> bool
+    val isPunct :	char -> bool
+    val isPrint :	char -> bool
+    val isGraph :	char -> bool
+    val isSpace :	char -> bool
+    val isCntrl :	char -> bool
+    val isAscii :	char -> bool
+
+    val toWide :	char -> WideChar.char				(**)
+    val fromWide :	WideChar.char -> char				(**)
+
+    val toString :	char -> string
+    val toCString :	char -> string
+    val fromString :	string -> char option
+    val fromCString :	string -> char option
+    val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
+    val scanC :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
+									(**)
+end

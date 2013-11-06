@@ -1,0 +1,140 @@
+import structure Protocol from "../common/Protocol"
+import signature SNAKE_UI from "SNAKE_UI-sig"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import structure Log from "../common/Log"
+
+functor LogClient (C: Protocol.CLIENT) = 
+struct
+
+    local
+	val logFn = Log.logFn
+    in
+	val name = C.name
+
+	val opponentHasConnected = logFn ("C.opponentHasConnected", 
+					  C.opponentHasConnected)
+	val opponentHasDisconnected = logFn ("C.opponentHasDisconnected",
+					     C.opponentHasDisconnected)
+	val opponentHasGivenUp = logFn ("C.opponentHasGivenUp",
+					C.opponentHasGivenUp)
+	val snakeKilled = logFn ("C.snakeKilled", C.snakeKilled)
+	val gameStarted = logFn ("C.gameStarted", C.gameStarted)
+	val gameFinished = logFn ("C.gameFinished", C.gameFinished)
+	val updateSeveral = logFn ("C.updateSeveral", C.updateSeveral)
+	val update = logFn ("C.update", C.update)
+	val tick = logFn ("C.tick", C.tick)
+    end
+end
+
+functor ProxyClient (C : Protocol.CLIENT) =
+struct
+    val lock = Lock.lock ()
+    val name = C.name
+
+    val opponentHasConnected = Remote.proxy (Lock.sync lock C.opponentHasConnected)
+    val opponentHasDisconnected = Remote.proxy (Lock.sync lock C.opponentHasDisconnected)
+    val opponentHasGivenUp = Remote.proxy (Lock.sync lock C.opponentHasGivenUp)
+
+    val snakeKilled = Remote.proxy (Lock.sync lock C.snakeKilled)
+    val gameStarted = Remote.proxy (Lock.sync lock C.gameStarted)
+    val gameFinished = Remote.proxy (Lock.sync lock C.gameFinished)
+    val updateSeveral = Remote.proxy (Lock.sync lock C.updateSeveral)
+    val update = Remote.proxy (Lock.sync lock C.update)
+    val tick = Remote.proxy (Lock.sync lock C.tick)
+end
+
+functor StartClient (UI : SNAKE_UI) =
+struct
+    structure P = Protocol
+
+    local
+	val startRequestP = Promise.promise ()
+	val turnP = Promise.promise ()
+	val giveUpP = Promise.promise ()
+	val disconnectP = Promise.promise ()
+    in
+	fun mkCallbacks connect = 
+	    { connectCB = connect,
+	     startRequestCB = Promise.future startRequestP,
+	     turnCB = Promise.future turnP,
+	     giveUpCB = Promise.future giveUpP,
+	     disconnectCB = Promise.future disconnectP
+	     }
+
+	fun provideCallbacks { startRequest, turn, giveUp, disconnect } =
+	    (Promise.fulfill (startRequestP, startRequest);
+	     Promise.fulfill (turnP, turn);
+	     Promise.fulfill (giveUpP, giveUp);
+	     Promise.fulfill (disconnectP, disconnect))
+    end
+
+    (* gui handler callbacks *)
+    fun connectCB (name, ticket) =
+	(let
+	     structure S = unpack Remote.take ticket : P.SERVER
+	     structure Client =
+	     struct
+		 val name = name
+
+		 val idVar = ref NONE
+
+		 fun id () = valOf (! idVar)
+
+		 fun opponentHasConnected info = 
+		     UI.opponentHasConnected info
+
+		 fun opponentHasDisconnected opId = 
+		     UI.opponentHasDisconnected opId
+
+		 fun opponentHasGivenUp opId = UI.opponentHasGivenUp opId
+
+		 fun snakeKilled id = UI.snakeKilled id
+
+		 fun gameStarted () = UI.gameStarted ()
+
+		 fun gameFinished winner = UI.gameFinished winner
+
+		 fun update args = UI.update args 
+
+		 fun updateSeveral l = List.app update l
+		     
+		 fun tick () = UI.tick () 
+
+		 fun run (i) = idVar := SOME i
+
+		 (* gui callbacks *)
+
+		 fun startRequestCB () = S.startGame (id ())
+		 val startRequestCB = Log.logFn ("startRequestCB",
+						 startRequestCB)
+
+		 fun turnCB h = S.turn (id (), h)
+		 val turnCB = Log.logFn ("turnCB", turnCB)
+
+		 fun giveUpCB () = S.giveUp (id ())
+		 val giveUpCB = Log.logFn ("giveUpCB", giveUpCB)
+		 
+		 fun disconnectCB () = S.disconnect (id ())
+		 val disconnectCB = Log.logFn ("disconnectCB", disconnectCB)
+	     end
+
+	     val package = pack (ProxyClient (LogClient Client)) :> P.CLIENT
+	 in
+	     provideCallbacks {startRequest = Client.startRequestCB, 
+			       turn = Client.turnCB,
+			       giveUp = Client.giveUpCB,
+			       disconnect = Client.disconnectCB };
+
+	     case S.connect package of
+		 SOME (cldId, arena, snake) =>
+		     (Client.run (cldId); SOME (arena, snake))
+	       | NONE => NONE
+	 end) handle _ => NONE
+
+    fun run () = UI.execute (mkCallbacks connectCB)
+
+end
+
+
+
+

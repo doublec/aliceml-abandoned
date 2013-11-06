@@ -1,0 +1,46 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Config                   from "../lib/system/Config"
+import structure TextIO                   from "../lib/system/TextIO"
+import structure OS                       from "../lib/system/OS"
+import structure CommandLine              from "../lib/system/CommandLine"
+import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
+import structure SMLToSeamBatchCompiler   from "top/SMLToSeamBatchCompiler"
+(* This is fairly obsolete by now...
+import structure SMLToDotNetBatchCompiler from "top/SMLToDotNetBatchCompiler"
+*)
+
+val _ =
+    case CommandLine.arguments () of
+	"--mozart"::args =>
+	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
+      | "--seam"::args =>
+	    OS.Process.exit (SMLToSeamBatchCompiler.main args)
+      (*
+      | "--dotnet"::args =>
+	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
+      *)
+      | args =>
+	    case Config.vm of
+		"mozart" =>
+		    OS.Process.exit (SMLToMozartBatchCompiler.main args)
+	      | "seam" =>
+		    OS.Process.exit (SMLToSeamBatchCompiler.main args)
+	      (*
+	      | "dotnet" =>
+		    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
+	      *)
+	      | _ =>
+		    (TextIO.output (TextIO.stdErr,
+				    "alicec: unknown runtime environment\n");
+		     OS.Process.exit OS.Process.failure)

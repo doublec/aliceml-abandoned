@@ -1,0 +1,62 @@
+Debug.stc:
+
+Utils.stc: \
+
+Common.stc: \
+
+Path.stc:
+
+Interface.stc: \
+	Path.stc
+
+PARCEL-sig.stc: \
+	Common.stc \
+	Interface.stc
+
+MANAGER-sig.stc: \
+	Common.stc \
+	Interface.stc \
+	Debug.stc
+
+MkManager.stc: \
+	Common.stc \
+	Utils.stc \
+	Path.stc \
+	MANAGER-sig.stc \
+	Debug.stc
+
+GManager.stc: \
+	MANAGER-sig.stc \
+	MkManager.stc \
+	Common.stc \
+	MkGRSpace.stc
+
+MkEngine.stc: \
+	Common.stc \
+	MANAGER-sig.stc \
+	PARCEL-sig.stc \
+	Debug.stc
+
+RSPACE-sig.stc: \
+	Path.stc
+
+MkGRSpace.stc: \
+	RSPACE-sig.stc \
+	Path.stc \
+
+MkWorker.stc: \
+	Common.stc \
+	Utils.stc \
+	Utils.stc \
+	Interface.stc \
+	Path.stc \
+	RSPACE-sig.stc \
+	Debug.stc
+
+RemoteWorker.stc: \
+	PARCEL-sig.stc \
+	MkWorker.stc \
+	MkGRSpace.stc
+
+Test.stc: \
+

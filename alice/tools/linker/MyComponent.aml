@@ -1,0 +1,75 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Inf             from "../../lib/rtt/Inf"
+import structure IO              from "../../lib/system/IO"
+import structure Reflect         from "../../lib/system/Reflect"
+import structure Url             from "../../lib/system/Url"
+import structure Resolver        from "../../lib/system/Resolver"
+import structure UnsafeComponent from "../../lib/system/UnsafeComponent"
+import structure Component       from "../../lib/system/Component"
+import signature MY_COMPONENT    from "MY_COMPONENT-sig"
+
+structure MyComponent :> MY_COMPONENT =
+struct
+    nonfix mod
+    type inf = Inf.t option
+    type mod = Reflect.module
+
+    datatype component =
+        EVALUATED of { inf: inf, mod: mod }
+      | UNEVALUATED of { imports: (string * inf) vector,
+			 body:    mod vector -> mod,
+			 inf:     inf }
+      | VNATIVE of { name: string, mod: mod option ref }
+    type t = component
+
+    fun load url =
+	case Resolver.localize Component.defaultResolver url of
+	    SOME (Resolver.FILE name) =>
+		(SOME (UnsafeComponent.load name)
+		 handle UnsafeComponent.CorruptInternal => NONE)
+	  | SOME (Resolver.STRING string) =>
+		(SOME (UnsafeComponent.unpack_ string)
+		 handle cause =>
+		     raise IO.Io {name = Url.toStringRaw url,
+				  function = "load", cause})
+	  | SOME (Resolver.DELEGATE url') =>
+		load (Url.fromString (Url.toLocalFile url))
+	  | NONE => raise IO.Io {name = Url.toStringRaw url,
+				 function = "load", cause = Component.NotFound}
+
+    fun save (name, component) =
+	UnsafeComponent.save (name, component)
+	handle cause => raise IO.Io {name, function = "save", cause}
+
+    fun imports (UNEVALUATED {imports, ...}) = imports
+      | imports (EVALUATED _| VNATIVE _) = #[]
+
+    fun body (UNEVALUATED {body, ...}) = body
+      | body (EVALUATED {mod, ...}) = (fn _ => mod)
+      | body (VNATIVE {name, ...}) = raise Fail name
+
+    fun inf (UNEVALUATED {inf, ...}) = inf
+      | inf (EVALUATED {inf, ...}) = inf
+      | inf (VNATIVE _) = NONE
+
+    fun component {imports, body, inf} = UNEVALUATED {imports, body, inf}
+
+    fun stripImportInfs (UNEVALUATED {imports, body, inf}) =
+	let
+	    val imports = Vector.map (fn (s, _) => (s, NONE)) imports
+	in
+	    UNEVALUATED {imports, body, inf}
+	end
+      | stripImportInfs component = component
+end

@@ -1,0 +1,104 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestBool :> TESTSUITE = (* the bool test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testNot () = 
+	(Test.test (fn x => Bool.not x = false) true;
+	 Test.test (fn x => Bool.not x = true) false)
+
+    fun testCompare () =
+        (Test.test (fn x => Bool.compare x = LESS)    (false, true);
+	 Test.test (fn x => Bool.compare x = GREATER) (true, false);
+	 Test.test (fn x => Bool.compare x = EQUAL)   (true, true);
+	 Test.test (fn x => Bool.compare x = EQUAL)   (false, false))
+
+    fun testEqual () =
+        (Test.test (fn x => Bool.equal x = true)  (true, true);
+	 Test.test (fn x => Bool.equal x = false) (true, false);
+	 Test.test (fn x => Bool.equal x = true)  (false, false);
+         Test.test (fn x => Bool.equal x = false) (false, true))
+
+    fun testFromString () =
+	let
+	    fun t s = StringCvt.scanString Bool.scan s = 
+		      Bool.fromString s
+	in 
+	    Gen.try 1000 Gen.string (Test.test t)
+	end 
+
+    fun testToString () =
+	(Test.test (fn x => Bool.toString x = "true")  true;
+	 Test.test (fn x => Bool.toString x = "false") false)
+
+(* (char, 'a) reader = 'a -> (char * 'a) option 
+
+   (char, int list) reader = int list -> (char * int list) option *)
+
+    fun testScan () = 
+	let
+	    val bVals = [[116, 114, 117, 101],
+			 [84, 114, 117, 101],
+			 [84, 114, 85, 101],
+			 [102, 97, 108, 115, 101],
+			 [70, 97, 108, 115, 101],
+			 [70, 97, 108, 83, 101]]
+			       
+	    fun stream xs = 
+		if Gen.bool 0
+		then let
+			fun insert ([], ys, zs) = ys @ zs
+			  | insert (x::xs, ys, zs) = 
+			            if x = 32 (* whitespace *)
+				    then insert (xs, x::ys, zs)
+				    else ys @ zs @ xs
+		    in 
+		    (insert (xs, [], 
+			 List.nth (bVals, Gen.cardinal (List.length bVals))),
+		     true)
+		     end
+		else
+		    (List.filter (fn x => x <> 69 andalso x <> 101) xs, false)
+
+	    fun t xs = 
+		let
+		    val (str, b) = stream (List.filter (fn x => x <= 255) xs)
+
+		    fun rdr [] = NONE
+		      | rdr (y::ys) = SOME (Char.chr y, ys)
+
+		    val result = Bool.scan rdr str
+				 
+		in
+		    if b
+		      then isSome result
+		    else isNone result
+		end
+	in 
+	    Gen.try 1000 (Gen.list Gen.cardinal) (Test.test t)
+	end
+
+    val suite = ("Bool", [("not", testNot), 
+                          ("compare", testCompare),
+                          ("equal", testEqual),
+                          ("toString", testToString),
+ 			  ("fromString", testFromString), 
+	                  ("scan", testScan)])
+end

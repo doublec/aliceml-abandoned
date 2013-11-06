@@ -1,0 +1,32 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+import structure Packer from "x-alice:/lib/distribution/Packer"
+import structure Trace  from "Trace"
+
+signature MANAGER =
+    sig
+	type sol
+	type trace = sol Trace.trace
+
+	val log : int * int * string -> unit
+	val sync : unit Promise.promise -> unit
+	val prepare : unit Promise.promise -> unit
+	val register : Packer.package * int -> unit
+	val start : unit -> unit
+	val broadcast : (Packer.package -> unit) -> unit
+	val idle : int -> unit
+	val done : unit -> unit
+	val succeeded : sol -> unit
+	val collect : sol -> unit
+	val get : sol list Promise.promise -> unit
+    end

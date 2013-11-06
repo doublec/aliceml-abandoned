@@ -1,0 +1,36 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure StringFromString : REGRESSION =
+struct
+
+val name = "string.fromString"
+
+val ok = SOME "string.fromString.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+fun check (s, s') =
+   case String.fromString s of
+      NONE => concatResult "WRONG  NONE\n"
+    | SOME s'' =>
+	 if s' = s''
+	    then concatResult (concat ["OK  [", s', "]\n"])
+	 else concatResult (concat ["WRONG  [", s', "] [", s'', "]\n"])
+
+val _ =
+   List.app check
+   [("abc\"def", "abc\"def"),
+     (*("\\q", ""),*)
+     ("a\^D", "a"),
+     ("a\\ \\\\q", "a"),
+     ("\\ \\", ""),
+     ("", ""),
+     ("\\ \\\^D", "")(*,
+     ("\\ a", "")*)]
+
+val result = !result
+
+end

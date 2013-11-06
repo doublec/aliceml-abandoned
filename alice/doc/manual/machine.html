@@ -1,0 +1,113 @@
+<?php include("macros.php3"); ?>
+<?php heading("Virtual machine", "virtual\nmachine") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>The virtual machine is required to execute Alice applications. It takes the
+URL of the application's <A href="components.html">root component</A> and
+evaluates it.</P>
+
+
+<?php section("synopsis", "synopsis") ?>
+
+<DL>
+  <DT><TT>alicerun</TT> <I>&lt;url&gt;</I> <I>&lt;args&gt;</I> ...</DT>
+</DL>
+
+<!--
+<DIV class=note>
+<P><I>Note:</I> Windows does not properly allow a single program to support both text mode <I>and</I> GUI mode. Thus, <TT>alicerun</TT> will always open a console window (if not started from a console shell), even if it does not perform any I/O on standard channels. As an alternative, we hence provide the <TT>alicerunwin</TT> command on Windows:</P>
+<DL>
+  <DT><TT>alicerunwin</TT> <I>&lt;url&gt;</I> <I>&lt;args&gt;</I> ...</DT>
+</DL>
+Note that programs invoked with this command <I>cannot</I> perform any I/O on <TT>stdIn</TT>, <TT>stdOut</TT> and <TT>stdErr</TT>.
+</P>
+</DIV>
+-->
+
+
+<?php section("description", "description") ?>
+
+<P>Executes the application given by <I>&lt;url&gt;</I>, denoting a compiled
+component. The component is located, loaded and evaluated using the root <A
+href="library/component-manager.html">component manager</A>.<!-- The component may
+be a Mozart component (<A
+href="http://www.mozart-oz.org/documentation/apptut/node3.html">Mozart
+"functor"</A>).--></P>
+
+<P>The application can access the remaining command line arguments via the <A
+href="library/command-line.html"><TT>CommandLine</TT></A> library structure. 
+To terminate an application, the <TT>OS.Process.terminate</TT> function must be
+invoked. The virtual machine will <EM>not</EM> be terminated automatically,
+even if no live threads are left.</P>
+
+
+<?php section("environment-variables", "environment variables") ?>
+
+<P>The virtual machine is parameterized by the following
+environment variables:</P>
+
+<DL>
+  <DT><P><TT>ALICE_HOME</TT></P>
+  <DD><P>specifies the directory where Alice is installed.  If not set,
+    under Unix or started from a Windows Cygwin shell, <TT>alicerun</TT>
+    guesses its name by looking in the following directories, in that
+    order:</P>
+    <OL>
+      <LI><TT>/usr/share/alice</TT>, which is the default installation
+	path on some Unix variants
+      <LI><TT>%PROGRAMFILES%/Alice</TT>, which is the default installation
+	path on Windows
+      <LI>The parent directory of the directory in which <TT>alicerun</TT>
+	resides.
+    </OL>
+    <P>If not set, under Windows started from a <TT>CMD</TT> console,
+    <TT>alicerun</TT> guesses the installation directory to be
+    <TT>%PROGRAMFILES%\Alice</TT>.</P>
+  <DT><TT>ALICE_LOAD_PREFIX</TT>
+  <DT><TT>ALICE_LOAD_SUFFIX</TT>
+  <DD><P>specify resolving methods to use when trying to access components.
+    Components are resolved with the following methods, in order:</P>
+    <OL>
+      <LI>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
+	before any of the following.
+      <LI>The URL is tried below the <TT>.alice/cache</TT>
+	directory in the user's home directory, in a <A
+	href="library/resolver-handler.html#cache">cache-style</A>
+	structure.
+      <?php if ($platform == "seam") { ?>
+      <LI>The URL is tried with the platform's default component
+	extension appended, which is <TT>.alc</TT>.
+      <?php } else { ?>
+      <LI>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
+	for compatibility with Oz.
+      <LI>Otherwise, the URL is tried with the platform's default component
+	extension appended, which is <TT>.ozf</TT>.
+      <LI>If that fails, the URL is tried as-is, for compatibility
+	with Oz.
+      <?php } ?>
+      <LI>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
+	are tried at this point.
+    </OL>
+    <P>The syntax for specifying custom resolving methods is defined by
+    the library's
+    <A href="library/resolver.html#Handler"><TT>Resolver.Handler</TT></A>
+    structure.</P>
+    <P></P>
+  <DT><P><TT>ALICE_TRACE_BOOT_LINKER</TT></P>
+  <DD><P>if set (its value does not matter), causes trace messages to be
+    printed on standard error about linking Alice components required to
+    boot the machine.</P>
+  <?php if ($platform == "seam") { ?>
+  <DT><P><TT>ALICE_JIT_MODE</TT></P>
+  <DD><P>if set to <TT>0</TT>, disables the run-time compiler.  
+  If set to <TT>1</TT>, the native code run-time compiler for x86
+  processors is used. If set to <TT>2</TT>, the byte code run-time
+  compiler is used. If set to <TT>3</TT>, the byte code compiler is
+   used only for frequently executed functions - this is the default.</P>
+  <?php } ?>
+</DL>
+
+
+<?php footing() ?>

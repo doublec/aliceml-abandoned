@@ -1,0 +1,64 @@
+#!/bin/sh
+
+set -e
+
+find_in () {
+    search_for=$1
+    found_in=""
+    shift
+    for d in "$@"; do
+	if test -f "$d/${search_for}" -o -h "$d/${search_for}"; then
+	    found_in=$d && break
+	fi
+    done
+    if test -z "${found_in}"; then
+	echo "Error: Could not find ${search_for} in either of" >&2
+	for d in "$@"; do echo "  $d" >&2; done
+	exit 1
+    fi
+    echo "${found_in}"
+}
+
+if test -z "${ALICE_HOME}"; then
+    dir=$(dirname "$0")
+    dir=$(dirname "$dir")
+    ALICE_HOME=$(find_in VMMain.ozf "$dir" /usr/share/alice-mozart "$PROGRAMFILES/Alice")
+fi
+
+if test -z "${OZHOME}"; then
+    dir=`which oz`
+    dir=$(dirname "$dir")
+    dir=$(dirname "$dir")
+    OZHOME=$(find_in share/Init.ozf "$dir" /usr/share/mozart "$PROGRAMFILES/Mozart")
+fi
+
+case $(uname) in
+    CYGWIN*)
+	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
+	sep=\;
+	esc=
+	;;
+    *)
+	sep=:
+	esc=\\
+	;;
+esac
+
+ALICE_LOAD=cache=~/.alice/cache${sep}pattern=x-oz:'?{x}'=x-oz${esc}:'?{x}'${sep}pattern='?{x}'='?{x}.ozf'${sep}pattern='?{x}'='?{x}'
+
+if [ ! -z "$ALICE_LOAD_PREFIX" ]
+then
+    ALICE_LOAD=$ALICE_LOAD_PREFIX${sep}$ALICE_LOAD
+fi
+if [ ! -z "$ALICE_LOAD_SUFFIX" ]
+then
+    ALICE_LOAD=$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX
+fi
+
+: ${OZ_LOAD:=cache=~/.oz/cache${sep}cache=/usr/lib/mozart/cache${sep}cache=/usr/share/mozart/cache${sep}cache=$OZHOME/cache}
+
+OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'.ozf${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'${sep}$OZ_LOAD
+
+export ALICE_HOME ALICE_LOAD OZ_LOAD
+
+exec ozengine x-alice:/VMMain "$@"

@@ -1,0 +1,19 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS from "../../lib/system/OS"
+
+signature INTERACTIVE_TOPLEVEL =
+    sig
+	val main: string list -> OS.Process.status
+	val use: string -> unit
+    end

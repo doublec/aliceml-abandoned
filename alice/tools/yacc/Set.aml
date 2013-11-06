@@ -1,0 +1,11 @@
+(* Set abstraction *)
+
+structure Set = 
+struct
+    type 'a set = 'a  list
+    val empty = []
+    fun isempty s = s=nil
+    fun contains s x = List.exists (fn y => y=x) s
+    fun insert x s = if contains s x then s else x::s
+    fun remove x s = List.filter (fn y => y<>x) s
+end

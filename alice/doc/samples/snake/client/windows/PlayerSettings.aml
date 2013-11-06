@@ -1,0 +1,305 @@
+(* Alice Snake 2.0 - PlayerSettingsWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature PLAYERSETTINGS from "PLAYERSETTINGS-sig"
+
+import structure Gtk            from "GtkSupport"
+import structure Gdk            from "GtkSupport"
+
+import structure Color          from "../../common/Color"
+import structure Text           from "Text"
+
+
+structure PlayerSettings :> PLAYERSETTINGS =
+struct
+
+    type cancel_cb = unit -> unit
+
+    type ready_cb = (string * Color.color) option -> string option 
+
+    datatype state = WAITING | SELECTING
+
+    type player_settings_widget = {object       : Gtk.object,
+				   insertPlayer : string * Color.color -> unit,
+				   insertColor  : Color.color -> unit,
+				   removePlayer : string * Color.color -> unit,
+				   removeColor  : Color.color -> unit,
+				   state        : state ref}
+
+    (* converts a Color.color into a Gdk.color *)
+    fun colorToGdkColor (colormap, c) =
+	let
+	    val (r, g, b) = Color.rgb c
+	    fun conv n = Real.round (65535.0 * n)
+	    val color = Gdk.Color.new { red = conv r, green = conv g, blue = conv b }
+	in
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
+	    color
+	end
+
+    (* if client has pushed the reday-button yet, everything is ok and
+       the game starts normally. if he has not, it will abort 
+       by returning to MainWindow and showing an error message *)
+    fun gameStarted (p : player_settings_widget) = 
+	(Gtk.Widget.destroy (#object p);
+	 if !(#state p) <> WAITING
+	     then Text.mkTextWindow (#object p, "ERROR!", 
+				    "Sorry, game already started without you!")
+	 else Gtk.null;())
+	
+    (* call playersJoined when some players has joined the game *)
+    fun playersJoined (p : player_settings_widget, xs) = 
+	List.app (fn (n, c) => (#insertPlayer p (n, c);
+				#removeColor p c)) xs
+	
+    (* call playerDisconnected when one player has disconnected *)
+    fun playerDisconnected (p : player_settings_widget, name, color) = 
+	(fn (n, c) => (#removePlayer p (n, c);
+		       #insertColor p c)) (name, color)
+
+
+    (* builds the player settings window *)
+    fun mkPlayerSettings (parent, cancelCB, readyCB) = 
+	let
+
+	    val playerSettings  = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+  	    val playerText      = Gtk.createTextWidget ()
+	    val playerScrolledWindow = 
+		                  Gtk.ScrolledWindow.new (Gtk.null, Gtk.null)
+ 	    val colorCombo      = Gtk.ComboBox.newText ()
+	    val settingsVBox 	= Gtk.VBox.new (false, 0)
+	    val nameLabel 	= Gtk.Label.new "Name : "
+	    val nameText	= Gtk.Entry.new ()
+	    val nameHBox	= Gtk.HBox.new (false, 0)
+	    val separator1	= Gtk.HSeparator.new ()
+	    val colorLabel 	= Gtk.Label.new "Color : "
+	    val colorHBox	= Gtk.HBox.new (false, 5)
+	    val separator2	= Gtk.HSeparator.new ()
+	    val spectatorCheckButton = 
+		Gtk.CheckButton.newWithLabel "Spectator Mode"
+	    val separator3	= Gtk.HSeparator.new ()
+	    val connectedLabel 	= Gtk.Label.new "Connected Players: "
+	    val separator4	= Gtk.HSeparator.new ()
+	    val readyButton    	= Gtk.Button.newWithLabel "Ready "
+	    val cancelButton    = Gtk.Button.newWithLabel "Cancel"
+	    val buttonHBox	= Gtk.HBox.new (true, 10)
+
+	    val state = ref SELECTING
+
+	    val colormap = Gdk.Colormap.getSystem ()
+	
+	    (* an alterable list which contains all colors that are
+	     still selectabel *)
+	    val allColors = ref (List.map Color.toString Color.all)
+
+	    (* inserts all colors into the color combo *)
+	    fun insertColors colors = 
+                List.app (fn c => Gtk.ComboBox.appendText (colorCombo, c)) colors
+
+	    fun removeColor col =
+		let
+		    val c = Color.toString col
+                    fun remove (ndx, res, []) = (~1, List.rev res)
+                      | remove (ndx, res, c'::cs) = 
+                        if c = c' then
+                            (ndx, List.rev res @ cs)
+                        else
+                            remove (ndx + 1, c' :: res,  cs)
+                        
+                    val (ndx, spareColors) = remove (0, [], !allColors)
+		in
+		    allColors := spareColors;
+                    Gtk.ComboBox.removeText (colorCombo, ndx)
+		end
+
+	    fun insertColor col = 
+		let
+		    val colors = (Color.toString col) :: (!allColors)
+		in
+		    allColors := colors;
+                    Gtk.ComboBox.appendText (colorCombo, Color.toString col)
+		end
+
+	    val colorlock = Lock.lock ()
+
+	    val removeColor = Lock.sync colorlock removeColor
+
+	    val insertColor = Lock.sync colorlock insertColor
+		
+	    (* inserts a player with his color in the playerText widget *)
+	    fun insertPlayer (name, color) = 
+		let
+		    val text = name ^ " has connected!\n"
+		    val color = colorToGdkColor (colormap, color)
+		in
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
+		end
+
+
+	    (* inserts 'name has disconnected' with it's color in playerText *)
+	    fun removePlayer (name, color) = 
+		let
+		    val text  = name ^ " has disconnected!\n"
+		    val color = colorToGdkColor (colormap, color)
+		in
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
+		end
+
+	    val playerSettingsWindow = {object = playerSettings,
+					insertPlayer,
+					insertColor,
+					removePlayer,
+					removeColor,
+					state}
+
+
+
+	    (* the quit procedure. disconnects the client from the game
+	       and returns to the main window *)
+	    fun quit (p : player_settings_widget) = 
+		                            Gtk.Widget.destroy (#object p)
+
+	    fun mainQuit (p : player_settings_widget) = 
+		              (Gtk.Widget.destroy (#object p);
+			       cancelCB ())
+
+	    (* called, if the client has changed the nameText widget.
+	       if nameText = "" -> you can't press the ready-button,
+	       else the ready-button is set sensitive *)
+	    fun changedNameText () =
+		if Gtk.Entry.getText nameText = ""
+		    then Gtk.Widget.setSensitive (readyButton, false)
+		else Gtk.Widget.setSensitive (readyButton, true)
+
+	    (* handles what happens, if the spectator Button has
+	       been pressed *)
+	    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
+		if Gtk.ToggleButton.getActive spectator
+		    then
+			(Gtk.Widget.setSensitive (nameBox, false);
+			 Gtk.Widget.setSensitive (colorBox, false);
+			 Gtk.Widget.setSensitive (readyButton, true))
+		else
+		    (Gtk.Widget.setSensitive (nameBox, true);
+		     Gtk.Widget.setSensitive (colorBox, true);
+		     if Gtk.Entry.getText nameText = ""
+			 then Gtk.Widget.setSensitive (readyButton, false)
+		     else ())
+
+
+	    (* handles what happens if the ready-button has clicked.
+	     play (name, color) will be called and if it returns
+	     FST game -> fulfilling the state and forbid to press
+	                 the button again
+	     SND errorMsg -> return to main window by showing error message *)
+	    fun okClickedCB (p : player_settings_widget, spectator) = 
+		let
+		    val name  = Gtk.Entry.getText nameText
+		    val color = 
+			Color.fromString (Gtk.Entry.getText 
+					  (Gtk.Combo.getFieldEntry colorCombo))
+
+		    fun return () = 
+			if Gtk.ToggleButton.getActive spectator
+			    then readyCB NONE
+			else readyCB (SOME (name, color))
+                    
+		in
+		    case return () of 
+		       NONE =>(Gtk.Button.setLabel (cancelButton, "Disconnect");
+			       Gtk.Widget.setSensitive (readyButton, false);
+			       Gtk.Widget.setSensitive (nameHBox, false);
+			       Gtk.Widget.setSensitive (colorHBox, false);
+			       Gtk.Widget.setSensitive (spectatorCheckButton, 
+						       false);
+			       (#state p) := WAITING;
+			       if Gtk.ToggleButton.getActive spectator
+				   then ()
+			       else playersJoined (p, [(name, color)]);
+			       () (* FIXME:!! Gtk.Combo.setPopdownStrings (colorCombo, 
+						       [Color.toString color]) *))
+		     | SOME errorMsg => 
+			   (Text.mkTextWindow (parent, "ERROR!!", errorMsg);
+			    Gtk.Widget.destroy (#object p))
+		end
+
+	in
+
+	    (* inserts all available colors into the color combo *)
+	    insertColors (!allColors);
+	    Gtk.Window.setModal (playerSettings, true);
+	    Gtk.Window.setTitle (playerSettings, "Player Settings");
+	    Gtk.Window.setPosition (playerSettings, Gtk.WindowPosition.CENTER);
+	    Gtk.TextView.setEditable (playerText, false);
+	    
+	    Gtk.signalConnect (playerSettings,
+			       "delete-event", 
+			       fn _ => mainQuit playerSettingsWindow);
+	    Gtk.signalConnect (spectatorCheckButton, 
+			       "clicked", 
+			       fn _ => 
+			       pressedSpectatorButton (spectatorCheckButton, 
+						       nameHBox, 
+						       colorHBox));
+	    Gtk.signalConnect (nameText, 
+			       "changed",
+			       fn _ => changedNameText ());
+	    Gtk.signalConnect (readyButton, 
+			       "clicked", 
+			       fn _ => okClickedCB (playerSettingsWindow, 
+						    spectatorCheckButton));
+	    Gtk.signalConnect (cancelButton, 
+			       "clicked",
+			       fn _ => mainQuit playerSettingsWindow);
+	    
+	    (* setting some useful values *)
+	    Gtk.Container.setBorderWidth (playerSettings, 10);
+	    Gtk.Misc.setAlignment (connectedLabel, 0.0, 0.5);
+	    Gtk.Entry.setEditable (Gtk.Combo.getFieldEntry colorCombo, 
+				  false);
+	    Gtk.Window.setDefaultSize(playerSettings, 300, 400);
+	    Gtk.ScrolledWindow.setPolicy (playerScrolledWindow, 
+					 Gtk.PolicyType.NEVER, 
+					 Gtk.PolicyType.ALWAYS);
+	    Gtk.Entry.setMaxLength (nameText, 11);
+	    Gtk.Widget.setSensitive (readyButton, false);
+
+	    (* packing everything in boxes and later in playerSettings *)
+	    Gtk.Box.packStart (nameHBox, nameLabel, false, false, 0);
+	    Gtk.Box.packStart (nameHBox, nameText, true, false, 0);
+
+	    Gtk.Box.packStart (colorHBox, colorLabel, false, false, 0);
+	    Gtk.Box.packStart (colorHBox, colorCombo, true, false, 0);
+
+	    Gtk.Box.packStart (buttonHBox, readyButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, cancelButton, true, true, 5);
+
+	    Gtk.Box.packStart (settingsVBox, nameHBox, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, separator1, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, colorHBox, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, separator2, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, spectatorCheckButton, false, 
+			      false, 5);
+	    Gtk.Box.packStart (settingsVBox, separator3, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, connectedLabel, false, false, 0);
+	    Gtk.Box.packStart (settingsVBox, playerScrolledWindow, 
+			      true, true, 0);
+	    Gtk.Box.packStart (settingsVBox, separator4, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, buttonHBox, false, false, 5);
+	    
+	    Gtk.Container.add (playerScrolledWindow, playerText);
+	    Gtk.Container.add (playerSettings, settingsVBox);
+
+	    Gtk.Widget.showAll playerSettings;
+
+	    playerSettingsWindow
+	end
+end

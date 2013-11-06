@@ -1,0 +1,26 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name from "../../lib/rtt/Name"
+
+signature NAME_TRANSLATION =
+sig
+    val trValName :	Name.t -> Name.t
+    val trTypName :	Name.t -> Name.t
+    val trModName :	Name.t -> Name.t
+    val trInfName :	Name.t -> Name.t
+
+    val isValName :	Name.t -> bool		(* Domain *)
+    val isTypName :	Name.t -> bool		(* Domain *)
+    val isModName :	Name.t -> bool		(* Domain *)
+    val isInfName :	Name.t -> bool		(* Domain *)
+end

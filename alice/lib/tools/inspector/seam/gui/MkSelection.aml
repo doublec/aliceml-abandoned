@@ -1,0 +1,644 @@
+import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
+import signature MAIN_WINDOW   from "MAIN_WINDOW-sig"
+import signature SELECTION     from "SELECTION-sig"
+import structure GrTypes       from "GrTypes"
+import structure MyPrint       from "../Print"
+import structure Gdk           from "x-alice:/lib/gtk/Gdk"
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure Common        from "../Common"
+import structure AbsTree       from "../AbsTree"
+import structure Canvas        from "x-alice:/lib/gtk/Canvas"
+
+functor MkSelection (Driver : CANVAS_DRIVER)
+                    (MainWindow : MAIN_WINDOW)
+                    (QueuePut:Common.QUEUE_PUT)
+     :> SELECTION =
+struct
+
+open GrTypes
+
+val getEntryP = Promise.promise ()
+val getEntry = Promise.future getEntryP
+
+datatype comparison = datatype Common.comparison
+
+(* The current selection(s). *)
+type selection = {rect   : Gtk.object,
+                  shaded : garment list list,
+                  entry  : int option,
+                  path   : int list ref,
+
+                  (* These extra fields are only used for tooltips. *)
+                  width  : int,
+                  height : int,
+                  xpos   : int} (* Relatively to the rectangle's group. *)
+
+val selection = ref ([]: selection list)
+
+fun isEmpty () = List.null (!selection)
+
+val setSens = Gtk.Widget.setSensitive
+
+fun initMenu () =
+    if isEmpty () then setSens (MainWindow.menuSelection, false)
+    else (setSens(MainWindow.menuSelection, true) ;
+	  setSens(MainWindow.menuItemExpand, true) ;
+	  setSens(MainWindow.menuItemExpandF, true) ;
+	  setSens(MainWindow.menuItemFold, true) ;
+	  setSens(MainWindow.menuItemReinspect, true) ;
+	  setSens(MainWindow.menuItemForceEval, true) ;
+	  setSens(MainWindow.menuItemRemovEntry, true))
+
+(* Tells if the given tree is expandable. *)
+fun expandable (Simple {content = (Fold _ | WidthLimit _), ...}) = true
+  | expandable (Simple {desc = AbsTree.Decl decl, ...}) = true
+  | expandable (Simple _) = false
+  | expandable (Prefix {tree, ...}) = expandable (!tree)
+  | expandable (Container {kids, ...}) = false
+
+(* Tells if the given content is foldable. *)
+fun foldable' (NestedRow _) = false
+  | foldable' TopLevel      = assert false
+  | foldable' Struct        = false
+  | foldable' (Decl _)      = false
+  | foldable' (Value _)     = true
+  | foldable' (Module _)    = true
+  | foldable' (ListTail _)  = false
+
+(* Tells if the given tree is foldable. *)
+fun foldable (Simple {desc, ...}) = foldable' desc
+  | foldable (Prefix {tree, ...}) = foldable (!tree)
+  | foldable (Container {desc, ...}) = foldable' desc
+
+(* Tells if the given content is reinspectable. *)
+fun reinspectable' (NestedRow _) = false
+  | reinspectable' TopLevel      = assert false
+  | reinspectable' Struct        = false
+  | reinspectable' (Decl _)      = false
+  | reinspectable' (Value _)     = true
+  | reinspectable' (Module _)    = true
+  | reinspectable' (ListTail _)  = true
+
+(* Tells if the given tree is reinspectable. *)
+fun reinspectable (Simple {desc, ...}) = reinspectable' desc
+  | reinspectable (Prefix {tree, ...}) = reinspectable (!tree)
+  | reinspectable (Container {desc, ...}) = reinspectable' desc
+
+(* Tells if the given tree is a lazy. *)
+fun isLazy tree = case getDesc tree of
+		    NestedRow _ => false
+		  | TopLevel    => assert false
+                  | Struct      => false
+                  | Decl _      => false
+		  | Value (_, v, Future _)  => Future.isLazy v
+		  | Module (_, m, Future _) => Future.isLazy m
+		  | ListTail (_, v, _)      => Future.isLazy v
+		  | Value _  => false
+		  | Module _ => false
+
+(* Tells is the argument is a (boxed) future. *)
+fun isFuture (Simple {desc = NestedRow _, parent, ...}) =
+     (case getDesc parent of
+        NestedRow _ => false
+      | Struct => false
+      | Decl _ => false
+      | Value (_, _, Future _) => true
+      | Module (_, _, Future _) => true
+      | ListTail (_, _, Future _) => true
+      | _ => false)
+
+  | isFuture _ = false
+                      
+fun updMenu' (tree, {entry, ...} : selection) =
+    (if expandable tree
+     then () else (setSens(MainWindow.menuItemExpand, false) ;
+                   setSens(MainWindow.menuItemExpandF, false)) ;
+     
+     if foldable tree
+     then () else setSens(MainWindow.menuItemFold, false) ;
+
+     if reinspectable tree
+     then () else setSens(MainWindow.menuItemReinspect, false) ;
+     
+     if entry = NONE
+     then setSens(MainWindow.menuItemRemovEntry, false) else () ;
+     
+     if isLazy tree
+     then () else setSens(MainWindow.menuItemForceEval, false))
+
+fun setSelection (sel, trees) =
+    (selection := sel ;
+     initMenu () ; ListPair.app updMenu' (trees, sel))
+
+(* Selects the tree "below" the current tree. *) 
+fun selectBelow atree =
+  case atree of
+    (Simple _ | Container _) => atree
+  | Prefix {orient, tree, ...} =>
+      case !orient of
+        Parent    => selectBelow (!tree)
+      | SonStrict => selectBelow (!tree)
+      | Son       => atree
+
+(* Selects the given tree, and the corresponding garments. *)
+fun select' tree =
+  case tree of
+    Simple    {desc = Struct, parent, ...} => select' parent
+  | Container {desc = Struct, parent, ...} => select' (!parent)
+  | Simple    {parent=p, index=i, ...} => selectBelow (fromParent(p, i))
+  | Container {parent=p, index=i, ...} => selectBelow (fromParent(!p, !i))
+  | Prefix    _                        => selectBelow tree
+
+(* Selects a prefix according to its orientation. *)
+fun selectOrient (orient, parent, index) =
+  case !orient of
+    Parent => select' parent
+  | (SonStrict | Son) => selectBelow (fromParent (parent, index))
+
+fun fromPath (x :: 0 :: xs) =
+    let
+      val _ = assert (x:int) < 0
+      val (entry, _) = getEntry (~x)
+      val tree = GrTypes.fromPath (entry, xs)
+    in
+      Option.map select' tree
+    end
+
+  | fromPath _ = assert false
+
+fun deselectOne {rect, shaded, entry, path, width, height, xpos} =
+  (Gtk.Object.destroy rect ;
+   List.app Driver.unshadeGarments shaded)
+
+(* Tells if path p occurs is related to one in the selection list. *)
+fun getNested (_, ([]:selection list)) = Distinct
+  | getNested (p, {path, ...} :: xs) = case Common.comparePaths (p, !path) of
+					 Distinct => getNested (p, xs)
+				       | x => x
+
+
+fun getTrees' (pr, [], acc1, acc2, flag) = (acc1, acc2, flag)
+  | getTrees' (pr, x :: xs, acc1, acc2, flag) =
+    let
+      val pathr = #path x
+      val path = !pathr
+      val tree = if pr path then
+		   case fromPath path of
+		     NONE => NONE
+		   | (SOME t) as res =>
+		     let val newpath = getPath (t, [])
+		     in
+		       case getNested (newpath, acc2) of
+			 Distinct => (pathr := newpath ; res)
+		       | _ => NONE
+		     end
+		 else NONE
+    in
+      case tree of
+	NONE => (deselectOne x ; getTrees' (pr, xs, acc1, acc2, true))
+      | SOME t => getTrees' (pr, xs, t :: acc1, x :: acc2, flag)
+    end
+
+(* Get all the valid trees of the selection whose path
+ * also satisfies predicate p. *)
+fun getPredicateTrees p = 
+    let val (trees, sel, flag) = getTrees' (p, !selection, [], [], false)
+    in
+      if flag then setSelection (sel, trees) else () ;
+      trees
+    end
+
+fun alwaysTrue _ = true
+fun getTrees () = getPredicateTrees alwaysTrue
+
+fun distinctPaths p1 p2 = Common.comparePaths (p1, p2) = Distinct
+
+fun unselectPath path = if isEmpty () then () (* Optimisation. *)
+			else ignore (getPredicateTrees (distinctPaths path))
+
+fun deselect () = (List.app deselectOne (!selection) ; setSelection ([], []))
+
+(* Modifiers (masks). *)
+infix &&
+fun a && b    = Word31.andb (a,b)  (* AND two masks *)
+val zeroMask  = Word31.fromInt 0 (* Empty mask *)
+val shiftMask = Word.fromInt (Gdk.ModifierType.toInt [Gdk.ModifierType.SHIFT_MASK])
+val ctrlMask  = Word.fromInt (Gdk.ModifierType.toInt [Gdk.ModifierType.CONTROL_MASK])
+
+val modifier  = ref zeroMask
+
+fun isShift () = Word31.compare (zeroMask, (!modifier) && shiftMask) <> EQUAL
+fun isCtrl  () = Word31.compare (zeroMask, (!modifier) && ctrlMask) <> EQUAL
+
+(* Shade out a suffix. *)
+fun shadeAll (_, [], accu) = accu
+  | shadeAll (maxw, (gl, _, _) :: xs, accu) =
+    if maxw <= 0 then accu
+    else
+      let
+	val swidth = Driver.getGarmentPos (gl, 0)
+      in
+        Driver.shadeGarments gl ;
+	shadeAll (maxw - swidth, xs, gl :: accu)
+      end
+
+(* Given a depth, shade the part of the suffix that is 'outside'. *)
+fun shadeSuffix (maxw, xpos, depth, ((gl, orient, pdepth) :: xs) as suffixes) =
+    if suffixIsInObj (pdepth, orient, depth) 
+    then
+      let
+	val garmentWidth = Driver.getGarmentPos (gl, 0)
+	val maxw' = maxw - garmentWidth
+      in
+	shadeSuffix (maxw', xpos + garmentWidth, depth, xs)
+      end
+    else (xpos, shadeAll (maxw, suffixes, []))
+
+  | shadeSuffix (maxw, xpos, _, _) = (xpos, [])
+
+(* Get the real size, and shade out delimiters in the zone. *)
+fun getSelectionSize (maxw, tree, depth) =
+  case tree of
+    Prefix {prefixWidth, tree, ...} =>
+      let
+        val (w, h, shaded) = getSelectionSize(maxw - prefixWidth, !tree, depth)
+      in
+        (prefixWidth + w, h, shaded)
+      end
+
+  | Simple {height, width, suffix, ...} =>
+      let 
+        val suffixes = List.rev suffix
+        val (suffixWidth, shaded) =
+          shadeSuffix (maxw - width, 0, depth, suffixes)
+      in
+        (width + suffixWidth, height, shaded)
+      end
+
+  | Container {kids, mode, ...} =>
+      let
+        val kids = !kids
+        val size = Array.length kids
+        val mode = !mode
+
+        fun loop (width, height, index) =
+          if index >= size - 1 then (width, height)
+          else
+            let
+              val kid = Array.sub (kids, index)
+              val (w, h) = getSize kid
+            in
+              case mode of
+                (Vertical _ | AlwaysVertical) => loop (Int.max (width, w),
+                                                       height + h, index + 1)
+              | Horizontal => loop (width + w, Int.max (height, h), index + 1)
+            end
+        
+        val (width, height) = loop (0, 0, 0)
+	val maxw = case mode of
+		     (Vertical _ | AlwaysVertical) => Int.max (maxw, width)
+		   | Horizontal => maxw - width
+
+        val lastkid = Array.sub (kids, size - 1)
+        val (w, h, shaded) = getSelectionSize (maxw, lastkid, depth)
+
+        val (width, height) =
+          case mode of
+            (Vertical _ | AlwaysVertical) => (Int.max (width, w), height + h)
+          | Horizontal => (width + w, Int.max (height, h))
+
+      in
+        (width, height, shaded)
+      end
+      
+(* Given a path, tells if it is the path of an entry. *)
+fun isEntry [] = assert false
+                 (* The top-level container must not be selectable. *)
+  | isEntry [x] = assert false 
+  | isEntry [x, _] = (assert x < 0; SOME (~x))
+  | isEntry _ = NONE
+
+(* Gives the entry of the given path. *)
+fun getEntryNumber [] = assert false
+  | getEntryNumber (x :: _) = (assert x < 0; ~x)
+
+(* Draws the rectangle around the given tree. *)
+fun drawSelection (tree, path) =
+  let
+    val depth = getDepth tree
+    val (width, height, shaded) = getSelectionSize (0, tree, depth)
+    val (group, x) = getOrigin tree
+    val rect = Driver.drawSelection (group, x, 0, width, height)
+    val entry = isEntry path
+    val item = {rect, shaded, entry, path = ref path, width, height, xpos = x}
+  in
+    item
+  end
+
+(* Highlight one more item. *)
+fun highlightAdd (tree, path) =
+    let
+      val _    = unselectPath path
+      val item = drawSelection (tree, path)
+      val oldsel = !selection
+    in
+      selection := item :: oldsel ;
+      if List.null oldsel then initMenu () else () ;
+      updMenu' (tree, item)
+    end
+
+(* Adds a range of entries. *)
+fun addEntries (i ,last) =
+  if i > last then ()
+  else let val (tree, next) = getEntry i
+       in
+         highlightAdd (tree, [~i, 0]) ;
+         case next of
+           NONE => ()
+         | SOME j => addEntries (j, last)
+       end
+
+(* Adds a range of subtrees. *)
+fun addSubTrees (rpath, i, last) =
+  if i > last then ()
+  else let val path = List.revAppend (rpath, [i])
+       in
+         (case fromPath path of
+            NONE => ()
+          | SOME t =>
+              let val newpath = getPath (t, [])
+              in
+                highlightAdd (t, newpath)
+              end) ;
+
+          addSubTrees (rpath, i + 1, last)
+       end
+
+
+fun pathToString p = List.foldl (fn (p, s) => (Int.toString p) ^ "." ^ s) "" p
+
+fun highlight tree =
+  let
+    val path  = getPath (tree , [])
+    val shift = isShift ()
+    val ctrl  = isCtrl ()
+  in
+    (case (shift, ctrl) of
+      (false, false) => (deselect () ; highlightAdd (tree, path))
+			
+    | (true , false) => 
+      (* We select a range from the last selected entry to the current one. *)
+      (case !selection of
+	 [] => highlightAdd (tree, path)
+       | {path = path', ...} :: xs =>
+	 let
+           val (last1, rpath1) = Common.decomposePath path
+           val (last2, rpath2) = Common.decomposePath (!path')
+         in
+           if rpath1 = rpath2 then
+             let             
+               val (start, last) = if last1 < last2 then (last1, last2) 
+                                   else (last2, last1)
+             in
+               case rpath1 of
+                 [] => addEntries (start, last)
+               | [_] => assert false
+               | _ => addSubTrees (rpath1, start, last) 
+             end
+           
+           else (* Both elements are not in the same container. *)
+             (MainWindow.setStatus "Elements are not in the same container." ;
+              case getNested (path, !selection) of
+                Distinct => highlightAdd (tree, path)
+              | _ => unselectPath path)
+
+         end)
+
+    | (_    , true ) =>
+          (* Is this tree related to at least one already selected tree ? *)
+          case getNested (path, !selection) of
+            (Distinct | Contains) => highlightAdd (tree, path)
+          | (Equal | Belongs)     => unselectPath path) ;
+       
+       true
+  end
+
+fun getTreeFromDepth (tree, adepth) =
+  case tree of
+    (Simple {parent, depth, ...} |
+     Prefix {parent, depth, ...} |
+     Container {parent = ref parent, depth, ...})
+                                     => if depth <= adepth then tree
+					else getTreeFromDepth (parent, adepth)
+
+fun selectSuffix (orient, tree, depth) =
+  let
+    val origin = getTreeFromDepth (tree, depth)
+    val (parent, index) = getParent origin
+  in
+    selectOrient (orient, parent, index)
+  end
+    
+fun findInSuffix (_, _, []) = Nowhere
+  | findInSuffix (simple, x, (gl, orient, depth) :: rest) =
+  let
+    val width = Driver.getGarmentPos (gl, 0)
+    val dx = x - width
+  in
+    if dx <= 0 then InSuffix (simple, gl, orient, depth)
+    else findInSuffix (simple, dx, rest)
+  end
+
+(* Returns the element located at (x,y) in the given tree. 
+ * The coordinates are always relative to the object itself (not its group).
+ * x and y must be >=0 *)
+fun find (atree, x, y) =
+    case atree of
+      Simple {width, suffix, ...} => 
+        let val dx = x - width
+        in
+          (* Are we in the suffix ? *)
+          if dx <= 0 then InTree atree
+          else findInSuffix (atree, dx, (List.rev suffix))
+       end
+
+    | Prefix {prefixWidth, prefixHeight, tree, ...} =>
+        if x <= prefixWidth then
+          if y <= prefixHeight
+            then InPrefix atree
+          else Nowhere
+        else find (!tree, x - prefixWidth, y)
+
+    | Container {width, height, kids, mode, ...} =>
+      let
+	val width = !width
+	val height = !height
+      in
+        if x <= width then
+	  if y <= height then
+	    let
+	      val kids = !kids
+	      val n = Array.length kids
+	      val mode = !mode
+
+	      (* x and y are known to be >= 0. *)
+	      fun loop (x, y, index) =
+		  if index >= n
+                    then (Common.warning "MkSelection.find: Not in container.";
+                          Nowhere)
+		  else
+		    let
+		      val kid = Array.sub (kids, index)
+		      val (width, height) = getSize kid
+		    in
+                      case mode of
+                        (Vertical _ | AlwaysVertical) =>
+                            if y <= height then
+                              if x <= width then
+                                case find (kid, x, y) of
+                                  Nowhere => InTree atree
+                                | elem => elem
+                              else InTree atree
+                            else loop (x, y - height, index + 1)
+		      | Horizontal =>
+                            if x <= width then
+                              if y <= height then find (kid, x, y)
+                              else InTree atree
+                            else loop (x - width, y, index + 1)
+		    end
+	    in
+	      loop (x, y, 0)
+	    end
+	  else Nowhere
+	else Nowhere
+      end      
+
+fun getEntireValue (atree, x, y) =
+  case find (atree, x, y) of
+    Nowhere => NONE
+  | InSuffix (simple, _, orient, depth) =>
+                                    SOME (selectSuffix (orient, simple, depth))
+  | InPrefix (Prefix {orient, parent, index, ...}) =>
+                                    SOME (selectOrient (orient, parent, index))
+  | InPrefix _ => assert false
+  | InTree atree => if isFuture atree
+                      then SOME (select' (#1 (getParent atree)))
+                      else SOME (select' atree)
+
+fun selectAt (atree, x, y) =
+  case getEntireValue (atree, x, y) of
+    NONE => false
+  | SOME t => highlight t
+
+fun selectTree tree = ignore (highlight (select' tree))
+
+fun printInfo x = MainWindow.setStatus (MyPrint.info x)
+
+fun infoAt (atree, x, y, false) = printInfo (find (atree, x, y))
+  | infoAt (atree, x, y, true) =
+    let val item = getEntireValue (atree, x, y) 
+    in
+      case item of
+	NONE => MainWindow.setStatus "Nothing here."
+      | SOME tree =>
+	case tree of (Simple _ | Container _) => printInfo (InTree tree)
+		   | Prefix _ => printInfo (InPrefix tree)
+    end
+
+fun getEntries' (([]: selection list), accu) = accu
+  | getEntries' ({path, ...} :: xs, accu) =
+        case isEntry (!path) of
+          NONE => getEntries' (xs, accu)
+        | SOME id => getEntries' (xs, id :: accu)
+
+fun getEntries () = getEntries' (!selection, [])
+
+fun selectPaths ([], sel, trees) = (sel, trees)
+  | selectPaths (p :: ps, sel, trees) =
+    let
+      val tree = case fromPath p of
+		     NONE => NONE
+		   | SOME t =>		     
+		         let val newpath = getPath (t, [])
+			 in
+			   case getNested (newpath, sel) of
+			     Distinct => SOME (t, newpath)
+			   | _ => NONE
+			 end
+    in
+      case tree of
+	NONE => selectPaths (ps, sel, trees)
+      | SOME (t, p) => let val item = drawSelection (t, p)
+		       in
+			 selectPaths (ps, item :: sel, t :: trees)
+		       end
+    end
+
+fun getPaths () = List.map (fn ({path, ...} : selection) => !path) (!selection)
+
+fun doSelect paths =
+    let val (sel, trees) = selectPaths (paths, [], [])
+    in 
+      setSelection (sel, trees)
+    end
+	
+val cmpLists = List.collate Int.compare
+fun cmpPath ((_, p1 :: path1), (_, p2 :: path2)) = 
+        if p1 < p2 then GREATER (* Yes *)
+	else if p1 > p2 then LESS
+	else cmpLists (path1, path2)
+  | cmpPath _ = assert false
+
+fun getSelection () =
+    let
+      val trees = getTrees ()
+      val trees' = List.map (fn t => (t, getPath (t, []))) trees
+      val sorted = List.sort cmpPath trees'
+    in
+      List.map #1 sorted
+    end
+
+fun mapSelection f = 
+   let
+     val paths = getPaths ()
+     val trees = getTrees ()
+   in
+     deselect () ;
+     List.app f trees ;
+     if paths <> []
+       then QueuePut.put (Common.DoSelect paths)
+       else ()
+   end
+
+fun reselect () =
+  if isEmpty () then () (* Optimization. *)
+  else let val paths = getPaths ()
+       in
+         deselect () ;
+         if paths <> []
+           then QueuePut.put (Common.DoSelect paths)
+           else ()
+       end 
+
+fun toEntries f =
+  let val entries = getEntries ()
+  in
+    deselect () ;
+    List.app f entries
+  end
+
+(* For tooltips *)
+fun isInEntry (x, y) ({rect, width, height, xpos, ...} : selection) =
+  let
+    val (x0, y0) = Canvas.Item.i2w (rect, 0.0, 0.0)
+    val x0 = xpos + Real.trunc x0
+    val y0 = Real.trunc y0
+  in
+    x >= x0 andalso x <= x0 + width andalso y >= y0 andalso y <= y0 + height
+  end
+
+fun findSelectionAt (x, y) =
+  case List.find (isInEntry (x, y)) (!selection) of
+    NONE => NONE
+  | SOME {path, ...} => fromPath (!path)
+end

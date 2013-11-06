@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Inf       from "../../lib/rtt/Inf"
+import structure Url       from "../../lib/system/Url"
+import structure Component from "../../lib/system/Component"
+import signature TARGET    from "TARGET-sig"
+
+structure Target =
+struct
+    datatype t =
+	COMPONENT of {component: unit -> Component.t,
+		      eval: Url.t -> Package.t}
+      | FOREIGN of {inf: Inf.t,
+		    save: string -> unit}
+end

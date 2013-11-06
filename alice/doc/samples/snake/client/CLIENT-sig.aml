@@ -1,0 +1,19 @@
+(* Alice Snake 2.0 - Client
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Protocol   from "../common/Protocol"
+import structure Gui        from "Gui"
+
+signature CLIENT =
+sig
+    val startClient : Gui.gui * Gui.gui_join * Protocol.server_interface -> Protocol.client_interface * Gui.model_join
+
+end

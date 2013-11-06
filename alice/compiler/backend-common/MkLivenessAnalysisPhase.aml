@@ -1,0 +1,674 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name                    from "../../lib/rtt/Name"
+import structure Crash                   from "../infrastructure/Crash"
+import signature SWITCHES                from "../infrastructure/SWITCHES-sig"
+import structure EmptyContext            from "../infrastructure/EmptyContext"
+import structure StampSet                from "../common/StampSet"
+import structure StampMap                from "../common/StampMap"
+import structure FlatGrammar             from "FlatGrammar"
+import structure IntermediateAux         from "IntermediateAux"
+import signature LIVENESS_ANALYSIS_PHASE from "LIVENESS_ANALYSIS_PHASE-sig"
+
+functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
+    LIVENESS_ANALYSIS_PHASE =
+    struct
+	structure C = EmptyContext
+	structure I = FlatGrammar
+	structure O = FlatGrammar
+
+	open I
+
+	structure IdSet = IntermediateAux.IdSet
+
+	fun sideEffecting (NewExp (_, _)) = false
+	  | sideEffecting (VarExp (_, _)) = false
+	  | sideEffecting (TagExp (_, _, _, _)) = false
+	  | sideEffecting (RefExp (_, _)) = false
+	  | sideEffecting (TupExp (_, _)) = false
+	  | sideEffecting (ProdExp (_, _)) = false
+	  | sideEffecting (PolyProdExp (_, _)) = false
+	  | sideEffecting (VecExp (_, _)) = false
+	  | sideEffecting (FunExp (_, _, _, _, _, _, _)) = false
+	  | sideEffecting (PrimAppExp (_, "Future.byneed", _)) = false
+	  | sideEffecting (LazyPolySelExp (_, _, _)) = false
+	  | sideEffecting _ = true
+
+	(* Auxiliary function: Determine all ids defined within a body *)
+
+	fun ins (set, IdDef id) = IdSet.insert (set, id)
+	  | ins (_, Wildcard) = ()
+
+	fun allDefsArgs (OneArg idDef, set) = ins (set, idDef)
+	  | allDefsArgs (TupArgs idDefs, set) =
+	    Vector.app (fn idDef => ins (set, idDef)) idDefs
+	  | allDefsArgs (ProdArgs labelIdDefVec, set) =
+	    Vector.app (fn (_, idDef) => ins (set, idDef)) labelIdDefVec
+
+	fun allDefs body =
+	    let
+		val set = IdSet.set ()
+		val shared = StampSet.set ()
+	    in
+		allDefsBody (body, set, false, shared);
+		Vector.fromList (IdSet.fold op:: nil set)
+	    end
+	and allDefsBody (stm::stms, set, nested, shared) =
+	    (allDefsStm (stm, set, nested, shared);
+	     allDefsBody (stms, set, nested, shared))
+	  | allDefsBody (nil, _, _, _) = ()
+	and allDefsStm (Entry (_, _), _, _, _) = ()
+	  | allDefsStm (Exit (_, _, _), _, _, _) = ()
+	  | allDefsStm (LastUse (_, _), _, _, _) = ()
+	  | allDefsStm (ValDec (_, idDef, _), set, _, _) = ins (set, idDef)
+	  | allDefsStm (RecDec (_, idDefExpVec), set, _, _) =
+	    Vector.app (fn (idDef, exp) => ins (set, idDef)) idDefExpVec
+	  | allDefsStm (RefDec (_, idDef, _), set, _, _) = ins (set, idDef)
+	  | allDefsStm (TupDec (_, idDefs, _), set, _, _) =
+	    Vector.app (fn idDef => ins (set, idDef)) idDefs
+	  | allDefsStm (ProdDec (_, labelIdDefVec, _), set, _, _) =
+	    Vector.app (fn (_, idDef) => ins (set, idDef)) labelIdDefVec
+	  | allDefsStm (RaiseStm (_, _), _, _, _) = ()
+	  | allDefsStm (ReraiseStm (_, _), _, _, _) = ()
+	  | allDefsStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
+			set, nested, shared) =
+	    (allDefsBody (tryBody, set, true, shared);
+	     ins (set, idDef1); ins (set, idDef2);
+	     allDefsBody (handleBody, set, nested, shared))
+	  | allDefsStm (EndTryStm (_, body), set, nested, shared) =
+	    if nested then allDefsBody (body, set, false, shared) else ()
+	  | allDefsStm (EndHandleStm (_, body), set, nested, shared) =
+	    (assert (not nested);
+	     allDefsBody (body, set, nested, shared))
+	  | allDefsStm (TestStm (_, _, tests, body), set, nested, shared) =
+	    (allDefsTests (tests, set, nested, shared);
+	     allDefsBody (body, set, nested, shared))
+	  | allDefsStm (SharedStm (_, body, stamp), set, nested, shared) =
+	    if StampSet.member (shared, stamp) then ()
+	    else
+		(StampSet.insert (shared, stamp);
+		 allDefsBody (body, set, nested, shared))
+	  | allDefsStm (ReturnStm (_, _), _, _, _) = ()
+	  | allDefsStm (IndirectStm (_, ref bodyOpt), set, nested, shared) =
+	    allDefsBody (valOf bodyOpt, set, nested, shared)
+	  | allDefsStm (ExportStm (_, _), _, _, _) = ()
+	and allDefsTests (LitTests tests, set, nested, shared) =
+	    Vector.app (fn (_, body) =>
+			   allDefsBody (body, set, nested, shared)) tests
+	  | allDefsTests (TagTests (_, tests), set, nested, shared) =
+	    Vector.app (fn (_, idDefArgs, body) =>
+			   (allDefsArgs (idDefArgs, set);
+			    allDefsBody (body, set, nested, shared))) tests
+	  | allDefsTests (ConTests tests, set, nested, shared) =
+	    Vector.app (fn (_, idDefArgs, body) =>
+			   (allDefsArgs (idDefArgs, set);
+			    allDefsBody (body, set, nested, shared))) tests
+	  | allDefsTests (VecTests tests, set, nested, shared) =
+	    Vector.app (fn (idDefs, body) =>
+			   (Vector.app (fn idDef => ins (set, idDef)) idDefs;
+			    allDefsBody (body, set, nested, shared))) tests
+
+	(* Main liveness analysis *)
+
+	fun difference (set1, set2, dontKill) =
+	    Vector.fromList
+		(IdSet.fold (fn (id, rest) =>
+				if IdSet.member (set2, id) then rest
+				else if IdSet.member (dontKill, id) then rest
+				else id::rest) nil set1)
+
+	fun union (set1, set2) =
+	    let
+		val set = IdSet.clone set1
+	    in
+		IdSet.app (fn id => IdSet.insert (set, id)) set2; set
+	    end
+
+	fun laIdDef (IdDef id, use) =
+	    if IdSet.member (use, id) then
+		(IdSet.remove (use, id); IdDef id)
+	    else Wildcard
+	  | laIdDef (Wildcard, _) = Wildcard
+
+	fun laIdDefs (idDefs, use) =
+	    Vector.map (fn idDef => laIdDef (idDef, use)) idDefs
+
+	fun laIdDefArgs (OneArg idDef, use) = OneArg (laIdDef (idDef, use))
+	  | laIdDefArgs (TupArgs idDefs, use) =
+	    TupArgs (laIdDefs (idDefs, use))
+	  | laIdDefArgs (ProdArgs labelIdDefVec, use) =
+	    ProdArgs (Vector.map (fn (label, idDef) =>
+				     (label, laIdDef (idDef, use)))
+				 labelIdDefVec)
+
+	fun laId (id, use, dontKill) =
+	    if IdSet.member (use, id) then false
+	    else
+		(IdSet.insert (use, id);
+		 if IdSet.member (dontKill, id) then false
+		 else true)
+
+	fun laIdRef ((IdRef id | LastIdRef id), use, dontKill) =
+	    if laId (id, use, dontKill) then LastIdRef id else IdRef id
+	  | laIdRef (idRef as (Lit _ | Prim _ | Value _), _, _) = idRef
+
+	fun laIdRefs (idRefs, use, dontKill) =
+	    let
+		val ids = IdSet.set ()
+		val nonlinear = IdSet.set ()
+	    in
+		Vector.app (fn (IdRef id | LastIdRef id) =>
+			       if IdSet.member (ids, id) then
+				   IdSet.insert (nonlinear, id)
+			       else IdSet.insert (ids, id)
+			     | (Lit _ | Prim _ | Value _) => ()) idRefs;
+		(Vector.fromList (IdSet.fold (fn (id, rest) =>
+						 if laId (id, use, dontKill)
+						 then id::rest else rest)
+					     nil nonlinear),
+		 Vector.map (fn idRef as (IdRef id | LastIdRef id) =>
+				if IdSet.member (nonlinear, id) then IdRef id
+				else laIdRef (idRef, use, dontKill)
+			      | idRef as (Lit _ | Prim _ | Value _) => idRef)
+			    idRefs)
+	    end
+
+	fun laLabelIdRefVec (labelIdRefVec, use, dontKill) =
+	    let
+		val (labels, idRefs) = VectorPair.unzip labelIdRefVec
+		val (lastUses, idRefs) = laIdRefs (idRefs, use, dontKill)
+	    in
+		(lastUses, VectorPair.zip (labels, idRefs))
+	    end
+
+	fun laIdRefArgs (OneArg idRef, use, dontKill) =
+	    (#[], OneArg (laIdRef (idRef, use, dontKill)))
+	  | laIdRefArgs (TupArgs idRefs, use, dontKill) =
+	    let
+		val (lastUses, idRefs) = laIdRefs (idRefs, use, dontKill)
+	    in
+		(lastUses, TupArgs idRefs)
+	    end
+	  | laIdRefArgs (ProdArgs labelIdRefVec, use, dontKill) =
+	    let
+		val (lastUses, labelIdRefVec) =
+		    laLabelIdRefVec (labelIdRefVec, use, dontKill)
+	    in
+		(lastUses, ProdArgs labelIdRefVec)
+	    end
+
+	fun bodyInfo (stm::_) = infoStm stm
+	  | bodyInfo nil = raise Crash.Crash "LivenessAnalysisPhase.bodyInfo"
+
+	fun lastUse (#[], stms) = stms
+	  | lastUse (ids, stms) = LastUse (bodyInfo stms, ids)::stms
+
+	fun isNamed (IdDef (Id (_, _, Name.ExId _))) = true
+	  | isNamed (IdDef (Id (_, _, Name.InId))) = false
+	  | isNamed Wildcard = false
+
+	fun laEntryPoint (ConEntry (typ, idRef, idRefArgs), use, dontKill) =
+	    let
+		val idRef = laIdRef (idRef, use, dontKill)
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, ConEntry (typ, idRef, idRefArgs))
+	    end
+	  | laEntryPoint (SelEntry (prod, label, n, typ, idRef),
+			  use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], SelEntry (prod, label, n, typ, idRef))
+	    end
+	  | laEntryPoint (StrictEntry (typ, idRef), use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], StrictEntry (typ, idRef))
+	    end
+	  | laEntryPoint (AppEntry (typ, idRef, idRefArgs), use, dontKill) =
+	    let
+		val idRef = laIdRef (idRef, use, dontKill)
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, AppEntry (typ, idRef, idRefArgs))
+	    end
+	  | laEntryPoint (CondEntry (typ, idRef), use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], CondEntry (typ, idRef))
+	    end
+	  | laEntryPoint (RaiseEntry idRef, use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], RaiseEntry idRef)
+	    end
+	  | laEntryPoint (HandleEntry idRef, use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], HandleEntry idRef)
+	    end
+	  | laEntryPoint (SpawnEntry, _, _) = (#[], SpawnEntry)
+
+	fun laBody (Entry (info, entryPoint)::stms, shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val (lastUses, entryPoint) =
+		    laEntryPoint (entryPoint, use, dontKill)
+	    in
+		(Entry (info, entryPoint)::lastUse (lastUses, stms), use)
+	    end
+	  | laBody (Exit (info, exitPoint, idRef)::stms,
+		    shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val idRef = laIdRef (idRef, use, dontKill)
+	    in
+		(Exit (info, exitPoint, idRef)::stms, use)
+	    end
+	  | laBody (LastUse (_, _)::stms, shared, dontKill) =
+	    (*--** add assertion: ids \cap use(stms) = \emptyset *)
+	    laBody (stms, shared, dontKill)
+	  | laBody (ValDec (info, idDef, exp)::stms, shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+	    in
+		case laIdDef (idDef, use) of
+		    idDef as IdDef _ =>
+			let
+			    val (lastUses, exp) = laExp (exp, use, dontKill)
+			in
+			    (ValDec (info, idDef, exp)::
+			     lastUse (lastUses, stms), use)
+			end
+		  | Wildcard =>
+			if !Switches.CodeGen.debugMode andalso isNamed idDef
+			then
+			    let
+				val (lastUses, exp) =
+				    laExp (exp, use, dontKill)
+			    in
+				(ValDec (info, idDef, exp)::
+				 lastUse (lastUses, stms), use)
+			    end
+			else if sideEffecting exp then
+			    let
+				val (lastUses, exp) =
+				    laExp (exp, use, dontKill)
+			    in
+				(ValDec (info, Wildcard, exp)::
+				 lastUse (lastUses, stms), use)
+			    end
+			else (stms, use)
+	    end
+	  | laBody (RecDec (info, idDefExpVec)::stms, shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val lastUsesSet = IdSet.set ()
+		val idDefExpList =
+		    Vector.foldr
+			(fn ((idDef, exp), rest) =>
+			    let
+				val (lastUses, exp) =
+				    laExp (exp, use, dontKill)
+			    in
+				Vector.app
+				    (fn id => IdSet.insert (lastUsesSet, id))
+				    lastUses;
+				(idDef, exp)::rest
+			    end) nil idDefExpVec
+		val lastUses =
+		    Vector.fromList (IdSet.fold op:: nil lastUsesSet)
+		val idDefExpList =
+		    List.foldr
+			(fn ((idDef, exp), rest) =>
+			    case laIdDef (idDef, use) of
+				idDef as IdDef _ => (idDef, exp)::rest
+			      | Wildcard =>
+				   if !Switches.CodeGen.debugMode
+				      andalso isNamed idDef
+				   then (idDef, exp)::rest
+				   else if sideEffecting exp
+				   then (Wildcard, exp)::rest
+				   else rest) nil idDefExpList
+		val stms = lastUse (lastUses, stms)
+	    in
+		(case idDefExpList of
+		     _::_ => RecDec (info, Vector.fromList idDefExpList)::stms
+		   | nil => stms, use)
+	    end
+	  | laBody (RefDec (info, idDef, idRef)::stms, shared, dontKill) =
+	    (*--** replace by await? *)
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val idRef = laIdRef (idRef, use, dontKill)
+		val idDef = laIdDef (idDef, use)
+	    in
+		(RefDec (info, idDef, idRef)::stms, use)
+	    end
+	  | laBody (TupDec (info, idDefs, idRef)::stms, shared, dontKill) =
+	    (*--** replace by await? *)
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val idRef = laIdRef (idRef, use, dontKill)
+		val idDefs = laIdDefs (idDefs, use)
+	    in
+		(TupDec (info, idDefs, idRef)::stms, use)
+	    end
+	  | laBody (ProdDec (info, labelIdDefVec, idRef)::stms,
+		    shared, dontKill) =
+	    (*--** replace by await? *)
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val idRef = laIdRef (idRef, use, dontKill)
+		val labelIdDefVec =
+		    Vector.map (fn (label, idDef) =>
+				   (label, laIdDef (idDef, use))) labelIdDefVec
+	    in
+		(ProdDec (info, labelIdDefVec, idRef)::stms, use)
+	    end
+	  | laBody ([RaiseStm (info, idRef)], _, dontKill) =
+	    let
+		val use = IdSet.set ()
+		val idRef = laIdRef (idRef, use, dontKill)
+	    in
+		([RaiseStm (info, idRef)], use)
+	    end
+	  | laBody ([ReraiseStm (info, idRef)], _, dontKill) =
+	    let
+		val use = IdSet.set ()
+		val idRef = laIdRef (idRef, use, dontKill)
+	    in
+		([ReraiseStm (info, idRef)], use)
+	    end
+	  | laBody ([TryStm (info, tryBody, idDef1, idDef2, handleBody)],
+		    shared, dontKill) =
+	    (*--** dontKills can be killed at corresponding EndTryStm *)
+	    let
+		val (handleBody, use2) = laBody (handleBody, shared, dontKill)
+		val idDef1 = laIdDef (idDef1, use2)
+		val idDef2 = laIdDef (idDef2, use2)
+		val dontKill' = union (dontKill, use2)
+	    in
+		case laBody (tryBody, shared, dontKill') of
+		    ([EndTryStm (_, body)], use) => (body, use)
+		  | (tryBody, use1) =>
+			(IdSet.union (use1, use2);
+			 ([TryStm (info, tryBody, idDef1, idDef2,
+				   lastUse (allDefs tryBody, handleBody))],
+			  use1))
+	    end
+	  | laBody ([EndTryStm (info, body)], shared, dontKill) =
+	    let
+		val (body, use) = laBody (body, shared, dontKill)
+	    in
+		([EndTryStm (info, body)], use)
+	    end
+	  | laBody ([EndHandleStm (info, body)], shared, dontKill) =
+	    let
+		val (body, use) = laBody (body, shared, dontKill)
+	    in
+		([EndHandleStm (info, body)], use)
+	    end
+	  | laBody ([TestStm (info, idRef, tests, elseBody)],
+		    shared, dontKill) =
+	    let
+		val (elseBody, use) = laBody (elseBody, shared, dontKill)
+		val elseUse = IdSet.clone use
+		val tests = laTests (tests, use, shared, dontKill)
+		val elseBody = lastUse (difference (use, elseUse, dontKill),
+					elseBody)
+		val idRef = laIdRef (idRef, use, dontKill)
+	    in
+		([TestStm (info, idRef, tests, elseBody)], use)
+	    end
+	  | laBody ([SharedStm (info, body, stamp)], shared, dontKill) =
+	    (*--** remove trivial shared statements? *)
+	    (case StampMap.lookup (shared, stamp) of
+		 SOME (body, use) => (body, IdSet.clone use)
+	       | NONE =>
+		     let
+			 val (body, use) = laBody (body, shared, dontKill)
+			 val body = [SharedStm (info, body, stamp)]
+		     in
+			 StampMap.insert (shared, stamp, (body, use));
+			 (body, IdSet.clone use)
+		     end)
+	  | laBody ([ReturnStm (info, exp)], _, dontKill) =
+	    let
+		val use = IdSet.set ()
+		val (_, exp) = laExp (exp, use, dontKill)
+	    in
+		([ReturnStm (info, exp)], use)
+	    end
+	  | laBody ([IndirectStm (_, ref bodyOpt)], shared, dontKill) =
+	    laBody (valOf bodyOpt, shared, dontKill)
+	  | laBody ([ExportStm (info, exp)], _, dontKill) =
+	    let
+		val use = IdSet.set ()
+		val (_, exp) = laExp (exp, use, dontKill)
+	    in
+		([ExportStm (info, exp)], use)
+	    end
+	  | laBody (_, _, _) =
+	    (*--** make exhaustiveness explicit *)
+	    raise Crash.Crash "MkLivenessAnalysisPhase.laBody"
+	and laTests (LitTests tests, use, shared, dontKill) =
+	    let
+		val testUseVec =
+		    Vector.map (fn (lit, body) =>
+				   let
+				       val (body, use') =
+					   laBody (body, shared, dontKill)
+				   in
+				       IdSet.union (use, use');
+				       (lit, body, use')
+				   end) tests
+		val tests =
+		    Vector.map (fn (lit, body, use') =>
+				   (lit,
+				    lastUse (difference (use, use', dontKill),
+					     body)))
+			       testUseVec
+	    in
+		LitTests tests
+	    end
+	  | laTests (TagTests (labels, tests), use, shared, dontKill) =
+	    let
+		val testUseVec =
+		    Vector.map
+			(fn (n, idDefArgs, body) =>
+			    let
+				val (body, use') =
+				    laBody (body, shared, dontKill)
+				val idDefArgs = laIdDefArgs (idDefArgs, use')
+			    in
+				IdSet.union (use, use');
+				(n, idDefArgs, body, use')
+			    end) tests
+		val tests =
+		    Vector.map (fn (n, idDefArgs, body, use') =>
+				   (n, idDefArgs,
+				    lastUse (difference (use, use', dontKill),
+					     body)))
+			       testUseVec
+	    in
+		TagTests (labels, tests)
+	    end
+	  | laTests (ConTests tests, use, shared, dontKill) =
+	    let
+		val testUseVec =
+		    Vector.map
+			(fn (idRef, idDefArgs, body) =>
+			    let
+				val (body, use') =
+				    laBody (body, shared, dontKill)
+				val idDefArgs = laIdDefArgs (idDefArgs, use')
+				val idRef = laIdRef (idRef, use, dontKill)
+			    in
+				IdSet.union (use, use');
+				(idRef, idDefArgs, body, use')
+			    end) tests
+		val tests =
+		    Vector.map (fn (idRef, idDefArgs, body, use') =>
+				   (idRef, idDefArgs,
+				    lastUse (difference (use, use', dontKill),
+					     body)))
+			       testUseVec
+	    in
+		ConTests tests
+	    end
+	  | laTests (VecTests tests, use, shared, dontKill) =
+	    let
+		val testUseVec =
+		    Vector.map (fn (idDefs, body) =>
+				   let
+				       val (body, use') =
+					   laBody (body, shared, dontKill)
+				       val idDefs = laIdDefs (idDefs, use')
+				   in
+				       IdSet.union (use, use');
+				       (idDefs, body, use')
+				   end) tests
+		val tests =
+		    Vector.map (fn (idDefs, body, use') =>
+				   (idDefs,
+				    lastUse (difference (use, use', dontKill),
+					     body)))
+			       testUseVec
+	    in
+		VecTests tests
+	    end
+	and laExp (exp as NewExp (_, _), _, _) = (#[], exp)
+	  | laExp (VarExp (info, idRef), use, dontKill) =
+	    (#[], VarExp (info, laIdRef (idRef, use, dontKill)))
+	  | laExp (TagExp (info, labels, n, idRefArgs), use, dontKill) =
+	    let
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, TagExp (info, labels, n, idRefArgs))
+	    end
+	  | laExp (ConExp (info, idRef, idRefArgs), use, dontKill) =
+	    (*--** nonlinearities between constructor and arguments *)
+	    let
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, ConExp (info, laIdRef (idRef, use, dontKill),
+				   idRefArgs))
+	    end
+	  | laExp (RefExp (info, idRef), use, dontKill) =
+	    (#[], RefExp (info, laIdRef (idRef, use, dontKill)))
+	  | laExp (TupExp (info, idRefs), use, dontKill) =
+	    let
+		val (lastUses, idRefs) = laIdRefs (idRefs, use, dontKill)
+	    in
+		(lastUses, TupExp (info, idRefs))
+	    end
+	  | laExp (ProdExp (info, labelIdRefVec), use, dontKill) =
+	    let
+		val (lastUses, labelIdRefVec) =
+		    laLabelIdRefVec (labelIdRefVec, use, dontKill)
+	    in
+		(lastUses, ProdExp (info, labelIdRefVec))
+	    end
+	  | laExp (PolyProdExp (info, labelIdRefVec), use, dontKill) =
+	    let
+		val (lastUses, labelIdRefVec) =
+		    laLabelIdRefVec (labelIdRefVec, use, dontKill)
+	    in
+		(lastUses, PolyProdExp (info, labelIdRefVec))
+	    end
+	  | laExp (VecExp (info, idRefs), use, dontKill) =
+	    let
+		val (lastUses, idRefs) = laIdRefs (idRefs, use, dontKill)
+	    in
+		(lastUses, VecExp (info, idRefs))
+	    end
+	  | laExp (FunExp (info, stamp, flags, typ, idDefArgs, 
+			   outArityOpt, body),
+		   use, dontKill) =
+	    let
+		val (body, use') = laBody (body, StampMap.map (), IdSet.set ())
+		val idDefArgs = laIdDefArgs (idDefArgs, use')
+		val lastUses = difference (use', use, dontKill)
+	    in
+		IdSet.union (use, use');
+ 		(lastUses,
+ 		 FunExp (info, stamp, flags, typ, 
+			 idDefArgs, outArityOpt, body))
+
+	    end
+	  | laExp (PrimAppExp (info, name, idRefs), use, dontKill) =
+	    let
+		val (lastUses, idRefs) = laIdRefs (idRefs, use, dontKill)
+	    in
+		(lastUses, PrimAppExp (info, name, idRefs))
+	    end
+	  | laExp (VarAppExp (info, idRef, idRefArgs), use, dontKill) =
+	    let
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, VarAppExp (info, laIdRef (idRef, use, dontKill),
+				      idRefArgs))
+	    end
+	  | laExp (DirectAppExp (info, idRef, idRefArgs), use, dontKill) =
+	    let
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, DirectAppExp (info, laIdRef (idRef, use, dontKill),
+					 idRefArgs))
+	    end
+	  | laExp (SelExp (info, prod, label, i, idRef), use, dontKill) =
+	    (#[], SelExp (info, prod, label, i,
+			  laIdRef (idRef, use, dontKill)))
+	  | laExp (LazyPolySelExp (info, label, idRef), use, dontKill) =
+	    (#[], LazyPolySelExp (info, label, laIdRef (idRef, use, dontKill)))
+	  | laExp (FunAppExp (info, idRef, stamp, idRefArgs), use, dontKill) =
+	    let
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, FunAppExp (info, laIdRef (idRef, use, dontKill),
+				      stamp, idRefArgs))
+	    end
+	  | laExp (exp as FailExp _, _, _) = (#[], exp)
+
+	fun translate (_, _, {imports, body, exports, sign}) =
+	    let
+		val shared = StampMap.map ()
+		val dontKill = IdSet.set ()
+		val (body, use) = laBody (body, shared, dontKill)
+		val _ =
+		    Vector.app (fn (_, id) => IdSet.insert (use, id)) exports
+		val imports =
+		    Vector.foldr (fn (imprt as (id, _, _, compileTime), rest) =>
+				     if not compileTime then imprt::rest else
+				     case laIdDef (IdDef id, use) of
+					 IdDef id => imprt::rest
+				       | Wildcard => rest) nil imports
+		val imports = Vector.fromList imports
+	    in
+		((), {imports = imports, body = body,
+		      exports = exports, sign = sign})
+	    end
+    end

@@ -1,0 +1,56 @@
+EXT = ozf
+ALICEC = alicec --no-warn-conventions
+ALICEDEP = alicedep
+ALICERUN = alicerun
+
+SIMULATOR_COMPONENTS = \
+	Ant \
+	Instructions \
+	World \
+	Simulator \
+	InstructionsParser \
+	WorldParser \
+	SimulatorMain \
+	Viewer
+
+SIMULATOR_SOURCES = $(SIMULATOR_COMPONENTS:%=%.aml)
+SIMULATOR_TARGETS = $(SIMULATOR_COMPONENTS:%=%.$(EXT))
+
+COMPILER_COMPONENTS = \
+	ANTE-sig Ante Instructions
+
+COMPILER_SOURCES = $(COMPILER_COMPONENTS:%=%.aml)
+COMPILER_TARGETS = $(COMPILER_COMPONENTS:%=%.$(EXT))
+
+SOURCES = $(SIMULATOR_SOURCES) $(COMPILER_SOURCES)
+TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
+
+.PHONY: all simulator compiler parsec depend clean distclean
+
+all: simulator compiler
+
+compiler: $(COMPILER_TARGETS)
+simulator: $(SIMULATOR_TARGETS)
+
+%.$(EXT): %.aml
+	$(ALICEC) $<
+
+%.ant: %.ante
+	compile $<
+
+parsec/Makefile.depend:
+	(cd parsec && $(MAKE) depend)
+
+parsec: parsec/Makefile.depend
+	(cd parsec && $(MAKE))
+
+depend:
+	$(ALICEDEP) $(SOURCES) > Makefile.depend
+
+-include Makefile.depend
+
+clean:
+	rm -f $(TARGETS)
+
+distclean: clean
+	rm -f Makefile.depend

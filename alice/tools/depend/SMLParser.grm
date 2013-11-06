@@ -1,0 +1,45 @@
+(* Author:							*)
+(*   Andreas Rossberg <rossberg@ps.uni-sb.de>			*)
+(*								*)
+(* Copyright:							*)
+(*   Andreas Rossberg, 2001-2007				*)
+(*								*)
+(* Last change:							*)
+(*   $Date$ by $Author$	*)
+(*   $Revision$						*)
+
+%%
+
+%header	 (functor MkLrVals(structure Token: TOKEN))
+%name    Parser
+%verbose
+%pos     int * int
+
+%term    EOF | IMPORT | COMP | WITH | STRING of string | OTHER
+%eop     EOF
+%noshift EOF
+
+%start   component
+%nonterm component of string list
+       | decs      of string list
+       | ldecs
+       | items
+
+%%
+
+component:	decs				( decs )
+
+decs:		(*empty*)			( [] )
+|		OTHER decs			( decs )
+|		STRING decs			( decs )
+|		WITH decs			( decs )
+|		IMPORT items STRING decs	( STRING::decs )
+|		COMP ldecs WITH decs		( decs )
+
+ldecs:		(*empty*)			()
+|		OTHER ldecs			()
+|		STRING ldecs			()
+|		IMPORT ldecs			()
+
+items:		(*empty*)			()
+|		OTHER items			()

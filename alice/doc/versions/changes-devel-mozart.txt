@@ -1,0 +1,310 @@
+Language:
+
+* Line comments, starting with "(*)".
+* Extensible records and row capture: "{a=1, b=2, ...=r}", see manual
+  section on record sugar for details.
+* Allow optional bar before first clause of fn, case, handle, fun, and
+  before first constructor in datatype definitions.
+* Allow optional semicolon after sequence expressions.
+* Allow "do exp" as abbreviation for "val _ = exp".
+* Generalised open declarations: "open strexp".
+* Else branch in conditionals is now optional.
+* Pattern guards now use "if" keyword.
+* Syntactic sugar for finalization.
+* Nicer syntax (derived forms) for functors.
+* Lazy and spawn syntax for modules.
+* Pack can now use a transparent annotation, as this is usually more convenient.
+* Fully dynamic component typing: link-time type checking now is fully
+  parametric in abstract import types and takes into account the *dynamic*
+  types exported by respective components. This implies at least two things:
+  - Less need for recompilation. Recompilation of a component exporting
+    abstract types no longer forces recompilation of dependent components.
+  - Smooth interaction with pickles. Abstract types in compiled components are
+    no longer incompatible with abstract types in pickled components.
+
+Compiler:
+
+* Signature inclusion has been implemented.
+* Equality types have been implemented.
+* Dynamic sealing has been implemented.
+* Warn about unused imports (switch --(no-)warn-unused-imports).
+* Warn about inaccessible type and signature names appearing in inferred
+  component signature (switch --(no-)warn-inaccessible-exports).
+* Inaccessible types occuring in inferred /import/ signatures are now an error.
+* To accommodate with the new dynamic import typing, the compiler now closes
+  over all implicit import signatures, by potentially inserting additional
+  imports for abstract types and signatures imported transitively. Transitive
+  components must be present for compilation. Optional warnings for added
+  imports (switch --warn-added-imports).
+* Support for giving multiple source files on command line.
+* Import URLs are now resolved relative to the out-file location when compiling,
+  allowing proper separation of source and build directories.
+* Support for smart recompilation, taking component signatures into account.
+* Produce proper error messages for out-of-range literals.
+* Option --annotations-file to output type information about compiled program
+  for use by external tools, e.g. smart editors.
+* Fixed overly aggressive optimization that broke package unpacking (bug 147).
+* Fixed bug in type variable scope resolution.
+* Fixed bug that allowed non-value expressions and unsound typing in val rec.
+* Fixed bug in liveness analysis that could break exception handlers.
+* Fixed border case where lexer went into infinite loop for some inputs only
+  consisting of one token.
+* Don't use encoded URLs in error messages.
+
+Linker:
+
+* Rewritten to soundly support dynamic component typing.
+* Disallow cyclic linking.
+* Print free type names appearing in component signature with -d option.
+
+Interactive Toplevel:
+
+* Enable Ctrl-C for interrupting a computation.
+* Enable Ctrl-Z for putting a computation into background (new Alice thread).
+* Function exit() as an alternative for Ctrl-D in broken environments.
+* Value printer is customizable for abstract types; depth and width limits are
+  configurable; most library exceptions regognized.
+* Fixed off-by-one line numbers, including use function.
+
+Library:
+
+* Component:
+  - Added fromPackage.
+  - Create now takes a functor as argument to support unevaluated components.
+  - Added exception Internal.
+* ComponentManager:
+  - Added load function.
+  - Functions eval and link return packages now.
+  - Link and link are no longer lazy.
+  - Removed start (equivalent to ignore o link).
+  - logger reference to configure trace destinations. Preconfigurable
+    through value of ALICE_TRACE_COMPONENT.
+  - Trace messages are more informative, particularly wrt signature mismatches.
+* Resolver, ComponentManager: added support for delegation.
+* Toplevel: Future.await is now available unqualified; fst and snd no longer.
+* Fn: new structure with generic function combinators.
+* Word[N]: fixed compare.
+* Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
+* Real: Fixed treatment of NaN in several functions.
+* Exn: new structure for dealing with exceptions and backtraces.
+* OS.FileSys: filter out current and parent arc with readDir.
+* OS.Path:
+  - Handle Windows style path syntax as well.
+  - Allow mkRelative to take two relative paths.
+* OS.Process: atExn takes an Exn.packet now.
+* Promise:
+  - Equality now works properly.
+  - Added isFulfilled predicate.
+  - Fulfilling with a cycle no longer fails the promise.
+* Hole: future now simply returns argument if not a hole (no exception).
+* Alt: added mapBoth.
+* Pair: added mapBoth.
+* List[Pair]:
+  - Added exists[i]Eq and filter[i]Eq.
+  - Fixed evaluation order of filter[i] and partition[i].
+* Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
+* VectorPair: fixed foldri.
+* VectorSlice: fixed toVector.
+* ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
+* Array2: properly treat zero-size regions.
+* Char: fixed scan, scanC, fromCString.
+* String: fixed isSubstring, scanC, fromCString.
+* Substring: fixed isSubstring, isSuffix, tokens.
+* StringCvt: fixed pad{Left,Right}.
+* ByNeed: moved to Future structure.
+* Future: added ByNeed and Concur functors.
+* Lock:
+  - sync is now re-entrant.
+  - added Sync functor, which turns an arbitrary structure into a monitor.
+  - moved to lib/data.
+* Package: deleted separate val_package type.
+* TextIO, StreamIO: fixed buffering of TTY output.
+* TextIO: implemented CR/NL translation properly.
+* BinIO: added openOverwrite and seek{In,Out}.
+* BinIO: added missing type sharing with BinPrimIO.{reader,writer}.
+* PrimIO: new functions openVectorList{Rd,Wr}, useful for internal redirection.
+* GlobalStamp: fixed toString.
+* Channel: new module for concurrent message channels.
+* Print:
+  - Added depth and width to control printing bounds; renamed printWidth to
+    layoutWidth.
+  - Added function register for hooking user-defined printing functions.
+  - Most library exceptions recognized.
+  - Print Array2.array values.
+* Config: added buildDate, version, and codename.
+* Http: ignore multiple headers; replace empty reguest URIs with "/".
+* Remote:
+  - Added functor Proxy to conveniently wrap a whole module into proxies.
+  - Replaced Execute functor by two function/functors eval/Eval and run/Run.
+    The former terminates after evaluation of the mobile component, the latter
+    keeps the process alive.
+  - More error conditions distinguished by eval/run. Uncaught exceptions on the
+    remote site are now propagated back to the caller.
+* Gtk library: simplified structure, all types are now defined in GtkTypes.
+
+
+Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
+---------------------------------------------------------
+
+Language:
+
+* Implemented overloading (except for literals).
+* Implemented a simple form of intensional polymorphism that enables
+  generic library functions like printVal.
+* Syntactic support for assertions with multiple activation levels.
+
+Compiler:
+
+* Check exhaustiveness of patterns, giving samples of uncovered cases.
+* Flag unresolved record types as error.
+
+Library:
+
+* Sync'ed with recent updates to Basis spec
+  (see http://sml.sourceforge.net/Basis/history.html).
+* Added lib/system/Print and toplevel printVal, printType for generic
+  value and type printing.
+* OS.FileSys: implemented directory streams.
+* Socket: fixed handling of IO exceptions.
+* Http{,Client,Server}: more uniform exception treatment.
+* Remote: much more efficient proxy calls, protocol no longer based on HTTP.
+* Remote: fixed connection timeout bug for proxies.
+* Remote: more precise exception scheme wrt failure on proxy calls.
+* Pickle: Added exception Corrupt.
+* Added intersect and difference functions to map types.
+* Added disjoint function to set and map types.
+* Atom: moved to lib/data.
+* Real: added checkFloat.
+* Real: fixed isFinite.
+* Thread: fixed exception handling.
+* *VectorSlice,Substring: fixed splitr (also fixes OS.Path.split*).
+* CharArraySlice: fixed.
+* PrimIO: fixed augment{Reader,Writer}.
+* Gtk: fixed string list marshalling (e.g. for clist/ctree functions).
+* FD: added SPLIT_MIN/SPLIT_MAX distributor.
+
+Runtime system:
+
+* Adapted to Mozart 1.3.
+
+Documentation:
+
+* Man pages.
+* Clarified limitations of mapping in Linear module.
+* Updates.
+
+
+Alice 0.9.2 (Stockhausen Operette 3 Remix 2) - 2003/07/25
+---------------------------------------------------------
+
+Library:
+
+* Added data structure library under x-alice:/lib/data with functional and
+  imperative sets, maps, stacks, and stamps.
+* Added Array2.
+* Added OS.Path.
+* Defined and fixed behaviour of proxies in the presence of
+  sited values and failed futures.
+* Fixed race condition in Future.awaitEither.
+* Renamed UniqueString to Atom.
+* Added WideText and WideChar{Vector,Array}[Slice].
+* Added List.split.
+* Added Substring.{position,fields,tokens}.
+* Corrected treatment of exceptions in Lock.sync.
+* FD and FS set constructors now perform domain checking.
+* FD and FS now raise Tell exception on toplevel constraints.
+* Fixed broken GTK signal handling (disconnect/block/unblock/emit).
+* Fixed broken string type in GTK.
+* Renamed some GTK types to meet SML conventions.
+
+Compiler:
+
+* New naming convention warning.
+* Automatic .import file prepending for .sml sources.
+* Automatic import generation from dependency files (option --dependency-file).
+* Fixed translation of "fun spawn ..." derived form.
+
+
+Alice 0.9.1 (Stockhausen Operette 3 Remix 1) - 2003/02/13
+---------------------------------------------------------
+
+Interactive toplevel:
+
+* Don't barf on Oz exceptions (particularly generated by failed spaces).
+* Minor cosmetics in output of values (futures, some abstract types).
+
+
+Library:
+
+* Proxy calls are now performed concurrently instead of sequentially.
+* HTTPServer and HTTPClient implement persistent connections.
+* Added Url.toLocalFile.
+* Changed type of Config.homeDir.
+* Added tracingApply to RESOLVER_HANDLER.
+* Renamed constructor Linear.fd to Linear.FD.
+* Bug fixes.
+
+
+Inspector:
+
+* Display values more consistently with interactive toplevel.
+* References are now updated correctly.
+
+
+Runtime system:
+
+* Now runs with official Mozart 1.2.5 release.
+* Renamed environment variable STOCKHOME to ALICE_HOME.
+* Added support for ALICE_LOAD_PREFIX and ALICE_LOAD_SUFFIX variables.
+* Support file names containing spaces.
+
+
+Linker:
+
+* Perform true Url resolution instead of string prefix matching.
+* Support rewrite tracing via ALICE_TRACE_REWRITE variable.
+* Support file names containing spaces.
+
+
+Dependency Analyzer:
+
+* Perform true Url resolution instead of string prefix matching.
+* Support file names containing spaces.
+* Translate backslashes to slashes.
+
+
+Documentation:
+
+* Added Oz-to-Alice migration page.
+* Updates.
+
+
+Installer:
+
+* Debian packages available.
+* Windows installer now creates program group.
+* Windows installer sets necessary environment variables.
+
+
+Alice 0.9 (Stockhausen Operette 3) - 2002/12/20
+-----------------------------------------------
+
+First public release.
+
+
+Stockhausen Operette 3 Draft Scores - 2002/04/25
+------------------------------------------------
+
+Technology preview release.
+
+
+Stockhausen Operette 2 - 2001/04/19
+-----------------------------------
+
+Second internal prototype release.
+
+
+Stockhausen Operette 1 - 2000/06/16
+-----------------------------------
+
+First internal prototype release.

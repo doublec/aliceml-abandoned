@@ -1,0 +1,1385 @@
+%%%
+%%% Authors:
+%%%   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+%%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+%%%
+%%% Copyright:
+%%%   Thorsten Brunklaus, 2003
+%%%   Leif Kornstaedt, 2003
+%%%
+%%% Last change:
+%%%   $Date$ by $Author$
+%%%   $Revision$
+%%%
+
+\documentclass[a4paper,11pt,fleqn,leqno]{article}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[expert,T1]{lucidabr}
+\usepackage{amsmath}
+\usepackage{irule}
+
+\usepackage{hyperref}
+
+\newcommand{\var}[1]{\mbox{\textit{#1}}}
+\newcommand{\key}[1]{\mbox{\texttt{#1}}}
+\newcommand{\fun}[1]{\mbox{#1}}
+\newcommand{\rec}[1]{\{\;#1\;\}}
+\newcommand{\feat}[2]{\key{#1}:#2}
+\newcommand{\sep}{\;\;\;}
+
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\BB}{\mathbb{B}}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 2pt minus 1pt}
+\setlength{\textwidth}{14cm}
+
+% Needed for irule.sty
+\let\irule=\inference
+\let\irulesep=\qquad
+
+\newcommand{\irulec}[3]{\irule{#1}{#2}\quad #3}
+
+% Semantics
+\newcommand{\impl}{\ensuremath{\Rightarrow}}
+\newcommand{\judge}[2]{%
+  \ensuremath{#1\vdash #2}}             % x |- y
+\newcommand{\judgeT}[2]{%
+  \ensuremath{#1\vDash #2}}             % x |= y
+\newcommand{\judgea}[3]{%
+  \ensuremath{\judge{#1}{#2}\impl #3}}  % x |- y => z
+\newcommand{\judgeTa}[3]{%
+  \ensuremath{\judgeT{#1}{#2}\impl #3}}  % x |= y => z
+\newcommand{\judgeP}[2]{%
+  \ensuremath{#1\to_{P}#2}}             % x ->P y
+\newcommand{\judgePs}[2]{%
+  \ensuremath{#1\to_{P}^\ast#2}}        % x ->P* y
+\newcommand{\judgep}[2]{%
+  \ensuremath{#1\to_{p}#2}}             % x ->p y
+\newcommand{\judgeps}[2]{%
+  \ensuremath{#1\to_{p}^\ast#2}}        % x ->p* y
+
+\newcommand{\repl}[2]{#1/#2}            % x/y
+\newcommand{\tup}[1]{\ensuremath{\langle#1\rangle}}
+\newcommand{\set}[1]{\ensuremath{\{#1\}}}
+
+\begin{document}
+\raggedbottom
+
+%-----------------------------------------------------------------------
+\section{Syntax}
+%-----------------------------------------------------------------------
+
+%-----------------------------------------------------------------------
+\subsection{Terminals}
+
+$\var{int}, \var{real}, \var{real}$ and $\var{string}$ denote
+the sets as specified in the Alice data representation.
+
+$\var{id}$ denotes the set of identifiers.
+
+$\var{value}$ denotes the set of alice values as defined in section
+\ref{alice_values}.
+
+%-----------------------------------------------------------------------
+\subsection{Notation}
+
+We will use a record-like notation for each instruction. It is intended
+for explanatory purposes only.
+
+In practice, the Alice code datatype does
+not use records but constructed values. The corresponding value can be
+obtained by stripping the record annotations from the instruction,
+preserving the printed order of the constituents.
+
+The real representation is used for both
+the rules of static semantics and dynamic semantics.
+
+%-----------------------------------------------------------------------
+\subsection{Identifiers: Definition and Reference}
+Identifiers can either be defined or used.
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{def} & ::= & \key{IdDef}        & \rec{\feat{id}{\var{id}}} \\
+              &  |  & \key{Wildcard}\\
+    \var{ref} & ::= & \key{Global}       & \rec{\feat{id}{\var{id}}}\\
+              &  |  & \key{Immediate}    & \rec{\feat{value}{\var{value}}}\\
+              &  |  & \key{LocalKill}    & \rec{\feat{id}{\var{id}}}\\
+              &  |  & \key{Local}        & \rec{\feat{id}{\var{id}}}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Code}
+
+\begin{itemize}
+\item
+Code only occurs as procedure bodies.
+Each procedure is created from a procedure template.
+The idea behind template instantiation
+is to propagate global variables denoting an immediate value, thus
+enabling better code generation at runtime.
+\item
+Control flow is represented such that branching and
+joining of control flows is explict.
+Each instruction carries a reference to its succeeding instruction.
+\item
+Data flow is organized in static single assigment form.
+\item
+Code is annotated with local identifier liveness information in two ways.
+First, we have fine-grained exact liveness information:
+Identifier references are marked as last usage and explicitly killed with
+a special \key{Kill} instruction.
+
+In addition code caches an approximation of
+liveness information. This approximation is suitable for input to
+linear scan register allocation\cite{Poletto1999b}.
+
+Note: Further details need to be specified since the annotations enforce some
+runtime code generation policies.
+\end{itemize}
+
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{code} & ::= & \key{Template}\;\{\\
+               &     & \;\;\;\;\feat{nbGlobals}{\var{int}}\\
+               &     & \;\;\;\;\feat{arguments}{\var{def}^{*}}\\
+               &     & \;\;\;\;\feat{body}{\var{instr}}\\
+               &     & \;\;\;\;\feat{liveness}{(\var{id}\times\var{int}\times\var{int})^{*}}\\
+               &     & \}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Instr: Allocation}
+
+The instructions presented in this section deal with datastructure allocation
+and initialization.
+
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{instr} & ::= & \key{NewCon} & % PutNew
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{name}{\var{string}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewTagVal} & % PutTag
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{tag}{\var{int}}\sep
+        \feat{fields}{\var{ref}^{+}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewConVal} & % PutCon
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{con}{\var{ref}}\sep
+        \feat{fields}{\var{ref}^{+}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewRefVal} & % PutRef
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{field}{\var{ref}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewTup} & % PutTup
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{fields}{\var{ref}^{+}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewRec} & % PutPolyRec
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{fields}{(\var{label}\times\var{ref})^{*}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewVec} & % PutVec
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{fields}{\var{ref}^{*}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewClosure} & % Close
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{globals}{\var{ref}^{*}}\sep
+        \feat{template}{\var{code}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{NewSpecClosure} & % Specialize
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{globals}{\var{ref}^{*}}\sep
+        \feat{template}{\var{code}}\sep
+        \feat{next}{\var{instr}}}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Instr: Data Structure Access}
+
+The instructions presented in this section are used to transfer data
+from various sources into the local environment.
+
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{instr} & ::=  & \key{Let} & % PutVar
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{src}{\var{ref}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{SelRef} & % GetRef
+      \rec{
+        \feat{dest}{\var{def}}\sep
+        \feat{ref}{\var{ref}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{SelTup} & % GetTup
+      \rec{
+        \feat{dest}{\var{def}^{+}}\sep
+        \feat{tuple}{\var{ref}}\sep
+        \feat{next}{\var{instr}}}\\
+                &  |  & \key{SelRec} & % LazyPolySel
+      \rec{
+        \feat{dest}{(\var{label}\times\var{def})^{*}}\sep
+        \feat{record}{\var{ref}}\sep
+        \feat{next}{\var{instr}}}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Instr: Conditionals}
+
+The instructions presented in this section deal with testing and
+branching.
+
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{instr} & ::= & \key{TestInt} & % IntTest
+      \rec{
+        \feat{arbiter}{\var{ref}}\sep
+        \feat{branches}{(\var{int}\times\var{instr})^{*}}\sep
+        \feat{else}{\var{instr}}}\\
+                &  |  & \key{TestIntCompact} & % CompactIntTest
+      \rec{
+        \feat{arbiter}{\var{ref}}\sep
+        \feat{zero}{\var{int}}\sep
+        \feat{branches}{\var{instr}^{*}}\sep
+        \feat{else}{\var{instr}}}\\
+                & |  & \key{TestReal} & % RealTest
+      \rec{
+        \feat{arbiter}{\var{ref}}\sep
+        \feat{branches}{(\var{real}\times\var{instr})^{*}}\sep
+        \feat{else}{\var{instr}}}\\
+                & |  & \key{TestString} & % StringTest
+      \rec{
+        \feat{arbiter}{\var{ref}}\sep
+        \feat{branches}{(\var{string}\times\var{instr})^{*}}\sep
+        \feat{else}{\var{instr}}}\\
+                & |  & \key{TestTag} &\{\\ % TagTest
+      & & & \sep\sep\feat{arbiter}{\var{ref}}\\
+      & & & \sep\sep\feat{branches}{(\var{int}\times\var{def}^{*}\times\var{instr})^{*}}\\
+      & & & \sep\sep\feat{else}{\var{instr}}\\
+      & & & \}\\
+                & |  & \key{TestTagCompact} &\{\\ % CompactTagTest
+      & & & \sep\sep\feat{arbiter}{\var{ref}}\\
+      & & & \sep\sep\feat{branches}{(\var{def}^{*}\times\var{instr})^{+}}\\
+      & & & \}\\
+                & |  & \key{TestCon} &\{\\ % ConTest
+      & & & \sep\sep\feat{arbiter}{\var{ref}}\\
+      & & & \sep\sep\feat{branches}{(\var{ref}\times\var{def}^{*}\times\var{instr})^{*}}\\
+      & & & \sep\sep\feat{else}{\var{instr}}\\
+      & & & \}\\
+                & |  & \key{TestVec} & % VecTest
+      \rec{
+        \feat{arbiter}{\var{ref}}\sep
+        \feat{branches}{(\var{def}^{*}\times\var{instr})^{*}}\sep
+        \feat{else}{\var{instr}}}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Instr: Exceptions}
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{instr} & ::= & \key{Try} &
+      \rec{
+        \feat{body}{\var{instr}}\sep
+        \feat{handler}{(\var{def}\times\var{id}^{*}\times\var{instr})}}\\
+                &  |  & \key{EndTry} &
+      \rec{\feat{next}{\var{instr}}}\\
+                &  |  & \key{Raise} &
+      \rec{\feat{exception}{\var{ref}}}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Instr: Function Application}
+Argument passing works with respect to calling convention conversion.
+Encapsulation is needed to ensure proper recognition of all possible
+conversion cases.
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{instr} & ::= & \key{Apply}\;\{\\
+      & & \;\;\;\;\feat{closure}{\var{ref}}\\
+      & & \;\;\;\;\feat{in}{\var{ref}^{*}}\\
+      & & \;\;\;\;\feat{out}{(\var{def}^{*}\times\var{instr})}\\
+      & & \}\\
+                &  |  & \key{ApplyTail}\;\{\\
+      & & \;\;\;\;\feat{closure}{\var{ref}}\\
+      & & \;\;\;\;\feat{in}{\var{ref}^{*}}\\
+      & & \}\\
+                &  |  & \key{Return}\;\{\\
+      & & \;\;\;\;\feat{values}{\var{ref}^{*}}\\
+      & & \}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\subsection{Instr: Annotations}
+
+The annotations are used to specify fine-grained liveness
+(in conjunction with \key{LocalKill}) and to preserve basic
+block information by making joining of control flows explicit.
+
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l@{\ }l}
+    \var{instr} & ::= & \key{Kill} &
+      \rec{
+        \feat{ids}{\fun{Pow}(\var{id})}\sep
+        \feat{next}{\var{instr}}}\\
+                & |  & \key{Join} &
+      \rec{\feat{stamp}{\var{int}}\sep\feat{next}{\var{instr}}}\\
+  \end{array}
+\]
+
+%-----------------------------------------------------------------------
+\section{Static Semantics}
+%-----------------------------------------------------------------------
+Static semantics are specified as a set of inference rules.
+If no rule is applicable, the program is rejected as invalid.
+
+%-----------------------------------------------------------------------
+\subsection{Definitions}
+
+The static semantics definition makes use of the following types:
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l}
+    j,n & \in & \NN\\
+    k & \in & \var{int}\\
+    f & \in & \var{real}\\
+    t & \in & \var{id}\times\var{int}\times\var{int}\\
+    i & \in & \var{id}\\
+    r & \in & \var{ref}\\
+    d & \in & \var{def}\\
+    l & \in & \var{instr} \\
+    s & \in & \var{string} \\
+    \var{status} & = &
+      \{\key{uninitialized}, \key{initialized}, \key{killed}\}\\
+    \var{Env} & = &
+      \var{id} \rightharpoonup \var{status}\\
+     L & \in & \var{Env}\\
+     G,T & \in & \NN\\
+     w & \in & \var{word}\\
+     \var{Shared} & = &
+       \var{int}\rightharpoonup
+        ((\var{Env}\times\var{instr})\uplus\tup{})\\
+     \bar{S} & \in & \var{Shared}\\
+     S & \in & \var{Shared}\times\NN\\
+     \var{context} & = &
+       \var{Env}\times\NN\times\NN\\
+     C & \in & \var{context}\\
+  \end{array}
+\]
+
+Also, the static semantics makes use of some auxiliary functions:
+\begin{equation*}
+L + d =
+\begin{cases}
+L & \text{if $d=\key{Wildcard}$}\\
+L[\repl{\key{initialized}}{i}] & \text{if $d=\key{IdDef}\;i\wedge L(i)=\key{uninitialized}$}\\
+\end{cases}
+\end{equation*}
+\begin{equation*}
+C + d = \tup{L+d,G}\quad\text{if $C=\tup{L,G}$}
+\end{equation*}
+\begin{equation*}
+C[\repl{v}{i}] = \tup{L[\repl{v}{i}],G}\quad\text{if $C=\tup{L,G}$}
+\end{equation*}
+\begin{equation*}
+\fun{defsOf}(\bar{d}) =
+\begin{cases}
+\bar{d}   & \text{if $\bar{d}=\tup{d_1,\ldots,d_n}$}\\
+\tup{d'}  & \text{if $\bar{d}=\key{OneArg}\;d'$}\\
+\tup{d_1,\ldots,d_n} & \text{if $\bar{d}=\key{TupArgs}\;\tup{d_1,\ldots,d_n}$}\\
+\end{cases}
+\end{equation*}
+\begin{equation*}
+\fun{refsOf}(\bar{r}) =
+\begin{cases}
+\bar{r}   & \text{if $\bar{r}=\tup{r_1,\ldots,r_n}$}\\
+\tup{r'}  & \text{if $\bar{r}=\key{OneArg}\;r'$}\\
+\tup{r_1,\ldots,r_n} & \text{if $\bar{r}=\key{TupArgs}\;\tup{r_1,\ldots,r_n}$}\\
+\end{cases}
+\end{equation*}
+
+%-----------------------------------------------------------------------
+\subsection{Code Rules Scheme}
+Each code rule has the following scheme:
+\begin{irulegather*}
+\irule{}{\judgea{C,S}{l}{S'}}
+\end{irulegather*}
+The semantics of the rule is that the instruction $l$ is evaluated
+under the evaluation context $C$ denoting a tuple $\tup{L,G}$ and
+a state $S$ denoting a tuple $\tup{\bar{S},T}$, with
+\begin{itemize}
+\item $L$ the local environment,
+\item $G$ the number of global variables,
+\item $\bar{S}$ the current shared map,
+\item $T$ the current exception handler nesting state,
+\item $S'$ the result state.
+\end{itemize}
+
+%-----------------------------------------------------------------------
+\subsection{Code}
+
+\begin{irulegather*}
+\irulec{\tup{d_1,\ldots,d_k}=\fun{defsOf}(\bar{d})\\
+       L=((\{\tup{0,\key{uninitialized}},\ldots,
+             \tup{n-1,\key{uninitialized}}\} + d_1) + \ldots + d_{k})\\
+       \judgea{\tup{L,G},\tup{\set{},0}}{l}{S}}
+      {\judge{G}{\key{Template}\;m\;\tup{d_1,\ldots,d_k}\;l\;
+                 \tup{t_1,\ldots,t_n}}}
+      {\begin{array}{l}
+         n\ge k\\
+         G= m\\
+       \end{array}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Identifier References}
+\begin{irulegather*}
+\irulec{0 \leq i < G}
+       {\judgea{C}{\key{Global}\;i}{C}}
+       {C=\tup{L,G}}
+\\
+\irule{}
+      {\judgea{C}{\key{Immediate}\;w}{C}}
+\\
+\irulec{L(i) = \key{initialized}}
+       {\judgea{C}{\key{Local}\;i}{C}}
+       {C=\tup{L,G}}
+\\
+\irulec{L(i) = \key{initialized}}
+       {\judgea{C}{\key{LocalKill}\;i}
+       {C[\repl{\key{killed}}{i}]}}
+       {C=\tup{L,G}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Allocation}
+
+\begin{irulegather*}
+\irule{\judgea{C+d,S}{l}{S'}}
+      {\judgea{C,S}{\key{NewCon}\;d\;s\;l}{S'}}
+\\
+\irule{\judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judgea{C_n + d,S}{l}{S'}}
+      {\judgea{C_0,S}{\key{NewTagVal}\;d\;k\;\tup{r_1,\ldots,r_n}\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C_0}\quad
+       \judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judgea{C_n + d,S}{l}{S'}}
+      {\judgea{C,S}{\key{NewConVal}\;d\;r\;\tup{r_1,\ldots,r_n}\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\quad
+       \judgea{C' + d,S}{l}{S'}}
+      {\judgea{C,S}{\key{NewRefVal}\;d\;r\;l}{S'}}
+\\
+\irule{\judgea{C_0}{r_1}{C_{1}}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judgea{C_n + d,S}{l}{S'}}
+      {\judgea{C_0,S}{\key{NewTup}\;d\;\tup{r_1,\ldots,r_n}\;l}{S'}}
+\\
+\irule{\judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judgea{C_n + d,S}{l}{S'}\quad |\set{s_1,\ldots,s_n}| = n}
+      {\judgea{C_0,S}{\key{NewRec}\;d\;\tup{\tup{s_1,r_1},\ldots,\tup{s_n,r_n}}\;l}{S'}}
+\\
+\irule{\judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judgea{C_n + d,S}{l}{S'}}
+      {\judgea{C_0,S}{\key{NewVec}\;d\;\tup{r_1,\ldots,r_n}\;l}{S'}}
+\\
+\irule{\judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judge{n}{c}\quad
+       \judgea{C_n + d,S}{l}{S'}}
+      {\judgea{C_0,S}{\key{NewClosure}\;d\;\tup{r_1,\ldots,r_n}\;c\;l}{S'}}
+\\
+\irule{\judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\quad
+       \judge{n}{c}\quad
+       \judgea{C_n + d,S}{l}{S'}}
+      {\judgea{C_0,S}{\key{NewSpecClosure}\;d\;\tup{r_1,\ldots,r_n}\;c\;l}{S'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Data Structure Access}
+
+\begin{irulegather*}
+\irule{\judgea{C}{r}{C'}\quad
+       \judgea{C' + d,S}{l}{S'}}
+      {\judgea{C,S}{\key{Let}\;d\;r\;l}{S'}}
+\irulesep
+\irule{\judgea{C}{r}{C'}\quad
+       \judgea{C' + d,S}{l}{S'}}
+      {\judgea{C,S}{\key{SelRef}\;d\;r\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\quad
+       \judgea{((C' + d_1) + \ldots + d_n,S)}{l}{S'}}
+      {\judgea{C,S}{\key{SelTup}\;\tup{d_1,\ldots,d_n}\;r\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\quad
+       \judgea{((C' + d_1) + \ldots + d_n),S}{l}{S'}\quad
+       |\set{s_1,\ldots,s_n}| = n}
+      {\judgea{C,S}{\key{SelRec}\;
+        \tup{\tup{s_1,d_1},\ldots,\tup{s_n,d_n}}\;r\;l}{S'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Conditionals}
+
+\begin{irulegather*}
+\irule{\judgea{C}{r}{C'}\quad
+       |\set{i_1,\ldots,i_n}| = n\quad
+       \judgea{C',S_0}{l_1}{S_1}\quad\ldots\quad
+       \judgea{C',S_{n-1}}{l_n}{S_n}\\
+       \judgea{C',S_n}{l}{S'}}
+      {\judge{C,S_0}{\key{TestInt}\;r\;\tup{\tup{i_1,l_1},\ldots,\tup{i_n,l_n}}\;l}{S'}}
+\\
+\irulec{\judgea{C}{r}{C'}\quad
+       \judgea{C',S_0}{l_1}{S_1}\quad\ldots\quad
+       \judgea{C',S_{n-1}}{l_n}{S_n}\\
+       \judgea{C',S_n}{l}{S'}}
+      {\judgea{C,S_0}{\key{TestIntCompact}\;r\;k\;\tup{l_1,\ldots,l_n}\;l}{S'}}
+      {k+(n-1)\in\var{int}}
+\\
+\irule{\judgea{C}{r}{C'}\quad
+       |\set{f_1,\ldots,f_n}| = n\quad
+       \judgea{C',S_0}{l_1}\quad\ldots\quad\judgea{C',S_{n-1}}{l_n}{S_n}\\
+       \judgea{C',S_n}{l}{S'}}
+      {\judgea{C,S_0}{\key{TestReal}\;r\;\tup{\tup{f_1,l_1},\ldots,\tup{f_n,l_n}}\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\quad
+       |\set{s_1,\ldots,s_n}| = n\quad
+       \judgea{C',S_0}{l_1}\quad\ldots\quad\judgea{C',S_{n-1}}{l_n}{S_n}\\
+       \judgea{C',S_n}{l}{S'}}
+      {\judgea{C,S_0}{\key{TestString}\;r\;\tup{\tup{s_1,l_1},\ldots,\tup{s_n,l_n}}\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\quad
+       |\set{i_1,\ldots,i_n}| = n\\
+       \judgea{((C' + d_{1,1}) + \ldots + d_{1,j_1}),S_0}{l_1}{S_1}
+       \quad\ldots\\
+       \judgea{((C' + d_{n,1}) + \ldots + d_{n,j_n}),S_{n-1}}{l_n}{S_n}\quad
+       \judgea{C',S_n}{l}{S'}\\
+       b=\tup{\tup{i_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{i_n,\tup{d_{n,1},\ldots,d_{n,j_n}}},l_n}}
+      {\judgea{C,S_0}{\key{TestTag}\;r\;b\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\\
+       \judgea{((C' + d_{1,1}) + \ldots + d_{1,j_1}),S_0}{l_1}{S_1}
+       \quad\ldots\\
+       \judgea{((C' + d_{n,1}) + \ldots + d_{n,j_n}),S_{n-1}}{l_n}{S_n}\\
+       b=\tup{\tup{\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{\tup{d_n,1},\ldots,d_{n,j_n}},l_n}}
+      {\judgea{C,S_0}{\key{TestTagCompact}\;r\;b}{S_n}}
+\\
+\irule{\judgea{C}{r}{C'}\\
+       \judgea{C'}{r_1}{C'_1}\quad\ldots\quad\judgea{C'}{r_n}{C'_n}\\
+       \judgea{((C'_n + d_{1,1}) + \ldots + d_{1,j_1}),S_0}{l_1}{S_1}
+       \quad\ldots\\
+       \judgea{((C'_n + d_{n,1}) + \ldots + d_{n,j_n}),S_{n-1}}{l_n}{S_n}\quad
+       \judgea{C',S_n}{l}{S'}\\
+       b=\tup{\tup{r_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{r_n,\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}}
+      {\judgea{C,S_0}{\key{TestCon}\;r\;b\;l}{S'}}
+\\
+\irule{\judgea{C}{r}{C'}\\
+       \judgea{((C' + d_{1,1}) + \ldots + d_{1,j_1}),S_0}{l_1}{S_1}
+       \quad\ldots\\
+       \judgea{((C' + d_{n,1}) + \ldots + d_{n,j_n}),S_{n-1}}{l_n}{S_n}\quad
+       \judgea{C',S_n}{l}{S'}\\
+       b=\tup{\tup{\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}}
+      {\judgea{C,S}{\key{TestVec}\;r\;b\;l}{S'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Exceptions}
+
+\begin{irulegather*}
+\irulec{\judgea{C,\tup{\bar{S},T+1}}{l}{S_0}\\
+       \judgea{(C[\repl{\key{killed}}{i_1}]\ldots[\repl{\key{killed}}{i_n}])
+              + d,S_0}{l'}{S'}}
+      {\judgea{C,S}{\key{Try}\;l\;\tup{d,\tup{i_1,\ldots,i_n},l'}}{S'}}
+      {S=\tup{\bar{S},T}}
+\\
+\irulec{\judgea{C,\tup{\bar{S},T-1}}{l}{S'}\quad T > 0}
+       {\judgea{C,S}{\key{EndTry}\;l}{S'}}
+       {S=\tup{\bar{S},T}}
+\\
+\irule{\judgea{C}{r}{C'}}
+      {\judgea{C,S}{\key{Raise}\;r}{S}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Function Application}
+
+\begin{irulegather*}
+\irule{\judgea{C}{r}{C_0}\quad
+       \judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}\\
+       \judgea{((C + d_1) + \ldots + d_j),S}{l}{S'}}
+      {\judgea{C,S}{\key{Apply}\;r\;\tup{r_1,\ldots,r_n}
+                    \;\tup{\tup{d_1,\ldots,d_j},l}}{S'}}
+\\
+\irule{\judgea{C}{r}{C_0}\quad
+       \judgea{C_0}{r_1}{C_1}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}}
+      {\judgea{C,S}{\key{ApplyTail}\;r\;\tup{r_1,\ldots,r_n}}{S}}
+\\
+\irule{\judgea{C_0}{r_1}{C_{1}}\quad\ldots\quad
+       \judgea{C_{n-1}}{r_n}{C_n}}
+      {\judgea{C,S}{\key{Return}\;\tup{r_1,\ldots,r_n}}{S}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Annotations}
+
+\begin{irulegather*}
+\irulec{\judgea{C[\repl{\key{killed}}{i_1}]\ldots
+                [\repl{\key{killed}}{i_n}]}{l}{S'}\\
+       |\set{i_1,\ldots,i_n}| = n\quad
+       \set{i_1,\ldots,i_n} \subseteq \fun{Dom}(L)}
+      {\judgea{C,S}{\key{Kill}\;\{i_1,\ldots,i_n\}\;l}{S'}}
+      {C=\tup{L,G}}
+\\
+\irulec{\judgea{C,\tup{\bar{S}[\repl{\tup{}}{k}],T}}{l}{S'}}
+       {\judgea{C,S}{\key{Join}\;k\;l}{\tup{\bar{S}[\repl{\tup{C,l}}{k}],T}}}
+       {\begin{array}{l}
+        S = \tup{\bar{S},T}\\
+        k \notin \fun{Dom}(\bar{S})\\
+        \end{array}}
+\\
+\irulec{\judgea{C',S}{l}{S'}\qquad}
+       {\judgea{C,S}{\key{Join}\;k\;l}{S'}}
+       {\begin{array}{l}
+        S=\tup{\bar{S},T}\\
+        \bar{S}(k)=\tup{C',l}\\
+        \end{array}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\section{Dynamic Semantics}
+%-----------------------------------------------------------------------
+Dynamic semantics are specified as a set of inference rules.
+If no rule is applicable, the program is rejected as invalid.
+
+%-----------------------------------------------------------------------
+\subsection{Definitions}
+\label{alice_values}
+The dynamic semantics makes use of the following types:
+\[
+  \begin{array}{@{}r@{\ }c@{\ }l}
+    x & \in & \var{id}\\
+    n,m,j & \in & \NN\\
+    r & \in & \var{ref}\\
+    d & \in & \var{def}\\
+    \bar{r} & \in & \var{refArgs}\\
+    \bar{d} & \in & \var{defArgs}\\
+    l & \in & \var{instr}\\
+    i & \in & \var{int}\\
+    s & \in & \var{string}\\
+    f & \in & \var{real}\\
+    a & \in & \var{addr}\\
+    c & \in & \var{code}\\
+    \var{con} & =& \set{\key{con}}\times\var{string}\\
+    \var{value} & = &
+      \var{int}\cup\var{string}\cup\var{real}\cup\var{addr}\;\cup\\
+      & & \set{\key{tuple}}\times\var{value}^{*}\;\cup\\
+      & & \set{\key{vector}}\times\var{value}^{*}\;\cup\\ 
+      & & \set{\key{tagval}}\times\var{int}\times\var{value}^{*}\;\cup\\
+      & & \set{\key{closure}}\times\var{code}\times\var{value}^{*}\;\cup\\
+      & & \set{\key{primitive}}\times\var{string}\\
+      & & \set{\key{record}}\times(\var{string}\times\var{value})^{*}\\
+    v & \in & \var{value}\\
+    \var{ref} & = &
+      \set{\key{ref}}\times\var{value}\\ 
+    \var{transient} &= &
+      \set{\key{future}}\times\var{thread}^{*}\;\cup\\
+      & & \set{\key{lazy}}\times\var{value}\;\cup\\
+      & & \set{\key{hole}}\times\var{value}\;\cup\\
+      & & \set{\key{failed}}\times\var{value}\\
+    \var{Env} & = &
+      \var{id} \rightharpoonup \var{value}\\
+    L,G & \in & \var{Env}\\
+    \var{cont} & = & \var{def}^{*}\times\var{instr}\\
+    N   & \in & \var{cont}\\
+    \var{handlerStack} & = &
+      (\var{def}\times\var{instr}\times\var{stack})
+        \times\var{handlerStack}\cup\tup{}\\
+    H & \in & \var{handlerStack}\\
+    \var{stack} & = & \var{Env}\times\var{Env}\times\var{cont}
+      \times\var{handlerStack}\times\var{stack}\uplus \set{\tup{}}\\
+    S & \in & \var{stack}\\
+    \var{thread} & = & \var{stack}\times\var{instr}\\
+    T & \in & \var{thread}\\
+    R & \in & \var{thread}^{*}\\
+    \var{Memory} &=& \var{addr}\rightharpoonup\var{value}\uplus\var{ref}\uplus\var{con}\uplus\var{transient}\\
+    \var{M} &\in& \var{Memory}\\
+    \var{context} & = & \var{thread}^{*}\times\var{Memory}\times\var{stack}\\
+    C & \in & \var{context}\\
+  \end{array}
+\]
+
+Also, the dynamic semantics makes use of some auxiliary functions:
+\begin{equation*}
+L + d(v) =
+\begin{cases}
+L & \text{if $d=\key{Wildcard}$}\\
+L[\repl{v}{x}] & \text{if $d=\key{IdDef}\;x$}\\
+\end{cases}
+\end{equation*}
+\begin{equation*}
+C + d(v) = \tup{R,M,\tup{L + d(v),G,N,H,S'}}
+\quad\text{if}\quad C=\tup{R,M,\tup{L,G,N,H,S'}}
+\end{equation*}
+\begin{equation*}
+\fun{deref}(M,v) =
+\begin{cases}
+\fun{deref}(M,M(p)) & \text{if $v\in\var{stamp}\wedge M(p)\in\var{stamp}$}\\
+v    & \text{otherwise}\\
+\end{cases}
+\end{equation*}
+\begin{align*}
+\fun{select}(\tup{T_1,\ldots,T_{k-1},T_k,T_{k+1},\ldots,T_n})&=\\
+& \tup{\tup{T_1,\ldots,T_{k-1},T_{k+1},\ldots,T_n},T_k}\\
+& \text{if $T_k$ is to be scheduled}
+\end{align*}
+Note: $\fun{select}$ behavior with empty runnable set to be specified
+%-----------------------------------------------------------------------
+\subsubsection{Code Rules Scheme}
+Each code rule has the following scheme:
+\begin{irulegather*}
+\irule{}{\judgea{C=\tup{R,M,S}}{l_{\text{self}}=l}{M'}}
+\end{irulegather*}
+and is abbreviated as
+\begin{irulegather*}
+\irule{}{\judgea{C}{l}{M'}}
+\end{irulegather*}
+The semantics of the rule is that the instruction $l$ is evulated
+under the evaluation context $C$ denoting a triple $\tup{R,M,S}$, with
+\begin{itemize}
+\item $l_{\text{self}}$ assigned to $l$.
+\item $R$ the runnable threads,
+\item $M$ the state, and
+\item $S$ the current stack.
+\item $M'$ the result state.
+\end{itemize}
+
+%-----------------------------------------------------------------------
+\subsection{Identifier References}
+\begin{irulegather*}
+\irule{}
+      {\judgea{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{Global}\;i}{G(i)}}
+\\
+\irule{}
+      {\judgea{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{Immediate}\;v}{v}}
+\\
+\irule{}
+      {\judgea{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{Local}\;i}{L(i)}}
+\\
+\irule{}
+      {\judgea{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{LocalKill}\;i}{L(i)}}
+\\
+\irule{}
+      {\judgeTa{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{Global}\;i}
+      {\fun{deref}(M,G(i))}}
+\\
+\irule{}
+      {\judgeTa{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{Immediate}\;v}
+      {\fun{deref}(M, v)}}
+\\
+\irule{}
+      {\judgeTa{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{Local}\;i}
+      {\fun{deref}(M, L(i))}}
+\\
+\irule{}
+      {\judgeTa{\tup{R,M,\tup{L,G,N,H,S'}}}{\key{LocalKill}\;i}
+      {\fun{deref}(M,L(i))}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Calling Convention Conversion}
+
+\begin{irulegather*}
+\irule{}
+      {\judgea{C}{CCC(k,\tup{v_1,\ldots,v_k})}{\tup{v_1,\ldots,v_k}}}
+\\
+\irulec{\fun{deref}(M,v)=p}
+       {\judgea{C=\tup{R,M,S}}{CCC(k,\tup{v})}{p}}
+       {\begin{array}{l}
+        M(p)\in\var{transient}\\
+        k\neq 1\\
+        \end{array}}
+\\
+\irulec{\fun{deref}(M,v)= \tup{v_1,\ldots,v_k}\quad}
+       {\judgea{C=\tup{R,M,S}}{CCC(k,\tup{v})}{\tup{v_1,\ldots,v_k}}}
+       {k\neq 1}
+\\
+\irulec{}
+       {\judgea{C}{CCC(1,\tup{v_1,\ldots,v_k})}{\tup{\tup{v_1,\ldots,v_k}}}}
+       {k\neq 1}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Transients}
+This sections defines pseudo instructions used to model transients.
+Alice knows four types of transients:
+$\key{future}, \key{lazy}, \key{hole}, \key{failed}$.
+Currently, $\key{hole}$ and $\key{failed}$ are missing.
+$\key{await}$ needs to handle failed futures.
+\begin{irulegather*}
+\irulec{T'=\tup{S,l}\quad
+        M_0= M[\repl{\key{future}\;\tup{T'_1,\ldots,T'_n,T'}}{a}]\\
+        \judgea{\tup{R,M_0,S'}}{l'}{M'}
+      }
+      {\judgea{\tup{R,M,S}}{\key{await}\;a\;\;l}{M'}}
+      {\begin{array}{l}
+       M(a) = \key{future}\;\tup{T'_1,\ldots,T'_n}\\
+      \tup{R',\tup{S',l'}} = \fun{select}\;R\\
+       \end{array}
+      }
+\\
+\irulec{T'=\tup{S,l}\quad
+        M_0=M[\repl{\key{future}\;\tup{T'}}{a}]\\
+        l'= \key{Apply}\;(\key{Local}\;0)\;\tup{}\;
+            \tup{\tup{\key{IdDef}\;1}, \key{bind}\;a\;(\key{Local}\;1)}\\
+        T =\tup{\tup{\set{\tup{0,v}},\set{},\tup{},\tup{},\tup{}},l'}\\
+        R_0=\tup{T_1,\ldots,T_k,T}\\
+       \judgea{\tup{R',M_0,S'}}{l'}{M'}
+      }
+      {\judgea{\tup{\tup{T_1,\ldots,T_k},M,S}}{\key{await}\;a\;l}{M'}}
+      {\begin{array}{l}
+       M(p) = \key{lazy}\;v\\
+       \tup{R',\tup{S',l'}} = \fun{select}\;R_0\\
+       \end{array}
+      }
+\\
+\irulec{\judgea{C}{r}{v}\quad
+       M_0=M[\repl{v}{a}]\\
+       \judgea{\tup{R',M_0,S'}}{l'}{M'}
+      }
+      {\judgea{C}{\key{bind}\;a\;r}{M'}}
+      {\begin{array}{l}
+       M(a)=\key{future}\;\tup{T'1,\ldots,T'_k}\\
+       C=\tup{R,M,S}\\
+       R=\tup{T_1,\ldots,T_j}\\
+       \tup{R',\tup{S',l'}} = \fun{select}\;
+       \tup{T'_1,\ldots,T'_k,T_1,\ldots,T_j}\\
+       \end{array}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Code}
+
+Code defines the entry point of computation with respect
+to a global environment.
+
+\begin{irulegather*}
+\irulec{\judgea{\tup{R,M,S}}{l}{M'}}
+       {\judgea{\tup{v_1,\ldots,\tup{v_n}}}{\key{Template}\;m\;\tup{}\;l\;
+         \tup{t_1,\ldots,t_j}}{M'}}
+       {\begin{array}{l}
+        m=n\\
+        R=\tup{}\\
+        M=\set{}\\
+        L=\set{}\\
+        G=\set{\tup{0,v_1},\ldots,\tup{n-1,v_n}}\\
+        S=\tup{L,G,\tup{},\tup{},\tup{}}\\
+        \end{array}}
+\end{irulegather*}
+%-----------------------------------------------------------------------
+\subsection{Rules: Allocation}
+\begin{irulegather*}
+\irulec{M_0=M[\repl{\key{con}\;s}{a}]\quad
+        \judgea{\tup{R,M_0,S} + d(a)}{l}{M'}}
+       {\judgea{C}{\key{NewCon}\;d\;s\;l}{M'}}
+       {a\notin\fun{Dom}(M)}
+\\
+\irule{\judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       \judgea{C + d(\key{tagval}\;\tup{k,v_1,\ldots,v_n})}{l}{M'}}
+      {\judgea{C}{\key{NewTagVal}\;d\;k\;\tup{r_1,\ldots,r_n}\;l}{M'}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{NewConVal}\;d\;r\;\tup{r_1,\ldots,r_n}\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{r_1}{v_1}\quad\ldots\quad
+        \judgea{C}{r_n}{v_n}\\
+        \judgea{C + d(\key{conval}\;\tup{a,v_1,\ldots,v_n})}{l}{M'}}
+       {\judgea{C}{\key{NewConVal}\;d\;r\;\tup{r_1,\ldots,r_n}\;l}{M'}}
+       {M(a)\in\var{con}}
+\\
+\irulec{\judgea{C}{r}{v}\quad
+        M_0=M[\repl{\key{ref}\;v}{a}]\quad
+        \judgea{\tup{R,M_0,S} + d(a)}{l}{M'}
+        }
+       {\judgea{C}{\key{NewRefVal}\;d\;r\;l}{M'}}
+       {a\notin\fun{Dom}(M)}
+\\
+\irule{\judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       \judgea{C + d(\key{tuple}\;\tup{v_1,\ldots,v_n})}{l}{M'}}
+      {\judgea{C}{\key{NewTup}\;d\;\tup{r_1,\ldots,r_n}\;l}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       \judgea{C + d(\key{record}\;
+         \tup{\tup{s_1,v_1},\ldots,\tup{s_n,v_n}})}{l}{M'}}
+      {\judgea{C}
+      {\key{NewRec}\;d\;\tup{\tup{s_1,r_1},\ldots,\tup{s_n,r_n}}\;l}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       \judgea{C + d(\key{vector}\;\tup{v_1,\ldots,v_n})}{l}{M'}}
+      {\judgea{C}{\key{NewVec}\;d\;\tup{r_1,\ldots,r_n}\;l}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       \judgea{\tup{v_1,\ldots,v_n}}{c}{c'}\\
+       \judgea{C + d(\key{closure}\;\tup{c',v_1,\ldots,v_n})}{l}{M'}}
+      {\judgea{C}{\key{NewClosure}\;d\;\tup{r_1,\ldots,r_n}\;c\;l}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       \judgea{\tup{v_1,\ldots,v_n}}{c}{c'}\\
+       \judgea{C + d(\key{closure}\;\tup{c',v_1,\ldots,v_n})}{l}{M'}}
+      {\judgea{C}{\key{NewSpecClosure}\;d\;\tup{r_1,\ldots,r_n}\;c\;l}{M'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Data Structure Access}
+Note: $\key{SelRec}$ needs to be lazy. This is currently missing.
+
+\begin{irulegather*}
+\irule{\judgea{C}{r}{v}\quad
+       \judgea{C + d(v)}{l}{M'}}
+      {\judgea{C}{\key{Let}\;d\;r\;l}{M'}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{SelRef}\;d\;r\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C + d(v)}{l}{M'}}
+       {\judgea{C}{\key{SelRef}\;d\;r\;l}{M'}}
+       {M(a)=\key{ref}\;v}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{SelTup}\;\tup{d_1,\ldots,d_n}\;r\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{\judgeTa{C}{r}{\key{tuple}\;\tup{v_1,\ldots,v_n}}\quad
+       \judgea{((C + d_1(v_1)) + \ldots + d_n(v_n))}{l}{M'}}
+      {\judgea{C}{\key{SelTup}\;\tup{d_1,\ldots,d_n}\;r\;l}{M'}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{SelRec}\;
+         \tup{\tup{s_1,d_1},\ldots,\tup{s_n,d_n}}\;r\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{\key{record}\;\tup{\tup{s'_1,v_1},
+          \ldots,\tup{s'_n,v_n}}}\\
+        \judgea{((C + d_1(v_1)) + \ldots + d_k(v_k))}{l}{M'}}
+       {\judgea{C}{\key{SelRec}\;
+          \tup{\tup{s_1,d_1},\ldots,\tup{s_k,d_k}}\;r\;l}{M'}}
+       {\set{s_1,\ldots,s_k}\subseteq\set{s'_1,\ldots,s'_n}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Conditionals}
+
+\begin{irulegather*}
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestInt}\;r\;
+         \tup{\tup{i_1,l_1},\ldots,\tup{i_n,l_n}}\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{i}\quad
+        \judgea{C}{l_k}{M'}}
+       {\judgea{C}{\key{TestInt}\;r\;
+          \tup{\tup{i_1,l_1},\ldots,\tup{i_n,l_n}}\;l}{M'}}
+       {i=i_k\in\set{i_1,\ldots,i_n}}
+\\
+\irulec{\judgeTa{C}{r}{i}\quad
+        \judge{C}{l}}
+       {\judgea{C}{\key{TestInt}\;r\;
+         \tup{\tup{i_1,l_1},\ldots,\tup{i_n,l_n}}\;l}{M'}}
+       {i\notin\set{i_1,\ldots,i_n}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestIntCompact}\;r\;j\;\tup{l_1,\ldots,l_n}\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{i}\quad
+        \judgea{C}{l_k}{M'}}
+       {\judgea{C}{\key{TestIntCompact}\;r\;j\;\tup{l_1,\ldots,l_n}\;l}{M'}}
+       {(i - j + 1)=k \in \set{1,\ldots,n}}
+\\
+\irulec{\judgeTa{C}{r}{i}\quad
+        \judgea{C}{l}{M'}}
+       {\judgea{C}{\key{TestIntCompact}\;r\;j\;\tup{l_1,\ldots,l_n}\;l}{M'}}
+       {(i - j + 1) \notin \set{1,\ldots,n}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestReal}\;r\;
+         \tup{\tup{f_1,l_1},\ldots,\tup{f_n,l_n}}\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{f}\quad
+        \judgea{C}{l_k}{M'}}
+       {\judgea{C}{\key{TestReal}\;r\;
+         \tup{\tup{f_1,l_1},\ldots,\tup{f_n,l_n}}\;l}{M'}}
+       {f=f_k\in\set{f_1,\ldots,f_n}}
+\\
+\irulec{\judgeTa{C}{r}{f}\quad
+        \judgea{C}{l}{M'}}
+       {\judgea{C}{\key{TestReal}\;r\;
+         \tup{\tup{f_1,l_1},\ldots,\tup{f_n,l_n}}\;l}{M'}}
+       {f\notin\set{f_1,\ldots,f_n}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestString}\;r\;
+         \tup{\tup{s_1,l_1},\ldots,\tup{s_n,l_n}}\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irulec{\judgeTa{C}{r}{s}\quad
+        \judgea{C}{l_k}{M'}}
+       {\judgea{C}{\key{TestString}\;r\;
+         \tup{\tup{s_1,l_1},\ldots,\tup{s_n,l_n}}\;l}{M'}}
+       {s=s_k\in\set{s_1,\ldots,s_n}}
+\\
+\irulec{\judgeTa{C}{r}{s}\quad
+        \judgea{C}{l}{M'}}
+       {\judgea{C}{\key{TestString}\;r\;
+         \tup{\tup{s_1,l_1},\ldots,\tup{s_n,l_n}}\;l}{M'}}
+       {s\notin\set{s_1,\ldots,s_n}}
+\end{irulegather*}
+\begin{irulegather*}
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestTag}\;r\;b\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{
+       b=\tup{\tup{i_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{i_n,\tup{d_{n,1},\ldots,d_{n,j_n}}},l_n}\\
+       \judgeTa{C}{r}{\key{tagval}\;\tup{i,v_1,\ldots,v_m}}\quad
+       i=i_k\in\set{i_1,\ldots,i_n}\quad m=j_k\\
+       \judgea{((C + d_{k,1}(v_1)) + \ldots + d_{k,j_k}(v_m))}{l_k}{M'}\\
+      }
+      {\judgea{C}{\key{TestTag}\;r\;b\;l}{M'}}
+\\
+\irule{
+       b=\tup{\tup{i_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{i_n,\tup{d_{n,1},\ldots,d_{n,j_n}}},l_n}\\
+\judgeTa{C}{r}{\key{tagval}\;\tup{i,v_1,\ldots,v_m}}\quad
+       i=\notin\set{i_1,\ldots,i_n}\quad
+       \judgea{C}{l}{M'}\\
+       }
+      {\judgea{C}{\key{TestTag}\;r\;b\;l}{M'}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestTagCompact}\;r\;b}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{
+       b=\tup{\tup{\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{\tup{d_n,1},\ldots,d_{n,j_n}},l_n}\\
+       \judgeTa{C}{r}{\key{tagval}\;\tup{i,v_1,\ldots,v_m}}\quad
+       (i + 1)=k\in\set{1,\ldots,n}\quad m=j_k\\
+       \judgea{((C + d_{k,1}(v_1)) + \ldots + d_{k,j_k}(v_m))}{l_k}{M'}\\
+       }
+      {\judgea{C}{\key{TestTagCompact}\;r\;b}{M'}}
+\end{irulegather*}
+\begin{irulegather*}
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestCon}\;r\;b\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{
+       b=\tup{\tup{r_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{r_n,\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}\\
+       \judgeTa{C}{r}{\key{conval}\;\tup{a,v_1,\ldots,v_m}}\quad
+       \judgeTa{C}{r_1}{a_1}\quad\ldots\quad\judgeTa{C}{r_n}{a_n}\\
+       \exists a'\in\set{a_1,\ldots,a_n}:
+       M(a')\in\var{transient}\quad
+       \judgea{C}{\key{await}\;a'\;l_{\text{self}}}{M'}}
+      {\judgea{C}{\key{TestCon}\;r\;b\;l}{M'}}
+\\
+\irule{
+       b=\tup{\tup{r_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{r_n,\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}\\
+       \judgeTa{C}{r}{\key{conval}\;\tup{a,v_1,\ldots,v_m}}\quad
+       \judgeTa{C}{r_1}{a_1}\quad\ldots\quad\judgeTa{C}{r_n}{a_n}\\
+       \forall a'\in\set{a_1,\ldots,a_n}:
+       M(a')\in\var{con}\\
+       a=a_k\in\set{a_1,\ldots,a_n}\quad m=j_k\quad
+       \judgea{((C + d_{k,1}(v_1)) + \ldots + d_{k,j_k}(v_m))}{l_k}{M'}}
+      {\judgea{C}{\key{TestCon}\;r\;b\;l}{M'}}
+\\
+\irule{
+       b=\tup{\tup{r_1,\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{r_n,\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}\\
+       \judgeTa{C}{r}{\key{conval}\;\tup{a,v_1,\ldots,v_m}}\quad
+       \judgeTa{C}{r_1}{a_1}\quad\ldots\quad\judgeTa{C}{r_n}{a_n}\\
+       \forall a'\in\set{a_1,\ldots,a_n}:
+       M(a')\in\var{con}\\
+       a\notin\set{a_1,\ldots,a_n}\quad
+       \judgea{C}{l}{M'}\\
+      }
+      {\judgea{C}{\key{TestCon}\;r\;b\;l}{M'}}
+\end{irulegather*}
+\begin{irulegather*}
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{TestVec}\;r\;b\;l}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{
+       b=\tup{\tup{\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}\\
+       \judgeTa{C}{r}{\key{vector}\;\tup{v_1,\ldots,v_m}}\quad
+       (m + 1)=k\in\set{1,\ldots,n}\quad m=j_k\\
+       \judgea{((C + d_{k,1}(v_1)) + \ldots + d_{k,j_k}(v_m))}{l_k}{M'}\\
+      }
+      {\judgea{C}{\key{TestVec}\;r\;b\;l}{M'}}
+\\
+\irule{ b=\tup{\tup{\tup{d_{1,1},\ldots,d_{1,j_1}},l_1},\ldots,\tup{\tup{d_{n,1},\ldots,d_{n,j_n}},l_n}}\\
+       \judgeTa{C}{r}{\key{vector}\;\tup{v_1,\ldots,v_m}}\quad
+       (m+1)\notin\set{1,\ldots,n}\quad
+       \judgea{C}{l}{M'}\\
+      }
+      {\judgea{C}{\key{TestVec}\;r\;b\;l}{M'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Exceptions}
+Exception handling is specified by means of a pseudo instruction
+$\key{raise}$.
+\begin{irulegather*}
+\irule{\judge{\tup{R,M,\tup{L,G,N,\tup{\tup{d,l',S},H},S'}}}{l}}
+      {\judge{\tup{R,M,\tup{L,G,N,H,S'}}}
+      {\key{Try}\;l\;\tup{d,\tup{x_1,\ldots,x_n},l'}}}
+\\
+\irule{\judge{\tup{R,M,\tup{L,G,N,H,S'}}}{l}}
+      {\judge{\tup{R,M,\tup{L,G,N,\tup{\tup{d,l'},H},S'}}}{\key{EndTry}\;l}}
+\\
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{Raise}\;r}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{\judgeTa{C}{r}{v}\quad
+       \judgea{C}{\key{raise}\;v}{M'}}
+      {\judgea{C}{\key{Raise}\;r}{M'}}
+\\
+\irule{\judgea{\tup{R,M,S'}}{\key{raise}\;v}{M'}}
+      {\judgea{\tup{R,M,\tup{L,G,N,\tup{},S'}}}{\key{raise}\;v}{M'}}
+\\
+\irule{\judgea{\tup{R,M,\tup{L + d(v),G,N,H,S}}}{l}{M'}}
+      {\judgea{\tup{R,M,
+               \tup{L,G,N,\tup{\tup{d,l,S},H},S'}}}{\key{Raise}\;v}{M'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Function Application}
+
+\begin{irulegather*}
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{Apply}\;r\;\tup{r_1,\ldots,r_j}\;
+                   \tup{\tup{d_1,\ldots,d_n},l'}}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1,\ldots,d_n}
+            \;l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\quad
+       L'=((\set{}+d_1(v_1))+ \ldots + d_n(v_n))\\
+       G'= \set{\tup{0,v'_1},\ldots,\tup{m-1,v'_m}}\quad
+       \judgea{\tup{R,M,\tup{L',G',
+          \tup{\tup{d'_1,\ldots,d'_k},l'},H,C}}}{l}{M'}
+       }
+       {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{Apply}\;r\;\tup{r_1,\ldots,r_n}\;
+        \tup{\tup{d'_1,\ldots,d'_k},l'}}{M'}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1,\ldots,d_n}\;
+            l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad
+       \judgea{C}{\fun{CCC}(n,\tup{v_1})}{a}\\
+       \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{Apply}\;r\;\tup{r_1}\;\tup{\tup{d'_1,\ldots,d'_k},l'}}{M'}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1,\ldots,d_n}\;
+            l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad
+       \judgea{C}{\fun{CCC}(n,\tup{v_1})}{\tup{v''_1,\ldots,v''_n}}\\
+       L'=((\set{}+d_1(v''_1))+ \ldots + d_n(v''_n))\\
+       G'= \set{\tup{0,v'_1},\ldots,\tup{m-1,v'_m}}\quad
+       \judgea{\tup{R,M,\tup{L',G',
+          \tup{\tup{d'_1,\ldots,d'_k},l'},H,C}}}{l}{M'}
+      }
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{Apply}\;r\;\tup{r_1}\;\tup{\tup{d'_1,\ldots,d'_k},l'}}{M'}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1}\;
+            l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad\ldots\quad\judgea{C}{r_n}{v_n}\quad
+       \judgea{C}{\fun{CCC}(1,\tup{v_1,\ldots,v_n})}{\tup{v''_1}}\\
+       L'=(\set{}+d_1(v''_1))\\
+       G'= \set{\tup{0,v'_1},\ldots,\tup{m-1,v'_m}}\quad
+       \judgea{\tup{R,M,\tup{L',G',
+          \tup{\tup{d'_1,\ldots,d'_k},l'},H,C}}}{l}{M'}
+      }
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{Apply}\;r\;\tup{r_1,\ldots,r_n}\;\tup{\tup{d'_1,\ldots,d'_k},l'}}{M'}}
+\end{irulegather*}
+\begin{irulegather*}
+\irulec{\judgeTa{C}{r}{a}\quad
+        \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+       {\judgea{C}{\key{ApplyTail}\;r\;\tup{r_1,\ldots,r_n}}{M'}}
+       {M(a)\in\var{transient}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1,\ldots,d_n}\;l\;
+            \tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad\ldots\quad
+       \judgea{C}{r_n}{v_n}\\
+       L'=((\set{}+d_1(v_1))+ \ldots + d_n(v_n))\\
+       G'= \set{\tup{0,v'_1},\ldots,\tup{m-1,v'_m}}\quad
+       \judgea{\tup{R,M,\tup{L',G',N,H,S'}}}{l}{M'}
+      }
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}{\key{ApplyTail}\;r\;\tup{r_1,\ldots,r_n}}{M'}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1,\ldots,d_n}\;
+            l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad
+       \judgea{C}{\fun{CCC}(n,\tup{v_1})}{a}\\
+       \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{ApplyTail}\;r\;\tup{r_1}}{M'}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1,\ldots,d_n}\;
+            l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad
+       \judgea{C}{\fun{CCC}(n,\tup{v_1})}{\tup{v''_1,\ldots,v''_n}}\\
+       L'=((\set{}+d_1(v''_1))+ \ldots + d_n(v''_n))\\
+       G'= \set{\tup{0,v'_1},\ldots,\tup{m-1,v'_m}}\quad
+       \judgea{\tup{R,M,\tup{L',G',N,H,S'}}}{l}{M'}
+      }
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{ApplyTail}\;r\;\tup{r_1}}{M'}}
+\\
+\irule{\judgeTa{C}{r}{\key{closure}\;
+       \tup{\key{Template}\;m\;\tup{d_1}\;
+            l\;\tup{t_1,\ldots,t_j}, v'_1,\ldots,v'_m}}\\
+       \judgea{C}{r_1}{v_1}\quad\ldots\quad\judgea{C}{r_n}{v_n}\quad
+       \judgea{C}{\fun{CCC}(1,\tup{v_1,\ldots,v_n})}{\tup{v''_1}}\\
+       L'=(\set{}+d_1(v''_1))\\
+       G'= \set{\tup{0,v'_1},\ldots,\tup{m-1,v'_m}}\quad
+       \judgea{\tup{R,M,\tup{L',G',N,H,S'}}}{l}{M'}
+      }
+      {\judgea{C=\tup{R,M,\tup{L,G,N,H,S'}}}
+       {\key{ApplyTail}\;r\;\tup{r_1,\ldots,r_n}\;}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_{1}}\quad\ldots\quad\judgea{C}{r_n}{v_n}\\
+       \judgea{\tup{((L'+d_1(v_1))+\ldots+d_n(v_n)),G',H',C'}}{l}{M'}}
+      {\judgea{C=\tup{L,G,
+                   \tup{\tup{d_1,\ldots,d_n},l},
+                   \tup{L',G',H',C'}}}{\key{Return}\;\tup{r_1,\ldots,r_n}}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_{1}}\quad
+       \judgea{C}{CCC(n,\tup{v_1})}{a}\\
+       \judgea{C}{\key{await}\;a\;l_{\text{self}}}{M'}}
+      {\judgea{C=\tup{L,G,
+                   \tup{\tup{d_1,\ldots,d_n},l},
+                   \tup{L',G',H',C'}}}{\key{Return}\;\tup{r_1}}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_{1}}\quad
+       \judgea{C}{CCC(n,\tup{v_1})}{\tup{v'_1,\ldots,v'_n}}\\
+       \judgea{\tup{((L'+d_1(v'_1))+\ldots+d_n(v'_n)),G',H',C'}}{l}{M'}}
+      {\judgea{C=\tup{L,G,
+                   \tup{\tup{d_1,\ldots,d_n},l},
+                   \tup{L',G',H',C'}}}{\key{Return}\;\tup{r_1}}{M'}}
+\\
+\irule{\judgea{C}{r_1}{v_{1}}\quad\ldots\quad\judgea{C}{r_n}{v_n}\\
+       \judgea{C}{CCC(1,\tup{v_1,\ldots,v_k})}{\tup{v'_1}}\\
+       \judgea{\tup{((L'+d_1(v'_1)),G',H',C'}}{l}{M'}}
+      {\judgea{C=\tup{L,G,
+                   \tup{\tup{d_1},l},
+                   \tup{L',G',H',C'}}}{\key{Return}\;\tup{r_1,\ldots,r_n}}{M'}}
+\end{irulegather*}
+
+%-----------------------------------------------------------------------
+\subsection{Rules: Annotations}
+
+The annotations do not have any computational effect. They are only used
+for supporting runtime compilation.
+
+\begin{irulegather*}
+\irule{\judgea{C}{l}{M'}}
+      {\judgea{C}{\key{Kill}\;\{x_1,\ldots,x_n\}\;l}{M'}}
+\\
+\irule{\judgea{C}{l}{M'}}
+      {\judgea{C}{\key{Join}\;k\;l}{M'}}
+\end{irulegather*}
+
+
+% Try/EndTry Rules
+% ((let
+%   val x = 7
+% in
+%   f x
+% end) handle _ => ();
+% g ())
+
+% wird zu
+
+%                  Try
+% Apply(Last x) /   |         
+% EndTry            | E2 (Alternative [killed/x])
+%    +------------ Shared
+%      E1          Apply
+
+% mit E1 ungleich E2 (E1(x)=killed und E2(x)=unallocated)
+
+% Damit die Shared-Invariante gilt, daß E1 und E2 stets gleich, muss
+% explizites Kill in die Try-Instruktion. Dieses Kill würde dann auch
+% bereits gekillte Variablen erneut killen.
+
+
+\bibliographystyle{abbrv}
+\bibliography{../literature}
+\pagebreak
+\ \\
+\pagebreak
+\end{document}

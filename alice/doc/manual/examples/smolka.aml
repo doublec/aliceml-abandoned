@@ -1,0 +1,132 @@
+open Future
+open Promise
+
+
+(* Lazy Stream of Natural Numbers *)
+
+fun gen n = lazy n::gen(n+1)
+
+val stream : int list = gen 0
+
+
+(* next : 'a list promise * 'a -> 'a list promise  *)
+
+fun next (p : 'a list promise, x : 'a) : 'a list promise =
+    let
+        val p' = promise ()
+    in
+        fulfill (p, x::future p'); 
+        p'
+    end
+
+
+(* run :  ('a * 'b promise -> unit) -> 'a -> 'b  *)
+
+fun run (f : 'a * 'b promise -> unit) (x : 'a) : 'b =
+    let
+        val p = promise ()
+    in
+        spawn f (x,p); 
+        future p
+    end
+
+
+(* plus : int list * int list -> int list  *)
+
+fun plus a = run plus' a
+
+and plus' ((x::xr, y::yr), p) = plus' ((xr,yr), next (p,x+y))
+  | plus' (      _       , p) = fulfill (p,nil)
+
+
+(* merge : 'a list * 'a list -> 'a list *)
+
+fun merge a = run merge' a
+
+and merge' ((xs,ys), p) =
+    case awaitEither (xs,ys) of
+        FST _ => merge'' (xs,ys,p)
+      | SND _ => merge'' (ys,xs,p)
+
+and merge'' (x::xr, ys, p) = merge' ((ys,xr), next (p,x))
+  | merge'' (nil  , ys, p) = fulfill (p,ys)
+
+
+(* Time out, variant 1 *)
+
+fun timeout (x : 'a, t : Time.time) : 'a option =
+    case awaitEither (x, alarm t) of
+        FST _ => SOME x
+      | SND _ => NONE
+
+
+(* Time out, variant 2 *)
+
+fun timeout (x : 'a, t : Time.time) : 'a option =
+    let
+        val p = promise ()
+    in
+        spawn (await (alarm t); fulfill (p, NONE)); 
+        spawn (await x; fulfill (p, SOME x)); 
+        await (future p)
+    end
+
+
+(* Mailbox *)
+
+fun mailbox () : ('a -> unit) * 'a list =
+    let
+        val p = promise ()
+        val r = ref p
+        fun put x =
+            let
+                val p' = promise ()
+            in
+                fulfill (Ref.exchange (r,p'), x::future p')
+            end
+    in
+        (put, future p)
+    end
+
+
+(* Stream Merge *)
+
+fun merge (xs : 'a list, ys : 'a list) : 'a list =
+    let
+        val (put, zs) = mailbox ()
+
+        fun feed nil     = ()
+          | feed (u::ur) = (put u ; feed ur)
+    in
+        spawn feed xs; 
+        spawn feed ys; 
+        zs
+    end
+
+
+(* Dispenser *)
+
+fun dispenser (xs : 'a list) : unit -> 'a =
+    let
+        val r = ref xs
+    in
+        fn () =>
+	let
+            val p = promise ()
+        in
+            case Ref.exchange (r, future p) of
+                y::yr => (fulfill (p,yr); y)
+              | nil   => raise Empty
+        end
+    end
+
+
+(* Channels *)
+
+fun channel () : ('a -> unit) * (unit -> 'a) =
+    let
+        val (put, xs) = mailbox ()
+        val get       = dispenser xs
+    in
+        (put, get)
+    end

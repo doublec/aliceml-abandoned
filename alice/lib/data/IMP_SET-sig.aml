@@ -1,0 +1,62 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature IMP_SET =
+sig
+    type item
+    eqtype set
+    type t = set
+
+    exception Unknown of item
+    exception Collision of item
+
+    val set :		unit -> set
+    val clone :		set -> set
+    val fromList :	item list -> set		(* Collision *)
+    val fromVector :	item vector -> set		(* Collision *)
+    val toList :	set -> item list
+    val toVector :	set -> item vector
+
+    val insert :	set * item -> unit
+    val insertDisjoint:	set * item -> unit		(* Collision *)
+    val insertWith :	(item -> unit) -> set * item -> unit
+
+    val remove :	set * item -> unit
+    val removeExistent:	set * item -> unit		(* Unknown *)
+    val removeWith :	(item -> unit) -> set * item -> unit
+    val removeAll :	set -> unit
+
+    val union :		set * set  -> unit
+    val unionDisjoint :	set * set  -> unit		(* Collision *)
+    val unionWith :	(item -> unit) -> set * set -> unit
+
+    val intersect :	set * set -> unit
+    val difference :	set * set -> unit
+
+    val size :		set -> int
+    val isEmpty :	set -> bool
+
+    val member :	set * item -> bool
+    val choose :	set -> item option
+
+    val equal :		set * set -> bool
+    val subset :	set * set -> bool
+    val disjoint :	set * set -> bool
+    val compare :	set * set -> order
+
+    val app :		(item -> unit) -> set -> unit
+    val fold :		(item * 'a -> 'a) -> 'a -> set -> 'a
+    val all :		(item -> bool) -> set -> bool
+    val exists :	(item -> bool) -> set -> bool
+    val find :		(item -> bool) -> set -> item option
+    val filter :	(item -> bool) -> set -> unit
+end

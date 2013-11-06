@@ -1,0 +1,182 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Promise structure", "The <TT>Promise</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature PROMISE
+    structure Promise : PROMISE
+  </PRE>
+
+  <P>
+    The <TT>Promise</TT> structure provides operations to create and
+    eliminate futures through explicit handles, so-called <EM>promises</EM>.
+    The polymorphic function</P>
+    <PRE>
+      promise ()</PRE>
+    <P>creates a new promise <TT><I>p</I></TT> and an associated future.
+    The future can then be extracted with the function</P>
+    <PRE>
+      future <I>p</I></PRE>
+    <P>The future is eliminated by applying <TT>fulfill (<I>p</I>,
+    <I>v</I>)</TT>, which globally replaces it with the value <TT><I>v</I></TT>.
+    That value may again be a future. A promise may not be fulfilled more
+    than once.
+  </P>
+
+  <P class=note><EM>Note:</EM> 
+    Promises may be thought of as single-assignment references that
+    allow dereferencing prior to assignment, yielding a future. The
+    operations <TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT>
+    correspond to <TT>ref</TT>, <TT>!</TT> and <TT>:=</TT>, respectively.
+  </P>
+
+  <P>
+    See the end of the page for some <A href="#examples">examples</A>
+    of programming with promises.
+  </P>
+
+  <P>See also:
+    <A href="future.html"><TT>Future</TT></A>,
+    <A href="ref.html"><TT>Ref</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature PROMISE =
+    sig
+	type 'a promise
+	type 'a t = 'a promise
+
+	exception Promise
+
+	val promise :     unit -> 'a promise
+	val future :      'a promise -> 'a
+
+	val fulfill :     'a promise * 'a -> unit
+	val fail :        'a promise * exn -> unit
+
+	val isFulfilled : 'a promise * 'a -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type 'a promise</TT> <BR>
+      <TT>type t = promise</TT>
+    </DT>
+    <DD>
+      <P>The type of promises of values of type <TT>'a</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Promise</TT>
+    </DT>
+    <DD>
+      <P>Raised on multiple attempts to fulfill the same promise.</P>
+    </DD>
+
+    <DT>
+      <TT>promise ()</TT>
+    </DT>
+    <DD>
+      <P>Creates a new promise and an associated future. Returns the
+      promise.</P>
+    </DD>
+
+    <DT>
+      <TT>future <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the future associated with <TT><I>p</I></TT>. If
+      <TT><I>p</I></TT> has already been fulfilled with value <TT><I>v</I></TT>,
+      that value is returned.</P>
+    </DD>
+
+    <DT>
+      <TT>fulfill (<I>p</I>, <I>v</I>)</TT>
+    </DT>
+    <DD>
+      <P>Replaces the future associated with <TT><I>p</I></TT> with the value
+      <TT><I>v</I></TT>. If <TT><I>v</I></TT> is the future itself,
+      the exception <TT>Future.Cyclic</TT> is raised instead.
+      If <TT><I>p</I></TT> has already been fulfilled or failed, the exception
+      <TT>Promise</TT> is raised.</P>
+    </DD>
+
+    <DT>
+      <TT>fail (<I>p</I>, <I>ex</I>)</TT>
+    </DT>
+    <DD>
+      <P>Requests the exception <TT><I>ex</I></TT> and fails the
+      future associated with the promise <TT><I>p</I></TT> with <TT><I>ex</I></TT>.
+      If <TT><I>p</I></TT> has already been fulfilled or failed, the exception
+      <TT>Promise</TT> is raised. Equivalent to</P>
+      <PRE>
+        (Future.await <I>ex</I>; fulfill (<I>p</I>, spawn raise <I>ex</I>))</PRE>
+    </DD>
+
+    <DT>
+      <TT>isFulfilled <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>p</I></TT> has already been fulfilled
+      or failed, <TT>false</TT> otherwise. Note that a result of <TT>true</TT>
+      does not necessarily imply that <TT>future <I>p</I></TT> is determined,
+      since <TT><I>p</I></TT> may have been fulfilled with another future.</P>
+    </DD>
+  </DL>
+
+<?php section("examples", "examples") ?>
+
+  <P>
+    Promises can be utilized to write a tail-recursive version of append:
+  </P>
+
+  <PRE>
+    fun append (l1, l2)       = let val p = promise() in append'(l1, l2, p); future p end
+    and append'( [],   l2, p) = fulfill(p, l2)
+      | append'(x::l1, l2, p) = let val p' = promise() in fulfill(p, x::future p'); append'(l1, l2, p') end</PRE>
+
+  <P>
+    Channels can be implemented easily using promises and references:
+  </P>
+
+  <PRE>
+    type 'a chan = 'a list promise ref * 'a list ref
+
+    fun chan () =
+	let
+	    val p = promise ()
+	in
+	    (ref p, ref (future p))
+	end
+
+    fun put ((putr, getr), x) =
+        let
+            val p = promise ()
+        in
+            fulfill (Ref.exchange (putr, p), x :: future p)
+        end
+
+    fun get (putr, getr) =
+	let
+            val p  = promise ()
+	    val xs = Ref.exchange (getr, future p)
+        in
+            fulfill (p, tl xs); hd xs
+        end
+
+    fun close (putr, getr) = fulfill (!putr, nil)
+  </PRE>
+
+<?php footing() ?>

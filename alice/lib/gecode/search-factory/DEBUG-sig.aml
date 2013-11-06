@@ -1,0 +1,44 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature DEBUG =
+sig
+
+  type db_mask = Word31.t
+
+  infix &&
+  infix ||
+  val && : db_mask * db_mask -> db_mask
+  val || : db_mask * db_mask -> db_mask
+
+  val newDB : unit -> db_mask
+
+  val dbExc    : db_mask
+  val dbRecomp : db_mask
+  val dbClone  : db_mask
+  val dbBaB    : db_mask
+  val dbSearch : db_mask
+  val dbSlow   : db_mask
+
+  val dbZero   : db_mask
+  val dbNone   : db_mask
+  val dbAll    : db_mask
+
+  val localPrint : (string -> unit) ref
+
+  val dbPrint  : db_mask * db_mask * string -> unit
+
+end

@@ -1,0 +1,18 @@
+(*
+ * Interpreter for F - Environments
+ *
+ * 2000/02/02 Andreas Rossberg
+ *)
+
+signature ENV =
+sig
+    type id = string
+    type 'a env
+
+    exception Unbound of id
+
+    val empty :  'a env
+    val insert : id * 'a * 'a env -> 'a env
+    val lookup : id * 'a env -> 'a		(* [Unbound] *)
+    val ++ :     'a env * 'a env -> 'a env
+end

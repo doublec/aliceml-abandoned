@@ -1,0 +1,86 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive              from "Pervasive"
+import __primitive
+       type char and string and int
+       datatype bool and order and option from "ToplevelTypes"
+import __primitive infix 4 = <= infix 6 +
+       val op = and op +                  from "ToplevelValues"
+import __primitive signature BOOL         from "BOOL-sig"
+
+structure Bool : BOOL =
+struct
+    datatype bool		= datatype bool
+    type     t			= bool					(**)
+
+    val equal			= op =					(**)
+
+    fun compare(false,true)	= LESS					(**)
+      | compare(true,false)	= GREATER
+      | compare _		= EQUAL
+
+    fun not true		= false
+      | not false		= true
+
+    fun toString true		= "true"
+      | toString false		= "false"
+
+    __primitive val <= : char * char -> bool = "Char.<="
+    __primitive val ord : char -> int = "Char.ord"
+    __primitive val chr : int -> char = "Char.chr"
+    __primitive val size : string -> int = "CharVector.length"
+    __primitive val sub' : string * int -> char = "Unsafe.String.sub"
+
+    fun isSpace c	= (#"\t" <= c andalso c <= #"\r") orelse c <= #" "
+    fun isUpper c	= #"A" <= c andalso c <= #"Z"
+    fun toLower c	= if isUpper c then chr(ord c + 32) else c
+
+    fun dropl p f src	= case f src
+ 			    of NONE => src
+			     | SOME (c, src') =>
+			       if p c then dropl p f src' else src
+    fun skipWS f s	= dropl isSpace f s
+
+    fun scanString f s	= case f (reader s) 0
+			    of NONE => NONE
+			     | SOME (a, _) => SOME a
+    and reader s i	= if i = size s then NONE
+			  else SOME (sub'(s, i), i+1)
+
+    fun scanTextual (s,i) getc src =
+	if i = size s then SOME src else
+	case getc src
+	  of SOME(c, src') =>
+	     if toLower c = sub'(s, i)
+	     then scanTextual (s, i+1) getc src'
+	     else NONE
+	   | NONE => NONE
+
+    fun scan getc src =
+	let
+	    val src1 = skipWS getc src
+	in
+	    case scanTextual ("true", 0) getc src1
+	      of SOME src2 => SOME(true, src2)
+	       | NONE =>
+	    case scanTextual ("false", 0) getc src1
+	      of SOME src2 => SOME(false, src2)
+	       | NONE => NONE
+	end
+
+    val fromString = scanString scan
+end

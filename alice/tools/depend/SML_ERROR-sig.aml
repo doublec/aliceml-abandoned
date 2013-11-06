@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature ERROR =
+sig
+    type pos	= int * int
+    type region	= pos * pos
+
+    datatype error =
+	  UnclosedComment
+	| InvalidString
+	| EscapeCharTooLarge	of bool
+	| InvalidChar		of char
+	| SyntaxError		of string
+
+    exception Error of region * string
+
+    val error :	region * error -> 'a
+end

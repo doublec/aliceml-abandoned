@@ -1,0 +1,31 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url              from "Url"
+import signature RESOLVER_HANDLER from "RESOLVER_HANDLER-sig"
+
+signature RESOLVER =
+    sig
+	structure Handler: RESOLVER_HANDLER
+
+	type resolver
+	type t = resolver
+
+	datatype result =
+	    FILE of string
+	  | STRING of string
+	  | DELEGATE of Url.t
+
+	val resolver: {name: string, handlers: Handler.t list,
+		       memoize: bool} -> resolver
+	val localize: resolver -> Url.t -> result option
+    end

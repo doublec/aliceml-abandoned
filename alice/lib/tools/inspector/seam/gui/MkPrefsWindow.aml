@@ -1,0 +1,331 @@
+import structure Gtk      from "x-alice:/lib/gtk/Gtk"
+import structure Prefs    from "../Prefs"
+import structure Common   from "../Common"
+import signature HANDLERS from "../HANDLERS-sig"
+
+functor MkPrefsWindow (Handlers:HANDLERS) :> () =
+struct
+  (********************************************************
+   *         Creates a new 'preferences' window.          *
+   ********************************************************)
+
+local
+
+  (*************** Preference window. ***********************)
+  structure MainWin = Handlers.MainWindow
+  val _ = Gtk.Widget.setSensitive(MainWin.menuItemPreferences, false)
+  val prefs = Prefs.getCurrentPrefs ()
+    
+  val dialog = Gtk.Dialog.new ()
+  val _ = Gtk.Window.setTitle (dialog, "Inspector Preferences")
+  (* WithButtons ("Inspector Preferences",
+                                         MainWin.window,
+                                         Gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         "    Done    ",
+                                         Gtk.INT 0)
+  *)
+  val _ = Gtk.Dialog.addButton (dialog, "    Apply    ", 1)
+  val _ = Gtk.Dialog.addButton (dialog, "    Save    ", 2)
+  val _ = Gtk.Dialog.addButton (dialog, "    Done    ", 0)
+  val _ = Gtk.Dialog.addButton (dialog, "    Cancel    ", ~1)
+    
+  val vbox = Gtk.Dialog.getFieldVBox dialog
+  val label1 = Gtk.Label.new ""
+  val text1  =
+    "      <span size=\"large\" foreground=\"blue\">" ^
+    "Inspector Preferences</span>      "
+    
+  val notebook = Gtk.Notebook.new ()
+
+  fun hAlign widgets = 
+      let val group = Gtk.SizeGroup.new (Gtk.SizeGroupMode.HORIZONTAL)
+      in
+	List.app (fn w => Gtk.SizeGroup.addWidget (group, w)) widgets
+      end
+
+  (*********** First PAGE of the notebook . ****************)
+  local
+    val vbox = Gtk.VBox.new (false, 15)      
+    val traversal = Gtk.Frame.new "Traversal"
+    val identif   = Gtk.Frame.new "Identifiers"
+    val vbox2 = Gtk.VBox.new (false, 5)
+    val vbox3 = Gtk.VBox.new (false, 5)
+    val hbox1 = Gtk.HBox.new (false, 10)
+    val hbox2 = Gtk.HBox.new (false, 10)
+    val label1 = Gtk.Label.new "Initial max width"
+    val label2 = Gtk.Label.new "Initial max depth"
+    val widthLimit = real (#widthLimit prefs)
+    val depthLimit = real (#depthLimit prefs)
+    val spinner1 = Gtk.SpinButton.newWithRange (1.0, 500.0, 1.0) ;
+    val spinner2 = Gtk.SpinButton.newWithRange (1.0, 500.0, 1.0) ;
+
+    val label3 = Gtk.Label.new "Incremental width"
+    val label4 = Gtk.Label.new "Incremental depth"
+    val incrWidth = real (#incrWidth prefs)
+    val incrDepth = real (#incrDepth prefs)
+    val spinner3 = Gtk.SpinButton.newWithRange (1.0, 500.0, 1.0) ;
+    val spinner4 = Gtk.SpinButton.newWithRange (1.0, 500.0, 1.0) ;
+    val check1 = Gtk.CheckButton.newWithLabel
+                            "Show indices for futures and references"
+
+    val _ =
+      (hAlign [label1, label2, label3, label4] ;
+       hAlign [spinner1, spinner2, spinner3, spinner4] ;
+       Gtk.SpinButton.setValue (spinner1, widthLimit) ;
+       Gtk.SpinButton.setValue (spinner2, depthLimit) ;
+       Gtk.SpinButton.setValue (spinner3, incrWidth) ;
+       Gtk.SpinButton.setValue (spinner4, incrDepth) ;
+       Gtk.Container.setBorderWidth (vbox, 10); 
+       Gtk.Container.setBorderWidth (vbox2, 10); 
+       Gtk.Container.setBorderWidth (vbox3, 10); 
+       Gtk.Frame.setShadowType (traversal, Gtk.ShadowType.OUT);
+       Gtk.Box.packStart (vbox, traversal, false, false, 0) ;
+       Gtk.Container.add (traversal, vbox2) ;
+       Gtk.Frame.setShadowType (identif, Gtk.ShadowType.OUT);
+       Gtk.Box.packStart (vbox, identif, false, false, 0) ;
+       Gtk.Container.add (identif, vbox3) ;
+       Gtk.Container.add (vbox2, hbox1) ;
+       Gtk.Container.add (vbox2, hbox2) ;
+       Gtk.Container.add (vbox3, check1) ;
+       if #identifiers prefs then Gtk.ToggleButton.setActive (check1, true)
+       else Gtk.ToggleButton.setActive (check1, false) ;
+       Gtk.Box.packStart (hbox1, label1, false, false, 5) ;
+       Gtk.Box.packStart (hbox2, label2, false, false, 5) ;
+       Gtk.Box.packStart (hbox1, spinner1, false, false, 5) ;
+       Gtk.Box.packStart (hbox2, spinner2, false, false, 5) ;
+       Gtk.Box.packStart (hbox1, label3, false, false, 5) ;
+       Gtk.Box.packStart (hbox2, label4, false, false, 5) ;
+       Gtk.Box.packStart (hbox1, spinner3, false, false, 5) ;
+       Gtk.Box.packStart (hbox2, spinner4, false, false, 5) ;
+       ())
+  in
+    
+    fun read1 (prefs:Prefs.prefs) = 
+      {prefs where widthLimit = Gtk.SpinButton.getValueAsInt spinner1 ,
+                   depthLimit = Gtk.SpinButton.getValueAsInt spinner2 ,
+		   incrWidth  = Gtk.SpinButton.getValueAsInt spinner3 ,
+                   incrDepth  = Gtk.SpinButton.getValueAsInt spinner4 ,
+                   identifiers = Gtk.ToggleButton.getActive check1}
+      
+    val page1 = vbox
+
+  end
+
+  (*********** Second PAGE of the notebook. ****************)
+  local
+    val vbox = Gtk.VBox.new (false, 15)
+    val fontname = ref (#fontname prefs)
+    val styles   = #styles prefs
+    val fontframe = Gtk.Frame.new "Fonts"
+    val fontvbox  = Gtk.VBox.new (false, 10)
+    val fonthbox  = Gtk.HBox.new (false, 10)
+    val column1 = Gtk.SizeGroup.new (Gtk.SizeGroupMode.HORIZONTAL)
+    val column2 = Gtk.SizeGroup.new (Gtk.SizeGroupMode.HORIZONTAL)
+    val column3 = Gtk.SizeGroup.new (Gtk.SizeGroupMode.HORIZONTAL)
+
+    fun createFontChooser (fontref, fonthbox, isDefault) =
+	let
+	  val fontlabel2 = Gtk.Label.new ""
+	  val fontbutton = Gtk.Button.new ()
+	  val fontbuttonBox = Gtk.VButtonBox.new ()
+      
+	  fun setFont () =
+	      let
+		val markup =
+		    "<span font_desc=\"" ^ (!fontref) ^ "\">"
+		    ^ Prefs.sampleText ^ "</span>"
+	      in
+		Gtk.Button.setLabel (fontbutton, !fontref) ;
+		Gtk.Label.setMarkup (fontlabel2, markup)
+	      end
+		
+	  fun fontButtonClicked _ =
+	      let
+		val fontdialog = Gtk.FontSelectionDialog.new "Pick a font"
+		val _ = Gtk.FontSelectionDialog.setFontName (fontdialog,
+							    !fontref)
+		val _ = Gtk.Widget.show fontdialog
+		val result = Gtk.ResponseType.fromInt (Gtk.Dialog.run fontdialog)
+	      in
+		(case result of
+		   (Gtk.ResponseType.APPLY | Gtk.ResponseType.OK | Gtk.ResponseType.YES) =>
+		   (fontref := Gtk.FontSelectionDialog.getFontName fontdialog ;
+		    setFont ())
+		 | _ => ()) ;
+		
+		Gtk.Widget.destroy fontdialog
+	      end
+	in
+	  setFont () ;
+	  Gtk.Box.packStart (fonthbox, fontbuttonBox, false, false, 5) ;
+	  Gtk.Box.packStart (fonthbox, fontlabel2, false, false, 5) ;
+	  Gtk.signalConnect (fontbutton, "clicked", fontButtonClicked);
+	  Gtk.Container.add (fontbuttonBox, fontbutton) ;
+	  if isDefault then () 
+	  else (Gtk.SizeGroup.addWidget (column2, fontbutton) ;
+		Gtk.SizeGroup.addWidget (column3, fontlabel2)) ;
+	  fontbutton
+	end
+    
+    fun addEditable ({name, font, usefont, ...} : Prefs.style) =
+	let
+	  val hbox  = Gtk.HBox.new (false, 10)
+	  val checkLabel = "Use customized font for a " ^ name ^ " : "
+	  val check = Gtk.CheckButton.newWithLabel checkLabel
+	  val _ = Gtk.Box.packStart (hbox, check, false, false, 5)
+		  
+	  val fontButton = createFontChooser (font, hbox, false)
+			   
+	  fun checkClicked _ = 
+	      if Gtk.ToggleButton.getActive check
+	      then (Gtk.Widget.setSensitive (fontButton, true) ;
+		    usefont := true)
+	      else (Gtk.Widget.setSensitive (fontButton, false) ;
+		    usefont := false)
+	in
+	  if !usefont
+	  then (Gtk.Widget.setSensitive (fontButton, true) ;
+		Gtk.ToggleButton.setActive (check, true))
+	  else (Gtk.Widget.setSensitive (fontButton, false) ;
+		Gtk.ToggleButton.setActive (check, false)) ;
+	  Gtk.Container.add (fontvbox, hbox) ;
+	  Gtk.signalConnect (check, "toggled", checkClicked) ;
+	  Gtk.SizeGroup.addWidget (column1, check) ;
+	  ()
+	end
+
+    val fontlabel1 = Gtk.Label.new "Default font : "
+
+  val _ =
+    (Gtk.Container.setBorderWidth (vbox, 10); 
+     Gtk.Container.setBorderWidth (fonthbox, 10); 
+     Gtk.Frame.setShadowType (fontframe, Gtk.ShadowType.OUT);
+     Gtk.Box.packStart (vbox, fontframe, false, false, 0) ;
+     Gtk.Container.add (fontframe, fontvbox) ;
+     Gtk.Container.add (fontvbox, fonthbox) ;
+     Gtk.Box.packStart (fonthbox, fontlabel1, false, false, 5) ;
+     Gtk.Container.add (fontvbox, Gtk.HSeparator.new ()) ;
+     createFontChooser (fontname, fonthbox, true) ;
+     List.app addEditable styles)
+  in
+
+    fun read2 (prefs:Prefs.prefs) =
+      {prefs where fontname = !fontname}
+  
+    val page2 = vbox
+
+  end
+
+  (*********** Third PAGE of the notebook. ****************)
+  local
+    val vbox = Gtk.VBox.new (false, 15)      
+    val selection = Gtk.Frame.new "Selection"
+    val hbox1 = Gtk.HBox.new (false, 10)
+    val label1 = Gtk.Label.new "A click on a record label selects "
+    val vbox1 = Gtk.VBox.new (false, 5)
+    val therecord = "the record"
+    val thefield  = "the field"
+    val choice1 = Gtk.RadioButton.newWithLabel ([], thefield) 
+    val group   = Gtk.RadioButton.getGroup choice1
+    val choice2 = Gtk.RadioButton.newWithLabel (group, therecord)
+    val _ = case (#labelOrient prefs) of
+	      Prefs.Parent    => Gtk.ToggleButton.setActive (choice2, true)
+	    | Prefs.SonStrict => Gtk.ToggleButton.setActive (choice1, true)
+	    | Prefs.Son => assert false
+
+    val tooltips = Gtk.Frame.new "Tooltips"
+    val hbox2   = Gtk.HBox.new (false, 10)
+    val check1   = Gtk.CheckButton.newWithLabel "Activate tooltips"
+    val label2  = Gtk.Label.new "Tooltip delay (in ms) "
+    val unitms = real Prefs.mouseTickms
+    val spinner1 = Gtk.SpinButton.newWithRange (unitms, 100000.0, unitms) ;
+    val delay = real (Prefs.mouseTickms * (#tipDelay prefs))
+
+    fun checkClicked _ = if Gtk.ToggleButton.getActive check1
+                           then (Gtk.Widget.setSensitive (label2, true) ;
+                                 Gtk.Widget.setSensitive (spinner1, true))
+                         else (Gtk.Widget.setSensitive (label2, false) ;
+                               Gtk.Widget.setSensitive (spinner1, false))
+
+    val _ =
+      (Gtk.Container.setBorderWidth (vbox, 10); 
+       Gtk.Container.setBorderWidth (hbox1, 10); 
+       Gtk.Container.setBorderWidth (hbox2, 10); 
+       Gtk.Frame.setShadowType (selection, Gtk.ShadowType.OUT);
+       Gtk.Frame.setShadowType (tooltips, Gtk.ShadowType.OUT);
+       Gtk.Box.packStart (vbox, selection, false, false, 0) ;
+       Gtk.Container.add (selection, hbox1) ;
+       Gtk.Box.packStart (hbox1, label1, false, false, 5) ;
+       Gtk.Box.packStart (hbox1, vbox1, false, false, 5) ;
+       Gtk.Container.add (vbox1, choice1) ;
+       Gtk.Container.add (vbox1, choice2) ;
+       Gtk.Box.packStart (vbox, tooltips, false, false, 0) ;
+       Gtk.Container.add (tooltips, hbox2) ;
+       Gtk.Container.add (hbox2, check1) ; 
+       Gtk.Container.add (hbox2, label2) ; 
+       Gtk.Container.add (hbox2, spinner1) ; 
+       Gtk.SpinButton.setValue (spinner1, delay) ;
+       Gtk.ToggleButton.setActive (check1, #tooltips prefs) ;
+       checkClicked () ;
+       Gtk.signalConnect (check1, "toggled", checkClicked) ;
+       ())
+  in
+    
+    fun read3 (prefs:Prefs.prefs) = 
+	let
+	  val orient = if Gtk.ToggleButton.getActive choice1 
+		       then Prefs.SonStrict else Prefs.Parent
+          val tooltips = Gtk.ToggleButton.getActive check1
+          val delay = Gtk.SpinButton.getValueAsInt spinner1
+          val delay = delay div Prefs.mouseTickms
+	in
+	  {prefs where labelOrient = orient,
+                       tooltips    = tooltips,
+                       tipDelay    = delay}
+	end
+      
+    val page3 = vbox
+
+  end
+
+
+  (***************** Behaviour *******************)
+    
+  fun close () =
+    (Gtk.Widget.destroy dialog ;
+     Gtk.Widget.setSensitive(MainWin.menuItemPreferences, true))
+    
+  fun apply () = Handlers.applyPreferences (read3 (read2 (read1 prefs)))
+
+  fun response (_, args) =
+    case args of
+      Gtk.INT 0 :: _ => (apply () ; close ())
+    | Gtk.INT 1 :: _ => apply ()
+    | Gtk.INT 2 :: _ => (apply () ; Prefs.save ())
+    | Gtk.INT x :: _ => (assert (x<0) ; close ())
+    | _ => (Common.warning "MkPrefsWindow.newPrefWindow: GTK - assert false." ;
+            close ())
+        
+ val _ =
+   (Gtk.Label.setMarkup (label1, text1) ;
+    
+    Gtk.Box.packStart (vbox, label1, false, false, 10) ;
+    Gtk.Box.packStart (vbox, notebook, true, true, 10) ;
+    
+    Gtk.Notebook.appendPage (notebook, page1, Gtk.Label.new "Structure") ;
+    Gtk.Notebook.appendPage (notebook, page2, Gtk.Label.new "Appearance") ;
+    Gtk.Notebook.appendPage (notebook, page3, Gtk.Label.new "Behaviour") ;
+    
+    Gtk.Widget.showAll dialog ;
+    
+    Gtk.signalConnect (dialog, "response", response) ;
+    
+    ())
+
+in
+
+end
+
+
+end
+

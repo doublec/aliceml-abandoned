@@ -1,0 +1,12 @@
+Group is
+
+    ../lib/rtt/interface.cm
+    ../lib/system/sources.cm
+    ../lib/system/resolver.cm
+    ../lib/utility/sources.cm
+
+    UnsafeComponent.sml
+    COMPONENT_MANAGER-sig.sml
+    COMPONENT-sig.sml
+    Component.sml
+    ComponentManager.sml

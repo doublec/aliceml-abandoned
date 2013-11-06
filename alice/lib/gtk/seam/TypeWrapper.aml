@@ -1,0 +1,508 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Defs           from "Defs"
+import structure BasicTypes     from "BasicTypes"
+import structure AliceType      from "AliceType"
+import structure AliceName      from "AliceName"
+import structure Lexer          from "Lexer"
+import structure SexpTools      from "SexpTools"
+import structure StrMap         from "StrMap"
+import structure Naming         from "Naming"
+import structure Code           from "Code"
+import structure TextIO         from "x-alice:/lib/system/TextIO"
+import structure OS             from "x-alice:/lib/system/OS"
+
+
+structure TypeWrapper :
+sig
+    datatype param_kind =
+        IN
+      | IN_OUT
+      | OUT
+      | ERROR
+
+    and type_wrapper = TY_WRAP of {
+        defType         : BasicTypes.def_type,
+        cType           : BasicTypes.c_type,
+        aliceType       : AliceType.alice_type,
+        inCode          : string,     (* $0 = cvalue, $1 = alicevalue *)
+        outCode         : string,     (* $0 = cvalue, $1 = place to put it in *)
+        argCode         : string,     (* $0 = value *)
+        prepareOutCode  : string,     (* $1 *)
+        paramKind       : param_kind  (* not used for wrapping return values *) 
+    }
+
+    val isOutArg : type_wrapper -> bool
+    val isInArg  : type_wrapper -> bool
+
+    val lookupParam : BasicTypes.def_type -> type_wrapper
+    val param  : Defs.parameter -> type_wrapper
+
+    val params : Defs.parameter list -> type_wrapper list
+    
+    val return : BasicTypes.def_type -> type_wrapper
+
+    val registerTy : Defs.ty -> unit
+
+    (*
+    val objectParamInfo : c_name -> param_info
+    *)
+
+    val aliceFunctionSig' : bool * Defs.parameter list * type_wrapper option -> AliceType.alice_type
+
+    val aliceFunctionSig : Defs.function -> AliceType.alice_type
+end
+=
+struct
+    open BasicTypes
+    open Lexer
+
+    datatype param_kind =
+        IN
+      | IN_OUT
+      | OUT
+      | ERROR
+
+    and type_wrapper = TY_WRAP of {
+        defType         : def_type,
+        cType           : c_type,
+        aliceType       : AliceType.alice_type,
+        inCode          : string,     
+        outCode         : string,     
+        argCode         : string,
+        prepareOutCode  : string,
+        paramKind       : param_kind  (* not used for wrapping return values *) 
+    }
+
+
+    datatype mode = 
+        M_IN_OUT
+      | M_OUT
+      | M_IN
+      | M_IN_RET
+      | M_RET
+
+    fun convMode "in-out" = M_IN_OUT
+      | convMode "out"    = M_OUT
+      | convMode "in"     = M_IN
+      | convMode "in-ret" = M_IN_RET
+      | convMode "ret"    = M_RET
+
+    val paramMap        = StrMap.map ()
+    val retMap          = StrMap.map ()
+
+    fun load () =
+        parse (lex "types")
+    handle Lexer.Error msg =>
+        (TextIO.output (TextIO.stdErr, "*** error loading type definitions: " ^ msg ^ ".\n");
+         OS.Process.exit OS.Process.failure)
+
+    and parse [] = ()
+      | parse (LPAR :: SYM "type-wrapper" :: STR defType :: STR aliceType :: body) =
+        let val (assocs, ts) = SexpTools.parseAssocs body 
+            val ctype = SexpTools.assoc' SexpTools.Conv.string (Fn.const defType) ("c-type", assocs)
+            val argCode = SexpTools.assoc' SexpTools.Conv.string 
+                                (Fn.const ("(" ^ ctype ^ ")$0")) ("arg-code", assocs)
+                    
+            val mode  = SexpTools.assoc' (convMode o SexpTools.Conv.symOrStr) 
+                                (Fn.const M_IN_RET) ("mode", assocs)
+            fun getInCode assocs  = SexpTools.assoc' SexpTools.Conv.string
+                                     (Fn.const "") ("in-code", assocs)
+            fun getOutCode assocs = SexpTools.assoc' SexpTools.Conv.string
+                                     (Fn.const "") ("out-code", assocs)
+            fun getPrepareOutCode assocs = SexpTools.assoc' SexpTools.Conv.string
+                                    (Fn.const "") ("prepare-out-code", assocs)
+        
+            fun register (kind, inCode, outCode, prepareOutCode) map =
+                StrMap.insertDisjoint (map, defType, TY_WRAP {
+                    defType   = DT defType, 
+                    cType     = CT ctype, 
+                    argCode,
+                    aliceType = AliceType.fromString aliceType,
+                    inCode, outCode, prepareOutCode, paramKind = kind
+                })
+                    
+            fun registerArgRet a = List.app (register a) [paramMap, retMap]
+
+        in    
+            case mode of
+                M_IN_RET => registerArgRet (IN, getInCode assocs, getOutCode assocs, "")
+              | M_IN     => register (IN, getInCode assocs, "", "") paramMap
+              | M_OUT    => register (OUT, "", getOutCode assocs, 
+                                            getPrepareOutCode assocs) paramMap
+              | M_IN_OUT => register (IN_OUT, getInCode assocs, getOutCode assocs, 
+                                            getPrepareOutCode assocs) 
+                                paramMap
+              | M_RET    => register (OUT, "", getOutCode assocs, "") retMap;
+            parse ts
+        end
+      | parse _ = raise Error "Syntax"
+
+
+    val _ = load ()
+
+    local
+        open Defs
+
+        fun callbackWrapper dt =
+            TY_WRAP {
+                defType   = DT dt,
+                cType     = CT dt,
+                aliceType = AliceType.AT (AliceName.aliceName (["Core"], "object")),
+                inCode    = dt ^ " $1 = 0; /* FIXME: can't be done with current seam*/",
+                argCode   = "(" ^ dt ^ ")$0",
+                outCode   = "",
+                prepareOutCode = "",
+                paramKind = IN
+            }
+                
+        val errorWrapper =
+            TY_WRAP {
+                defType   = DT "GError**",
+                cType     = CT "GError**",
+                aliceType = AliceType.AT (AliceName.aliceName (["Core"], "error")),
+                argCode   = "$0",
+                inCode    = "",
+                prepareOutCode    = "GError *$t1 = 0; GError **$1 = &$t1;",
+                outCode   = "CHECK_GERROR(*$0);",
+                paramKind = ERROR
+            }
+
+        fun cTypeOfDType (DT dt) =
+            CT (String.translate (fn #"-" => " " | c => String.str c) dt)
+
+        fun unpackCT (CT ct) = ct
+
+        fun genericWrapper dt = 
+            TY_WRAP {
+                defType   = DT dt,
+                cType     = cTypeOfDType (DT dt),
+                aliceType = AliceType.Types.object,
+                argCode   = "(" ^ unpackCT (cTypeOfDType (DT dt)) ^ ")$0",
+                inCode    = "DECLARE_OBJECT ($1, $0);",
+                outCode   = "word $1 = OBJECT_TO_WORD ($0);",
+                prepareOutCode = "",
+                paramKind = IN
+            }
+                
+    in
+        fun lookupParam (DT dt) =
+            case StrMap.lookup (paramMap, dt) of
+                SOME wrap => wrap
+              | NONE      =>
+                (* don't know about this type.
+                   If it ends with Func it's most likely
+                   a callback function, which we all 
+                   handle the same way right now.
+                 *)
+                if String.isSuffix "Func" dt then
+                    callbackWrapper dt
+                else
+                    (print ("warning wrapping unknown type '" ^ dt ^
+                     " as object.\n");
+                     genericWrapper dt)
+
+
+        fun param (PARAM { name, defType = dt, array = NONE, ... }) =
+            lookupParam dt
+          | param (PARAM { name, defType = dt, 
+                    array = SOME { elemType, sizeType, sizeBefore }, ... }) =
+            let
+                val elemWrapper as TY_WRAP { 
+                        aliceType = elemAliceT,
+                        inCode    = elemInCode,
+                        outCode   = elemOutCode,
+                        cType     = CT elemCType,
+                        ... 
+                    } 
+                    = lookupParam elemType
+                val sizeWrapper as TY_WRAP {
+                        cType   = CT sizeCType,
+                        ...
+                    }
+                    = lookupParam sizeType
+                val r = ref 0
+                fun temps () = !r before (r := !r + 1)
+            in
+                TY_WRAP {
+                    defType         = dt,
+                    cType           = cTypeOfDType dt,
+                    aliceType       = AliceType.Types.vectorOf elemAliceT,
+                    prepareOutCode  = "",
+                    inCode          = "DECLARE_C_ARG_ARRAY($1, $1size, $0, " ^ sizeCType ^ ", "
+                                     ^ elemCType ^ ", " ^ 
+                                        Code.format (elemInCode, 
+                                            temps, #["elem_alice", "elem_c"])
+                                      ^ ");",
+                    argCode         = if sizeBefore then
+                                        "(" ^ sizeCType ^ ")$0size, (" ^ elemCType ^ "*)$0" 
+                                      else
+                                        "(" ^ elemCType ^ "*)$0, (" ^ sizeCType ^ ")$0size",
+                    outCode         = "",       (* FIXME: add cleanup-in delete $0 *)
+                    paramKind       = IN
+                }
+            end
+          
+    
+        fun lookupParamPtrTo (CN cName) = 
+            lookupParam (DT (cName ^ "*"))
+    
+
+        fun register (DT n, t, maps) =
+            List.app (fn m => StrMap.insertDisjoint (m, n, t)) maps
+            
+        val _ = register (DT "GError**", errorWrapper, [paramMap])
+
+        fun registerTy (TY_BOXED { cName = CN cName, aliceName, gType, ... }) =
+            let val g     = case gType of NONE => ");" | SOME g => ", " ^ g ^ ");" 
+                val decl  = case gType of
+                        NONE    =>
+                            "DECLARE_OBJECT($1, $0);"
+                      | SOME t  =>
+                            "DECLARE_OBJECT_OF_TYPE($1, $0, " ^ t ^ ");"
+            in
+            (register (DT (cName ^ "**"),
+                TY_WRAP {
+                    defType   = DT (cName ^ "**"), 
+                    cType     = CT (cName ^ "**"), 
+                    aliceType = AliceType.Types.object,
+                    inCode    = "",
+                    prepareOutCode    = cName ^ "* $t1 = 0; " ^ cName ^ "** $1 = &$t1;", 
+                    outCode   = "word $1 = OBJECT_TO_WORD(*$0, TYPE_BOXED" ^ g, 
+                    argCode   = "(" ^ cName ^ "**)$0", 
+                    paramKind = OUT
+                }, [paramMap, retMap]);
+             register (DT ("const-" ^ cName ^ "*"),
+                TY_WRAP {
+                    defType   = DT ("const-" ^ cName ^ "*"), 
+                    cType     = CT ("const " ^ cName ^ "*"), 
+                    aliceType = AliceType.Types.object,
+                    inCode    = decl, 
+                    prepareOutCode = "",
+                    outCode   = "word $1 = OBJECT_TO_WORD ($0, TYPE_BOXED" ^ g, 
+                    argCode   = "(const " ^ cName ^ "*)$0",
+                    paramKind = IN
+                }, [paramMap, retMap]);
+             register (DT (cName ^ "*"),
+                TY_WRAP {
+                    defType   = DT (cName ^ "*"), 
+                    cType     = CT (cName ^ "*"), 
+                    aliceType = AliceType.Types.object,
+                    inCode    = decl,
+                    prepareOutCode = "",
+                    outCode   = "word $1 = OBJECT_TO_WORD ($0, TYPE_BOXED" ^ g, 
+                    argCode   = "(" ^ cName ^ "*)$0",
+                    paramKind = IN
+                }, [paramMap, retMap]);
+             register (DT cName, 
+                TY_WRAP {
+                    defType   = DT (cName), 
+                    cType     = CT (cName), 
+                    aliceType = AliceType.Types.object,
+                    prepareOutCode = "",
+                    inCode    = "DECLARE_OBJECT($t1, $0);\n" ^
+                                cName ^ " $1 = *(" ^ cName ^ "*)$t1;", 
+                    outCode   = "",
+                    argCode   = "(" ^ cName ^ ")$0",
+                    paramKind = IN
+                }, [paramMap]);
+              register (DT cName, 
+                TY_WRAP {
+                    defType   = DT (cName), 
+                    cType     = CT (cName), 
+                    aliceType = AliceType.Types.object,
+                    prepareOutCode = "",
+                    inCode    = "",
+                    outCode   = cName ^ "* $t1 = (" ^ cName ^ "*)g_malloc(sizeof(" ^ cName ^"));\n" ^
+                                "memcpy ($t1, &$0, sizeof(" ^ cName ^ "));\n" ^
+                                "word $1 = OBJECT_TO_WORD ($t1, TYPE_BOXED"  ^ g,
+                    argCode   = "",
+                    paramKind = IN
+                }, [retMap]))
+            end
+         | registerTy (TY_OBJECT (OBJECT { cName = CN cName, alicePath, parent = CN parent, 
+                                           gType,
+                                           ... })) =
+            let val ob = if String.isPrefix "Gtk" cName andalso parent <> "GObject"
+                            then "TYPE_GTK_OBJECT" 
+                            else "TYPE_G_OBJECT"
+            in
+            (register (DT (cName ^ "**"),
+                TY_WRAP {
+                    defType   = DT (cName ^ "**"), 
+                    cType     = CT (cName ^ "**"), 
+                    aliceType = AliceType.Types.object,
+                    inCode    = "",
+                    prepareOutCode    = cName ^ "* $t1 = 0; " ^ cName ^ "** $1 = &$t1;", 
+                    outCode   = "word $1 = OBJECT_TO_WORD(*$0," ^ ob ^ ");", 
+                    argCode   = "(" ^ cName ^ "**)$0",
+                    paramKind = OUT
+                }, [paramMap, retMap]);
+             register (DT ("const-" ^ cName ^ "*"),
+                TY_WRAP {
+                    defType   = DT ("const-" ^ cName ^ "*"), 
+                    cType     = CT ("const " ^ cName ^ "*"), 
+                    aliceType = AliceType.Types.object,
+                    prepareOutCode = "",
+                    inCode    = "DECLARE_OBJECT_OF_TYPE($1, $0, " ^ gType ^ ");", 
+                    outCode   = "word $1 = OBJECT_TO_WORD($0," ^ ob ^ ");", 
+                    argCode   = "(const " ^ cName ^ "*)$0",
+                    paramKind = IN
+                }, [paramMap, retMap]);
+                         register (DT (cName ^ "*"),
+                TY_WRAP {
+                    defType   = DT (cName ^ "*"),
+                    cType     = CT (cName ^ "*"),
+                    aliceType = AliceType.Types.object,
+                    prepareOutCode = "",
+                    inCode    = "DECLARE_OBJECT_OF_TYPE($1, $0, " ^ gType ^ ");", 
+                    outCode   = "word $1 = OBJECT_TO_WORD($0," ^ ob ^ ");", 
+                    argCode   = "(" ^ cName ^ "*)$0",
+                    paramKind = IN
+                }, [paramMap, retMap]))
+          end
+          | registerTy (TY_ENUM { cName = CN cName, aliceName, isFlag, ... }) =
+            if isFlag then
+                (register (DT (cName),
+                    TY_WRAP {
+                        defType     = DT cName,
+                        cType       = CT cName,
+                        aliceType   = AliceType.AT aliceName,
+                        prepareOutCode = "",
+                        inCode      = "DECLARE_LIST_ELEMS($t1, $t2, $0, \n" ^
+                                        "{ if (Store::WordToInt($t1->Sel(0)) == INVALID_INT)\n" ^
+                                            "{REQUEST($0);}\n" ^
+                                        "});\n" ^
+                                        cName ^ " $1 = " ^ Naming.nativeEnumFromWord 
+                                        (AliceName.reveal aliceName) ^ "($0);",
+                        outCode     = "word $1 = " ^ Naming.nativeEnumToWord
+                                        (AliceName.reveal aliceName) ^ "($0);",
+                        argCode     = "(" ^ cName ^ ")$0",
+                        paramKind   = IN
+                    }, [paramMap, retMap]);
+                 register (DT (cName ^ "*"),
+                    TY_WRAP {
+                        defType     = DT (cName ^ "*"),
+                        cType       = CT (cName ^ "*"),
+                        aliceType   = AliceType.AT aliceName,
+                        prepareOutCode = "",
+                        inCode      = "DECLARE_LIST_ELEMS($t1, $t2, $0, \n" ^
+                                        "{ if (Store::WordToInt($t1->Sel(0)) == INVALID_INT)\n" ^
+                                            "{REQUEST($0);}\n" ^
+                                        "});\n" ^
+                                      cName ^ " $t3 = " ^ Naming.nativeEnumFromWord 
+                                        (AliceName.reveal aliceName) ^ "($0);" ^
+                                      cName ^ " *$1 = &$t3;",
+                        outCode     = "word $1 = " ^ Naming.nativeEnumToWord
+                                        (AliceName.reveal aliceName) ^ "(*$0);",
+                        argCode     = "(" ^ cName ^ "*)$0",
+                        paramKind   = IN_OUT
+                    }, [paramMap]))
+             else
+                (register (DT (cName),
+                    TY_WRAP {
+                        defType     = DT cName,
+                        cType       = CT cName,
+                        aliceType   = AliceType.AT aliceName,
+                        prepareOutCode = "",
+                        inCode      = "if (Store::WordToInt($0) == INVALID_INT) {" ^
+                                            "REQUEST($0);" ^
+                                        "}\n" ^ 
+                                        cName ^ " $1 = " ^ Naming.nativeEnumFromWord 
+                                        (AliceName.reveal aliceName) ^ "($0);",
+                        outCode     = "word $1 = " ^ Naming.nativeEnumToWord
+                                        (AliceName.reveal aliceName) ^ "($0);",
+                        argCode     = "(" ^ cName ^ ")$0",
+                        paramKind   = IN
+                    }, [paramMap, retMap]);
+                  register (DT (cName ^ "*"),
+                    TY_WRAP {
+                        defType     = DT (cName ^ "*"),
+                        cType       = CT (cName ^ "*"),
+                        aliceType   = AliceType.AT aliceName,
+                        prepareOutCode = "",
+                        inCode      = "if (Store::WordToInt($0) == INVALID_INT) {" ^
+                                            "REQUEST($0);" ^
+                                        "}\n" ^ 
+                                      cName ^ " $t1 = " ^ Naming.nativeEnumFromWord 
+                                        (AliceName.reveal aliceName) ^ "($0);" ^
+                                      cName ^" *$1 = &$t1;",
+                        outCode     = "word $1 = " ^ Naming.nativeEnumToWord
+                                        (AliceName.reveal aliceName) ^ "(*$0);",
+                        argCode     = "(" ^ cName ^ "*)$0",
+                        paramKind   = IN_OUT
+                    }, [paramMap]))
+
+                    
+
+        fun params ps  = List.map param ps
+
+        fun return (DT dt) = 
+            case StrMap.lookup (retMap, dt) of
+                SOME wrap => wrap
+              | NONE      =>
+                (print ("warning wrapping unknown type '" ^ dt ^
+                         " as object.\n");
+                 genericWrapper dt)
+
+    end
+
+    fun isOutArg (TY_WRAP { paramKind = k, ... }) = 
+        case k of
+            IN          => false
+          | ERROR       => false
+          | _           => true
+                
+
+    fun isInArg (TY_WRAP { paramKind = k, ... })  = 
+        case k of
+            OUT         => false
+          | ERROR       => false
+          | _           => true
+
+
+    fun prod [t] = t
+      | prod ts  = AliceType.AT_PROD ts
+
+    fun aliceFunctionSig' (useRecord, parameters, return) =
+        let
+            val params  = params parameters
+            val outs    = #2 (ListPair.unzip (ListPair.filter (isOutArg o #2)
+                                (parameters, params)))
+            val ins     = ListPair.filter (isInArg o #2) (parameters, params)
+            
+            fun getAT (TY_WRAP { aliceType = a, ... }) = a
+
+            fun getNameAT (Defs.PARAM { name, ... }, TY_WRAP { aliceType = a, ...}) = 
+                (name, a)
+
+            val return  = 
+                case (outs, return) of
+                    ([], NONE)   => AliceType.Types.unit
+                  | ([], SOME r) => getAT r
+                  | (_, NONE)    => prod (map getAT outs)
+                  | (_, SOME r)  => prod ( getAT r :: (map getAT outs) )
+            
+            val params  = 
+                if useRecord then
+                    AliceType.AT_REC (map getNameAT ins)    
+                else 
+                    prod (map (getAT o #2) ins)
+        in
+            AliceType.AT_ARROW (params, return)
+        end
+
+    fun aliceFunctionSig (Defs.FUNCTION f) =
+        aliceFunctionSig' (#useRecord f, #parameters f, Option.map return (#returnType f))
+
+end

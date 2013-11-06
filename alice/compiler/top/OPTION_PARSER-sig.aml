@@ -1,0 +1,22 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature OPTION_PARSER =
+    sig
+	val helpText: string
+        val version: string
+	val banner: string
+        val copyright: string
+
+	val parse: string list -> string list
+	val isOption: string -> bool
+    end

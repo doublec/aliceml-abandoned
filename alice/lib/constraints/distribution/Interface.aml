@@ -1,0 +1,28 @@
+(* Interface between the Workers and the Manager. *)
+
+import structure Path from "Path"
+
+structure Interface =
+struct
+  type id = int  (* A unique number for each worker. *)
+
+     (* A typical message from a worker to a manager
+      * contains the id of the worker and some data. *)
+
+  type 'a worker_intf =
+    {id       :        id,                       (* Id of this worker. *)
+     name     :    string,                       (* Nickname of this worker. *)
+     share    :      unit -> ('a Path.t) option, (* Returns available work *)
+     explore  : 'a Path.t -> unit, (* Explore this path in the search tree *)
+     best     :        'a -> unit, (* Current best solution. *)
+     stop     :      unit -> unit,
+     shutdown :    unit -> unit
+     }
+    
+  type 'a manager_intf =
+    {register:      'a worker_intf -> unit, (* Registers a worker. *)
+     find    :                  id -> unit, (* Worker #id asks for some work. *)
+     collect : 'a * id * 'a Path.t -> unit, (* Worker #id returns a solution. *)
+     log     :         id * string -> unit  (* Worker #id logs some message. *)
+     }
+end

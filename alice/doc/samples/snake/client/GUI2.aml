@@ -1,0 +1,504 @@
+import structure EnterName from "windows/EnterName"
+import structure PlayerSettings from "windows/PlayerSettings"
+import structure Main from "windows/Main"
+import structure Connection from "windows/Connection"
+import structure Wait from "windows/Wait"
+import structure ServerSettings from "windows/ServerSettings"
+import structure Protocol from "../common/Protocol"
+import structure Color from "../common/Color"
+import structure Config from "../common/Config"
+
+
+import signature GUI2       from "GUI2-sig"
+
+
+structure GUI2 :> GUI2 =
+struct
+
+    datatype error = 
+        ERROR of string
+     |  CONN_ERROR of string
+
+    exception Error of string
+
+    type callbacks = {
+        (* called initially *)
+        startServer :   (string * Color.color) option * Config.config -> 
+		                                           (string, error) alt,
+        connect :       string -> error option,
+
+        (* called during the join phase *)
+        play :          string * Color.color -> error option,
+        watch :         unit -> error option,
+
+        (* called during a running game *)
+        turn :          Protocol.direction -> error option,
+        changeView :    Protocol.view_hint -> error option,
+        giveUp :        unit -> error option,
+
+	(* called in wait phase of server *)
+	start : unit -> error option,
+
+        (* called anytime *)
+        disconnect :    unit -> error option
+    }
+
+
+    datatype gui_state =
+        INITIAL 
+    |   CONNECT         of Connection.connection_widget
+    |   SINGLE_SETTINGS
+    |   PLAYER_SETTINGS of PlayerSettings.player_settings_widget
+    |   SERVER_SETTINGS of ServerSettings.server_settings_widget
+    |   WAIT            of Wait.wait_widget
+    |   LEVEL_RUNNING
+
+    type gui = {
+        mainWindow :    Main.mainwindow_type,
+        callbacks :     callbacks,
+        state :         gui_state ref
+    }
+
+
+    fun start (callbacks : callbacks) =
+        let
+            val state   = ref INITIAL
+	    val mainw   = Main.mkMainWindow (startClientCB (state, callbacks), 
+					     startServerCB (state, callbacks),
+					     startSingleCB (state, callbacks),
+					     turnCB (state, callbacks),
+					     changeViewCB (state, callbacks),
+					     giveUpCB (state, callbacks),
+					     disconnectCB (state, callbacks),
+					     quitCB)
+        in
+            { mainWindow = mainw, callbacks, state }
+        end
+
+(* -------------------------------- *)
+    (* menuItem `start client' pressed . displays connection window*)
+    and startClientCB (state, callbacks : callbacks) mainWindow =
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+	            INITIAL => 
+                Promise.fulfill (p, CONNECT (Connection.mkConnectionWindow 
+					 (Main.getWindow mainWindow, 
+					  connectCB (state,
+						     mainWindow, callbacks), cancelConnectCB state)))
+	        |     _   => assert false
+        end
+
+    (* menuItem `start server' pressed *)
+    and startServerCB (state, callbacks : callbacks) mainWindow = 
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+                INITIAL => 
+                   Promise.fulfill (p, SERVER_SETTINGS (ServerSettings.mkServerSettingsWindow 
+                             (Main.getWindow mainWindow,
+                              readySSettingsCB  (state, mainWindow,
+                                         callbacks),
+                              cancelSSettingsCB state)))
+              |   _     => assert false
+        end
+
+    (* menuItem 'start singleplayer' pressed *)
+    and startSingleCB (state, callbacks : callbacks) mainWindow =
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+		INITIAL => 
+		    (EnterName.mkEnterName
+		     (Main.getWindow mainWindow,
+		      readySingleCB (state, mainWindow,
+				     callbacks),
+		      cancelSingleCB state);
+		     Promise.fulfill (p, SINGLE_SETTINGS))
+	   |    _    => assert false
+	end
+
+    and turnCB (state, callbacks : callbacks) d = 
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+	     LEVEL_RUNNING => ((case #turn callbacks d of
+				   NONE                  => NONE
+				 | SOME (CONN_ERROR msg) => SOME msg
+				 | SOME (ERROR msg)      => SOME msg) before
+			       Promise.fulfill (p, LEVEL_RUNNING))
+	   |       _       => assert false
+	end
+
+    and changeViewCB (state, callbacks : callbacks) vh = 
+       let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+	     LEVEL_RUNNING => ((case #changeView callbacks vh of
+				   NONE                  => NONE
+				 | SOME (CONN_ERROR msg) => SOME msg
+				 | SOME (ERROR msg)      => SOME msg) before
+			       Promise.fulfill (p, LEVEL_RUNNING))
+	   |       _       => assert false
+       end
+
+    (* menuItem `quit' pressed *)
+    and quitCB () = OS.Process.exit OS.Process.success
+
+    and disconnectCB (state, callbacks : callbacks) () = 
+	let
+	    val p = Promise.promise ()
+	    val s = Ref.exchange (state, Promise.future p)
+	in
+	    case s of 
+		LEVEL_RUNNING => 
+		    (case #disconnect callbacks () of
+			 NONE => NONE
+		       | SOME (CONN_ERROR msg) => SOME msg
+		       | SOME (ERROR msg)      => SOME msg before
+			     Promise.fulfill (p, INITIAL))
+	      |           _       => assert false
+	end
+
+    (* menuItem 'giveUp' pressed, mainWindow is already set in start mode... *)
+    and giveUpCB (state, callbacks : callbacks) mainWindow =
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+	     LEVEL_RUNNING => 
+		 (case #giveUp callbacks () of
+		     NONE                  => NONE
+		   | SOME (CONN_ERROR msg) => SOME msg
+		   | SOME (ERROR msg)      => SOME msg before
+		  Promise.fulfill (p, INITIAL))
+	   |        _      => assert false
+	end
+
+(* -------------------------------- *)
+    (* this function is called by the ConnectionWindow.  If an
+       error occurs when connecting this function should return
+       SOME msg, this msg is then displayed by the window and
+       the user is given the possibility to retry entering the
+       ticket and connecting *)
+    and connectCB (state, mainWindow, callbacks : callbacks) ticket =
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+          case s of
+	     CONNECT _ => 
+		  (case #connect callbacks ticket of
+		      NONE    =>  (* connection was successful  *)
+			          (* display player settings window *)
+			  (Promise.fulfill (p, 
+			       PLAYER_SETTINGS (PlayerSettings.mkPlayerSettings
+					        (Main.getWindow mainWindow,
+						 cancelPSettingsCB (state, 
+								    callbacks),
+						 readyPSettingsCB (state, 
+								   mainWindow, 
+        						         callbacks))));
+                (* inform the connectionWindow that everything went well,
+                   the window will close itself in this case *)
+			   NONE)
+		(* if an error occurs inform the connectionWindow,
+		so that it displays that message and stays visible and active *)
+		    |   SOME (CONN_ERROR msg) => SOME msg
+		    |   SOME (ERROR msg)      => SOME msg)
+	   |   _           => assert false 
+	end
+
+    (* this function is called by the ConnectionWindow. The connectionWindow.
+       should have already closed itself before calling this function. *)
+    and cancelConnectCB state () =
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+		CONNECT _     => Promise.fulfill (p, INITIAL)
+	      |   _           => assert false
+	end
+
+(* -------------------------------- *)
+    (* before calling this procedure the ServerSettingsWindow should 
+       have been closed. It starts the server by differentiating Spectator
+       and Player. *)
+    and readySSettingsCB (state, mainWindow, callbacks : callbacks) (player, config) = 
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+		SERVER_SETTINGS s => 
+		    (case #startServer callbacks (player, config) of
+			 FST ticket => 
+			     (Promise.fulfill (p, 
+					 WAIT (Wait.mkWaitWindow 
+					       (Main.getWindow mainWindow,
+						ServerSettings.alreadyConn s,
+						readyWaitCB (state, mainWindow,
+							     callbacks), 
+						cancelWaitCB (state, callbacks),
+						ticket)));
+			NONE)
+		 | SND (CONN_ERROR msg) => (Promise.fulfill (p, INITIAL); SOME msg)
+		 | SND (ERROR msg)      => (Promise.fulfill (p, INITIAL); SOME msg))
+	|            _        => assert false
+	end
+
+
+    (* the ServerSettingsWindow should have been closed before calling 
+       this procedure *)
+    and cancelSSettingsCB state () =
+        let
+            val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+	    SERVER_SETTINGS _ => Promise.fulfill (p, INITIAL)
+	|            _        => assert false
+	end
+
+(* -------------------------------- *)
+    (* is called by the PlayerSettingsWindow. The highlighting stuff will be
+       done by the window. The window also acts as a waiting window, but the
+       state keeps PLAYER_SETTINGS.
+       if something went wrong SOME msg will be returned. In that case, the
+       message will be displayed and the PlayerSettingsWindow is closed. *)
+    and readyPSettingsCB (state, mainWindow, callbacks : callbacks) NONE =
+	let
+	    val p   = Promise.promise ()
+            val s   = Ref.exchange (state, Promise.future p)
+        in
+            case s of
+		PLAYER_SETTINGS _ => 
+		    (case #watch callbacks () of
+			 NONE                  => NONE before 
+			                          Promise.fulfill (p, s)
+		       | SOME (CONN_ERROR msg) => (Promise.fulfill (p,INITIAL);
+						   SOME msg)
+		       | SOME (ERROR msg)      => (Promise.fulfill (p, INITIAL);
+						   SOME msg))
+	      |           _      => assert false
+	end
+       | readyPSettingsCB (state, mainWindow, callbacks) (SOME player) = 
+	 let
+	     val p   = Promise.promise ()
+	     val s   = Ref.exchange (state, Promise.future p)
+	 in
+	     case s of
+		PLAYER_SETTINGS _ => 
+		    (case #play callbacks player of
+			 NONE                  => NONE before 
+			                          Promise.fulfill (p, s)
+		      | SOME (CONN_ERROR msg) => (Promise.fulfill (p, INITIAL);
+						   SOME msg)
+		      | SOME (ERROR msg)      => (Promise.fulfill (p, INITIAL);
+						   SOME msg))
+	      |           _       => assert false
+	 end	      
+    (* this function is called by the PlayerSettingsWindow. It should also have
+       already closed itself before callinng cancelPSettingsCB *)
+    and cancelPSettingsCB (state, callbacks : callbacks) () = 
+	let
+	     val p   = Promise.promise ()
+	     val s   = Ref.exchange (state, Promise.future p)
+	 in
+	     case s of
+	    PLAYER_SETTINGS _ => (#disconnect callbacks ();
+				  Promise.fulfill (p,INITIAL))
+	  |            _      => assert false
+	end
+
+(* -------------------------------- *)
+
+    (* if the return value of this procedure is NONE, the EnterNameWindow
+       will be closed and everything's ok. Otherwise the error message
+       will be displayed and the EnterNameWindow NOT destroyed *)
+    and readySingleCB (state, mainWindow, callbacks : callbacks) settings =
+	let
+	     val p   = Promise.promise ()
+	     val s   = Ref.exchange (state, Promise.future p)
+	 in
+	     case s of
+		 SINGLE_SETTINGS => 
+		     ((case #startServer callbacks settings of
+			  FST _             => 
+			      (case #start callbacks () of
+				   NONE                 => NONE
+				 | SOME (CONN_ERROR msg) => SOME msg
+				 | SOME (ERROR msg)      => SOME msg)
+			| SND (CONN_ERROR msg) => SOME msg
+			| SND (ERROR msg)      => SOME msg) before
+			  Promise.fulfill (p, SINGLE_SETTINGS))
+	       |      _           => assert false
+	end
+
+    (* called after closing the EnterNameWindow *)
+    and cancelSingleCB state () = 
+	let
+	     val p   = Promise.promise ()
+	     val s   = Ref.exchange (state, Promise.future p)
+	 in
+	     case s of
+		 SINGLE_SETTINGS => Promise.fulfill (p, INITIAL)
+	       |      _          => assert false
+	end
+
+(* -------------------------------- *)
+    (* this is called from the WaitWindow, after it's closing *)
+    and readyWaitCB (state, mainWindow, callbacks : callbacks) () =
+	let
+	     val p   = Promise.promise ()
+	     val s   = Ref.exchange (state, Promise.future p)
+	 in
+	     case s of
+		 WAIT _ => (case #start callbacks () of
+				NONE                  => NONE before
+				                         Promise.fulfill (p, s)
+			      | SOME (CONN_ERROR msg) => 
+				      (Promise.fulfill (p, INITIAL); 
+				       SOME msg) 
+			      | SOME (ERROR msg)      => 
+				      (Promise.fulfill (p, INITIAL);
+				       SOME msg))
+	  |   _    => assert false
+	end
+
+    (* cancelWaitCB is called after the termination of WaitWindow *)
+    and cancelWaitCB (state, callbacks : callbacks) () =
+	let
+	     val p   = Promise.promise ()
+	     val s   = Ref.exchange (state, Promise.future p)
+	 in
+	     case s of
+	    WAIT _ => (#disconnect callbacks ();
+		       Promise.fulfill (p, INITIAL))
+	  |   _    => assert false
+	end
+	
+
+(* -------------------------------- *)
+(* -------------------------------- *)
+
+
+    fun playersJoined (gui: gui, players) =
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     case s of
+		 PLAYER_SETTINGS p =>
+		     (PlayerSettings.playersJoined (p, players);
+		      Promise.fulfill (pr, s))
+	       |   WAIT w          => 
+		     (Wait.playersJoined (w, players);
+		      Promise.fulfill (pr, s))
+	       |   _ => raise Error "Error, while sending playersJoined signal"
+	end
+
+    fun playerDisconnected (gui: gui, name, color) = 
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     case s of
+		 PLAYER_SETTINGS win =>
+		     (PlayerSettings.playerDisconnected (win, name, color);
+		      Promise.fulfill (pr, s))
+	       | WAIT w              => 
+		     (Wait.playerDisconnected (w, name, color);
+		      Promise.fulfill (pr, s))
+	       |  _ => raise Error "Error while sending playerDisconnected signal"
+	end
+
+    fun gameStarted (gui : gui) =
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     Future.await s;
+	     case s of
+		 PLAYER_SETTINGS p => (Promise.fulfill (pr, LEVEL_RUNNING);
+				       PlayerSettings.gameStarted p;
+				       Main.gameMode (#mainWindow gui))
+	       | WAIT win          => (Promise.fulfill (pr, LEVEL_RUNNING);
+				       Wait.gameStarted win;
+				       Main.gameMode (#mainWindow gui))
+	       | SINGLE_SETTINGS   => (Promise.fulfill (pr, LEVEL_RUNNING);
+				       Main.gameMode (#mainWindow gui))
+	       |  _ => raise Error "Error, while sending gameStarted signal"
+	end
+
+    fun levelStart (gui : gui, levelInf) = 
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     case s of
+	    LEVEL_RUNNING => (Main.levelStart (#mainWindow gui, levelInf);
+			      Promise.fulfill (pr, s))
+	  |  _ => raise Error "Error, while sending levelStart signal"
+	end
+
+    fun levelTick (gui : gui, points, diffs, pos, time) = 
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     case s of
+		 LEVEL_RUNNING => (Main.levelTick (#mainWindow gui,
+						   points, diffs, pos, time);
+				   Promise.fulfill (pr, s))
+	       |  _ => raise Error "Error, while sending tick signal"
+	end
+
+    fun levelCountdown (gui : gui, n) =
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     case s of
+		 LEVEL_RUNNING => (Main.levelCountDown (#mainWindow gui, n);
+				   Promise.fulfill (pr, s))
+	       |  _ => raise Error "Error, while sending levelCountdown signal"
+	end
+
+    (* a textWindow will be shown and 
+        the mainWindow is resetted in START mode *)
+    fun gameFinished (gui : gui, score) = 
+	let
+	     val pr   = Promise.promise ()
+	     val s = Ref.exchange (#state gui, Promise.future pr)
+	 in
+	     case s of
+		 LEVEL_RUNNING => (Main.gameFinished (#mainWindow gui,
+						      score);
+				   Promise.fulfill (pr, INITIAL))
+	       |  _ => raise Error "Error, while sending gameFinished signal"
+	end
+		     
+
+end    
+
+
+
+
+
+
+
+
+

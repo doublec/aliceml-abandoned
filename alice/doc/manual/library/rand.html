@@ -1,0 +1,61 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Rand structure", "The <TT>Rand</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature RAND
+    structure Rand : RAND
+  </PRE>
+
+  <P>
+    The <TT>Rand</TT> provides access to the operating system's pseudo-random
+    number generator.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature RAND from "x-alice:/lib/data/RAND-sig"
+    import structure Rand from "x-alice:/lib/data/Rand"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature RAND =
+    sig
+	val rand :       unit -> int
+	val srand :      int -> unit
+	val randLimits : unit -> int * int
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>rand ()</TT>
+    </DT>
+    <DD>
+      <P>Returns a pseudo-random integer between <TT>lo</TT> and <TT>hi</TT>, where <TT>(lo,hi) = randLimits()</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>srand <I>i</I></TT>
+    </DT>
+    <DD>
+      <P>Sets the seed for a new sequence of pseudo-random numbers to be
+      returned by <TT>rand</TT>. These sequences are repeatable by
+      calling <TT>srand</TT> with the same seed value.</P>
+    </DD>
+
+    <DT>
+      <TT>randLimits ()</TT>
+    </DT>
+    <DD>
+      <P>returns the lower and upper bound of the range of numbers that
+      will be returned by <TT>rand</TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

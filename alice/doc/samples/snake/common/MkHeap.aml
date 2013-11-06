@@ -1,0 +1,60 @@
+(* Alice Snake 2.0 - Heaps (impl)
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import signature ORDERED    from "x-alice:/lib/data/ORDERED-sig"
+
+import signature HEAP       from "HEAP-sig"
+
+
+functor MkHeap (Elem: ORDERED): HEAP =
+struct
+    exception Empty
+
+    type elem = Elem.t
+       
+    type heap   = elem list ref
+    type t      = heap
+
+    fun heap () = ref []
+
+    fun insert (h, e) =
+        let
+            fun insert' []      = [e]
+              | insert' (x::xs) = 
+                case Elem.compare (e, x) of
+                    (LESS|EQUAL)    => e :: x :: xs
+                |   GREATER         => x :: insert' xs
+            
+            val res = Promise.promise ()
+            val l   = Ref.exchange (h, Promise.future res)
+        in
+            Promise.fulfill (res, insert' l)
+        end
+
+    val isEmpty     = List.null o !
+    
+    val size        = List.length o !
+
+    fun minimum l   = 
+        case !l of
+            []      => raise Empty
+        |   (x::xs) => x
+
+    fun remove r    = 
+        let
+            val rest    = Promise.promise ()
+            val l       = Ref.exchange (r, Promise.future rest)
+        in
+            Promise.fulfill (rest, List.tl l)
+        end
+
+end
+

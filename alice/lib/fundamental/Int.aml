@@ -1,0 +1,166 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and LargeInt          from "Pervasive"
+import __primitive
+       type int
+       datatype bool and order and option and list from "ToplevelTypes"
+import __primitive
+       infix 4 = > < >= <=
+       infixr 5 ::
+       infix 6 + -
+       infix 7 * div mod
+       val op =
+       and op > and op < and op >= and op <=
+       val   ~  and abs  and op +  and op -
+       and op * and op div and op mod              from "ToplevelValues"
+import __primitive structure General               from "General"
+import __primitive structure Option                from "Option"
+import __primitive structure Char                  from "Char"
+import __primitive structure String                from "String"
+import __primitive structure StringCvt             from "StringCvt"
+import __primitive signature INTEGER               from "INTEGER-sig"
+
+structure Int : INTEGER =
+struct
+    type int = int
+    type t   = int							(**)
+
+    __primitive val minInt :    int option = "Int.minInt"
+    __primitive val maxInt :    int option = "Int.maxInt"
+    __primitive val precision : int option = "Int.precision"
+
+    fun toInt i		= i
+    fun fromInt i	= i
+
+    __primitive val toLarge : int -> LargeInt.int = "IntInf.fromInt"
+    __primitive val fromLarge : LargeInt.int -> int   = "IntInf.toInt"
+
+    val ~		= ~
+    val op +		= op +
+    val op -		= op -
+    val op *		= op *
+    val op div		= op div
+    val op mod		= op mod
+
+    val op <		= op <
+    val op >		= op >
+    val op <=		= op <=
+    val op >=		= op >=
+
+    __primitive val quot : int * int -> int = "Int.quot"
+    __primitive val rem :  int * int -> int = "Int.rem"
+
+    __primitive val compare : int * int -> order = "Int.compare"
+    __primitive val equal   : int * int -> bool  = "Int.equal"
+
+    val abs		= abs
+
+    fun hash i		= abs i handle General.Overflow => 0
+
+    fun min(i,j)	= if i < j then i else j
+    fun max(i,j)	= if i > j then i else j
+
+    fun sign i if (i>0)	= 1
+      | sign i if (i<0)	= ~1
+      | sign i		= 0
+
+    fun sameSign(i,j)	= sign i = sign j
+
+
+    (* Formatting *)
+
+    open StringCvt
+
+    (* fmt and scan both use inverted signs to cope with minInt! *)
+
+    fun base BIN	= 2
+      | base OCT	= 8
+      | base DEC	= 10
+      | base HEX	= 16
+
+    fun toIsDigit BIN	= Char.isBinDigit
+      | toIsDigit OCT	= Char.isOctDigit
+      | toIsDigit DEC	= Char.isDigit
+      | toIsDigit HEX	= Char.isHexDigit
+
+    val zero		= Char.ord #"0"
+    val ten		= Char.ord #"A" - 10
+    fun digit i		= Char.chr(i + (if i < 10 then zero else ten))
+    fun value c		= Char.ord(Char.toUpper c) -
+			  (if Char.ord c < ten+10 then zero else ten)
+
+    fun fmt radix 0	= "0"
+      | fmt radix i	= if i > 0
+			  then String.implode(fmt'(base radix, ~i, []))
+			  else String.implode(#"~" :: fmt'(base radix, i, []))
+    and fmt'(b, 0, cs)	= cs
+      | fmt'(b, i, cs)	= fmt'(b, quot(i,b), digit(~(rem(i,b))) :: cs)
+
+
+    (* Scanning *)
+
+    fun scanSign (getc, src) =
+	case getc src
+	  of SOME(#"-", src') => (1, src')
+	   | SOME(#"~", src') => (1, src')
+	   | SOME(#"+", src') => (~1, src')
+	   | _                => (~1, src)
+
+    fun scanPrefix (getc, src) =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"x", src'') => (true, src'')
+		 | SOME(#"X", src'') => (true, src'')
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanNum (isDigit, b, getc, src) =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then SOME(scanNum' (isDigit, b, getc, src, 0))
+	     else if c = #"_" then scanNum (isDigit, b, getc, src')
+	     else NONE
+	   | NONE => NONE
+    and scanNum' (isDigit, b, getc, src, i) =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then scanNum' (isDigit, b, getc, src', b*i - value c)
+	     else if c = #"_" then scanNum' (isDigit, b, getc, src', i)
+	     else (i, src)
+	   | NONE => (i, src)
+
+    fun scan radix getc src =
+	let
+	    val       src1  = skipWS getc src
+	    val (sign,src2) = scanSign (getc, src1)
+	    val (pref,src3) = if radix = HEX then scanPrefix (getc, src2)
+					     else (false, src2)
+	in
+	    case scanNum (toIsDigit radix, base radix, getc, src3)
+	      of SOME(num, src4) => SOME(sign*num, src4)
+	       | NONE => if pref then SOME(0, #2(Option.valOf(getc src2)))
+				 else NONE
+	end
+
+    val toString	= fmt DEC
+    val fromString	= scanString(scan DEC)
+end

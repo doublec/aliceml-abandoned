@@ -1,0 +1,39 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature TREE_NODE =
+    sig
+	type tree
+	type status
+
+	val horSpaceI : int
+	val verSpaceI : int
+	val minScaleF : real
+	val hiddenHalfWidthI : int
+	val scaleBase : int
+	val defScale : real
+	val maxExtent : real
+	val floatScaleBase : real
+	val intScaleBase : int
+	val maxScaleF : real
+	val defScaleF : real
+	val halfHorSpaceI : int
+	val getStatus : tree -> status
+	val addChild : tree * tree -> unit
+	val noOfChildren : tree -> int
+	val setHasSolBelow : tree -> unit
+	val layoutNode : tree -> (int * int) list
+	val getShape : tree -> (int * int) list
+	val getBBox : (int * int) list -> int * int * int
+	val findByX : tree * int * int * int -> tree
+	val getCenter : tree -> int * int
+    end

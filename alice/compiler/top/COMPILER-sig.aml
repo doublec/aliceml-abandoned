@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 2000-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * Scenarios for compiler usage:
+ * 1. Batch: always use empty context, discard result
+ * 2. Interactive: use previous resulting context
+ * 3. Debugging: context is provided by some outside magic, discard result
+ *)
+
+import structure Source   from "../infrastructure/Source"
+import signature CONTEXT  from "../infrastructure/CONTEXT-sig"
+import signature SWITCHES from "../infrastructure/SWITCHES-sig"
+import structure Target   from "../infrastructure/Target"
+
+signature COMPILER =
+sig
+    structure Switches : SWITCHES
+    structure Context :  CONTEXT
+
+    exception Error
+
+    val compile : Source.desc * Context.t * Source.t -> Context.t * Target.t
+							    (* [Error] *)
+    val isCrossCompiler : bool
+end

@@ -1,0 +1,46 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IO               from "IO"
+import structure Url              from "Url"
+import structure Reflect          from "Reflect"
+import structure Component        from "Component"
+import structure ComponentManager from "ComponentManager"
+import signature PICKLE           from "PICKLE-sig"
+
+structure Pickle : PICKLE =
+struct
+    exception Sited   = Component.Sited
+    exception Corrupt = Component.Corrupt
+    val extension     = Component.extension
+
+    fun save (file, package) =
+	Component.save (file, Component.fromPackage package)
+
+    fun load file =
+	let
+	    val url = Url.fromString file
+	in
+	    ComponentManager.eval (url, Component.load url)
+	end
+
+    functor Save (val file : string signature S structure X : S) =
+	(val _ = save (file, pack X : S))
+    functor Load (val file : string signature S) =
+	unpack load file : S
+
+    functor SaveVal (val file : string type t val x : t) =
+	(val _ = save (file, pack (val x = x) : (val x : t)))
+    functor LoadVal (val file : string type t) =
+	unpack load file : (val x : t)
+end

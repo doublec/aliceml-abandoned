@@ -1,0 +1,50 @@
+import signature REGRESSION from "REGRESSION-sig"
+
+structure CharScan : REGRESSION =
+struct
+
+val name = "char.scan"
+
+val ok = SOME "char.scan.ok"
+
+val result = ref ""
+
+fun concatResult s = result := (!result) ^ s
+
+
+val dquote = "\""
+   
+val _ = concatResult (concat [Bool.toString (isSome (Char.fromString dquote)), "\n"])
+
+val scan: string -> unit =
+   fn s =>
+   let
+      val n = String.size s
+      fun reader i =
+	 if i = n
+	    then NONE
+	 else SOME (String.sub (s, i), i + 1)
+   in
+      case Char.scan reader 0 of
+	 NONE => concatResult "NONE\n"
+       | SOME (c, i) => concatResult (concat [str c, " at ", Int.toString i,
+				       " of ", Int.toString n, "\n"])
+   end
+
+val _ =
+   List.app scan ["a\\ \\", "\\ \\a", "\\ \\a\\ \\", "\\ \\\\ \\a",
+		  "\\ \\"]
+
+val result = !result
+
+end
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,116 @@
+import structure Tag     from "Tag"
+import structure Meaning from "Meaning"
+import structure Lex     from "Lex"
+
+signature PARSE =
+sig
+    exception Invalid
+
+    val splitCost : int
+
+    val parse : string -> (Meaning.meaning * int * string list) list
+	(* Produces a _list_ partitioning the complete document wrt the
+	 * splitCost bound: no part has a higher cost than splitCost.
+	 * Each part is given by its meaning, its cost, and a simple
+	 * space-optimized version of the original thing that we can use
+	 * for emergency (ie. if we do not find a `real' solution before
+	 * timeout). *)
+end
+
+structure Parse : PARSE =
+struct
+    exception Invalid = Lex.Invalid
+
+    type context = Meaning.property
+
+    val splitCost = 40
+
+    val initial = Meaning.initialProperty
+
+    fun modify(context, Tag.B)  = {context where b = true}
+      | modify(context, Tag.EM) = if #s context then context : context else
+				  {context where em = not(#em context)}
+      | modify(context, Tag.I)  = {context where i = true}
+      | modify(context, Tag.PL) = {initial where size  = #size context,
+						 color = #color context}
+      | modify(context, Tag.S)  = {context where s = true, em = false}
+      | modify(context, Tag.TT) = {context where tt = true}
+      | modify(context, Tag.U)  = {context where u = Int.max(3, #u context + 1)}
+      | modify(context, Tag.SIZE n)  = {context where size = n}
+      | modify(context, Tag.COLOR c) = {context where color = c}
+
+    fun spacify(context : context) =
+	{initial where tt = #tt context, u = #u context, size = #size context,
+		       color = if #u context = 0 then Tag.W else #color context}
+
+
+    fun stackCost stack =
+	List.foldl (fn((_,t), sum) => Tag.cost t + sum) 0 stack
+
+    fun close(stack, ss) =
+	List.foldl (fn((_,t), ss) => Tag.toStringClose t::ss) ss stack
+
+    fun reopen(stack, ss) =
+	List.foldr (fn((_,t), ss) => Tag.toStringOpen t::ss) ss stack
+
+
+    val empty = []
+
+    fun text(x, context, (xs, false, property) :: doc', ss)
+	where (context = property) =
+	    ((x::xs, false, property) :: doc', x::ss)
+      | text(x, context, doc, ss) =
+	    (([x], false, context) :: doc, x::ss)
+
+    fun space(x, space_context, doc as (xs, spacy, property) :: doc', ss)
+	where (space_context = spacify property) =
+	    if not(#tt space_context) andalso (spacy orelse List.hd xs = " ")
+	    then (doc, ss)
+	    else ((x::xs, spacy, property) :: doc', x::ss)
+      | space(x, space_context, doc, ss) =
+	    (([x], true, space_context) :: doc, x::ss)
+
+    fun addPart([],  cost, ss, parts) = parts
+      | addPart(doc, cost, ss, parts) = (doc,cost,ss)::parts
+
+    fun parse'([], context, [], doc, cost, ss, parts) =
+	    List.rev(addPart(doc, cost, ss, parts))
+      | parse'([], context, stack, doc, cost, ss, parts) =
+	    raise Invalid
+      | parse'(t::ts, context, stack, doc, cost, ss, parts) =
+	case t of
+	     Lex.TEXT x =>
+	     let
+		val (doc',ss') = text(x, context, doc, ss)
+	     in
+		parse'(ts, context, stack, doc', cost, ss', parts)
+	     end
+	   | Lex.SPACE x =>
+	     let
+		val (doc',ss') = space(if #tt context then x else " ",
+				       spacify context, doc, ss)
+	     in
+		parse'(ts, context, stack, doc', cost, ss', parts)
+	     end
+	   | Lex.OPEN t =>
+	     let
+		val context' = modify(context,t)
+		val stack'   = (context,t)::stack
+		val cost'    = cost + Tag.cost t
+		val s        = Tag.toStringOpen t
+	     in
+		if cost' <= splitCost
+		then parse'(ts, context', stack', doc, cost', s::ss, parts)
+		else parse'(ts, context', stack', empty,
+			    stackCost stack, s::reopen(stack, []),
+			    addPart(doc, cost, close(stack, ss), parts))
+	     end
+	   | Lex.CLOSE t =>
+		case stack of [] => raise Invalid | (context',t')::stack' =>
+		if t <> t' then raise Invalid else
+		parse'(ts, context', stack', doc, cost,
+		       Tag.toStringClose t'::ss, parts)
+
+    fun parse s = parse'(Lex.lex s, initial, [], empty, 0, [], [])
+		  handle Future.Future(Invalid) => raise Invalid
+end

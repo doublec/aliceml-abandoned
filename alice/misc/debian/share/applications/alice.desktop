@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Alice Interactive Toplevel
+Comment=Develop Alice programs using a nice GUI
+Exec=alice -g %F
+Terminal=0
+Type=Application
+Icon=alice.png
+Categories=Application;Development;

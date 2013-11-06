@@ -1,0 +1,45 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure CoreToplevel from "CoreToplevel"
+import structure TextToplevel from "TextToplevel"
+import structure GuiToplevel  from "GuiToplevel"
+
+structure Main : any =
+struct
+    fun usage fail =
+	TextIO.output (if fail then TextIO.stdErr else TextIO.stdOut,
+		       "Usage: alice [options] [<input file> ...]\n\
+		       \\n\
+		       \Options:\n\
+		       \\t--gui, -g\n\
+		       \\t\tUse graphical user interface.\n\
+		       \\t--help, -h, -?\n\
+		       \\t\tShow this help.\n\
+		       \\t--version\n\
+		       \\t\tShow version only.\n")
+
+    fun main (("--help"|"-h"|"-?")::_) =
+	(usage false; OS.Process.success)
+      | main ("--version"::_) =
+	(TextIO.print CoreToplevel.banner; OS.Process.success)
+      | main (("--gui"|"-g")::files) =
+	(GuiToplevel.run files; OS.Process.success)
+      | main ("--no-gui"::files | files as nil) =
+	(TextToplevel.run files; OS.Process.success)
+      | main (s::_) if (String.size s = 0 orelse String.sub (s,0) = #"-") =
+	(usage true; OS.Process.failure)
+      | main files =
+	(TextToplevel.run files; OS.Process.success)
+
+    val _ = OS.Process.exit (main (CommandLine.arguments ()))
+end

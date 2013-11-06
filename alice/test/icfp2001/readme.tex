@@ -1,0 +1,262 @@
+\documentclass{article}
+\usepackage{amsmath,amstext,amsfonts}
+\newcommand{\NAT}{{\mathbb N}}
+\newcommand{\SET}[1]{{\{{#1}\}}}
+\newcommand{\COST}{{\textsf{cost}}}
+\newcommand{\TO}{\rightarrow}
+\newcommand{\ROOT}{{\textsf{root}}}
+\newcommand{\MOTHER}{{\textsf{mother}}}
+\newcommand{\DAUGHTERS}{{\textsf{daughters}}}
+\newcommand{\DOWN}{{\textsf{down}}}
+\newcommand{\EQDOWN}{{\textsf{eqdown}}}
+\newcommand{\UNION}{\cup}
+\newcommand{\TUP}[1]{{\langle{#1}\rangle}}
+\newcommand{\EPS}{\epsilon}
+\newcommand{\AT}[2]{@^{#1}_{#2}}
+\newcommand{\CONVEX}{{\textsf{convex}}}
+\newcommand{\IMPLIES}{\Rightarrow}
+\newcommand{\DEPTH}{{\textsf{depth}}}
+\newcommand{\INTER}{\cap}
+\makeatletter
+\newcommand{\SEQUNION}{{%
+  \setbox0\hbox{$\cup$}%
+  \@tempdima\wd0\relax
+  \hbox{\raise 2.5pt\hbox to0pt{\hbox to\@tempdima{\hss\tiny$\prec$\hss}\hss}\box0}}}
+\makeatother
+\title{Progamming Contest}
+\setlength{\parskip}{\medskipamount}
+\begin{document}
+\maketitle
+
+The basic idea is that the input document gives us an
+upper bound on the number of elements $n_E$ that may occur in the
+output document.
+
+An input document consists of a finite set $C$ of data items.  These
+data items are numbered by successive integers: we capture this by a
+function $\pi:C\rightarrow\NAT$ which is a bijection between $C$ and
+$\SET{1\ \ldots\ n_C}$ where $n_C=|C|$.  Furthermore, we assume given
+a set $A$ of attributes and an assignment $\alpha_C:C\times A
+\rightarrow \NAT$.
+
+We assume given a set $T$ of tags and we define the cost of a tag by a
+function $\COST_T:T\TO\NAT$:
+\begin{center}
+\begin{tabular}{c@{\hspace{1cm}}l@{}l}
+\verb+<b> ... </b>+ & $\COST_T(\texttt{b})$ & ${}=7$\\
+\verb+<pl> ... </pl>+ & $\COST_T(\texttt{pl})$ & ${}=9$
+\end{tabular}
+\end{center}
+an upper bound for the number of element is:
+\begin{gather*}
+\lfloor{{\Sigma}\SET{\COST_T(e)\mid e\text{ in document}}/7}\rfloor
+\end{gather*}
+it may be possible to derive a tighter bound when e.g.\ the input
+document contains redundant elements etc\ldots
+
+Our formalization of the output document considers the set $C$ of data
+items ($|C|=n_C$) and a set $E$ of elements ($|E|=n_E$).  We write
+$V=E\uplus C$ for the set of nodes in the tree representation of the
+document.  We also assume an additional node $\ROOT$ to serve as the
+root node of the document.  We write $V^*=V\uplus\ROOT$.  Not all
+elements in $E$ will necessarily be used (hopefully not): in our
+formalization, these unused elements will be empty and immediate
+daughters of the $\ROOT$.  We consider the following functions:
+\begin{align*}
+\MOTHER &: V\TO V^*\\
+\DAUGHTERS &: V^*\TO 2^V\\
+\DOWN &: V^*\TO 2^V\\
+\EQDOWN &: V^*\TO 2^{V^*}
+\end{align*}
+The treeness condition is satisfied when $\forall w\in V^*$ and
+$\forall w'\in V$:
+\begin{align*}
+\EQDOWN(w)&=\SET{w}\uplus\DOWN(w)\\
+\DOWN(w)&={\UNION}\SET{\EQDOWN(w')\mid w'\in\DAUGHTERS(w)}\\
+w=\MOTHER(w')\ &\equiv\ w'\in\DAUGHTERS(w)\\
+V&={\uplus}\SET{\DAUGHTERS(w)\mid w\in V^*}
+\end{align*}
+Posing $V=\SET{w_1,\ldots,w_n}$,
+equation $\DOWN(w)={\UNION}\SET{\EQDOWN(w')\mid w'\in\DAUGHTERS(w)}$
+can be implemented by the \emph{selection union} constraint:
+\begin{gather*}
+\DOWN(w)={\UNION}\TUP{\EQDOWN(w_1),\ldots,\EQDOWN(w_n)}[\DAUGHTERS(w)]
+\end{gather*}
+
+We introduce an additional fictional tag $\EPS$ to be assigned to an
+element which is not used.  We write $T^*=T\uplus\SET{\EPS}$.  We
+introduce the function $\tau:E\TO T^*$ to represent an assignment of
+tags to elements.
+
+Each attribute $a\in A$ has a default value $\delta(a)$.  We introduce
+the function $\alpha:V^*\times A\TO\NAT$ to represent an assignment of
+attribute values to nodes.
+\begin{gather*}
+\alpha(w,a) = \left\{
+\begin{array}{l@{\qquad}l}
+\alpha_C(w,a) & \text{for } w\in C\\
+\delta(a) & \text{for } w=\ROOT\\
+\AT{\tau(w)}{a}(\alpha(\MOTHER(w),a)) & \text{for } w\in E
+\end{array}
+\right.
+\end{gather*}
+where $\AT{t}{a}:\NAT\TO\NAT$ is the function which computes the value
+of attribute $a$ inside a tag $t$ given its value outside.  For most
+attributes it is the identity function.
+
+There are two difficulties in the last equation: (1) computing
+$\alpha$ at the unknown point $(\MOTHER(w),a)$ and (2) computing
+$\AT{\tau(w)}{a}$ at the unknown point $\alpha(\MOTHER(w),a)$.  This
+can be achieved using the following reduction:
+\begin{align*}
+\alpha(w',a) &= \TUP{\alpha(w_1,a),\ldots,\alpha(w_n,a)}[w']\\
+\AT{t}{a}(x) &= \TUP{\AT{t}{a}(1),\ldots,\AT{t}{a}(k_a)}[x]
+\end{align*}
+where we assume that the possible values for attribute $a$ range from
+$1$ to $k_a$.
+
+Furthermore, for all $w''\in C$ it must hold that
+\begin{gather*}
+\alpha(w'',a) = \alpha(\MOTHER(w''),a)
+\end{gather*}
+
+We write $S$ for the data range $\SET{1,\ldots,n_C}$ and introduce the
+scope function $\sigma:V^*\TO 2^S$.  For all $w\in V^*$, its scope is
+an interval:
+\begin{gather*}
+\CONVEX(\sigma(w))
+\end{gather*}
+furthermore, it can be computed inductively:
+\begin{gather*}
+\sigma(w) = \left\{
+\begin{array}{l@{\hspace{1cm}}l}
+S & \text{if } w=\ROOT\\
+\SET{\pi(w)} & \text{if } w\in C\\
+{\UNION}\SET{\sigma(w')\mid w'\in\DAUGHTERS(w)} & \text{if } w\in E
+\end{array}
+\right.
+\end{gather*}
+An element $w\in E$ is unused iff it is empty.  Furthermore, in that
+case it is an immediate daughter of the $\ROOT$.
+\begin{align*}
+\tau(w)&=\EPS\ &\equiv\ |\sigma(w)|=0\\
+\tau(w)&=\EPS\ &\IMPLIES\ \ROOT=\MOTHER(w)
+\end{align*}
+Finally, we introduce a cost function $\kappa:E\TO\NAT$:
+\begin{gather*}
+\kappa(w) = \TUP{\COST_T(t_1),\ldots,\COST_T(t_k)}[\tau(w)]
+\end{gather*}
+where we pose $T^*=\SET{t_1,\ldots,t_k}$ and $\COST_T(\EPS)=0$.
+The goal is to minimize the total cost:
+\begin{gather*}
+{\Sigma}\SET{\kappa(w)\mid w\in E}
+\end{gather*}
+In practice it is of course useful to break symmetries.  For example
+the set $V=\SET{w_1,\ldots,w_n}$ should be ordered using depth in the
+tree as primary sort key, minimal element as secondary sort key, and
+tag as tertiary sort key.  It is easy to combine these keys together
+using an appropriate base, so that elements in $V$ must have strictly
+increasing sort keys.
+
+\section*{Breaking Symmetries.}
+Let's now consider some methods for breaking symmetries. Of these, we just
+implemented the first one.
+
+\paragraph*{Depth Method.}
+Posing $E^*=E\uplus\SET{\ROOT}$, we introduce a function
+$\DEPTH:E^*\TO\NAT$ to represent the depth of an element in the tree
+representation:
+\begin{align*}
+\DEPTH(\ROOT) &= 0\\
+\DEPTH(w) &= 1+\DEPTH(\MOTHER(w))\qquad\text{for }w\in E
+\end{align*}
+As usual the latter equation translates into:
+\begin{gather*}
+\DEPTH(w) = 1+
+\TUP{\DEPTH(\ROOT),\DEPTH(w_1),\ldots,\DEPTH(w_{n_E})}[\MOTHER(w)]
+\end{gather*}
+for the obvious appropriate encoding of $E^*$.  Our first symmetry
+break is:
+\begin{gather*}
+\DEPTH(w_1)\leq\cdots\leq\DEPTH(w_{n_E})
+\end{gather*}
+in other words, elements are ordered by increasing depth.  Thus $w_1$
+will always be a child of $\ROOT$, and earlier elements are used for
+higher levels in the tree and later elements for deeper levels.
+
+\paragraph*{Sequenced Union Method.}
+A more clever method, is to say that the mother of an element must
+always precede it in the order $\ROOT \prec w_1 \prec \cdots \prec
+w_{n_E}$:
+\begin{gather*}
+\MOTHER(w)\prec w\qquad\text{for } w\in V
+\end{gather*}
+and additionally if $w$ is mother of $w'$ and $w''$ and
+$w'\prec w''$ then all the elements in $\DOWN(w')$ must precede all the
+elements in $\DOWN(w'')$.  For this, we introduce the functions
+$\DOWN_E:E\TO 2^E$, $\EQDOWN_E:E\TO 2^E$, and $\DAUGHTERS_E:E\TO 2^E$
+defined by:
+\begin{align*}
+\DOWN_E(w) &= E\INTER\DOWN(w)\\
+\EQDOWN_E(w) &= E\INTER\EQDOWN(w)\\
+\DAUGHTERS_E(w) &= E\INTER\DAUGHTERS(w)
+\end{align*}
+and the following constraint must be satisfied:
+\begin{gather*}
+\DOWN_E(w) =
+{\SEQUNION}\TUP{\EQDOWN_E(w_1),\ldots,\EQDOWN_E(w_{n_E})}[\DAUGHTERS_E(w)]
+\end{gather*}
+This is an application of the \emph{sequenced union selection}
+constraint.  It combines the \emph{union selection} constraint with
+the sequentiality constraint.
+
+To further break symmetries and strengthen propagation, we can require
+that $\EQDOWN_E(w)$ be an interval.  In this fashion (1) the root of a
+subtree must be the min element of its $\EQDOWN_E$ and (2) we get
+stronger propagation since we know that there can be no hole in the
+$\EQDOWN_E$:
+\begin{gather*}
+\CONVEX(\EQDOWN_E(w))
+\end{gather*}
+Finally, we should require that the unused elements occur at the end
+of the precedence order, i.e.\ for $w_i,w_{i+1}\in E$:
+\begin{gather*}
+|\DOWN(w_i)|=0\quad\IMPLIES\quad|\DOWN(w_{i+1})|=0
+\end{gather*}
+
+Note that scope should also be constrained using the sequenced union
+selection constraint:
+\begin{gather*}
+\sigma(w) = {\SEQUNION}\TUP{\sigma(w_1),\ldots,\sigma(w_n)}[\DAUGHTERS(w)]
+\end{gather*}
+i.e.\ not only is the scope of the mother formed from the union of the
+scopes of its daughters, but these scopes must also occur in sequence
+according to the precedence order $\prec$ of elements (i.e.\ the
+indices used to encode them).  Note that, if we can identify $\pi(w)$
+with $w$ for $w\in C$, then we also have the following:
+\begin{gather*}
+\DOWN(w) = \DOWN_E(w)\UNION\sigma(w)
+\end{gather*}
+
+\paragraph*{Stacking Method.}
+This last method is concerned with symmetries of the following kind:
+\begin{center}
+\verb+<B><I>...</I></B>+\linebreak
+\verb+<I><B>...</B></I>+
+\end{center}
+whenever $w$ is mother of a single child $w'$ then $w$ must be
+assigned a \emph{smaller} tag than $w'$.  Thus, here we must assume a
+total order $\prec$ on tags, and the constraint is:
+\begin{gather*}
+w=\MOTHER(w')\ \wedge\ |\DAUGHTERS(w)|=1\quad
+\IMPLIES\quad \tau(w)\preceq\tau(w')
+\end{gather*}
+For this to work, it must be the case that when switching the 2 tags
+is semantically significant then the configuration which does not
+satisfy the above constraint is redundant.  I don't know if this is
+the case.  Note that we used $\preceq$ rather than the stricter
+$\prec$ to allow for such stackings as \verb+<U><U>...</U></U>+.
+For this method to work, $\ROOT$ must be assigned some fictitious and lowest
+tag.
+
+\end{document}

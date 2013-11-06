@@ -1,0 +1,11 @@
+import structure StartClient from "Client"
+import structure Gui from "Gui"
+import structure LogSnakeUI from "SNAKE_UI-sig"
+
+structure M = StartClient (LogSnakeUI (Gui))
+
+fun main () =
+    (M.run ();
+     OS.Process.exit OS.Process.success)
+
+val _ = main ()

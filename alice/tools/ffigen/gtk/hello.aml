@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure c from "c"
+import structure Gtk from "Gtk" 
+
+let
+    fun hello _   = print "Hello, World!\n"
+    fun delete _  = OS.Process.exit OS.Process.success
+    val window    = Gtk.gtkWindowNew Gtk.GTK_WINDOW_POPUP
+    val deleteId  = Gtk.signalConnect(window, "delete-event", delete)
+    val button    = Gtk.gtkButtonNewWithLabel "Hello, World!"
+    val clickedId = Gtk.signalConnect(button, "clicked", hello)
+in
+    (* Assign Title to toplevel window *)
+    Gtk.gtkWindowSetTitle (c.cast window, "Hello Demo");
+    (* 10 pts border around the inner items *)
+    Gtk.gtkContainerSetBorderWidth (c.cast window, 20);
+    (* Add the button widget to toplevel *)
+    Gtk.gtkContainerAdd (c.cast window, button);
+    (* Make all subwindows of toplevel visible *)
+    Gtk.gtkWidgetShowAll window
+end
+

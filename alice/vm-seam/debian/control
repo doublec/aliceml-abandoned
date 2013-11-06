@@ -1,0 +1,17 @@
+Source: alice
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 4.0.0), seam-dev
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+Standards-Version: 3.6.0
+
+Package: alice
+Architecture: any
+Depends: ${shlibs:Depends}, seam
+Description: The Alice language layer
+
+Package: alice-dev
+Architecture: any
+Depends: alice (= ${Source-Version}), seam-dev
+Description: The Alice language layer (development files)
+

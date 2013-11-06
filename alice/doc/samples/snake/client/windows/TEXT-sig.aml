@@ -1,0 +1,21 @@
+(* Alice Snake 2.0 - TextWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk       from "GtkSupport"
+
+
+signature TEXT =
+sig
+    type text_widget = Gtk.object
+
+    val mkTextWindow : text_widget * string * string -> text_widget
+
+end

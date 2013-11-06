@@ -1,0 +1,38 @@
+(*
+ * Author:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+
+
+import structure Type                  from "../../lib/rtt/Type"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+
+
+signature MINIMIZE =
+sig
+    structure AbstractCodeGrammar : ABSTRACT_CODE_GRAMMAR
+
+
+    type local_names = (string * Type.t) option vector
+
+
+    (*
+     * Attempt to remove redundancy from the specified function, so that
+     * it loads faster at runtime and takes up less memory.
+     *
+     * Currently these minimizations are made:
+     *
+     *  - Local variables are re-numbered so there are no gaps in their
+     *    numbering. This is required for a compact liveness
+     *    representation.
+     *
+     *  - Adjacent LazyPolySel instructions that are selecting from the
+     *    same idRef are combined.
+     *
+     *  - Redundant Shared instructions are removed.
+     *
+     *  - Redundant Coord instructions are removed.
+     *)
+    val minimize : AbstractCodeGrammar.idDef vector * AbstractCodeGrammar.instr * local_names
+                     -> AbstractCodeGrammar.idDef vector * AbstractCodeGrammar.instr * local_names
+end

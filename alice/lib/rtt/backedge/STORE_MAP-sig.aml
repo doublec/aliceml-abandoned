@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Niko Paltzer <nikopp@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature STORE_MAP =
+sig
+    __eqeqtype ('a, 'b) map
+    type t = map 
+    
+    exception Unknown
+    exception Collision
+
+    val map : unit -> ('a, 'b) map
+    val fromList : ('a * 'b) list -> ('a, 'b) map (* Collision *)
+    val toList : ('a, 'b) map -> ('a * 'b) list
+    val clone : ('a, 'b) map -> ('a, 'b) map
+
+    val insert : ('a, 'b) map * 'a * 'b -> unit
+    val insertDisjoint:	('a,'b) map * 'a * 'b -> unit	(* Collision *)
+
+    val remove : ('a, 'b) map * 'a -> unit
+    val removeExistent:	('a,'b) map * 'a -> unit	(* Unknown *)
+
+    val lookup : ('a, 'b) map * 'a -> 'b option   (* Unknown *)
+    val lookupExistent : ('a, 'b) map * 'a -> 'b
+
+    val foldi :	('a * 'b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+
+end

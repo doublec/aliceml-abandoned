@@ -1,0 +1,1097 @@
+<?php include("macros.php3"); ?>
+
+<?php heading("The Language", "the\nlanguage") ?>
+
+
+<?php section("overview", "overview") ?>
+
+<P>Alice ML is based on the
+<A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>
+programming language (SML), as defined in</P>
+
+<UL>
+  <LI>Robin Milner, Mads Tofte, Robert Harper, Dave MacQueen: <BR>
+  <I><A href="http://mitpress.mit.edu/catalog/item/default.asp?sid=E868B22B-D3BB-46D3-95EF-9D010C912B4F&ttype=2&tid=3874">The
+  Definition of Standard ML (Revised)</A></I> <BR>
+  The MIT Press <BR>
+  ISBN 0-262-63181-4</LI>
+</UL>
+
+<P>However, Alice ML features a number of extensions relative to SML (including most current proposals for <A href="http://www.successor-ml.org"><I>Successor ML</I></A>).</P>
+
+<UL>
+  <LI> <A href="futures.html">Futures:</A>
+  <UL>
+    <LI> <A href="futures.html#spawn">concurrency</A> </LI>
+    <LI> <A href="futures.html#lazy">lazy evaluation</A> </LI>
+    <LI> <A href="futures.html#promise">promises</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="types.html">Extended type language:</A>
+  <UL>
+<!--
+    <LI> <A href="types.html#rebind">overloaded rebinding</A> </LI>
+-->
+    <LI> <A href="types.html#datatype">structural datatypes</A> </LI>
+    <LI> <A href="types.html#exttype">extensible types</A> </LI>
+    <LI> <A href="types.html#wildcard">type wildcards</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="modules.html">Higher-order modules:</A>
+  <UL>
+    <LI> <A href="modules.html#local">local modules</A> </LI>
+    <LI> <A href="modules.html#open">generalised open declarations</A> </LI>
+    <LI> <A href="modules.html#higher">higher-order functors</A> </LI>
+    <LI> <A href="modules.html#sigmembers">signature members and abstract signatures</A> </LI>
+<!--
+    <LI> <A href="modules.html#paramsig">parameterized signatures</A> </LI>
+    <LI> <A href="modules.html#singleton">singleton signatures</A> </LI>
+-->
+    <LI> <A href="modules.html#lazy">lazy evaluation</A> </LI>
+    <LI> <A href="modules.html#fixity">fixity specifications</A> </LI>
+    <LI> <A href="modules.html#sugar">syntax enhancements</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="packages.html">Packages:</A>
+  <UL>
+    <LI> <A href="packages.html#firstclass">first-class modules</A> </LI>
+    <LI> <A href="packages.html#dynamic">dynamic typing</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="pickling.html">Pickling:</A>
+  <UL>
+    <LI> <A href="pickling.html#semantics">persistent values</A> </LI>
+    <LI> <A href="pickling.html#export">persistent modules</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="components.html">Components:</A>
+  <UL>
+    <LI> <A href="components.html#source">separate compilation</A> </LI>
+    <LI> <A href="components.html#execution">lazy linking</A> </LI>
+    <LI> <A href="components.html#firstclass">first-class components</A> </LI>
+    <LI> <A href="components.html#managers">sandboxing</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="distribution.html">Distributed programming:</A>
+  <UL>
+    <LI> <A href="distribution.html#tickets">tickets</A> </LI>
+    <LI> <A href="distribution.html#proxies">proxies</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="constraints.html">Constraint programming</A>
+  <UL>
+    <LI> <A href="constraints.html#fd">finite domain constraints</A> </LI>
+    <LI> <A href="constraints.html#fs">finite set contraints</A> </LI>
+    <LI> <A href="constraints.html#spaces">first-class computation spaces</A> </LI>
+  </UL>
+  </LI>
+
+  <LI> <A href="sugar.html">Syntactic sugar:</A>
+  <UL>
+    <LI> <A href="sugar.html#comments">line comments</A> </LI>
+    <LI> <A href="sugar.html#literals">extended syntax for numeric literals</A> </LI>
+    <LI> <A href="sugar.html#vectors">vector expressions and patterns</A> </LI>
+    <LI> <A href="sugar.html#records">sugar for records</A> </LI>
+    <LI> <A href="sugar.html#patterns">extended pattern language</A> </LI>
+    <LI> <A href="sugar.html#rec-expression">generalized recursive definitions</A> </LI>
+    <LI> <A href="sugar.html#optional">Optional bars and semicolons</A> </LI>
+    <LI> <A href="sugar.html#if">conditional with optional <TT>else</TT> branch</A> </LI>
+    <LI> <A href="sugar.html#finally">finalization</A> </LI>
+    <LI> <A href="sugar.html#sourcepos">source position</A> </LI>
+    <LI> <A href="sugar.html#assert">assertions</A> </LI>
+    <LI> <A href="sugar.html#do">statements</A> </LI>
+  </UL>
+  </LI>
+</UL>
+
+<P>You should also be aware of some</P>
+
+<UL>
+  <LI><A href="incompatibilities.html">incompatibilities with SML</A>,</LI>
+  <LI><A href="limitations.html">limitations of the current implementation</A>.</LI>
+</UL>
+
+
+<?php section("syntax", "syntax summary") ?>
+
+<?php subsection("comments", "Line comments") ?>
+
+<UL>
+<LI>The comment marker <TT>(*)</TT> introduces a <A href="sugar.html#comments">line comment</A>.</LI>
+</UL>
+
+<?php subsection("literals", "Literals") ?>
+
+<UL>
+<LI>Numeric literals may contain <A href="sugar.html#literals">underscores</A> to group digits.</LI>
+
+<LI>The prefixes <TT>0b</TT> and <TT>0wb</TT> introduce <A href="sugar.html#literals">binary literals</A>.</LI>
+</UL>
+
+<?php subsection("reserved", "Reserved words") ?>
+
+<P>Alice ML defines some additional identifiers as reserved words:</P>
+
+<PRE class=code>
+	any    assert    assert<I>d</I>   comp      constructor  exttype
+	fct    finally   from      import    non          lazy
+	pack   spawn     unpack    withfun   withval      _file_    _line_</PRE>
+
+<P>The following grammar collects all other syntactic extensions of Alice ML
+relative to Standard ML. Derived forms are marked (*).
+
+
+<?php subsection("longids", "Long identifiers") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>longid</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>id</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>longid</I> <TT>.</TT> <I>id</I> </TD>
+    <TD> <A href="sugar.html#longids">long identifiers</A> </TD>
+  </TR>
+</TABLE>
+
+<?php subsection("syntax-exps", "Expressions") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>comp</TT> &lt;<I>ann</I> <TT>in</TT>&gt;
+         <I>spec</I> <TT>with</TT> <I>dec</I> <TT>end</TT> </TD>
+    <TD> <A href="components.html#firstclass">component</A><SUP>1</SUP> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>#[</TT> <I>exp</I><SUB>1</SUB> <TT>,</TT> ... <TT>,</TT>
+                     <I>exp</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
+    <TD> <A href="sugar.html#vectors">vector</A> (<I>n</I>&ge;0) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
+    <TD> <A href="sugar.html#records-update">record update</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>exp</I><SUB>1</SUB> <TT>;</TT> ... <TT>;</TT>
+                    <I>exp</I><SUB><I>n</I></SUB> &lt;<TT>;</TT>&gt;<TT>)</TT> </TD>
+    <TD> <A href="sugar.html#optional-semicolon">sequential</A> (<I>n</I>&ge;2) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>let</TT> <I>dec</I> <TT>in</TT>
+         <I>exp</I><SUB>1</SUB> <TT>;</TT> ... <TT>;</TT>
+         <I>exp</I><SUB><I>n</I></SUB> &lt;<TT>;</TT>&gt; <TT>end</TT> </TD>
+    <TD> <A href="sugar.html#optional-semicolon">local declaration</A> (<I>n</I>&ge;1)   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_file_</TT> </TD>
+    <TD> <A href="sugar.html#sourcepos">source file</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_line_</TT> </TD>
+    <TD> <A href="sugar.html#sourcepos">source line</A> (*) </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I> <TT>handle</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> <A href="sugar.html#optional-bar">handle exception</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>case</TT> <I>exp</I> <TT>of</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> <A href="sugar.html#optional-bar">case analysis</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> <A href="sugar.html#optional-bar">function</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> &lt;<TT>else</TT> <I>exp</I><SUB>3</SUB>&gt;
+    <TD> <A href="sugar.html#if">conditional</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>lazy</TT> <I>exp</I> </TD>
+    <TD> <A href="futures.html#lazy">lazy</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>spawn</TT> <I>exp</I> </TD>
+    <TD> <A href="futures.html#spawn">concurrent</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I><SUB>1</SUB> <TT>finally</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> <A href="sugar.html#finally">finalization</A> (L) (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#rec-expression">recursion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>strexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> <A href="packages.html#package-pack">transparent packing</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>strexp</I> <TT>:></TT> <I>sigexp</I> </TD>
+    <TD> <A href="packages.html#package-sharing">opaque packing</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> </TD>
+    <TD> <A href="sugar.html#assert">boolean assertion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> <A href="sugar.html#assert">pattern assertion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> <A href="sugar.html#assert">exception assertion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#assert">boolean precondition</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#assert">pattern precondition</A> (*) </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>exprow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt;
+                    &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-punning">label as expression</A> (*) </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>=</TT> <I>exp</I> &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
+  </TR>
+</TABLE>
+
+<P><SUP>1</SUP>) The syntax of import items in a first-class component is
+restricted to the syntactic subclass of the corresponding descriptions, as
+used in signatures.</P>
+
+
+<?php subsection("syntax-pats", "Patterns") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>atpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>#[</TT> <I>pat</I><SUB>1</SUB> <TT>,</TT> ... <TT>,</TT>
+                     <I>pat</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
+    <TD> <A href="sugar.html#vectors">vector</A> (<I>n</I>&ge;0) </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>pat</I><SUB>1</SUB> <TT>|</TT> ... <TT>|</TT>
+                    <I>pat</I><SUB><I>n</I></SUB> <TT>)</TT> </TD>
+    <TD> <A href="sugar.html#patterns-alt">alternative</A> (<I>n</I>&ge;2) </TD>
+  </TR>
+
+  <TR>&nbsp;</TR>
+  <TR>
+    <TD> <I>pat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>pat</I> <TT>as</TT> <I>pat</I> </TD>
+    <TD> <A href="sugar.html#patterns-layered">layered</A> (R) </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>non</TT> <I>pat</I> </TD>
+    <TD> <A href="sugar.html#patterns-negated">negated</A> </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>pat</I> <TT>if</TT> <I>atexp</I> </TD>
+    <TD> <A href="sugar.html#patterns-guard">guarded</A> (L) </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>patrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>=</TT> <I>pat</I> &lt;<TT>,</TT> <I>patrow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
+  </TR>
+</TABLE>
+
+
+<?php subsection("syntax-tys", "Types") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>ty</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> </TD>
+    <TD> <A href="types.html#wildcards">wildcard</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>tyrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>:</TT> <I>ty</I> &lt;<TT>,</TT> <I>tyrow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
+  </TR>
+</TABLE>
+
+
+<?php subsection("syntax-decs", "Declarations") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>dec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> <SUP>1</SUP>) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extbind</I> </TD>
+    <TD> <A href="types.html#exttype">extensible datatype</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econbind</I> </TD>
+    <TD> <A href="types.html#exttype">generative constructor</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>open</TT> <I>strexp</I>
+    <TD> <A href="module.html#open">generalised open</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>do</TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#do">statement</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>fvalbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; </TD>
+    <TD> <A href="futures.html#lazy-sugar">lazy</A>/<A href="futures.html#spawn-sugar">concurrent</A> function
+	 (<I>m</I>,<I>n</I>&ge;1) (*) </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&lt;<TT>|</TT>&gt;
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>11</SUB> ... <I>atpat</I><SUB>1<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>1</SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;<TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>21</SUB> ... <I>atpat</I><SUB>2<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>2</SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB>2</SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;<TT>|</TT> ... </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;<TT>|</TT>
+         &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB><I>m</I>1</SUB> ... <I>atpat</I><SUB><I>mn</I></SUB> &lt;<TT>:</TT> ty<SUB><I>m</I></SUB>&gt;
+	 <TT>=</TT> <I>exp</I><SUB><I>m</I></SUB> </TD>
+  </TR><TR>
+    <TD></TD><TD></TD>
+    <TD> &nbsp;&nbsp;&nbsp;&nbsp;&lt;<TT>and</TT> <I>fvalbind</I>&gt; </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>datbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>conbind</T> &lt;<TT>and</TT> <I>datbind</I>&gt; </TD>
+    <TD> <A href="sugar.html#optional-bar">datatype binding</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>extbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
+    <TD> <A href="types.html#exttype">extensible datatype</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>econbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
+    <TD> <A href="types.html#exttype">new constructor</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
+	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
+    <TD> <A href="types.html#exttype">synonym</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>strbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I>
+         &lt;<TT>and</TT> <I>strbind</I>&gt; </TD>
+    <TD> <A href="modules.html#sugar-wildcards">anonymous structure</A> (*) </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>funbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB> &lt;&nbsp;<TT>:</TT> | <TT>:></TT> <I>sigexp</I>&gt;
+         <TT>=</TT> <I>strexp</I>
+         &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
+    <TD> <A href="modules.html#higher-strexp">functor binding</A> (<I>n</I>&ge;1) (*) <SUP>2</SUP> </TD>
+  </TR>
+
+<!--
+  <TR></TR>
+  <TR>
+    <TD> <I>sigbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>sigbind</I>&gt; </TD>
+    <TD> <A href="modules.html#paramsig">signature binding</A> (<I>n</I>&ge;0) <SUP>2</SUP> </TD>
+  </TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) The extended phrase class <I>dec</I> contains all of Standard
+ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
+
+<P><SUP>2</SUP>) See the <A href="modules.html#syntax-decs">module syntax
+summary</A> for a more precise grammar of functor <!--and signature-->
+bindings.</P>
+
+<?php subsection("syntax-structs", "Structures") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>strexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>strexp</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#sugar-parens">parentheses</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>dec</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#sugar-parens">structure</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strexp</I> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#higher-strexp">functor application</A> <SUP>1</SUP> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#higher-strexp">functor</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> <A href="packages.html#package-unpack">unpacking</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>lazy</TT> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#lazy">laziness</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>spawn</TT> <I>strexp</I> </TD>
+    <TD> <A href="modules.html#lazy">concurrency</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>strpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> <A href="modules.html#higher-strexp">parameter</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> <A href="modules.html#sugar-wildcards">anonymous parameter</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#higher-strexp">parameter</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <TT>_</TT> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#sugar-wildcards">anonymous parameter</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#sugar-parens">signature as parameter</A> (*) </TD>
+  </TR>
+</TABLE>
+
+<P><SUP>1</SUP>) See the <A href="modules.html#syntax-structs">module syntax
+summary</A> for a more precise grammar of structure expressions and functor
+application.</P>
+
+
+<?php subsection("syntax-sigs", "Signatures") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>any</TT> </TD>
+    <TD> <A href="modules.html#top">top</A> </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>longsigid</I> </TD>
+    <TD> <A href="modules.html#sigmembers">signature identifier</A> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>let</TT> <I>dec</I> <TT>in</TT> <I>sigexp</I> <TT>end</TT> </TD>
+    <TD> local declarations </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#sugar-parens">parentheses</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#sugar-parens">signature</A> (*) </TD>
+  </TR>
+  <TR></TR>
+<!--
+  <TR>
+    <TD> <I>appsigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>appsigexp</I> <I>atstrexp</I> </TD>
+    <TD> <A href="modules.html#paramsig">signature application</A> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>appsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
+    <TD> <A href="modules.html#higher-sigexp">functor</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigexp</I><SUB>1</SUB> <TT>-></TT> <I>sigexp</I><SUB>2</SUB> </TD>
+    <TD> <A href="modules.html#higher-sigexp">non-dependent functor</A> <SUP>1</SUP> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>
+    <TD> <A href="modules.html#sigmembers-rea">specialization</A> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>rea</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>val</TT> <I>longvid</I> <TT>=</TT> <I>longvid</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>longvid</I> <TT>=</TT> <I>longvid</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>type</TT> <I>tyvarseq</I> <I>longtycon</I>
+         <TT>=</TT> <I>ty</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>structure</TT> <I>longstrid</I><SUB>1</SUB> <TT>=</TT> <I>longstrid</I><SUB>2</SUB> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>longsigid</I>
+         <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>sigexp</I> </TD>
+    <TD> signature (<I>n</I>&ge;0) </TD>
+  </TR>
+  <TR></TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) See the <A href="modules.html#syntax-sigs">module syntax
+summary</A> for a more precise grammar of functor signatures.</P>
+
+
+<?php subsection("syntax-specs", "Specifications") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>spec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extdesc</I> </TD>
+    <TD> <A href="types.html#exttype">extensible datatype</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econdesc</I> </TD>
+    <TD> <A href="types.html#exttype">generative constructor</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>functor</TT> <I>fundesc</I> </TD>
+    <TD> <A href="modules.html#higher-sigexp">functor specification</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>sigdesc</I> </TD>
+    <TD> <A href="modules.html#sigmembers">signature specification</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>datdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>condesc</T> &lt;<TT>and</TT> <I>datdesc</I>&gt; </TD>
+    <TD> <A href="sugar.html#optional-bar">datatype description</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>extdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
+    <TD> <A href="types.html#exttype">extensible datatype</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>econdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+	 &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
+    <TD> <A href="types.html#exttype">new constructor</A> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
+	 &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
+    <TD> <A href="types.html#exttype">synonym</A> </TD>
+-->
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>fundesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
+    <TD> <A href="modules.html#higher-sigexp">functor description</A> (<I>n</I>&ge;1) (*) <SUP>1</SUP> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>sigdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> &lt;<TT>=</TT> <I>sigexp</I>&gt;
+         &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
+    <TD> <A href="modules.html#sigmembers">signature description</A> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD> <I>sigdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         &lt;<TT>=</TT> <I>sigexp</I>&gt;
+         &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
+    <TD> <A href="modules.html#sigmembers">signature description</A> (<I>n</I>&ge;0) <SUP>1</SUP> </TD>
+  </TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) See the <A href="modules.html#syntax-specs">module syntax
+summary</A> for a more precise grammar of functor <!--and signature-->
+specifications.</P>
+
+<?php subsection("syntax-components", "Components") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>component</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>ann</I> &lt;<I>program</I>&gt; </TD>
+    <TD> <A href="components.html#source">component</A> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>ann</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>import</TT> <I>imp</I> <TT>from</TT> <I>string</I> </TD>
+    <TD> <A href="components.html#source">import announcement</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>import</TT> <I>string</I> </TD>
+    <TD> <A href="components.html#source-interactive">import all</A> (*)</TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD>  </TD>
+    <TD> empty </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>ann</I> &lt;<TT>;</TT>&gt; <I>ann</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>imp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>val</TT> <I>valitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>type</TT> <I>typitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>datatype</TT> <I>datitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exttype</TT> <I>extitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>econitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>exception</TT> <I>exitem</I> </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>structure</TT> <I>stritem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>functor</TT> <I>funitem</I> </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>sigitem</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>infix</TT> &lt;<I>d</I>&gt; <I>vid</I><SUB>1</SUB>
+                                     ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>infixr</TT> &lt;<I>d</I>&gt; <I>vid</I><SUB>1</SUB>
+                                      ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>nonfix</TT> <I>vid</I><SUB>1</SUB>
+                     ... <I>vid</I><SUB><I>n</I></SUB> </TD>
+    <TD> (<I>n</I>&ge;1)</TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD>  </TD>
+    <TD> empty </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>imp</I> &lt;<TT>;</TT>&gt; <I>imp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>valitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
+         &lt;<TT>and</TT> <I>valitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>:</TT> <I>ty</I>
+         &lt;<TT>and</TT> <I>valitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>typitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>typitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I>
+         &lt;<TT>and</TT> <I>typitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>datitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt; <I>conitem</I>
+         &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>conitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+         &lt;<TT>|</TT> <I>conitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>extitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tycon</I> &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> 
+         &lt;<TT>and</TT> <I>extitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>econitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+         &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
+	 <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
+         &lt;<TT>and</TT> <I>econitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+-->
+  <TR></TR>
+  <TR>
+    <TD> <I>exitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> 
+         &lt;<TT>and</TT> <I>exitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> &lt;<TT>op</TT>&gt; <I>vid</I> <TT>of</TT> <I>ty</I>
+         &lt;<TT>and</TT> <I>exitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>stritem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> &lt;<TT>and</TT> <I>stritem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>stritem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>funitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
+    <TD> (*) </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+	 <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
+    <TD> (<I>n</I>&ge;1) (*) <SUP>1</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigitem</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
+    <TD> </TD>
+  </TR>
+<!--
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
+    <TD> (<I>n</I>&ge;1) <SUP>1</SUP> </TD>
+  </TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) See the <A href="components.html#syntax">component syntax
+summary</A> for a more precise grammar of functor <!--and signature-->
+items.</P>
+
+<?php footing() ?>

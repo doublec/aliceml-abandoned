@@ -1,0 +1,437 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+
+structure TestIntInf :> TESTSUITE = (* the intInf test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    val fromI = IntInf.fromInt
+
+    fun testMinInt () =
+	Test.test (fn m => IntInf.minInt = m) NONE
+
+    fun testMaxInt () =
+	Test.test (fn m => IntInf.maxInt = m) NONE
+
+    fun testPrecision () =
+	Test.test (fn m => IntInf.precision = m) NONE
+
+    fun testToInt () = 
+	let
+	    val x1 = fromI (valOf Int.maxInt)
+	    val x2 = IntInf.* (x1, x1)
+	    val x1 = IntInf.- (x1, x2)
+	in
+	    Test.test (fn s => (IntInf.toInt s; false) handle _ => true) x1;
+	    Test.test (fn s => (IntInf.toInt s; false) handle _ => true) x2
+	end
+
+    fun testFromInt () =
+	let
+	    val max = IntInf.- (IntInf.pow (fromI 2, valOf Int.precision - 1),
+				fromI 1)
+	    val min = IntInf.~ (IntInf.pow (fromI 2, valOf Int.precision - 1))
+	in
+	    Test.test (fn x => IntInf.fromInt x = max) (valOf Int.maxInt);
+	    Test.test (fn x => IntInf.fromInt x = min) (valOf Int.minInt);
+	    Gen.try 1000 Gen.int 
+	        (Test.test (fn x => (IntInf.fromInt x; true)))
+	end
+
+    fun testToFromInt () =
+	let
+	    fun t x = x = IntInf.toInt (IntInf.fromInt x)
+	in
+	    Gen.try 10000 Gen.int (Test.test t)
+	end
+
+    fun testToLarge () =
+	let
+	    fun t x = x = IntInf.toLarge x
+	in
+	    Gen.try 10000 Gen.largeInt (Test.test t)
+	end
+
+    fun testFromLarge () =
+	let
+	    fun t x = x = IntInf.fromLarge x
+	in
+	    Gen.try 10000 Gen.largeInt (Test.test t)
+	end
+
+    fun testToFromLarge () =
+	let
+	    fun t x = x = IntInf.fromLarge (IntInf.toLarge x)
+	in
+	    Gen.try 10000 Gen.largeInt (Test.test t)
+	end
+
+    fun testDiv () =
+	let
+	    fun t (a, b) = IntInf.equal (a, b * IntInf.div(a, b) + 
+					        IntInf. mod(a, b)) 
+				     handle Div => IntInf.equal (b, fromI 0)
+	in
+	    Gen.try 10 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t)
+	end
+
+    fun testMod () =
+	let
+	    (* very ugly... TODO: some more faster way *)
+	    fun t (x, y, r, i) = if y * i > IntInf.abs(x) then false
+				 else if IntInf.equal (x, y * i + r) andalso 
+					 IntInf.sameSign (y, r) then true 
+				     else t (x, y, r, i + (fromI 1))
+	    fun getLarge i = IntInf.div (Gen.largeInt i, fromI 1000)
+	    fun h i = let val a = Gen.largeInt i
+			  val b = Gen.largeInt i
+		      in
+			  t (a, b, IntInf.mod(a, b), ~ (IntInf.abs a)) 
+			    handle Div => IntInf.equal (b, fromI 0)
+		      end
+	in
+	    Test.test (fn _ => true) () (*Gen.try 5 getLarge (Test.test h) *)
+	end
+
+    fun testQuot () =
+	let
+	    fun t (a, b) = IntInf.equal (a, b * IntInf.quot(a, b) + 
+					        IntInf. rem(a, b)) 
+				     handle Div => IntInf.equal (b, fromI 0)
+	in
+	    Gen.try 10 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t)
+	end
+
+    fun testRem () =
+	let
+	    (* very ugly... TODO: some more faster way *)
+	    fun t (x, y, r, i) = if y * i > IntInf.abs(x) then false
+				 else if IntInf.equal (x, y * i + r) andalso 
+					 IntInf.sameSign (x, r) then true 
+				     else t (x, y, r, i + (fromI 1))
+	    fun getLarge i = IntInf.div (Gen.largeInt i, fromI 1000)
+	    fun h i = let val a = Gen.largeInt i
+			  val b = Gen.largeInt i
+		      in
+			  t (a, b, IntInf.rem(a, b), ~ (IntInf.abs a)) 
+			    handle Div => IntInf.equal (b, fromI 0)
+		      end
+	in
+	    Test.test (fn _ => true) () (*Gen.try 5 getLarge (Test.test h) *)
+	end
+
+    fun testEqual () =
+	let
+	    fun t (x1, x2) = if x1 = x2 then Int.equal (x1, x2) 
+			     else Bool.not (Int.equal (x1, x2))
+	in
+	    Gen.try 10000 Gen.int 
+	     (Test.test (fn x => Int.equal(x, x) andalso 
+			         t (Gen.int x, Gen.int x)))
+	end
+
+    fun testCompare () =
+	let
+	    fun t' (x1, x2) = if IntInf.< (x1, x2) then LESS
+			      else if x1 > x2 then GREATER
+				   else EQUAL
+	    fun t'' (x1, x2) = IntInf.compare (x1, x2) = t' (x1, x2)
+	in 
+	    Gen.try 1000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t'');
+	    Test.test t'' (fromI 0, fromI 0)
+	end
+
+    fun testHash () =
+	let
+	    fun t i = 
+		case Int.maxInt of 
+		    NONE   => IntInf.toInt (IntInf.abs i)
+		  | SOME m => IntInf.toInt (IntInf.mod (IntInf.abs i, 
+							IntInf.fromInt m))
+	in
+	    Gen.try 1000 Gen.largeInt (Test.test (fn x => IntInf.hash x = t x))
+	end
+
+    fun testDivMod () =
+	let
+	    fun t (a, b) = IntInf.divMod (a, b) = 
+		           (IntInf.div (a, b), IntInf.mod (a, b)) 
+		              handle Div => b = (fromI 0)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t)
+	end
+
+    fun testQuotRem () =
+	let
+	    fun t (a, b) = IntInf.quotRem (a, b) = 
+		           (IntInf.quot (a, b), IntInf.rem (a, b)) 
+		              handle Div => b = (fromI 0)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t)
+	end
+
+    fun testPow () =
+	let
+	    val zero = fromI 0
+	    val one  = fromI 1
+
+	    fun pow' (a, b, c) = if b = 0 then c 
+				 else pow' (a, b - 1, IntInf.* (c, a))
+
+	    fun t (i, j) = if j >= 0 then
+	                       pow' (i, j, one)
+			   else
+			       if i = zero then
+			           raise Div
+			       else
+			           if IntInf.abs i = one then
+			               pow' (i, ~j, one)
+			           else
+			               zero
+	in
+	    Gen.try 100 (Gen.pair (Gen.largeInt, Gen.int))
+	       (Test.test (fn x => let
+				     val r = SOME (t x) handle Div => NONE
+			           in 
+				     case r
+				     of SOME r' => IntInf.pow x = r'
+				      | NONE    => (IntInf.pow x; false) handle Div => true
+			           end))
+	end
+
+    fun testLog2 () =
+	let
+	    fun findK (i, k) = if IntInf.pow (fromI 2, k) > i 
+				   then k - 1
+			       else findK (i, k + 1)
+
+	    fun t i = if i <= (fromI 0) then NONE
+		      else SOME (findK (i, 0)) handle Overflow => NONE
+	in
+	    Gen.try 10000 Gen.largeInt 
+	      (Test.test (fn x => 
+			    let
+				val r = t x
+			    in
+				IntInf.log2 x = valOf r 
+				          handle _ => Option.isNone r
+			    end))
+	end
+
+    fun testOrB () = (* or (a, b) = ~(~a ^ ~b) *)
+	let
+	    fun t (a, b) = IntInf.notb (IntInf.andb (IntInf.notb a, 
+						     IntInf.notb b))
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt))
+	       (Test.test (fn x => IntInf.orb x = t x))
+	end
+
+    fun testAndB () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testXorB () = (* xor (a, b) = (~a ^ b) v (a ^~b) *)
+	let
+	    fun t (a, b) = IntInf.orb (IntInf.andb (IntInf.notb a, b), 
+				       IntInf.andb (a, IntInf.notb b))
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt))
+	       (Test.test (fn x => IntInf.xorb x = t x))
+	end
+
+    fun testNotB () =
+	let
+	    fun t x = IntInf.notb x = IntInf.~ (x + (fromI 1))
+	in
+	    Gen.try 1000 Gen.largeInt (Test.test t)
+	end
+
+    fun testLeftShift () =
+	let
+	    fun t (i, w) = i * IntInf.pow (fromI 2, Word.toInt w)
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.word))
+	      (Test.test (fn x => t x = IntInf.<< x))
+	end
+
+    fun testRightShift () =
+	let
+	    fun t (i, w) = IntInf.div (i, IntInf.pow (fromI 2, Word.toInt w))
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.word))
+	      (Test.test (fn x => t x = IntInf.~>> x))
+	end
+
+    fun testAbs () =
+	let
+	    fun t x = if x < (fromI 0) 
+			  then IntInf.abs x = IntInf.~ x 
+		      else IntInf.abs x = x
+	in
+	    Gen.try 10000 Gen.largeInt (Test.test t)
+	end 
+
+    fun testMin () =
+	let
+	    fun t' (x1, x2) = if IntInf.equal (x1, x2) then x1
+			      else if x1 < x2 then x1
+				   else x2
+	    fun t x = IntInf.min x = t' x
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t)
+	end
+
+    fun testMax () =
+	let
+	    fun t' (x1, x2) = if IntInf.equal (x1, x2) then x1
+			      else if x1 > x2 then x1
+				   else x2
+	    fun t x = IntInf.max x = t' x
+	    fun t'' (x1, x2) = if IntInf.max (x1, x2) = x1
+				   then IntInf.min (x1, x2) = x2
+			       else IntInf.min (x2, x1) = x1
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) 
+		    (Test.test t);
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) 
+		    (Test.test t'')
+	end
+
+    fun testSign () =
+	let
+	    fun t' x = if x < (fromI 0) then ~1
+		       else 
+			   if x > (fromI 0) then  1 else 0
+	    fun t x = IntInf.sign x = t' x
+	in 
+	    Gen.try 1000 Gen.largeInt (Test.test t)
+	end
+
+    fun testSameSign () =
+	let
+	    fun t' (x1, x2) = if x1 = (fromI 0) andalso x2 = (fromI 0) 
+				  then true
+			      else if x1 > (fromI 0) andalso x2 > (fromI 0) 
+				       then true
+				   else if x1 < (fromI 0) andalso 
+				           x2 < (fromI 0) then true
+				      else false
+	    fun t x = IntInf.sameSign x = t' x
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t)
+	end
+
+    fun testArithmetic () = 
+	let
+	    fun tS (x1, x2) = if x2 = (fromI 0) 
+			      then IntInf.sameSign (x1, fromI ~1)
+			      else (IntInf.sameSign (x1, fromI ~1) andalso 
+				    IntInf.sameSign (x2, fromI 1)) orelse
+				   if IntInf.sameSign (x1, x2) andalso
+				      IntInf.sameSign (x1, fromI ~1) then
+				       ((IntInf.abs x2) div (IntInf.abs x1) = 
+					(fromI 0))
+				   else if x1 = (fromI 0) 
+				        then IntInf.sameSign (x2, fromI 1)
+				        else x1 div x2 = (fromI 0)
+	    fun tE (x1, x2) = if x2 = (fromI 0) then x1 = (fromI 0) 
+			      else x1 div x2 = (fromI 1) andalso 
+				   (x1 mod x2 = (fromI 0))
+            fun tG x = (Bool.not (tS x)) andalso (Bool.not (tE x))
+	    fun t' (x1, x2) = 
+		((tS (x1, x2)) = (x1 < x2)) andalso
+		((tG (x1, x2)) = (x1 > x2)) andalso
+		((tE (x1, x2)) = (x1 = x2))
+	in
+	    Gen.try 10000 (Gen.pair (Gen.largeInt, Gen.largeInt)) (Test.test t')
+	end
+
+    fun testToString () =
+	let
+	    fun t i = IntInf.toString i =
+		      IntInf.fmt StringCvt.DEC i 
+	in 
+	    Gen.try 1000 Gen.largeInt (Test.test t)
+	end
+
+    fun testFromString () =
+	let
+	    fun t s = StringCvt.scanString (IntInf.scan StringCvt.DEC) s = 
+		      IntInf.fromString s
+	in
+	    Gen.try 5000 Gen.string (Test.test t)
+	end
+
+    fun testToFromString () =
+	let
+	    val x1 = fromI (valOf Int.maxInt)
+	    val x2 = fromI (valOf Int.minInt)
+	    fun toFrom x = valOf (IntInf.fromString (IntInf.toString x))
+	in
+            (Test.test (fn x => toFrom x = x handle _ => false) x1;
+	     Test.test (fn x => toFrom x = x handle _ => false) x2;
+	     Gen.try 10000 Gen.int 
+		     (Test.test (fn x => let
+					   val t = fromI x
+				         in
+					   toFrom t = t handle _ => false
+				         end)))
+	end
+
+    fun testFmt () = Test.test (fn _ => raise Test.NotYetImplemented) ()    
+
+    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    val suite = ("IntInf", [("minInt", testMinInt),
+			    ("maxInt", testMaxInt),
+			    ("precision", testPrecision),
+			    ("toInt", testToInt),
+			    ("fromInt", testFromInt),
+			    ("toLarge", testToLarge),
+			    ("fromLarge", testFromLarge),
+			    ("toFromLarge", testToFromLarge),
+			    ("arithmetic", testArithmetic),
+			    ("div", testDiv),
+			    ("mod", testMod),
+			    ("quot", testQuot),
+			    ("rem", testRem),
+			    ("equal", testEqual),
+			    ("compare", testCompare),
+			    ("hash", testHash),
+			    ("divMod", testDivMod),
+			    ("quotRem", testQuotRem),
+			    ("pow", testPow),
+			    ("log2", testLog2),
+			    ("orb", testOrB),
+			    ("xorb", testXorB),
+			    ("andb", testAndB),
+			    ("notb", testNotB),
+			    ("<<", testLeftShift),
+			    ("~>>", testRightShift),
+			    ("abs", testAbs),
+			    ("min", testMin),
+			    ("max", testMax),
+			    ("sign", testSign),
+			    ("sameSign", testSameSign),
+			    ("toString", testToString),
+			    ("fromString", testFromString),
+			    ("toFromString", testToFromString),
+			    ("fmt", testFmt),
+			    ("scan", testScan)])
+end

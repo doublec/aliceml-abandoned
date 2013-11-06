@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+signature STREAM =					(**)
+    sig
+	type 'a stream
+	type 'a t = 'a stream
+
+	exception Closed
+
+	val stream: unit -> 'a stream * 'a list
+	val send: 'a stream * 'a -> unit	(* Closed *)
+	val close: 'a stream -> unit
+	val isClosed: 'a stream -> bool
+    end

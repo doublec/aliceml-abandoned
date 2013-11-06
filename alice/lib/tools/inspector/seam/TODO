@@ -1,0 +1,30 @@
+o I have not written type-mappers for all builtin types. Some are missing.
+  See the last lines of TypeMappers.aml
+
+o Strings cannot be expanded yet.
+
+o The field 'limit' in containers is not used. Remove it.
+
+o For the gnome-canvas, do not catch all events, but be more selective :
+  use the 'button-press-event' mask for example.
+
+o I defined the styles randomly. Some colors may look weird.
+
+o It would be nice if arrays were updated dynamically. Same for threads.
+
+o (Very) Minor efficiency pb : reselect() could be done only for entries
+  that are known to be updated.
+
+o Minor efficiency pb : the layout algorithm for the Board (and only for it !)
+  is quadratic. It could be made linear quite easily. 
+
+o Minor leak : when a future is removed from the inspector,
+  its monitoring thread is still running (until the future is determined).
+  One should kill that thread.
+
+o When the Inspector window is not shown, GTK should not be loaded.
+  It should also be possible to register an abstract type without loading GTK
+  (which is not so obvious since registering a type may imply registering
+   a new color)
+
+

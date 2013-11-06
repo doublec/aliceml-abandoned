@@ -1,0 +1,23 @@
+exception E1
+exception E2 = Empty
+
+{a = NONE, b=SOME, bb=SOME 5,...={c=9.8}, d=fn _=>5,
+ e= #[], f= #[2,3], g =(3,4.5), Domain, r= ref[ 4 ],
+ x1 = #bla{bla=0, b=0, ...={true}},
+ iff = if true then [4,5] else raise Empty,
+ cas = case LESS of _ => 0,
+ lz = lazy 9,
+ hash = #bla : {bla:_}->int,
+ hh = 3 handle _ => 4,
+ pac = pack ():(),
+ ll=let in 5 end,
+ alt=case 4 of ((3)   |(4)   |_) => 1,
+ lll=let exception E of int in E end,
+ pac2 = pack(fct()=>()):(fct()->()),
+ w = while (false) do (3+4),
+ file=(_file_,_line_),
+ oo={  },
+ fff=rec f => fn x => f x,
+ up = {{a=3,b="ha"} where a=""},
+ up2 = let type t = {aa:real,b:char} in fn r:t => {r where aa=""} end,
+ o }

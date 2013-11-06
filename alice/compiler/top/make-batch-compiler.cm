@@ -1,0 +1,8 @@
+Group is
+
+    ../../bootstrap/component.cm
+    make-option-parser.cm
+    make-recursive-compiler.cm
+
+    BATCH_COMPILER-sig.aml
+    MkBatchCompiler.aml

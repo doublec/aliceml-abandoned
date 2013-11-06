@@ -1,0 +1,121 @@
+import structure Protocol from "../common/Protocol"
+import structure Log from "../common/Log"
+
+structure Snake :> 
+sig
+    type snake
+
+    val snake : Protocol.snake_info -> snake
+
+   (* ---- queries ---- *)
+    val id : snake -> Protocol.snake_id
+    val points : snake -> int
+    val belly: snake -> int 
+    val headPos: snake -> Protocol.pos
+    val heading: snake -> Protocol.heading
+    val direction: snake -> Protocol.direction
+
+   (* ---- commands ---- *)
+    val reset: snake -> unit
+    val eat: snake * int -> unit
+    val step : snake -> unit
+
+    val appBodyPos: (Protocol.pos -> unit) -> snake -> unit
+
+    val turn: snake * Protocol.heading -> unit
+end
+=
+struct
+    structure P = Protocol
+
+    datatype snake = SNAKE of 
+	{ belly: int ref,
+	 dir: P.direction ref,
+	 heading: P.heading ref,
+	 body: P.pos list ref,
+	 points: int ref,
+	 id: int,
+	 initialInfo: Protocol.snake_info
+	 }
+
+    fun snake (info as { snakeId, initialPos, initialDir }) =
+	SNAKE { belly = ref 1, points = ref 0,
+	       dir = ref initialDir, heading = ref P.AHEAD,
+	       body = ref [initialPos], id = snakeId,
+	       initialInfo = info}
+
+    fun id (SNAKE { id, ... }) = id
+
+    fun eat (SNAKE { id, belly, points, ... }, joule) = 
+	(Log.log (Int.toString id ^ " eated " ^ Int.toString joule);
+	 belly := !belly + joule;
+	 points := !points + joule)
+
+    fun reset (SNAKE { belly, points, dir, heading, body, 
+		      initialInfo = { initialPos, initialDir,... }, ...} ) =
+	(belly := 1;
+	 points := 0;
+	 dir := initialDir;
+	 body := [initialPos])
+	
+	
+    fun points (SNAKE { points = ref p, ... }) = p
+
+    fun belly (SNAKE { belly = ref b, ... }) = b
+
+    fun headPos (SNAKE { body = ref b, ... }) = hd b
+	
+    fun appBodyPos f (SNAKE { body = ref b, ... }) = List.app f (tl b)
+	
+    fun direction (SNAKE { dir = ref d, ... }) = d
+     
+    fun heading (SNAKE { heading = ref h, ... }) = h
+
+    fun turn (SNAKE { heading, ... }, h) = heading := h
+
+    val turn = Log.logFn ("Snake.turn", turn)
+
+    fun nextDir (d, h) = 
+	case (d, h) of
+	    (_, P.AHEAD) => d
+          | (P.W, P.LEFT) => P.S
+          | (P.W, P.RIGHT) => P.N
+          | (P.N, P.LEFT) => P.W
+          | (P.N, P.RIGHT) => P.E
+          | (P.E, P.LEFT) => P.N
+          | (P.E, P.RIGHT) => P.S
+          | (P.S, P.LEFT) => P.E
+          | (P.S, P.RIGHT) => P.W
+
+    fun nextPos (d, (r, c)) =
+	case d of
+	    P.N => (r-1, c)
+          | P.W => (r, c-1)
+          | P.E => (r, c+1)
+	  | P.S => (r+1, c)
+ 
+    fun allButLast l = (* List.take (l, List.length (l) - 1) *)
+	List.rev (List.tl (List.rev l))
+
+
+    fun step (s as SNAKE { heading = hr as ref h, body, dir = dr as ref d,
+		     belly, ... }) =
+
+	let val newDir = nextDir (d, h) 
+	    val oldHd = hd (!body)
+	    val newHd = nextPos (newDir, oldHd)
+	in
+	    hr := P.AHEAD;
+	    dr := newDir;
+
+	    if !belly > 0 then
+		(belly := !belly - 1;
+		 body := newHd :: !body)
+	    else
+		body := newHd :: allButLast (!body)
+	end
+
+
+    val step = Log.logFn ("Snake.step", step)
+
+end

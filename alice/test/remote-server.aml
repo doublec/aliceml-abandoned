@@ -1,0 +1,11 @@
+import "x-alice:/lib/distribution/Remote"
+import "x-alice:/lib/system/HttpServer"
+
+val _ = HttpServer.idleTime := Time.fromSeconds 10
+val _ = HttpServer.logOut := SOME TextIO.stdErr
+
+fun f x = print ("f " ^ Int.toString x)
+
+val p = pack (val f = Remote.proxy f) :> (val f : int -> unit)
+val t = Remote.offer p
+val _ = Pickle.save ("/tmp/ticket", pack (val it = t) :> (val it : string))

@@ -1,0 +1,264 @@
+(* Inspector *)
+
+inspect {x = 5}
+
+val x = List.tabulate (20, fn i => i)
+val _ = inspect (x, x, x)
+
+val rec x = 1::2::3::4::5::x
+val _ = inspect x
+
+open Promise Future
+
+let
+    val p = promise ()
+    val f = future p
+    val l = 1::2::3::4::5::f
+in
+    fulfill (p, l); inspect l
+end;
+
+let
+    val p = promise ()
+    val f = future p
+in
+    fulfill (p, f); inspect f
+end;
+
+
+
+(* Bedarfsgetriebene Auswertung *)
+
+val fibs =
+    let
+	fun fib (n, m) =
+	    byneed (fn () => n::fib (m, n + m))
+    in
+	fib (1, 1)
+    end
+
+inspect fibs
+
+inspect (List.nth (fibs, 5))
+
+inspect (List.nth (fibs, 80))
+
+
+
+(* Nebenläufigkeit *)
+
+fun sleep n = Future.await (Future.alarm (Time.fromSeconds n))
+
+local
+    val active = ref true
+    fun counter i =
+	if !active then
+	    (inspect i;
+	     sleep 1;
+	     counter (i + 1))
+	else ()
+in
+    fun start () = (active := true; concur (fn () => counter 0))
+    fun stop () = active := false
+end
+
+val _ = start ()
+
+val _ = stop ()
+
+
+
+(* Synchronisation *)
+
+open Promise Future
+
+val p = promise ()
+val f = future p
+val _ = inspect ("Die Future:", f)
+
+inspect ("Der Thread:",
+	 concur (fn () => (await f; inspect "the future has been bound")))
+
+fulfill (p, 4)
+
+
+val x = promise ()
+val y = promise ()
+val z = promise ()
+val x' = future x
+val y' = future y
+val z' = future z
+
+inspect 5;
+
+concur (fn () => inspect (y' * z'))
+concur (fn () => inspect (x' + y' * z'))
+
+fulfill (y, 4)
+fulfill (z, 2)
+fulfill (x, 3)
+
+inspect (alarm (Time.fromSeconds 4));
+
+
+
+signature STREAM =
+sig
+    type 'a stream
+
+    val new: unit -> 'a stream * 'a list
+    val send: 'a stream * 'a -> unit
+    val close: 'a stream -> unit
+end
+
+structure Stream :> STREAM =
+struct
+    type 'a stream = 'a list promise ref
+
+    fun new () =
+	let
+	    val p = promise()
+	in
+	    (ref p, future p)
+	end
+
+    fun send (r, x) =
+	let
+	    val p' = promise()
+	    val p = Ref.exchange (r, p')
+	in
+	    fulfill(p, x::future p')
+	end
+
+    fun close r = fulfill(!r, nil)
+end
+
+val (stream, xs) = Stream.new ()
+
+inspect xs
+
+Stream.send (stream, 17);
+
+Stream.send (stream, 7);
+
+let
+    fun counter i =
+	(Stream.send (stream, i); sleep 1; counter (i + 1))
+	handle _ => ()
+in
+    concur (fn () => counter 0)
+end
+
+Stream.close stream
+
+
+
+(* Komponenten *)
+
+
+(* MY_COMPONENT-sig.aml *)
+
+signature MY_COMPONENT =
+    sig
+	val fak: int -> int
+    end
+
+
+(* MyComponent.aml *)
+
+import signature MY_COMPONENT from "MY_COMPONENT-sig"
+
+structure MyComponent :> MY_COMPONENT =
+    struct
+	val _ = TextIO.print "Evaluating MyComponent\n"
+
+	fun fak 0 = 1
+	  | fak i = i * fak (i - 1)
+    end
+
+
+(* MyApplication.aml *)
+
+import structure MyComponent from "MyComponent"
+
+val _ = TextIO.print (Int.toString (MyComponent.fak 7) ^ "\n")
+val _ = OS.Process.exit OS.Process.success
+
+
+
+(* Pakete *)
+
+structure P =
+    Package.Pack(structure X = (val f = length)
+		 signature S = (val f : 'a list -> int))
+
+structure Length =
+    Package.Unpack(val package = P.package
+		   signature S = (val f: 'a list -> int))
+val _ = inspect("length [1,2,1] = ", Length.f [1,2,1])
+
+structure _ =
+    Package.Unpack(val package = P.package
+		   signature S = (val f: real option -> int))   (* Mismatch *)
+
+
+signature TO_STRING =
+sig
+    type t
+    val x: t
+    val toString: t -> string
+end
+
+structure P1 =
+    Package.Pack(structure X = (open Int val x = 5)
+		 signature S = TO_STRING)
+structure P2 =
+    Package.Pack(structure X = (open Real val x = 5.0)
+		 signature S = TO_STRING)
+structure P3 =
+    Package.Pack(structure X = (open Char val x = #"7")
+		 signature S = TO_STRING)
+
+val ps = [P1.package, P2.package, P3.package]
+
+List.app (fn p =>
+	     let
+		 structure S =
+		     Package.Unpack(val package = p
+				    signature S = TO_STRING)
+	     in
+		 TextIO.print (S.toString S.x ^ "\n")
+	     end) ps
+
+
+(* Persistenz *)
+
+signature NUM =
+    sig
+	type t
+	fun fromInt : int -> t
+	fun toInt : t -> int
+	fun add : t * t -> t
+    end
+
+structure Num :> NUM =
+    struct
+	type t = int
+	fun toInt n   = n
+	fun fromInt n = n
+	val add       = op+
+    end
+
+val file = "Num." ^ Pickle.extension
+structure  _ = Pickle.Save(val file = file
+			   structure X = Num
+			   signature S = NUM where type t = Num.t)
+
+structure Num' = Pickle.Load(val file = file
+			     signature S = NUM where type t = Num.t)
+
+import "/home/kornstae/stockhausen/doc/samples/Num"
+
+structure  _ = Pickle.Save(val file = file
+			   structure X = TextIO
+			   signature S = TEXT_IO)

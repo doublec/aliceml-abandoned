@@ -1,0 +1,41 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                            from "Pervasive"
+import __primitive
+       type int and char and string and bool and option from "ToplevelTypes"
+
+signature STRING_CVT =
+sig
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
+
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs
+
+    val padLeft :	char -> int -> string -> string
+    val padRight :	char -> int -> string -> string
+    val splitl :	(char -> bool) -> (char,'a) reader ->'a -> (string * 'a)
+    val takel :		(char -> bool) -> (char,'a) reader -> 'a -> string
+    val dropl :		(char -> bool) -> (char,'a) reader -> 'a -> 'a
+    val skipWS :	(char,'a) reader -> 'a -> 'a
+    val scanString :	((char,cs) reader -> ('a,cs) reader) -> string
+							     -> 'a option
+end

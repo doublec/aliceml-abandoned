@@ -1,0 +1,94 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD from "FD"
+
+signature FS =
+    sig
+	type fd
+	type bin = fd
+	type fs
+
+	exception Tell of {cause : exn} (* = FD.Tell *)
+
+	(* Implementation dependent fs limits *)
+	val inf : int
+	val sup : int
+
+	(* Allocation Function *)
+	val fs : (FD.domain * FD.domain) option -> fs
+	val fsVec : int * FD.domain * FD.domain -> fs vector
+
+	(* Standard Propagators *)
+	val compl : fs * fs -> unit
+	val complIn : fs * fs * fs -> unit
+	val incl : fd * fs -> unit
+	val excl : fd * fs -> unit
+	val card : fs * fd -> unit
+	val cardRange : int * int * fs -> unit
+	val isIn : int * fs -> bool
+
+	val difference : fs * fs * fs -> unit
+	val intersect : fs * fs * fs -> unit
+	val intersectN : fs vector * fs -> unit
+	val union : fs * fs * fs -> unit
+	val unionN : fs vector * fs -> unit
+	val subset : fs * fs -> unit
+	val disjoint : fs * fs -> unit
+	val disjointN : fs vector -> unit
+	val distinct : fs * fs -> unit
+	val distinctN : fs vector -> unit
+	val partition : fs vector * fs -> unit
+
+	(* Values *)
+	val value : FD.domain -> fs
+	val emptyValue : unit -> fs
+	val singletonValue : int -> fs
+(*	    val upperBound : domain -> fs
+*)	    val universalValue : unit -> fs
+	val isValue : fs -> bool
+
+	(* Integer FS *)
+	structure Int :
+	    sig
+		val min : fs * fd -> unit
+		val max : fs * fd -> unit
+		val convex : fs -> unit
+		val match : fs * fd vector -> unit
+		val minN : fs * fd vector -> unit
+		val maxN : fs * fd vector -> unit
+	    end
+
+	(* Reified Propagators *)
+	structure Reified :
+	    sig
+		val isIn : int * fs * bin -> unit
+		val areIn : int list * fs * bin list -> unit
+		val incl : fd * fs * bin -> unit
+		val equal : fs * fs * bin -> unit
+		val partition : fs list * int list * fs * bin list -> unit
+	    end
+
+	(* Reflection *)
+	structure Reflect :
+	    sig
+		val card : fs -> FD.domain
+		val lowerBound : fs -> FD.domain
+		val unknown : fs -> FD.domain
+		val upperBound : fs -> FD.domain
+
+		val cardOfLowerBound : fs -> int
+		val cardOfUnknown : fs -> int
+		val cardOfUpperBound : fs -> int
+	    end
+    end

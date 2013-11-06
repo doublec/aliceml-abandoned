@@ -1,0 +1,61 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Path  from "Path"
+
+signature SEARCH =
+sig
+
+  type solution
+  type space
+
+  exception NotAssigned
+    
+  (* Optional: sets the top node of the search (root-node by default) *)
+  (* Raise Fail if the search has already begun and is not finished yet. *)
+  val init : solution Path.t -> unit
+
+  (* Get next solved space *)
+  val nextSolved : unit -> (space * solution Path.t) option
+
+  (* Indicates if the search is finished. *)
+  val isFinished : unit -> bool
+
+  (* Get one solution and the associated path.
+   * Raises NotAssigned if the variables are not assigned in the solved space;
+   * this means that the problem is under-specified. *)
+  val getOneSolution : unit -> (solution * solution Path.t) option
+
+  (* Get all solutions.
+   * In the case of Branch & Bound, the head of the list is the best solution.
+   * Raises NotAssigned if the variables are not assigned in the solved space;
+   * this means that the problem is under-specified. *)
+  val getAllSolutions : unit -> solution list
+
+  (* Get the path corresponding to some unexplored node,
+   * usually the highest available in the tree 
+   * Thread-safe. *)
+  val getUnexploredPath : unit -> solution Path.t option
+
+  (* Stop the search. 
+   * Thread-safe *)
+  val stopSearch : unit -> unit
+
+  (* Constraint the search space using the given solution. *)
+  val betterThan : solution -> unit
+
+end
+

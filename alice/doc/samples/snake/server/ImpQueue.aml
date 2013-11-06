@@ -1,0 +1,84 @@
+import signature IMP_QUEUE   from "IMP_QUEUE-sig"
+
+
+structure ImpQueue :> IMP_QUEUE =
+struct
+    exception Empty
+    exception Full
+
+    type 'a queue =
+        'a option array * int ref * int ref * int ref
+
+
+    fun queue capacity =
+        assert capacity > 0 do
+        (Array.array (capacity + 1, NONE), ref 0, ref 0, ref 0)
+
+    fun clear (a, inptr, outptr, n) =
+        (Array.modify (Fn.const NONE) a;
+         inptr := 0;
+         outptr := 0;
+         n := 0)
+
+    fun capacity (a, _, _, _) = Array.length a - 1
+
+    fun size (_, _, _, ref n) = n
+
+    fun isEmpty q = size q = 0
+
+    fun isFull q = size q = capacity q
+
+    fun add (q as (a, inptr, _, n), v) =
+        if isFull q 
+            then raise Full
+            else (Array.update (a, !inptr, SOME v);
+                  inptr := (!inptr + 1) mod Array.length a;
+                  n := !n + 1)
+
+    fun remove (q as (a, _, outptr, n)) =
+        if isEmpty q
+            then raise Empty
+            else 
+                let
+                    val res = Array.sub (a, !outptr)
+                in
+                    Array.update (a, !outptr, NONE);
+                    n := !n - 1;
+                    outptr := (!outptr + 1) mod Array.length a;
+                    assert (isSome res);
+                    valOf res
+                end
+
+
+    fun app f (a, _, ref outptr, ref n) =
+        app' (f, a, outptr, 0, n) 
+
+
+    and app' (f, a, outptr, i, n) =
+        if i = n 
+            then ()
+            else (f (valOf (Array.sub (a, (outptr + i) mod Array.length a))); 
+                  app' (f, a, outptr, i + 1, n))
+
+    fun fold f init (a, _, ref outptr, ref n) =
+        fold' (f, init, a, outptr, 0, n)
+
+    and fold' (f, acc, a, outptr, i, n) =
+        if i = n
+            then acc
+            else fold' (f, f (valOf (Array.sub (a, (outptr + i) mod Array.length a)), 
+                                acc),
+                        a, outptr, i + 1, n) 
+
+
+    fun tail (q as (a, _, ref outptr, _)) =
+        if isEmpty q 
+            then raise Empty
+            else valOf (Array.sub (a, outptr))
+
+    fun head (q as (a, ref inptr, _, _)) =
+        if isEmpty q 
+            then raise Empty
+            else valOf (Array.sub (a, (inptr - 1) mod Array.length a))
+
+end

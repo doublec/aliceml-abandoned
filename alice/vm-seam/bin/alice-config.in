@@ -1,0 +1,117 @@
+#!/bin/sh
+# 
+# Author:
+#   Guido Tack <tack@ps.uni-sb.de>
+# 
+# Copyright:
+#   Guido Tack, 2004
+# 
+# Last Change:
+#   $Date$
+#   $Revision$
+# 
+
+# Large parts inspired by mysql_config
+# Copyright (C) 2000 MySQL AB & MySQL Finland AB & TCX DataKonsult AB
+
+set -e
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+pkgincludedir=@includedir@/@PACKAGE@
+libdir=@libdir@
+pkglibdir=@libdir@/@PACKAGE@
+seamlibdir=@seamlibdir@
+pkgdatadir=@datadir@/@PACKAGE@
+
+which ()
+{
+  IFS="${IFS=   }"; save_ifs="$IFS"; IFS=':'
+  for file
+  do
+    for dir in $PATH
+    do
+      if test -f $dir/$file
+      then
+        echo "$dir/$file"
+        continue 2
+      fi
+    done
+    echo "which: no $file in ($PATH)"
+    exit 1
+  done
+  IFS="$save_ifs"
+}
+
+#
+# If we can find the given directory relatively to where mysql_config is
+# we should use this instead of the incompiled one.
+# This is to ensure that this script also works with the binary MySQL
+# version
+
+fix_path ()
+{
+  var=$1
+  shift
+  for filename
+  do
+    path=$basedir/$filename
+    if [ -d "$path" ] ;
+    then
+      eval "$var"=$path
+      return
+    fi
+  done
+}
+
+get_full_path ()
+{
+  case $1 in
+    /*)	echo "$1";;
+    ./*) tmp=`pwd`/$1; echo $tmp | sed -e 's;/./;/;' ;;
+     *) which $1 ;;
+   esac
+}
+
+me=`get_full_path $0`
+
+basedir=`echo $me | sed -e 's;/@exec_prefix@/alice-config;;'`
+
+usage () {
+    echo "Usage: $0 [OPTION]                                         " >&2
+    echo "Configuration tool for Alice                               " >&2
+    echo "                                                           " >&2
+    echo "Options:                                                   " >&2
+    echo "  -h, --help       display this message and exit           " >&2
+    echo "  --alicelibdir    [$pkgdatadir/lib]                       " >&2
+    echo "  --alicetoolsdir  [$pkgdatadir/tools]                     " >&2
+    echo "  --alicebindir    [$exec_prefix/bin]                      " >&2
+    echo "  --alicedll       [$seamlibdir/alice.dll]                 " >&2
+    exit 2
+}
+
+version () {
+    echo "$0 (Alice configuration tool) @PACKAGE_VERSION@" >&2
+    echo "                                                           " >&2
+    echo "Copyright (C) 2003  Programming Systems Lab                " >&2
+    echo "See the source for copying conditions.                     " >&2
+    exit 2
+}
+
+
+if test $# -le 0; then usage; fi
+
+while test $# -gt 0; do
+        case $1 in
+        --alicelibdir)  echo "$pkgdatadir/lib" ;;
+        --alicetoolsdir)  echo "$pkgdatadir/tools" ;;
+	--alicebindir) echo "$exec_prefix/bin" ;;
+        --alicedll)    echo "$seamlibdir/alice.dll" ;;
+        *)         usage ;;
+        esac
+
+        shift
+done
+
+exit 0

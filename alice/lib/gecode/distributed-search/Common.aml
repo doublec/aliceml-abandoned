@@ -1,0 +1,24 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature CONSTRAINTS from "x-alice:/lib/gecode/CONSTRAINTS-sig"
+import signature PROBLEM from "x-alice:/lib/gecode/search-factory/PROBLEM-sig"
+
+
+signature MK_PROBLEM = fct (Constraints:CONSTRAINTS)
+		       -> PROBLEM where type space = Constraints.Space.space
+
+

@@ -1,0 +1,38 @@
+import "lib/fundamental/Pervasive"
+
+(*
+ * In this example, there is a control flow path which contains
+ * more than one initialization for an identifier.
+ *)
+val f1 = fn ((17 withval a = 127 end, 7) | (_, a)) => a
+
+(*
+ * This example shows that we need two Shared node instances
+ * to store different kill sets, depending on the branch.
+ *)
+val f2 = fn (b, f) =>
+	    (if b then f 1
+	     else f 2;
+	     f 3)
+
+(*
+ * This example illustrates that all identifiers introduced in
+ * the `try' expression must be killed when entering the handler.
+ *)
+val f3 = fn f =>
+	    let
+		val x = 1
+	    in
+		let val y = 2 in f (x, y) end
+		handle _ => ()
+	    end
+
+(*
+ * In this example, a variable has its last occurrence within
+ * a nested function.
+ *)
+local
+    val x = fn _ => ()
+in
+    val f4 = fn _ => x
+end

@@ -1,0 +1,38 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Compiler from "x-alice:/lib/system/Compiler"
+
+signature CORE_TOPLEVEL =
+sig
+    datatype signal	= INTERRUPT | STOP
+
+    val init		: unit -> unit
+    val eval		: string * signal -> unit
+    val evalFile	: string * signal -> unit
+    val use		: string -> unit
+
+    val outWidth	: int ref
+    val errWidth	: int ref
+    val traceWidth	: int ref
+    val outStream	: TextIO.outstream
+    val errStream	: TextIO.outstream
+    val traceStream	: TextIO.outstream
+    val annotStream	: TextIO.outstream
+    val annotActive	: bool ref
+    val warnings	: Compiler.warnings ref
+
+    val banner		: string
+    val bye		: string
+    val prompt		: string
+    val contPrompt	: string
+end

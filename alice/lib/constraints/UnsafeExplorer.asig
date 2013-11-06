@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_EXPLORER_COMPONENT =
+    sig
+	structure UnsafeExplorer :
+	    sig
+		val exploreOne : 'a
+		val exploreOneBAB : 'a
+		val exploreAll : 'a
+		val exploreAllBAB : 'a
+		val exploreBest : 'a
+	    end
+    end

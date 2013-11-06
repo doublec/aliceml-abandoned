@@ -1,0 +1,19 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeDebug from "UnsafeDebug"
+import signature DEBUG       from "DEBUG-sig"
+
+structure Debug :> DEBUG =
+    struct
+	open UnsafeDebug
+    end

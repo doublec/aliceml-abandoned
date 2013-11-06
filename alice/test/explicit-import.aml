@@ -1,0 +1,8 @@
+import val a : int from "bingo1"
+import type 'a t from "bingo2"
+import structure B : (type t val b : t) from "bingo3"
+
+val a = a
+val b = B.b
+
+type u = t

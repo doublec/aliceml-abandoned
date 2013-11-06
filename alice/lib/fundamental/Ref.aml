@@ -1,0 +1,48 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive               from "Pervasive"
+import __primitive type unit and bool
+       datatype ref                        from "ToplevelTypes"
+import __primitive infix 3 :=
+       val ! and op = and op := and op :=: from "ToplevelValues"
+import __primitive signature REF           from "REF-sig"
+
+structure Ref : REF =							(**)
+  struct
+    datatype ref			= datatype ref
+    type  'a t				= 'a ref
+
+    val !				= !
+    val op :=				= op :=
+    val op :=:				= op :=:
+
+    __primitive val equal :	'a ref * 'a ref -> bool	= "Ref.equal"
+    __primitive val exchange :	'a ref * 'a -> 'a	= "Ref.exchange"
+
+    __primitive val hole :	unit -> 'a		= "Hole.hole"
+    __primitive val future :	'a -> 'a		= "Hole.future"
+    __primitive val fill :	'a * 'a  -> unit	= "Hole.fill"
+
+    fun app f (ref x)			= f x
+    fun map f (ref x)			= ref(f x)
+    fun modify f r			= let val h = hole()
+					      val x = exchange(r, future h)
+					  in
+					      fill(h, f x)
+					  end
+  end

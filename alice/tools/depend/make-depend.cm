@@ -1,0 +1,11 @@
+Group is
+
+	../../lib/system/sources.cm
+	sml-parser.cm
+
+	ANALYZER-sig.aml
+	MkAnalyzer.aml
+
+	MAKE_DEPEND-sig.aml
+	MkMakeDepend.aml
+	MakeDepend.aml

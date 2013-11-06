@@ -1,0 +1,53 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IO from "IO"
+
+signature TEXT_STREAM_IO =
+    sig
+	type elem = char
+	type vector = string
+
+	type instream
+	type pos
+	type reader
+
+	type outstream
+	type out_pos
+	type writer
+
+	val input: instream -> string * instream
+	val input1: instream -> (elem * instream) option
+	val inputN: instream * int -> string * instream
+	val inputAll: instream -> string * instream
+	val inputLine: instream -> (string * instream) option
+	val canInput: instream * int -> int option
+	val closeIn: instream -> unit
+	val endOfStream: instream -> bool
+	val mkInstream: reader * string -> instream
+	val getReader: instream -> reader * string
+(*	val filePosIn: instream -> pos *)
+
+	val output: outstream * string -> unit
+	val output1: outstream * elem -> unit
+	val outputSubstr: outstream * Substring.substring -> unit
+	val flushOut: outstream -> unit
+	val closeOut: outstream -> unit
+	val setBufferMode: outstream * IO.buffer_mode -> unit
+	val getBufferMode: outstream -> IO.buffer_mode
+	val mkOutstream: writer * IO.buffer_mode -> outstream
+	val getWriter: outstream -> writer * IO.buffer_mode
+	val getPosOut: outstream -> out_pos
+	val setPosOut: out_pos -> outstream
+(*	val filePosOut: out_pos -> pos *)
+    end

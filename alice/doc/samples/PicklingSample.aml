@@ -1,0 +1,183 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Pickle from "x-alice:/lib/system/Pickle"
+import signature URL    from "x-alice:/lib/system/URL-sig"
+
+structure PicklingSample =
+struct
+    (*
+     * Part 1:
+     * Pickling and unpickling of a simple value.
+     * Pickling suspends on futures.
+     *)
+
+    val  susp  = byneed(fn() => print "Welcome to the world of pickling!\n")
+    val  value = {a = 0, b = "Knob the dopp.", c = susp, d = [4, 0, 2, 42]}
+    type ty    = {a : int, b : string, c : unit, d : int list}
+
+    val file = "value." ^ Pickle.extension
+    structure _ = Pickle.SaveVal(val file = file val x = value type t = ty)
+    structure X = Pickle.LoadVal(val file = file type t = ty)
+
+    val _ = print(if #b X.x = #b value then "Yezz!\n" else raise Fail "Ouch!")
+
+
+    (*
+     * Part 2:
+     * Pickling and unpickling of a function.
+     *)
+
+    fun fib 0 = 0
+    |   fib 1 = 1
+    |   fib n = fib(n-1) + fib(n-2)
+
+    val file = "fib." ^ Pickle.extension
+    structure _ = Pickle.SaveVal(val file = file val x = fib type t = int->int)
+    structure X = Pickle.LoadVal(val file = file type t = int->int)
+
+    val _ = print("fib 10 = " ^ Int.toString(X.x 10) ^ "\n")
+
+
+    (*
+     * Part 3:
+     * Pickling and unpickling of a polymorphic function.
+     * We have to resort to modules to do that.
+     * Type can be specified less general at loading
+     * (ie. usual enrichment rules apply).
+     *)
+
+    val file = "Polymorphic." ^ Pickle.extension
+    structure _         = Pickle.Save(val file = file
+				      structure X = (val f = length)
+				      signature S = (val f : 'a list -> int))
+    structure Length    = Pickle.Load(val file = file
+				      signature S = (val f : 'a list -> int))
+    structure IntLength = Pickle.Load(val file = file
+				      signature S = (val f : int list -> int))
+
+    val _  = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
+    val _  = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
+
+
+    (*
+     * Part 4:
+     * Pickling and unpickling of an abstract type.
+     * The unpickled type is compatible with the original one.
+     *)
+
+    signature NUM =
+    sig
+	type t
+	fun fromInt : int -> t
+	fun toInt : t -> int
+	fun add : t * t -> t
+    end
+
+    structure Num :> NUM =
+    struct
+	type t = int
+	fun toInt n   = n
+	fun fromInt n = n
+	val add       = op+
+    end
+
+    val file = "Num." ^ Pickle.extension
+    structure  _   = Pickle.Save(val file = file
+				 structure X = Num
+				 signature S = NUM where type t = Num.t)
+    structure Num' = Pickle.Load(val file = file
+				 signature S = NUM where type t = Num.t)
+
+    val n1 = Num.fromInt 2
+    val n2 = Num'.fromInt 53
+    val n3 = Num.add(n1,n2)
+    val _  = print("2 + 53 = " ^ Int.toString(Num'.toInt n3) ^ "\n")
+
+
+    (*
+     * Part 5:
+     * Pickling of functors.
+     *)
+
+    val file = "Hello." ^ Pickle.extension
+
+    functor MkHello(val who : string) =
+    struct
+	val s = "Hello " ^ who ^ "!\n"
+    end
+
+    signature MK_HELLO = fct(val who : string) -> sig val s : string end
+
+    structure _        = Pickle.Save(val file = file
+				     structure X = MkHello
+				     signature S = MK_HELLO)
+    structure MkHello' = Pickle.Load(val file = file signature S = MK_HELLO)
+
+    structure Hello    = MkHello'(val who = "World")
+    val       _        = print(Hello.s)
+
+
+    (*
+     * Part 6:
+     * Pickling of signatures.
+     * Signatures are first-class and can be pickled.
+     * We can load pickles with statically unknown signatures.
+     *)
+
+    val sigfile = "Sig." ^ Pickle.extension
+    val modfile = "Mod." ^ Pickle.extension
+
+    signature T      = fct(_ : any) -> sig    type t       end
+    structure X :> T = fct(_ : any) => struct type t = int end
+
+    structure  _  = Pickle.Save(val file = modfile
+				structure X = X signature S = T)
+
+    structure  _  = Pickle.Save(val file = sigfile
+				structure X = (signature U = T)
+				signature S = (signature U))
+    structure Sig = Pickle.Load(val file = sigfile
+				signature S = (signature U))
+    structure Mod = Pickle.Load(val file = modfile
+				signature S = Sig.U)
+
+    (*
+     * Part 7:
+     * Components are pickles and vice versa!
+     * Loading a component as a pickle will execute it and return the
+     * component's content as a structure.
+     * A structure pickle can be used as a component. It is a special case of
+     * a component because its content is completely evaluated.
+     * Note that unpickling an evaluated component produces new abstract
+     * types! (so Url'.Url.t below is incompatible to the lib's Url.t)
+     *)
+
+    val file = "Url." ^ Pickle.extension
+    val com  = "x-alice:/lib/utility/" ^ file
+
+    structure Url' = Pickle.Load(val file = com
+				 signature S = (structure Url : URL))
+
+    val _ = print(Url'.Url.toString(Url'.Url.fromString com) ^ "\n")
+
+    structure _ = Pickle.Save(val file = file
+			      structure X = Url'
+			      signature S = (structure Url : URL))
+
+    (*
+     * Part ultimo:
+     * A funny kind of recursion.
+     *)
+
+    structure _ = Pickle.Load(val file = "PicklingSample" signature S = any)
+end

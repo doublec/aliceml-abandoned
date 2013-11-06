@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+
+__primitive eqtype    int	= "int"
+__primitive eqtype    word	= "word"
+__primitive eqtype    real	= "real"
+__primitive eqtype    char	= "char"
+__primitive eqtype    string	= "string"
+__primitive eqtype 'a vector	= "vector"
+__primitive __eqeqtype 'a array	= "array"
+__primitive exttype exn		= "exn"
+__primitive __reftype 'a ref	= ref of 'a
+__primitive type package	= "package"
+
+type unit			= {}
+type ('a,'b) pair		= 'a * 'b
+datatype bool			= false | true
+datatype order			= LESS | EQUAL | GREATER
+datatype ('a,'b) alt		= FST of 'a | SND of 'b			(**)
+datatype 'a option		= NONE | SOME of 'a
+datatype 'a list		= nil | op:: of 'a * 'a list

@@ -1,0 +1,29 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure Type        from "../rtt/Type"
+
+signature PP_VALUE =
+sig
+    type doc    = PrettyPrint.doc
+    type typ    = Type.t
+    type format = {depth : int, width : int, prec : int}
+
+    val defaultDepth :	int ref
+    val defaultWidth :	int ref
+
+    val ppVal :		typ -> 'value -> doc
+    val ppVal' :	typ -> format -> 'value -> doc
+    val registerTyp :	(typ -> format -> 'value -> doc option) -> unit
+    val unregisterTyp :	'value -> unit
+end

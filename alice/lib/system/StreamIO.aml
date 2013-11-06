@@ -1,0 +1,643 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS        from "OS"
+import structure IO        from "IO"
+import signature PRIM_IO   from "PRIM_IO-sig"
+import signature STREAM_IO from "STREAM_IO-sig"
+import structure RefMap    from "../data/RefMap"
+
+functor StreamIO(structure PrimIO: PRIM_IO
+			   where eqtype elem
+		 structure Vector: MONO_VECTOR
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+		 structure Array: MONO_ARRAY
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+			     and type array = PrimIO.array
+		 structure VectorSlice: MONO_VECTOR_SLICE
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+			     and type slice = PrimIO.vector_slice
+		 structure ArraySlice: MONO_ARRAY_SLICE
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+			     and type array = PrimIO.array
+			     and type vector_slice = PrimIO.vector_slice
+			     and type slice = PrimIO.array_slice
+		 val someElem: PrimIO.elem) :>
+	STREAM_IO
+	    where type elem = PrimIO.elem
+	      and type vector = PrimIO.vector
+	      and type reader = PrimIO.reader
+	      and type writer = PrimIO.writer
+	      and type pos = PrimIO.pos =
+    struct
+	type elem = PrimIO.elem
+	type vector = PrimIO.vector
+	type reader = PrimIO.reader
+	type writer = PrimIO.writer
+	type pos = PrimIO.pos
+
+	datatype history' =
+	    READER of reader * (vector * int) option
+	  | BUFFER of vector * history
+	  | TRUNCATED of string * reader
+	  | CLOSED_IN of string
+	withtype history = history' ref
+
+	type instream = history * int
+
+	datatype outstream' =
+	    WRITER of writer * PrimIO.array * int ref * IO.buffer_mode
+	  | TERMINATED of string * writer * IO.buffer_mode
+	  | CLOSED_OUT of string * IO.buffer_mode
+	withtype outstream = outstream' ref
+
+	type out_pos = outstream * pos
+
+	fun blocking NONE = raise IO.BlockingNotSupported
+	  | blocking (SOME f) = f
+	fun nonblocking NONE = raise IO.NonblockingNotSupported
+	  | nonblocking (SOME f) = f
+	fun randomAccess NONE = raise IO.RandomAccessNotSupported
+	  | randomAccess (SOME f) = f
+
+	fun input' (f as (history, offset), nMarkRead, function):
+	    vector * int * instream =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (history, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, chunkSize, readVec,
+						 avail, ...}, bufOpt) =>
+			let
+			    val (v, i) =
+				case bufOpt of
+				    SOME (v, i) => (v, i)
+				  | NONE =>
+					(blocking readVec
+					     (if chunkSize > 1 then chunkSize
+					      else
+						  case avail () of
+						      (SOME 0 | NONE) => 1
+						    | SOME i => i)
+					 handle cause =>
+					     (Promise.fulfill (p, state);
+					      raise IO.Io
+						  {name, function, cause}),
+					 0)
+			    val k = Vector.length v
+			in
+			    if k = 0 then
+				(Promise.fulfill (p, state);
+				 (v, 0, (history, offset)))
+			    else if k <= offset then
+				let
+				    val history' = ref (READER (reader, NONE))
+				in
+				    Promise.fulfill (p, BUFFER (v, history'));
+				    input' ((history', offset - k), nMarkRead,
+					    function)
+				end
+			    else
+				let
+				    val nRead = Int.min (k - offset, nMarkRead)
+				    val offset' = offset + nRead
+				    val i' = Int.max (i, offset')
+				in
+				    Promise.fulfill
+					(p, READER (reader, SOME (v, i')));
+				    (v, offset, (history, offset'))
+				end
+			end
+		  | BUFFER (v, history') =>
+			let
+			    val k = Vector.length v
+			in
+			    Promise.fulfill (p, state);
+			    if k <= offset then
+				input' ((history', offset - k), nMarkRead,
+					function)
+			    else
+				let
+				    val nRead = Int.min (k - offset, nMarkRead)
+				    val offset' = offset + nRead
+				in
+				    (v, offset, (history, offset'))
+				end
+			end
+		  | (TRUNCATED _ | CLOSED_IN _) =>
+			(Promise.fulfill (p, state);
+			 (Vector.fromList nil, 0, f))
+	    end
+
+	fun input f =
+	    let
+		val (v, offset, f') = input' (f, Vector.maxLen, "input")
+	    in
+		(VectorSlice.vector (VectorSlice.slice (v, offset, NONE)), f')
+	    end
+
+	fun input1 f =
+	    let
+		val (v, offset, f') = input' (f, 1, "input1")
+	    in
+		if Vector.length v = 0 then NONE
+		else SOME (Vector.sub (v, offset), f')
+	    end
+
+	fun inputN (f, n) if (n < 0 orelse n > Vector.maxLen) =
+	    raise General.Size
+	  | inputN (f, 0) = (Vector.fromList [], f)
+	  | inputN (f, n) =
+	    let
+		val (vs, f') = inputN' (f, n)
+	    in
+		(Vector.concat vs, f')
+	    end
+	and inputN' (f, n) =
+	    let
+		val (v, offset, f') = input' (f, n, "inputN")
+		val k = Vector.length v - offset
+	    in
+		if k = 0 then (nil, f')
+		else if k >= n then
+		    ([VectorSlice.vector
+		      (VectorSlice.slice (v, offset, SOME n))], f')
+		else
+		    let
+			val (vs, f'') = inputN' (f', n - k)
+		    in
+			(VectorSlice.vector
+			 (VectorSlice.slice (v, offset, NONE))::vs, f'')
+		    end
+	    end
+
+	(*--** use endPos, if available, or avail to guess size *)
+	fun inputAll f =
+	    let
+		val (vs, f') = inputAll' f
+	    in
+		(Vector.concat vs, f')
+	    end
+	and inputAll' f =
+	    let
+		val (v, offset, f') = input' (f, Vector.maxLen, "inputAll")
+		val k = Vector.length v - offset
+	    in
+		if k = 0 then (nil, f')
+		else
+		    let
+			val (vs, f'') = inputAll' f'
+		    in
+			(VectorSlice.vector
+			 (VectorSlice.slice (v, offset, SOME k))::vs, f'')
+		    end
+	    end
+
+	fun canInput (f as (history, offset), n) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (history, Promise.future p)
+		fun return k = SOME (Int.min (n, k))
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, readVecNB, ...},
+			    NONE) =>
+			((case nonblocking readVecNB n of
+			      SOME v =>
+				  (Promise.fulfill
+				       (p, READER (reader, SOME (v, 0)));
+				   return (Vector.length v))
+			    | NONE => (Promise.fulfill (p, state); NONE))
+			 handle cause =>
+			     raise IO.Io {name, function = "canInput", cause})
+		  | READER (reader, SOME (v, _)) =>
+			if Vector.length v = 0 then
+			    SOME 0
+			else if Vector.length v <= offset then
+			    let
+				val history' = ref (READER (reader, NONE))
+			    in
+				Promise.fulfill (p, BUFFER (v, history'));
+				canInput
+				    ((history', offset - Vector.length v), n)
+			    end
+			else
+			    (Promise.fulfill (p, state);
+			     return (Vector.length v - offset))
+		  | BUFFER (v, history') =>
+			(Promise.fulfill (p, state);
+			 if Vector.length v <= offset then
+			     canInput ((history', offset - Vector.length v), n)
+			 else
+			     return (Vector.length v - offset))
+		  | (TRUNCATED _ | CLOSED_IN _) =>
+			(Promise.fulfill (p, state); return 0)
+	    end
+
+	fun closeIn (history, _) = closeIn' history
+	and closeIn' history =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (history, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, close, ...}, bufOpt) =>
+			let
+			    val history' = CLOSED_IN name
+			    val history' =
+				case bufOpt of
+				    NONE => history'
+				  | SOME (_, 0) => history'
+				  | SOME (v, i) =>
+					BUFFER (VectorSlice.vector
+						(VectorSlice.slice
+						 (v, 0, SOME i)),
+						ref history')
+			in
+			    Promise.fulfill (p, history');
+			    close ()
+			    handle cause =>
+				raise IO.Io {name, function = "closeIn", cause}
+			end
+		  | BUFFER (_, f') =>
+			(Promise.fulfill (p, state); closeIn' f')
+		  | TRUNCATED (name, PrimIO.RD {close, ...}) =>
+			(Promise.fulfill (p, CLOSED_IN name);
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function = "closeIn", cause})
+		  | CLOSED_IN _ =>
+			(Promise.fulfill (p, state); ())
+	    end
+
+	fun endOfStream f =
+	    Vector.length (#1 (input' (f, 0, "endOfStream"))) = 0
+
+	fun mkInstream (reader, v) =
+	    (if Vector.length v = 0 then ref (READER (reader, NONE))
+	     else ref (READER (reader, SOME (v, 0))), 0)
+
+	fun getReader (history, _) = getReader' (history, [])
+	and getReader' (history, vs) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (history, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, ...}, bufOpt) =>
+			let
+			    val history' = TRUNCATED (name, reader)
+			    val (history', v) =
+				case bufOpt of
+				    NONE => (history', Vector.fromList nil)
+				  | SOME (v, 0) => (history', v)
+				  | SOME (v, i) =>
+					(BUFFER (VectorSlice.vector
+						 (VectorSlice.slice
+						  (v, 0, SOME i)),
+						 ref history'),
+					 VectorSlice.vector
+					 (VectorSlice.slice (v, i, NONE)))
+			in
+			    Promise.fulfill (p, history');
+			    (reader, Vector.concat (List.rev (v::vs)))
+			end
+		  | BUFFER (v, f') =>
+			(Promise.fulfill (p, state); getReader' (f', v::vs))
+		  | (TRUNCATED (name, _) | CLOSED_IN name) =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "getReader",
+				      cause = IO.ClosedStream})
+	    end
+
+(*--** if write raises an exception, adjust stillFree accordingly *)
+
+	fun writeBuffer' (buf, i, len, slice, write) =
+	    let
+		val k = write (slice (buf, i, SOME len))
+	    in
+		if k = len then ()
+		else writeBuffer' (buf, i + k, len - k, slice, write)
+	    end
+	fun writeBuffer (buf, len, writeArr) =
+	    writeBuffer' (buf, 0, len, ArraySlice.slice, blocking writeArr)
+	fun writeUnbuffered (vec, writeVec) =
+	    writeBuffer' (vec, 0, Vector.length vec, VectorSlice.slice,
+			  blocking writeVec)
+
+	fun flush (buf, stillFree, writeArr) =
+	    let
+		val free = !stillFree
+		val bufLen = Array.length buf
+	    in
+		stillFree := bufLen;
+		if free < bufLen then
+		    writeBuffer (buf, bufLen - free, writeArr)
+		else ()
+	    end
+
+	fun lineEnd (buf, 0) = NONE
+	  | lineEnd (buf, i) =
+	    let
+		val i' = i - 1
+	    in
+		if Vector.sub (buf, i') = someElem then SOME i
+		else lineEnd (buf, i')
+	    end
+
+	fun output (f, v) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, ...},
+			    buf, stillFree, bufferMode) =>
+			((case bufferMode of
+			      IO.NO_BUF =>
+				  outputUnbuffered (writer, v)
+			    | IO.LINE_BUF =>
+				  outputLine (writer, buf, stillFree, v)
+			    | IO.BLOCK_BUF =>
+				  output' (writer, buf, Array.length buf,
+					   stillFree, v, 0, Vector.length v,
+					   true);
+			  Promise.fulfill (p, state))
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function = "output", cause}))
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "output",
+				      cause = IO.ClosedStream})
+	    end
+	and outputUnbuffered (writer as PrimIO.WR {writeVec, ...}, v) =
+	    writeUnbuffered (v, writeVec)
+	and outputLine (writer, buf, stillFree, v) =
+	    let
+		val k = Vector.length v
+	    in
+		case lineEnd (v, Vector.length v) of
+		    SOME i =>
+			(output' (writer, buf, Array.length buf, stillFree,
+				  v, 0, i, false);
+			 output' (writer, buf, Array.length buf, stillFree,
+				  v, i, k - i, true))
+		  | NONE =>
+			output' (writer, buf, Array.length buf, stillFree,
+				 v, 0, k, true)
+	    end
+	and output' (writer as PrimIO.WR {writeArr, ...}, buf, bufLen,
+		     stillFree, v, vStart, vLen, buffered) =
+	    let
+		val free = !stillFree
+		val k = Int.min (vLen, free)
+		val free' = free - k
+		val vStart' = vStart + k
+		val vLen' = vLen - k
+	    in
+		ArraySlice.copyVec {src = VectorSlice.slice (v, vStart, SOME k),
+				    dst = buf, di = bufLen - free};
+		if free' > 0 andalso buffered then stillFree := free'
+		else
+		    (stillFree := bufLen;
+		     writeBuffer (buf, bufLen - free', writeArr);
+		     if vLen' = 0 then ()
+		     else output' (writer, buf, bufLen, stillFree,
+				   v, vStart', vLen', buffered))
+	    end
+
+	fun output1 (f, x) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree, bufferMode) =>
+			let
+			    val free = !stillFree
+			    val bufLen = Array.length buf
+			    val free' = free - 1
+			in
+			    Array.update (buf, bufLen - free, x);
+			    if free' = 0 orelse bufferMode = IO.NO_BUF
+				orelse (bufferMode = IO.LINE_BUF
+					andalso x = someElem)
+			    then
+				(stillFree := bufLen;
+				 writeBuffer (buf, bufLen - free', writeArr)
+				 handle cause =>
+				     (Promise.fulfill (p, state);
+				      raise IO.Io {name, function = "output1",
+						   cause}))
+			    else
+				stillFree := free';
+			    Promise.fulfill (p, state)
+			end
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "output1",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun flushOut f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree, _) =>
+			(flush (buf, stillFree, writeArr)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function="flushOut", cause});
+			 Promise.fulfill (p, state))
+		  | (TERMINATED _ | CLOSED_OUT _) => Promise.fulfill (p, state)
+	    end
+
+	val openSet = RefMap.map ()
+
+	fun flushAll () =
+	    RefMap.appi (fn (f, _) => flushOut f handle _ => ()) openSet
+	val _ = OS.Process.atExit flushAll
+
+	fun closeOut f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (PrimIO.WR {name, writeArr, close, ...},
+			    buf, stillFree, bufferMode) =>
+			(flush (buf, stillFree, writeArr)
+			 handle cause =>
+			     raise IO.Io {name, function="closeOut", cause};
+			 RefMap.removeExistent (openSet, f);
+			 Promise.fulfill (p, CLOSED_OUT (name, bufferMode));
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function="closeOut", cause})
+		  | TERMINATED (name, PrimIO.WR {close, ...}, bufferMode) =>
+			(Promise.fulfill (p, CLOSED_OUT (name, bufferMode));
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function="closeOut", cause})
+		  | CLOSED_OUT _ => Promise.fulfill (p, state)
+	    end
+
+	val minBufSize = 256
+
+	fun setBufferMode (f, bufferMode) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr,
+						 chunkSize, ...},
+			    buf, stillFree, bufferModeOld) =>
+			if bufferMode = bufferModeOld then
+			    ()
+			else if bufferMode = IO.NO_BUF then
+			    (flush (buf, stillFree, writeArr)
+			     handle cause =>
+				 (Promise.fulfill (p, state);
+				  raise IO.Io {name, function="setBufferMode",
+					       cause});
+			     Promise.fulfill
+				 (p, WRITER (writer, Array.array (1, someElem),
+					     stillFree, bufferMode)))
+			else if bufferModeOld = IO.NO_BUF then
+			    let
+				val bufSize = Int.max (chunkSize, minBufSize)
+			    in
+				stillFree := bufSize;
+				Promise.fulfill
+				    (p, WRITER (writer,
+						Array.array (bufSize, someElem),
+						stillFree, bufferMode))
+			    end
+			else
+			    Promise.fulfill
+				(p, WRITER (writer, buf, stillFree, bufferMode))
+		  | TERMINATED (name, writer, _) =>
+			Promise.fulfill (p, TERMINATED (name, writer, bufferMode))
+		  | CLOSED_OUT (name, _) =>
+			Promise.fulfill (p, CLOSED_OUT (name, bufferMode))
+	    end
+
+	fun getBufferMode f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (_, _, _, bufferMode) =>
+			(Promise.fulfill (p, state); bufferMode)
+		  | (TERMINATED (_, _, bufferMode) |
+		     CLOSED_OUT (_, bufferMode)) =>
+			(Promise.fulfill (p, state); bufferMode)
+	    end
+
+	fun mkOutstream (writer as PrimIO.WR {chunkSize, ...}, bufferMode) =
+	    let
+		val bufSize = if bufferMode = IO.NO_BUF then 1
+			      else Int.max (chunkSize, minBufSize)
+		val f =	ref (WRITER (writer,
+				     Array.array (bufSize, someElem),
+				     ref bufSize,  bufferMode))
+	    in
+		RefMap.insert (openSet, f, ());
+		f
+	    end
+
+	fun getWriter f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree, bufferMode) =>
+			(flush (buf, stillFree, writeArr)
+			 handle cause =>
+			     raise IO.Io
+				 {name, function = "getWriter", cause};
+			 RefMap.removeExistent (openSet, f);
+			 Promise.fulfill (p, TERMINATED (name, writer, bufferMode));
+			 (writer, bufferMode))
+		  | TERMINATED (_, writer, bufferMode) =>
+			(Promise.fulfill (p, state); (writer, bufferMode))
+		  | CLOSED_OUT (name, _) =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "getWriter",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun getPosOut f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, getPos, ...},
+			    buf, stillFree, bufferMode) =>
+			(flush (buf, stillFree, writeArr)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io
+				  {name, function = "getPosOut", cause});
+			 (f, randomAccess getPos ()) before
+			 Promise.fulfill (p, state)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io
+				  {name, function = "getPosOut", cause}))
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "getPosOut",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun setPosOut (f, pos) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, setPos, ...},
+			    buf, stillFree, bufferMode) =>
+			(flush (buf, stillFree, writeArr)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io
+				  {name, function = "setPosOut", cause});
+			 randomAccess setPos pos
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io
+				  {name, function = "setPosOut", cause});
+			 Promise.fulfill (p, state); f)
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "setPosOut",
+				      cause = IO.ClosedStream})
+	    end
+    end

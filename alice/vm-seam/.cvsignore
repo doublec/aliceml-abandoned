@@ -1,0 +1,14 @@
+Makefile.depend
+alice.dll
+Rel1.import Rel2.import
+build1 build2 build3
+Makefile.bootstrap.depend
+.deps
+Makefile
+Makefile.in
+Makefile.bootstrap
+aclocal.m4
+autom4te*.cache
+config.log
+config.status
+configure

@@ -1,0 +1,41 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeSpace from "UnsafeSpace"
+import signature SPACE       from "SPACE-sig"
+	
+structure Space :> SPACE =
+    struct
+	eqtype 'a space
+	    
+	datatype state =
+	    MERGED
+	  | FAILED
+	  | SUCCEEDED
+	  | ALTERNATIVES of int
+
+	datatype verbose_state =
+	    VERBOSE_SUSPENDED of verbose_state
+	  | VERBOSE_MERGED
+	  | VERBOSE_FAILED
+	  | VERBOSE_SUCCEEDED_STUCK
+	  | VERBOSE_SUCCEEDED_ENTAILED
+	  | VERBOSE_ALTERNATIVES of int
+	    
+	datatype choice =
+	    SINGLE of int
+	  | RANGE of int * int
+	    
+	open UnsafeSpace
+    end
+

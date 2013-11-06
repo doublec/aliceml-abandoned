@@ -1,0 +1,642 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Remote structure",
+	      "The <TT>Remote</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature REMOTE
+    structure Remote : REMOTE</PRE>
+
+  <P>
+    This structure provides support for the implementation of distributed
+    applications.  This includes exporting values from and importing values
+    into sites, performing remote function application and starting a new
+    site.  See the <A href="../distribution.html">distribution overview</A>
+    for an introduction to the distribution facilities provided by Alice.
+  </P>
+
+  <P>
+    Communication between sites is performed by <EM>cloning</EM> data
+    structures.  Cloning is defined by <A href="pickle.html">pickling</A>.
+  </P>
+
+  <P>
+    For more background, see the <a href="../distribution.html">overview of
+    distribution</A>.
+  </P>
+
+<!--
+  <P>
+    The current implementation uses HTTP as the transport protocol.
+    Accordingly, tickets are URLs using the <TT>http</TT> scheme.
+  </P>
+-->
+  <P>
+    See also:
+    <A href="component-manager.html"><TT>COMPONENT_MANAGER</TT></A>,
+    <A href="url.html"><TT>Url</TT></A>,
+    <A href="pickle.html"><TT>Pickle</TT></A>,
+    <A href="socket.html"><TT>Socket</TT></A>,
+    <A href="lock.html"><TT>Lock.Sync</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import structure Remote from "x-alice:/lib/distribution/Remote"
+    import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature REMOTE =
+    sig
+	type <A href="#ticket">ticket</A> = string
+
+	exception <A href="#Proxy-exn">Proxy</A> of exn
+	exception <A href="#SitedArgument-exn">SitedArgument</A>
+	exception <A href="#SitedResult-exn">SitedResult</A>
+	exception <A href="#Protocol">Protocol</A> of string
+	exception <A href="#Ticket-exn">Ticket</A>
+	exception <A href="#Port-exn">Port</A>
+	exception <A href="#Remote-exn">Remote</A> of exn
+	exception <A href="#Connection-exn">Connection</A>
+	exception <A href="#Exit-exn">Exit</A> of OS.Process.status
+
+	val <A href="#port">port</A> : unit -> Socket.port option
+	val <A href="#setPort">setPort</A> : Socket.port -> unit
+
+	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
+
+	val <A href="#offer">offer</A> : <A href="package.html#package">package</A> -> ticket
+	val <A href="#take">take</A> :  ticket -> <A href="package.html#package">package</A>
+
+	val <A href="#eval">eval</A> : string * <A href="component.html#t">Component.t</A> -> <A href="package.html#package">package</A>
+	val <A href="#run">run</A> :  string * <A href="component.html#t">Component.t</A> -> <A href="package.html#package">package</A>
+
+	functor <A href="#Proxy-fn">Proxy</A> (signature S  structure X : S) : S
+
+	functor <A href="#Offer-fn">Offer</A> (signature S  structure X : S) : (val ticket : ticket)
+	functor <A href="#Take-fn">Take</A> (val ticket : ticket  signature S) : S
+
+	functor <A href="#Eval">Eval</A> (val host : string
+			 signature S
+			 functor F : <A href="component-manager.html">COMPONENT_MANAGER</A> -> S) : S
+	functor <A href="#Run">Run</A> (val host : string
+			 signature S
+			 functor F : <A href="component-manager.html">COMPONENT_MANAGER</A> -> S) : S
+    end</PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="ticket">ticket</A> = string</TT>
+    </DT>
+    <DD>
+      <P>The type of tickets representing offered values.  Tickets are
+	short strings suitable for communication, for instance, over voice
+	lines or by email.  Tickets are suitable for parsing as URLs.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Port-exn">Port</A></TT>
+    </DT>
+    <DD>
+      <P>raised by <TT><A href="#setPort">setPort</A></TT> if the
+      port has already been set, either explicitly or implicitly.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Ticket-exn">Ticket</A></TT>
+    </DT>
+    <DD>
+      <P>indicates that a ticket was not well-formed or referred to
+	a site or value that could not be accessed.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Proxy-exn">Proxy</A> of exn</TT>
+    </DT>
+    <DD>
+      <P>indicates that a call through a proxy has failed. The argument
+      exception describes the specific cause of failure.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="SitedArgument-exn">SitedArgument</A></TT> <BR>
+      <TT>exception <A name="SitedResult-exn">SitedResult</A></TT> <BR>
+      <TT>exception <A name="Protocol">Protocol</A> of string</TT>
+    </DT>
+    <DD>
+      <P>the former two exceptions indicate that the argument or result of
+      a call to a proxy, or to <TT><A href="#eval">eval</A></TT> or
+      <TT><A href="#run">run</A></TT>
+      contained a sited value. The third exception
+      indicates an internal protocol error during execution of excute
+      or a proxy call,
+      where the string describes the error condition in text form.
+      For proxy calls, these exceptions are never raised directly, but
+      occur only as the argument of a <TT>Proxy</TT> exception.
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Remote-exn">Remote</A> of exn</TT>
+    </DT>
+    <DD>
+      <P>indicates that remote execution has failed. The argument
+      exception describes the specific cause of failure.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Connection-exn">Connection</A></TT> <BR>
+      <TT>exception <A name="Exit-exn">Exit</A> of OS.Process.status</TT>
+    </DT>
+    <DD>
+      <P>the former indicates that a connection for remote exection could not 
+      be established; the latter indicates that a remote process has called
+      <TT><A href="os-process.html">OS.Process.exit</A></TT>, or been terminated
+      by other means, before evaluation of its root component has finished.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="setPort">setPort</A> <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>sets the <A href="socket.html#port">port</A> used by the system to
+      <TT><A href="#offer">offer</A></TT> packages and accept incoming
+      <TT><A href="#proxy">proxy</A></TT> calls. If no port is set, it will
+      be chosen automatically when the first call to either
+      <TT><A href="#offer">offer</A></TT> or <TT><A href="#proxy">proxy</A></TT>
+      is performed. However, firewall configuration may require a fixed choice.
+      </P>
+      <P>
+      This function may only be called once, and must be called <I>before</I>
+      the first call to <TT><A href="#offer">offer</A></TT> or
+      <TT><A href="#proxy">proxy</A></TT>. In violation of this restriction,
+      the exception <TT><A href="Port-exn">Port</A></TT> will be raised.
+      </P>
+      <P>If the port number is invalid or the port unavailable, all
+      consecutive calls to <TT><A href="#offer">offer</A></TT> or
+      <TT><A href="#proxy">proxy</A></TT> will raise an
+      <TT><A href="io.html">IO.Io</A></TT> exception.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="port">port</A> ()</TT>
+    </DT>
+    <DD>
+      <P>returns the port set by <TT><A href="#setPort">setPort</A></TT> or
+      chosen automatically by the system, or <TT>NONE</TT> when no port has
+      been chosen yet. Raises <TT><A href="io.html">Io</A></TT> if the chosen
+      port was invalid or unavailable, or another error occured during the
+      attempt to bind it.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="proxy">proxy</A> <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>returns a proxy for&nbsp;<TT><I>f</I></TT>.  The proxy differs
+	from&nbsp;<TT><I>f</I></TT> in that:</P>
+      <UL>
+	<LI><P>the argument to the proxy is cloned before&nbsp;<TT><I>f</I
+	  ></TT> is applied to it; it may not contain sited values;</P>
+	<LI><P>the result of&nbsp;<I>f</I> (either a value or an exception)
+	  is cloned before it is delivered to the caller; it may not contain
+	  sited values;
+	<LI><P>whenever the proxy itself is cloned, only a reference to the
+	  running site is cloned which does not contain a clone
+	  of&nbsp;<TT><I>f</I></TT>;</P>
+	<LI><P>when the proxy is applied, no matter on which site, this
+	  causes <TT><I>f</I></TT> to be applied on the site on which the
+	  proxy was created, if necessary by transferring argument and
+	  result between the sites.</P>
+      </UL>
+      <P>The cloning performed when applying proxies implies that any <A
+        href="../futures.html">future</A> in the
+        argument value or result is requested. That
+	may raise an exception due to a failed future, which then becomes
+	the result of the call. In either case, this is
+	considered regular execution of the proxy call.</P>
+      <P>But proxy calls may also fail, for a number of reasons. In each case,
+        the exception <TT><A href="#Proxy-exn">Proxy</A></TT> is raised to
+	indicate failed execution of the call, with the actual cause as an
+	argument. The following causes are possible:</P>
+      <UL>
+	<LI><P>The argument to the proxy contains a sited value. In that
+	  case, <TT>Proxy(<A
+	  href="#SitedArgument-exn">SitedArgument</A>)</TT> will be
+	  raised.</P>
+	<LI><P>The result of applying <TT>f</TT> (a value or raised exception)
+	  contains a sited value, or it contains a failed future that
+	  carries an exception with a sited value or another failed
+	  future. In all cases, <TT>Proxy(<A
+	  href="#SitedResult-exn">SitedResult</A>)</TT> will be raised.
+	  (Secondary failed futures are captured to prevent divergence in
+	  the case of circular data structures.)</P>
+	<LI><P>The process in which the proxy was created has terminated.
+	  In this case, <TT>Proxy(<A 
+	  href="#Ticket-exn">Ticket</A>)</TT> will be raised.</P>
+	<LI><P>A protocol failure occurs in the lower communication layers.
+	  In this case, <TT>Proxy(<A 
+	  href="#Protocol-exn">Protocol</A> <I>s</I>)</TT> will be raised,
+	  with <TT><I>s</I></TT> describing the error condition. One
+	  possible cause is that the remote process terminates before the call
+	  returns (in particular, this can occur when the call itself triggers
+	  termination of the remote process).</P>
+	<LI><P>An I/O problem occurs in the lower communication layers.
+	  In this case, <TT>Proxy(<A 
+	  href="io.html">IO.Io</A> <I>args</I>)</TT> will be raised, with
+	  <TT><I>args</I></TT> carrying further information. Usually, this
+	  means that the process that exported the proxy is no
+	  longer alive.</P>
+      </UL>
+      <P>Other causes for raising <TT>Proxy</TT> are possible.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Proxy-fn">Proxy</A> (signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a wrapper of structure <TT><I>X</I></TT> where all fields
+        of function type are replaced by a proxy for the respective function.
+        A function that returns a function will return a proxy, respectively
+	(i.e. the wrapping is recursively performed for curried functions).</P>
+      <P>
+        If <TT><I>X</I></TT> is a functor, then a proxy for the functor is
+	created. When the functor is applied, the resulting module will be
+	wrapped recursively (i.e. the wrapping is recursively performed for
+	curried functors <EM>and</EM> any resulting structure).</P>
+      <P>Example:</P>
+      <PRE>
+      Proxy (signature S = (val x : int val f : int -> int val g : int -> int -> int)
+             structure X = (val x = 5   fun f n = n + 1    fun g n m = n + m))</PRE>
+      <P>returns a structure that is equivalent to</P>
+      <PRE>
+      struct
+         val x = 5 
+	 val f = proxy (fn n => n + 1)
+         val g = proxy (fn n => proxy (fn m => n + m))
+      end</PRE>
+      <P>Similarly,</P>
+      <PRE>
+      Proxy (signature S = fct () -> (val x : int val f : int -> int -> int)
+             structure X = fct () => (val x = 5   fun f n m = n + m))</PRE>
+      <P>returns a <EM>proxy</EM> for a functor equivalent to</P>
+      <PRE>
+      fct () => (val x = 5  val f = proxy (fn n => proxy (fn m => n + m)))</PRE>
+      <P>Note that structure fields of non-function type will not be wrapped,
+        even if they <EM>contain</EM> function values. For example,</P>
+      <PRE>
+      Proxy (signature S = (val p : (int -> int) * (int -> int))
+             structure X = (val p = (fn n => n, fn n => n + 1)))</PRE>
+      <P>returns <TT><I>X</I></TT> unchanged.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="offer">offer</A> <I>package</I></TT>
+    </DT>
+    <DD>
+      <P>makes <TT><I>package</I></TT> available to other sites for taking.
+	Returns a ticket suitable for <TT><A href="#take">take</A></TT>
+	or <TT><A href="#Take-fn">Take</A></TT>. Raises
+	<TT><A href="component.html#Sited">Sited</A></TT> if the package
+	contains sited values, or <TT><A href="io.html">IO.Io</A></TT>
+	when the port set by <TT><A href="#setPort">setPort</A></TT> was
+	invalid or unavailable.
+	An offered package can be taken any number of times.
+	If the package contains mutable data, then each
+	<TT><A href="#take">take</A></TT> will return a clone of
+	a snapshot of the package made when offer is executed.</P>
+	<P>Tickets are URIs of the form</P>
+	<PRE>
+	x-alice://<I>ip</I>:<I>port</I>/offer/<I>n</I></PRE>
+	<P>where <TT><I>ip</I></TT> is the local IP address or domain,
+	<TT><I>port</I></TT> the port set by
+	<TT><A href="#setPort">setPort</A></TT> or chosen by the system,
+	and <TT><I>n</I></TT> a running number, starting with <TT>1</TT>.
+	By using <TT><A href="#setPort">setPort</A></TT>, the URI is made
+	deterministic, which may be important for server applications.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="take">take</A> <I>ticket</I></TT>
+    </DT>
+    <DD>
+      <P>imports the data structure denoted by <TT><I>ticket</I></TT>, which
+	must have been created by <TT><A href="#offer">offer</A></TT>
+	or <TT><A href="#Offer-fn">Offer</A></TT>.  Raises
+	<TT><A href="#Ticket-exn">Ticket</A></TT> if the ticket is
+	invalid or the site on which it was created no longer exists.
+	Raises <TT><A href="io.html">IO.Io</A></TT> if retrieving the
+	package fails for other reasons.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Offer-fn">Offer</A> (signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>makes module <TT><I>X</I></TT> available to other sites for taking with
+	signature&nbsp;<I>S</I>.  Returns a ticket suitable for <TT><A
+	href="#take">take</A></TT> or <TT><A href="#Take-fn">Take</A></TT>.
+	Equivalent to</P>
+        <PRE>
+	(val ticket = offer (pack <I>X</I> : <I>S</I>))</PRE>
+    </DD>
+
+    <DT>
+      <TT><A name="Take-fn">Take</A> (val ticket = <I>ticket</I>
+	signature S = <I>S</I>)</TT>
+    </DT>
+    <DD>
+      <P>imports the module denoted by <TT><I>ticket</I></TT>, which
+	must have been created by <TT><A href="#offer">offer</A></TT> or <TT
+	><A href="#Offer-fn">Offer</A></TT>, under a sub-signature
+	of&nbsp;<TT><I>S</I></TT>.
+	Raises <TT><A href="#Ticket-exn">Ticket</A></TT> if the
+	ticket is invalid or the site on which it was created no longer
+	exists.  Raises <TT><A href="package.html#Mismatch">Package.Mismatch</A
+	></TT> if the module was not exported with a signature matching&nbsp;<TT
+	><I>S</I></TT>. Raises <TT><A href="io.html">IO.Io</A></TT> if
+	retrieving the module fails for other reasons.
+	Equivalent to</P>
+        <PRE>
+	unpack (take <I>ticket</I>) : <I>S</I></PRE>
+    </DD>
+
+    <DT>
+      <TT><A name="eval">eval</A> (<I>host</I>, <I>component</I>)</TT><BR>
+      <TT><A name="run">run</A> (<I>host</I>, <I>component</I>)</TT>
+    </DT>
+    <DD>
+      <P>create a new site on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>,
+	transfer a clone of <TT><I>component</I></TT> to the new site, on which
+	it is evaluated using the local component manager.  A clone of the
+	component's export module is transferred back to the caller as a
+	package. If evaluation of the component terminates with an
+	exception, that exception is re-raised in the caller's thread.</P>
+
+	<P>Like proxy calls, remote execution may fail for a number of reasons. In each case, the exception <TT>Remote</TT> is raised, carrying a secondary exception as an indication of the cause of failure:</P>
+      <UL>
+	<LI><P>The component contains a sited value. In that
+	  case, <TT><A
+	  href="#SitedArgument-exn">SitedArgument</A></TT> will
+	  indicate the cause.</P>
+	<LI><P>The remote process calls
+	  <TT><A href="os-process.html">OS.Process.exit</A></TT> before
+	  evaluation of the component was finished. Or it was terminated by
+	  other means, e.g. a signal. In these cases,
+	  <TT><A href="#Exit-exn">Exit</A></TT> is indicated.
+	  If the remote machine runs a Unix-compatible environment,
+	  the exception <TT>Exit 127</TT> might also indicate that the
+	  <TT>aliceremote</TT> command could not be found there.</P>
+	<LI><P>The export of the component contains a sited value after
+	  evaluation on the remote site, or it contains a failed future that
+	  carries an exception with a sited value or another failed
+	  future. In all cases, <TT><A
+	  href="#SitedResult-exn">SitedResult</A></TT> is indicated.
+	  (Secondary failed futures are captured to prevent divergence in
+	  the case of circular data structures.)</P>
+	<LI><P>The remote connection could not be established successfully,
+	  e.g. because the machine is not accessible, or permissions on the
+	  remote machine prohibit execution.
+	  In these cases, <TT><A 
+	  href="#Connection-exn">Connection</A> <I>s</I></TT> will be
+	  indicated.</P>
+	<LI><P>A protocol failure occurs in the lower communication layers.
+	  In this case, <TT><A 
+	  href="#Protocol-exn">Protocol</A> <I>s</I></TT> will be indicated,
+	  with <TT><I>s</I></TT> describing the error condition.</P>
+	<LI><P>An I/O problem occurs in the lower communication layers.
+	  In this case, <TT><A 
+	  href="io.html">Io</A> <I>args</I></TT> will be indicated, with
+	  <TT><I>args</I></TT> carrying further information.</P>
+	<LI><P>Other low-level occurs occured.
+	  In this case, <TT><A 
+	  href="os.html">OS.SysErr</A></TT> will be indicated.</P>
+      </UL>
+
+	<P>With <TT>eval</TT>, the remote process will exit after
+	evaluation of the component, regardless of any concurrent processes
+	that may have been spawned by evaluation.
+	With <TT>run</TT>, the remote process stays alive after the result is
+	returned to the caller,
+	i.e. the process is <I>not</I> terminated automatically
+	(not even if the parent process terminates!). This
+	allows concurrent threads to continue running; in particular, it enables
+	the remote process to create proxies and return them to the caller who
+	can therewith call into the remote process later.
+	It also allows a process to migrate to another site, by
+	initiating a remote process and then terminating the original one.
+	To terminate the remote process, an
+	explicit call to <TT><A href="os-process.html">OS.Process.exit</A></TT>
+	on the remote site is required. If evaluation of the component raises
+	an exception, the process is terminated in both cases.</P>
+
+	<P>Note that the <TT>ssh</TT> command must be available on the local
+	site, you must be able to login on the remote site via SSH without
+	entering a password (e.g. by using an SSH daemon),
+	and the Alice System's <TT>bin</TT> directory must be in <TT>PATH</TT>
+	on the remote site. On Linux, the latter can optionally be achieved by
+	setting <TT>ALICE_REMOTE_PATH=<I>&lt;alice-bin-dir&gt;</I></TT> into
+	your <TT>~/.ssh/environment</TT> file, if enabled. If that is not
+	possible, you can fall back to having a script named
+	<TT>aliceremote</TT> in your remote home directory, which
+	sets paths appropriately and forwards its arguments to the
+	<TT><A href="../machine.html">alicerun</A></TT> command of the Alice
+	System.</P>
+
+	<P>If the environment variable <TT>ALICE_REMOTE_LOG</TT> is set on the
+	remote machine then its value will be interpreted as a file name and
+	some logging information about the remote execution will be written to
+	the file (without truncating it).</TT>
+    </DD>
+
+    <DT>
+      <TT><A name="Eval">Eval</A> (val host = <I>host</I>
+	signature S = <I>S</I>
+	functor F = <I>F</I>)</TT><BR>
+      <TT><A name="Run">Run</A> (val host = <I>host</I>
+	signature S = <I>S</I>
+	functor F = <I>F</I>)</TT>
+    </DT>
+    <DD>
+      <P>construct a component with export signature <TT><I>S</I></TT> from
+ 	 <TT><I>F</I></TT> and transfer a clone of it to a newly created site
+	 on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>, on which it is evaluated
+	using the local component manager.  A clone of the resulting
+	structure is transferred back to the caller of and
+	returned as the resulting structure.
+	Equivalent, respectively, to</P>
+        <PRE>
+	let
+	    structure C = Component.Create (signature S = S structure F = F)
+	in
+	    unpack (eval (host, C.component)) : S
+	end</PRE>
+	<P>and</P>
+        <PRE>
+	let
+	    structure C = Component.Create (signature S = S structure F = F)
+	in
+	    unpack (run (host, C.component)) : S
+	end</PRE>
+    </DD>
+  </DL>
+
+<?php section("examples", "examples") ?>
+
+<?php subsection("examples-file", "remote file access") ?>
+
+<P>Here is an example of a simple program that creates a component to read the content of a file on a remote site. Note how the mobile component refers to dynamically acquired data, namely the respective file name:</P>
+
+<PRE>
+import structure Remote  from "x-alice:/lib/distribution/Remote"
+import signature TEXT_IO from "x-alice:/lib/system/TEXT_IO-sig"
+
+structure Main =
+struct
+   val (hostname, filename) =
+	case CommandLine.arguments ()
+	 of [s1, s2] => (s1, s2)
+	  | _ => (TextIO.output (TextIO.stdErr, "usage: fetch <host> <file>\n");
+		  OS.Process.exit OS.Process.failure)
+
+   val component =
+       comp
+           import structure TextIO : TEXT_IO from "x-alice:/lib/system/TextIO"
+       in
+           val content : string
+       with
+           val file = TextIO.openIn filename
+           val content = TextIO.inputAll file
+           do TextIO.closeIn file
+       end
+
+   structure Result =
+       unpack Remote.eval (hostname, component) : (val content : string)
+
+   do TextIO.print Result.content
+   do OS.Process.exit OS.Process.success
+end</PRE>
+
+<!--
+<PRE>
+import structure Url       from "x-alice:/lib/system/Url"
+import structure Remote    from "x-alice:/lib/distribution/Remote"
+import signature TEXT_IO   from "x-alice:/lib/system/TEXT_IO-sig"
+import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+
+structure Main =
+struct
+   val (hostname, filename) =
+	case CommandLine.arguments ()
+	 of [s1, s2] => (s1, s2)
+	  | _ => (TextIO.output (TextIO.stdErr, "usage: fetch <host> <file>\n");
+		  OS.Process.exit OS.Process.failure)
+
+   functor Comp (CM : COMPONENT_MANAGER) =
+   let
+      open CM.Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+		    signature S = (structure TextIO : TEXT_IO))
+      val file = TextIO.openIn filename
+   in
+      (val content = TextIO.inputAll file before TextIO.closeIn file)
+   end
+
+   structure Result = Remote.Eval (val host = hostname
+				   signature S = (val content : string)
+				   structure F = Comp)
+
+   do TextIO.print Result.content
+   do OS.Process.exit OS.Process.success
+end</PRE>
+-->
+
+
+<?php subsection("examples-chat", "chat room") ?>
+
+<P>A more interesting example is a simple client/server application with bidirectional communication:
+a simplistic chat room consisting of a chat server to which multiple clients can connect.</P>
+
+<P>The application consists of two programs: one for the server and one for clients. Both have to agree on the server interface, which we define in a shared component:</P>
+
+<PRE>
+(*) SERVER-sig.aml
+
+signature SERVER =
+sig
+   val register : (string -> unit) -> unit
+   val broadcast : string -> unit
+end</PRE>
+
+<P>Clients that register with the server will receive all messages sent by other clients, and they can broadcast messages themselves.</P>
+
+<P>Here is the code for the server:</P>
+
+<PRE>
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import signature SERVER from "SERVER-sig.aml"
+
+val clients = ref nil
+fun register client = clients := clients :: !clients
+fun broadcast message =
+    List.app (fn receive => spawn receive message) (!clients)
+
+structure Server =
+struct
+   val register = Remote.proxy (Lock.sync (Lock.lock ()) register)
+   val broadcast = Remote.proxy broadcast
+end
+
+val url = Remote.offer (pack Server : SERVER)
+do TextIO.print (url ^ "\n")</PRE>
+
+<P>The server simply keeps a list of registered clients
+(represented by their receive functions);
+broadcasting iterates over this list and forwards the message to each client.
+In order to avoid having to wait for each client in turn
+to receive its message, forwarding happens asynchronously,
+using a <A href="../futures.html">future</A> created with
+<A href="../futures.html#spawn"><TT>spawn</TT></A>.
+
+<P>Moreover, since the client list is stateful,
+we have to avoid race conditions when updating it during potentially concurrent
+calls to <TT>register</TT> from multiple clients.
+The exported <TT>register</TT> function hence synchronises using a fresh
+mutex <A href="lock.html">lock</A> (note that we do not need to
+synchronise broadcast, since it accesses the reference atomically).</P>
+
+<P>On startup, the server prints a URL for clients to connect. The code for clients is even simpler:</P>
+
+<PRE>
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import signature SERVER from "SERVER-sig.aml"
+
+val [url, name] = CommandLine.arguments ()
+
+structure Server = unpack Remote.take url : SERVER
+do Server.register (Remote.proxy TextIO.print)
+
+fun loop () = case TextIO.inputLine TextIO.stdIn of
+              | NONE => OS.Process.exit OS.Process.success
+              | SOME line => (Server.broadcast (name ^ ": " ^ line); loop ())
+do loop ()</PRE>
+
+<P>It expects a server URL and a user name on the command line, registers with the server, and simply forwards everything typed by the user to the server.
+Note that the call to <TT>register</TT> passes a proxy to the local
+<TT>print</TT> as argument, so that printing happens on the right site.</P>
+
+<P>This completes the application. Obviously, the implementation is quite simplistic: a user
+will see an echo of everything he types. More seriously, there is no error
+handling, and disconnecting clients do not notify the server (it will simply go on creating forwarding threads that fail with an <TT>Io</TT> exception).
+However, it should be clear how the program could be refined in that
+respect.</P>
+
+<?php footing() ?>

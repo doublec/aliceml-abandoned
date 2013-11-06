@@ -1,0 +1,6 @@
++ STORE_MAP-sig.aml definiert die Teilsignatur, die von Store.Map benötigt wird
+
++ das Modul TypeConst implementiert einige Konstruktoren um kleine Typen zu
+  Testzwecken zu erstellen
+
++ test_it.aml beinhaltet mehrere Beispiele die mit TypeConst erstellt werden

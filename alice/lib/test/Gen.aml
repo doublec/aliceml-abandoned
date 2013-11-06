@@ -1,0 +1,162 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import signature GEN from "GEN-sig"
+import structure Random from "x-alice:/lib/utility/Random"
+
+structure Gen :> GEN =
+struct
+    type 'a test    = 'a -> unit
+
+    type 'a gen	    = int -> 'a
+
+    exception Exhausted
+
+    val randomize = Random.randomize
+    
+    fun try n gen test =
+	    let fun doFor i =
+		    if i < n then (test (gen i); doFor (i + 1))
+		    else ()
+	    in
+		doFor 0 handle Exhausted => ()
+	    end
+
+    (* Generators / Combinators *)
+    fun pair (a, b) n	    = (a n, b n)
+    fun triple (a, b, c) n  = (a n, b n, c n)
+    
+    fun const v (i:int)	    = v
+
+    fun oneOf vals          = List.nth (vals, Random.int (length vals))
+
+    fun oneOfFreq vals	    = 
+	    select (Random.int (List.foldl 
+		(fn (a, res) => res + #1 a)  1 vals), vals)
+    and select (n, (i, v)::xs)	=   if n - i <= 0 then v 
+				    else select (n - i, xs)
+      | select _		= raise Fail "select: should never happen"
+
+    fun list elem n	    = List.tabulate (n, fn _ => elem n)
+
+    val maxGenTry = 100
+    
+    fun filter (gen, pred) n = 
+	let fun cond' (v, i) =
+	        if pred v then v
+	        else	if i > maxGenTry then raise Exhausted
+			else cond' (gen n, i + 1)
+	in
+	    cond' (gen n, 1)
+	end
+
+    val cardinal	= Random.int
+    fun bool n		= oneOf [const true, const false] n
+    fun char n		= Char.chr (cardinal (Char.maxOrd + 1))
+    fun wideChar n	= WideChar.chr (cardinal (WideChar.maxOrd + 1))
+    fun string n	= String.tabulate (Int.abs n, char) 
+    fun substring n     = Substring.substring (string n,
+					       cardinal n,
+					       cardinal n)
+			      handle Subscript => substring n
+    fun int n		= if bool 0 then cardinal n else ~ (cardinal n)
+    fun largeInt n      = IntInf.* (IntInf.fromInt (int n), 
+				    IntInf.fromInt (int n))
+    fun word n		= Word.fromInt (cardinal n)
+    fun word8 n         = Word8.fromInt (cardinal n)
+    fun word32 n        = LargeWord.fromInt (cardinal n)
+    fun option gen n	= if bool n then SOME (gen n) else NONE
+
+    fun real n		= Random.real (Real.fromInt n)
+    fun realNan n       = if bool n
+			  then Real.posInf - Real.posInf
+			  else 0.0 / 0.0
+    fun realInf n       = if bool n
+			  then Real.posInf
+			  else Real.negInf
+    fun realAll n       = case option bool n of
+			      NONE       => real n
+			    | SOME true  => realInf n
+			    | SOME false => realNan n
+
+    fun alt (ga, gb) n	= if bool n then FST (ga n) else SND (gb n)	
+    fun vector gen n	= Vector.tabulate (cardinal n, gen)
+    fun word8Vector gen n     = Word8Vector.tabulate (cardinal n, word8)
+    fun charVector gen n      = CharVector.tabulate (cardinal n, char)
+    fun wideCharVector gen n  = WideCharVector.tabulate (cardinal n, wideChar)
+    fun vectorSlice gen n = VectorSlice.slice (vector gen n,
+					       cardinal n,
+					       option cardinal n)
+			    handle Subscript => vectorSlice gen n
+    fun word8VectorSlice gen n = 
+	                   Word8VectorSlice.slice (word8Vector gen n, 
+						  cardinal n,
+						  option cardinal n) 
+			    handle Subscript => word8VectorSlice gen n
+    fun charVectorSlice gen n = 
+	                   CharVectorSlice.slice (charVector gen n, 
+						 cardinal n,
+						 option cardinal n) 
+	                        handle Subscript => charVectorSlice gen n
+    fun wideCharVectorSlice gen n = 
+	                   WideCharVectorSlice.slice (wideCharVector gen n, 
+						     cardinal n,
+						     option cardinal n) 
+	                        handle Subscript => charVectorSlice gen n
+    fun array gen n          = Array.tabulate (cardinal n, gen)
+    fun word8Array gen n     = Word8Array.tabulate (cardinal n, word8)
+    fun charArray gen n      = CharArray.tabulate (cardinal n, char)
+    fun wideCharArray gen n  = WideCharArray.tabulate (cardinal n, wideChar)
+    fun arraySlice gen n = ArraySlice.slice (array gen n, 
+					     cardinal n,
+					     option cardinal n) 
+			    handle Subscript => arraySlice gen n
+    fun word8ArraySlice gen n = 
+	                   Word8ArraySlice.slice (word8Array gen n, 
+						  cardinal n,
+						  option cardinal n) 
+			    handle Subscript => word8ArraySlice gen n
+    fun charArraySlice gen n = 
+	                   CharArraySlice.slice (charArray gen n, 
+						 cardinal n,
+						 option cardinal n) 
+	                        handle Subscript => charArraySlice gen n
+    fun wideCharArraySlice gen n = 
+	                   WideCharArraySlice.slice (wideCharArray gen n, 
+						     cardinal n,
+						     option cardinal n) 
+	                        handle Subscript => charArraySlice gen n
+    fun array2 gen n    = Array2.tabulate Array2.ColMajor 
+			                  (cardinal n, 
+					   cardinal n, 
+					   fn (a, b) => gen (a + b))
+    fun refOf gen n	= ref (gen n)
+			  
+    fun exn n           = 
+	let
+	    val exns = [Assert ("Gen.exn", 0),
+			Bind,
+			Chr,
+			Div,
+			Domain,
+			Fail "Gen.exn",
+			Match,
+			Overflow,
+			Size,
+			Span,
+			Subscript,
+			Unordered]
+	in
+	    List.nth (exns, Random.int (List.length exns))
+	end
+	
+end
+

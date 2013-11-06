@@ -1,0 +1,38 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(** control structures ML / Alice lacks *)
+signature CTRL =
+sig
+    infix 3 ++
+    infix 3 $
+
+    val ++ : 'a * ('a -> 'b) -> 'b
+    val $ : ('a -> 'b) * 'a -> 'b
+
+    val doFor : int * int * (int -> unit) -> unit
+    (** [doFor (lower, upper, f) has the same effect as
+         [(f lower; f (lower + 1); ... ; f upper; ())]
+      *)
+
+    val repeat : int * (int -> unit) -> unit
+    (** [repeat (n, f)] is semantically equivalent to [for (0, n - 1, f)] *)
+
+    val ispawn : string * int -> ('a -> unit) -> 'a -> unit
+    (** [ispawn (_file_, _line_) f a] spawns f a directly returning unit.
+        [not (Future.isFuture (ispawn f a))] always holds.
+        If [f] raises any exception the process is terminated
+        with [OS.Process.exit OS.Process.failure] and a error
+        message indicating the exception raised is printed on
+        standard error.
+      *)
+end

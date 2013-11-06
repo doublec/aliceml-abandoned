@@ -1,0 +1,188 @@
+<?php include("macros.php3"); ?>
+<?php heading("The MONO_VECTOR signature", "The <TT>MONO_VECTOR</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature MONO_VECTOR
+    structure CharVector : MONO_VECTOR where type elem = char
+    structure Word8Vector : MONO_VECTOR where type elem = Word8.word
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/mono-vector.html"><TT>MONO_VECTOR</TT></A> signature.
+  </P>
+
+  <P>See also:
+    <A href="mono-vector-slice.html"><TT>MONO_VECTOR_SLICE</TT></A>,
+    <A href="string.html"><TT>String</TT></A>,
+    <A href="vector.html"><TT>Vector</TT></A>,
+    <A href="mono-array.html"><TT>MONO_ARRAY</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature MONO_VECTOR =
+    sig
+	eqtype vector
+	type   t = vector
+
+	val maxLen :      int
+
+	val toList :      vector -> elem list
+	val fromList :    elem list -> vector
+	val tabulate :    int * (int -> elem) -> vector
+
+	val length :      vector -> int
+	val sub :         vector * int -> elem
+	val update :      vector * int * elem -> vector
+	val concat :      vector list -> vector
+	val rev :         vector -> vector
+
+	val app :         (elem -> unit) -> vector -> unit
+	val appr :        (elem -> unit) -> vector -> unit
+	val map :         (elem -> elem) -> vector -> vector
+	val foldl :       (elem * 'a -> 'a) -> 'a -> vector -> 'a
+	val foldr :       (elem * 'a -> 'a) -> 'a -> vector -> 'a
+	val all :         (elem -> bool) -> vector -> bool
+	val exists :      (elem -> bool) -> vector -> bool
+	val find :        (elem -> bool) -> vector -> elem option
+
+	val appi :        (int * elem -> unit) -> vector -> unit
+	val appri :       (int * elem -> unit) -> vector -> unit
+	val mapi :        (int * elem -> elem) -> vector -> vector
+	val foldli :      (int * elem * 'a -> 'a) -> 'a -> vector -> 'a
+	val foldri :      (int * elem * 'a -> 'a) -> 'a -> vector -> 'a
+	val alli :        (int * elem -> bool) -> vector -> bool
+	val existsi :     (int * elem -> bool) -> vector -> bool
+	val findi :       (int * elem -> bool) -> vector -> (int * elem) option
+
+	val contains :    (elem * elem -> bool) -> vector -> elem -> bool
+	val notContains : (elem * elem -> bool) -> vector -> elem -> bool
+
+	val equal :       (elem * elem -> bool) -> vector * vector -> bool
+	val collate :     (elem * elem -> order) -> vector * vector -> order
+
+	val isSorted :    (elem * elem -> order) -> vector -> bool
+	val sort :        (elem * elem -> order) -> vector -> vector
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/mono-vector.html"><TT>MONO_VECTOR</TT></A> signature.
+  </P>
+
+  <P>
+    Note that, unlike polymorphic vectors, monomorphic vectors are strict in
+    their elements. I.e., all constructor functions taking individual element
+    values (<TT>fromList</TT>, <TT>tabulate</TT>, <TT>update</TT>) will request
+    any potential futures immediately.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = vector</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>vector</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>toList <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a list of the elements of <TT><I>vec</I></TT> in order of
+      increasing indices.</P>
+    </DD>
+
+    <DT>
+      <TT>rev <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a vector that contains the elements of <TT><I>vec</I></TT>
+      in reverse order.</P>
+    </DD>
+
+    <DT>
+      <TT>appr <I>f</I> <I>vec</I></TT> <BR>
+      <TT>appri <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>app</TT> and <TT>appi</TT>, but apply <TT><I>f</I></TT> in
+      right to left order (i.e., decreasing indices). The expression
+      <TT>app <I>f vec</I></TT> is equivalent to:</P>
+      <PRE>
+        appri (<I>f</I> o #2) <I>vec</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>alli <I>f</I> <I>vec</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>.
+      The index of each element is passed to <TT><I>f</I></TT> as an additional
+      argument. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>vec</I>    = alli (<I>f</I> o #2) <I>vec</I>
+        exists <I>f</I> <I>vec</I> = existsi (<I>f</I> o #2) <I>vec</I></PRE>
+    </DD>
+
+    <DT>
+      <TT>contains <I>eq</I> <I>vec</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      vector <TT><I>vec</I></TT>, with respect to the element equality
+      <TT><I>eq</I></TT>; otherwise <TT>false</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>notContains <I>eq</I> <I>vec</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      vector <TT><I>vec</I></TT>, with respect to the element equality
+      <TT><I>eq</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>eq vec a</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>eq</I> (<I>vec1</I>, <I>vec2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an equality function on vectors given an equality on the
+      element type.</P>
+    </DD>
+
+    <DT>
+      <TT>isSorted <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> iff <TT><I>vec</I></TT> is sorted with respect
+      to the ordering function <TT><I>f</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>sort <I>f</I> <I>vec</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a new vector that contains the same elements as
+      <TT><I>vec</I></TT>, but sorted with respect to the ordering function
+      <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
+      elements.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

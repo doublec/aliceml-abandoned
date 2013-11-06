@@ -1,0 +1,22 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2002
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature UNSAFE_MINIMIZER_COMPONENT =
+    sig
+	structure UnsafeMinimizer:
+	    sig
+		val newPartition : unit -> 'partition
+		val loadGraph : 'partition * 'node -> unit
+		val minimize : 'partition -> unit
+	    end
+    end

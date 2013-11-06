@@ -1,0 +1,1062 @@
+(*
+ * Authors:
+ *   Niko Paltzer <nikopp@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label   from "x-alice:/lib/rtt/Label"
+import structure Path    from "x-alice:/lib/rtt/Path"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import signature TYPE    from "TYPE-sig"
+import structure Store   from "x-alice:/lib/system/Store"
+(* DEBUG
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+ * END DEBUG *)
+structure Type :> TYPE =
+struct
+
+(* non-interface-exceptions *)
+
+exception Internal of string (* errors that should not occur *)
+exception BoundVar (* a lambda term is constructed using an
+		    * already bound variable *)
+
+(*
+ * Types
+ *)
+
+type lab  = Label.t					(* [lab,l] *)
+type path = Path.t					(* [pi,p] *)
+
+datatype kind =						(* [kappa,k] *)
+	 STAR			(* plain type *)
+       | EXT			(* extensible type *)
+       | ARROW  of kind * kind	(* type function *)
+       | SING   of typ		(* singleton *)
+
+     and typ =					        (* [tau,t] *)
+	 VAR    of kind * constraint * typ
+       | CON    of path * kind	(* constructor (of arbitrary kind) *)
+       | FUN    of typ * typ	(* arrow type *)
+       | PROD   of row		(* product (tuple or record) *)
+       | SUM    of row		(* sum type (datatype) *)
+       | MU     of typ		(* recursive type *)
+       | ALL    of var * typ	(* universal quantification *)
+       | EXIST  of var * typ	(* existential quantification *)
+       | LAMBDA of var * typ	(* abstraction (type function) *)
+       | APPLY  of typ * typ	(* application *)
+       | ABBREV of typ * typ	(* abbreviations (#2 is unabbreviated type) *)
+
+     and row =						(* [rho,r] *)
+	 INDEXED of typ vector
+       | NAMED   of (lab * typ) list
+
+     and constraint =
+	 Unconstrained
+       | Intensional
+       | Extensional of path * path list
+
+withtype var = typ
+
+type t = typ
+
+type rea = typ PathMap.t
+
+type mismatch      = typ * typ
+type kind_mismatch = mismatch option
+
+exception Mismatch     of mismatch
+exception KindMismatch of kind_mismatch
+
+(* Almost everything in this module is mutually recursive. To avoid
+ * confusing reordering and allow for easy tracing (see below) we use
+ * holes.
+ *)
+
+val kindHole      = Hole.hole()
+val equalHole     = Hole.hole()
+val varHole       = Hole.hole()
+val etaExpandHole = Hole.hole()
+val matchKindHole = Hole.hole()
+val isUnknownHole = Hole.hole()
+val isIndexedHole = Hole.hole()
+val asIndexedHole = Hole.hole()
+
+fun kind t       = kindHole t
+fun equal tp     = equalHole tp
+fun var v        = varHole v
+fun etaExpand tk = etaExpandHole tk
+fun matchKind kp = matchKindHole kp
+fun isUnknown t  = isUnknownHole t
+fun isIndexed r  = isIndexedHole r
+fun asIndexed r  = asIndexedHole r
+
+(*
+ * Maps of types
+ * (only included to serve the prettyprinter)
+ *)
+
+type canonical_typ = typ
+
+val canonical = Fn.id
+val fromCanonical = Fn.id
+
+(* TODO : we want two different maps here
+ * one for types and one for variables *)
+structure Map = Store.Map
+
+(*
+ * Kinds
+ *)
+
+exception Kind
+
+fun starKind () = STAR
+
+fun extKind () = EXT
+
+fun arrowKind (k1, k2) = ARROW (k1, k2)
+
+fun singKind t =
+    case kind t of
+	SING _  as k => k
+      | _            => SING t
+
+datatype kind_desc =
+	 StarKind
+       | ExtKind
+       | ArrowKind of kind * kind
+       | SingKind  of typ
+
+fun inspectKind k =
+    case k of
+	STAR => StarKind
+      | EXT => ExtKind
+      | ARROW kp => ArrowKind kp
+      | SING t => SingKind t
+
+fun isStarKind k =
+    case k of
+	(STAR | EXT ) => true
+      | ARROW _ => false
+      | SING t => isStarKind (kind t)
+
+fun isExtKind k =
+    case k of
+	EXT => true
+      | SING t => isExtKind (kind t)
+      | _ => false
+
+fun isArrowKind k =
+    case k of
+	ARROW _ => true
+      | SING t => isArrowKind (kind t)
+      | _ => false
+
+fun isSingKind k =
+    case k of
+	SING _ => true
+      | _ => false
+
+fun asArrowKind k =
+    case k of
+	ARROW kp => kp
+      | SING t => asArrowKind (kind t)
+      | _ => raise Kind
+
+fun asSingKind k =
+    case k of
+	SING t => t
+      | _ => raise Kind
+
+fun equalKind (k1, k2) =
+    case (k1, k2) of
+	((STAR, STAR) | (EXT, EXT) ) => true
+      | (ARROW(k11, k12), ARROW(k21, k22)) => equalKind(k11, k21) andalso
+					      equalKind(k12, k22)
+      | (SING t1, SING t2) => equal(t1, t2)
+      | _ => false
+
+fun kind t =
+    case t of
+	(VAR (k, _, _) | CON (_, k) )               => k
+      | (FUN _ | PROD _ | SUM _ | ALL _ | EXIST _ ) => STAR
+      | (MU t  | ABBREV (_, t) )                    => kind t
+      | LAMBDA (v, t) => ARROW(kind v, kind t)
+      | APPLY (t1, _) => (case kind t1 of
+			      ARROW(k1, k2) => k2
+			    | _             => raise Kind)
+
+fun kindVar v =
+    case v of
+	VAR(k, _, _) => k
+      | _ => raise Internal "kindVar"
+
+fun constraintVar v =
+    case v of
+	VAR(_, c, _) => c
+      | _ => raise Internal "constraintVar"
+
+(*
+ * Injections
+ *)
+   
+exception Type
+exception Fix
+
+(* constraint c has to be checked when checking for equality *)
+fun newVar (k, c) = VAR(k, c, Hole.hole())
+
+fun isUnbound v =
+    case v of
+	VAR(_, _, t) => Hole.isHole t
+      | _            => raise Internal "isUnbound"
+
+(* kind k is ignored *)
+fun unknown k = Hole.hole ()
+
+(* do eta-expansion to obtain the long-eta-normal-form *)
+fun var v =
+    case v of
+	VAR (k, c, _) => etaExpand (v, k)
+      | _ => raise Internal "var"
+
+fun con (p, k) = etaExpand(CON(p, k), k)
+
+fun arrow (t1, t2) = (matchKind(kind t1, STAR) handle Hole.Hole => ();
+		      matchKind(kind t2, STAR) handle Hole.Hole => ();
+		      FUN(t1, t2))
+
+fun tuple tv = PROD(INDEXED tv)
+
+fun prod r = PROD r
+
+fun sum r = SUM r
+
+fun bind (cons, v, t) =
+    let
+	val t' = cons (v, t)
+    in
+	case v of
+	    VAR(_, _, t) => if Hole.isHole t then Hole.fill(t, t')
+			 else raise BoundVar
+	  | _ => raise Internal "bind";
+	t'
+    end
+
+fun all (v, t) = (matchKind(kind t, STAR) handle Hole.Hole => ();
+		  bind (ALL, v, t))
+
+fun exist (v, t) = (matchKind(kind t, STAR) handle Hole.Hole => ();
+		    bind (EXIST, v, t))
+
+fun lambda (v, t) =
+(* DEBUG 
+let
+val l =
+ * END DEBUG *)
+bind (LAMBDA, v, t)
+(* DEBUG
+in
+Inspector.inspect l;
+l
+end
+ * END DEBUG *)
+
+(* the insertDisjoint may be a Problem if we enter a cycle not at a mu
+ * but at some other node ...
+ * then a term is substituted twice and also inserted once ...
+ * hopefully this case does not occur in practise ...
+ * 
+ *)
+fun takeOld(smap, t, lvl) =
+    let
+	(* use the infinite lvl if you can recycle a term *)
+	val t_lvl = (t, valOf(Int.maxInt))
+    in
+	Store.Map.insertDisjoint(smap, t, t_lvl);
+	t_lvl
+    end
+
+fun makeNew(smap, t, t_lvl) = (Store.Map.insertDisjoint(smap, t, t_lvl); t_lvl)
+    handle Store.Map.Collision => Store.Map.lookupExistent(smap, t)
+
+(* there must be a LAMBDA because of long-eta-normal-form *)
+fun apply (t1, t2) =
+    if isUnknown t1 then APPLY(t1, t2)
+    else
+	(let
+	     val (k1, k2) = (kind t1, kind t2)
+	 in
+	     case k1 of
+		 ARROW(k11, k12) => (matchKind(k11, k2) handle Hole.Hole => ())
+	       | _ => raise Kind
+	 end;
+	 (* DEBUG
+	 print "matchKind\n";
+	  * END DEBUG *)
+	 case t1 of
+	     LAMBDA (v, t) =>
+	     (* DEBUG
+	     (print "LAMBDA\n";
+	      * END DEBUG *)
+	      betaRed (t, v, t2)
+	   (* DEBUG
+	     )
+	    * END DEBUG *)
+	   | (VAR _ | CON _ | MU _ ) => APPLY (t1, t2)
+	   | ABBREV (t1', t1) => abbrev(apply(t1', t2), apply(t1, t2))
+	   | _ => raise Type)
+
+and abbrev (t1, t2) =
+    (matchKind(kind t1, kind t2) handle Hole.Hole => ();
+     case (t1, t2) of
+	 (ABBREV(t11, t12), _ ) => abbrev(t11, t2)
+       | (_ , ABBREV(t21, t22)) => abbrev(t1, t22)
+       | _                      => ABBREV(t1, t2))
+
+(* check each first argument to be unknown *)
+and fix vec =
+    let
+	fun combine (u, t) =
+	    if isUnknown u then
+		let
+		    val m = MU t
+		in
+		    Hole.fill(u, m)
+		end
+	    else raise Type
+    in
+	Vector.app combine vec
+    end
+
+and unroll t =
+    case t of
+	APPLY _          => unrollApply (t, t, [])
+      | (MU t'          |
+	 ABBREV(_, t') ) => unroll t'
+      | _                => t
+
+and unrollApply (t0, t, ts) =
+    case t of
+	APPLY(t1, t2) => unrollApply(t0, t1, (t2 :: ts))
+      | MU t'         => unrollLambda (t0, Store.Map.map(), t', ts)
+      | ABBREV(_, t') => unrollApply(t0, t', ts)
+      | _             => t0
+
+and unrollLambda (t0, smap, t, ts) =
+    case (t, ts) of
+	(_, []) => unroll (substitute(t, smap))
+      | (ABBREV(_, t'), _) => unrollLambda(t0, smap, t', ts)
+      | (LAMBDA(v, t1), t2 :: ts') => (Store.Map.insert(smap, v, t2);
+				       unrollLambda(t0, smap, t1, ts'))
+      | _ => t0
+
+(* non-interface-functions *)
+
+and substitute (t, smap) =
+    let
+	val vs = List.map (fn (v, t) => (v, (t, 0))) (Store.Map.toList smap)
+	val smap' = Store.Map.fromList vs
+    in
+	if null vs then t
+	else #1 (substitute' (t, smap', Store.Map.map(), PathMap.map(), 1))
+    end
+
+and substitute' (t, smap, kmap, pmap, lvl) =
+    case Store.Map.lookup(smap, t) of
+	SOME t_lvl => t_lvl
+      | NONE       =>
+	case t of
+	VAR(k, c, t') =>
+	(* TODO : is this case not necessary?
+	 * maybe because only free variables should match
+	 * since bound variables should have been considered before
+	 * however, we do not descend into the term, the variable points to
+	 *)
+	let
+	    (* DEBUG
+	    (* perhaps, this shows that my assumption above is wrong ...
+	     * only seems to hide the BoundVar exception ...
+	     *)
+	    val _ = if Hole.isHole t' then ()
+		    else raise Internal "substitute'"
+	     * END DEBUG *)
+	    val (k', lvl') = substituteKind(k, smap, kmap, pmap, lvl)
+	in
+	    if lvl' >= lvl
+	    then takeOld(smap, t, lvl)
+	    else makeNew(smap, t, (VAR(k', c, t'), lvl'))
+	end
+      | CON(p, k) =>
+	(case PathMap.lookup(pmap, p) of
+	     SOME t' => ((matchKind(kind t', k);
+			  makeNew(smap, t, (t', 0)))
+			 handle KindMismatch _ => raise Kind)
+	   | NONE =>
+	     let
+		 val (k', lvl') = substituteKind(k, smap, kmap, pmap, lvl)
+	     in
+		 if lvl' >= lvl
+		 then takeOld(smap, t, lvl)
+		 else makeNew(smap, t, (con(p, k'), lvl'))
+	     end)
+      | FUN(t1, t2) => substitutePair(t, arrow, t1, t2, smap, kmap, pmap, lvl)
+      | PROD r => substituteRow(t, prod, r, smap, kmap, pmap, lvl)
+      | SUM r => substituteRow(t, sum, r, smap, kmap, pmap, lvl)
+      | MU t' =>
+	(* I think this is no longer necessary since it is automatically
+	 * done in the recursive call of substitute' ...
+	(case Store.Map.lookup(smap, t') of
+	     SOME t'' => if Store.same(t', t'')
+			 then takeOld(smap, t)
+			 else makeNew(smap, t, MU t'')
+	   | NONE =>
+	 *)
+	let
+	    val m = unknown()
+	    val lvl' = lvl + 1
+	    val _ = Store.Map.insert(smap, t, (m, lvl'))
+	    val (t'', lvl'') = substitute' (t', smap, kmap, pmap, lvl')
+	in
+	    if lvl'' >= lvl'
+	    then
+		(* overwrite the inserted t->(m, lvl') by t->(t, lvl) *)
+		(Store.Map.insert(smap, t, (t, lvl)); (t, lvl))
+	    else
+		(* t->m has already been inserted *)
+		(fix #[(m, t'')]; (m, lvl''))
+	end
+      | ALL(v, t) => createBinding (t, all, v, t, smap, kmap, pmap, lvl)
+      | EXIST(v, t) => createBinding (t, exist, v, t, smap, kmap, pmap, lvl)
+      | LAMBDA(v, t)  => createBinding (t, lambda, v, t, smap, kmap, pmap, lvl)
+      | APPLY(t1, t2) => substitutePair(t, apply, t1, t2, smap, kmap, pmap, lvl)
+      | ABBREV(t1, t2) =>
+	substitutePair(t, abbrev, t1, t2, smap, kmap, pmap, lvl)
+
+(* must be modified because binding is not that easy ...
+ * it seems that we have to work with levels ...
+ * and the kind of x has to be substituted ...
+ *)
+and createBinding (t0, toTyp, v, t, smap, kmap, pmap, lvl) =
+    let
+	val lvl' = lvl + 1
+	val (k, k_lvl) = substituteKind(kindVar v, smap, kmap, pmap, lvl')
+	val x = newVar(k, constraintVar v)
+	val v_lvl = Int.min(lvl', k_lvl)
+	val _ = Store.Map.insert(smap, v, (var x, v_lvl))
+	val (t'', lvl'') = substitute' (t, smap, kmap, pmap, lvl')
+	val lvl''' = Int.min(k_lvl, lvl'')
+    in
+	if lvl''' >= lvl'
+	then takeOld(smap, t0, lvl)
+	else makeNew(smap, t0, (toTyp(x, t''), lvl'''))
+    end
+
+and substituteKind (k, smap, kmap, pmap, lvl) =
+    case Store.Map.lookup(kmap, k) of
+	SOME k_lvl => k_lvl
+      | NONE    =>
+	case k of
+	    SING t =>
+	    let
+		val (t', lvl') = substitute'(t, smap, kmap, pmap, lvl)
+	    in
+		if lvl' >= lvl
+		then takeOld(kmap, k, lvl)
+		else makeNew(kmap, k, (singKind t', lvl'))
+	    end
+	  | ARROW(k1, k2) =>
+	    let
+		val (k1', lvl1) = substituteKind(k1, smap, kmap, pmap, lvl)
+		val (k2', lvl2) = substituteKind(k2, smap, kmap, pmap, lvl)
+		val lvl' = Int.min(lvl1, lvl2)
+	    in
+		if  lvl' >= lvl
+		then takeOld(kmap, k, lvl)
+		else makeNew(kmap, k, (arrowKind(k1', k2'), lvl'))
+	    end
+	  | _ => takeOld(kmap, k, lvl)
+
+and substitutePair (t, toTyp, t1, t2, smap, kmap, pmap, lvl) =
+    let
+	val (t1', lvl1) = substitute'(t1, smap, kmap, pmap, lvl)
+	val (t2', lvl2) = substitute'(t2, smap, kmap, pmap, lvl)
+	val lvl' = Int.min(lvl1, lvl2)
+    in
+	if lvl' >= lvl
+	then takeOld(smap, t, lvl)
+	else makeNew(smap, t, (toTyp(t1', t2'), lvl'))
+    end
+
+and substituteRow (t, toTyp, r, smap, kmap, pmap, lvl) =
+    case r of
+	INDEXED vec =>
+	let
+	    val (vec', lvl') = substituteVec (vec, smap, kmap, pmap, lvl)
+	in
+	    if lvl' >= lvl
+	    then takeOld(smap, t, lvl)
+	    else makeNew(smap, t, (toTyp(INDEXED vec'), lvl'))
+	end
+      | NAMED ps    =>
+	let
+	    val (ps', lvl') = substituteList (ps, smap, kmap, pmap, lvl)
+	in
+	    if lvl' >= lvl
+	    then takeOld(smap, t, lvl)
+	    else makeNew(smap, t, (toTyp(NAMED ps'), lvl'))
+	end
+
+and substituteVec (vec, smap, kmap, pmap, lvl) =
+    let
+	val min_lvl = ref lvl
+	val map_fn =
+	 fn t =>
+	    let
+		val (t', lvl') = substitute' (t, smap, kmap, pmap, lvl)
+	    in
+		min_lvl := Int.min(!min_lvl, lvl');
+		t'
+	    end
+    in
+	(Vector.map map_fn vec, !min_lvl)
+    end
+
+and substituteList (ps, smap, kmap, pmap, lvl) =
+    let
+	val min_lvl = ref lvl
+	val map_fn =
+	 fn (lab, t) =>
+	    let
+		val (t', lvl') = substitute' (t, smap, kmap, pmap, lvl)
+	    in
+		min_lvl := Int.min(!min_lvl, lvl');
+		(lab, t')
+	    end
+    in
+	(List.map map_fn ps, !min_lvl)
+    end
+
+(* betaRed t v t' = t[v := t'] *)
+and betaRed (t, v, t') =
+    let
+	val smap = Store.Map.map()
+	val _ = Store.Map.insert(smap, v, t')
+	(* DEBUG
+	val _ = Inspector.inspect (t, t')
+	 * END DEBUG *)
+    in
+	substitute (t, smap)
+    end
+
+fun etaExpand (t, k) =
+    case k of
+	ARROW(k1, k2) =>
+	let
+	    val x = newVar (k1, Unconstrained)
+	in
+	    lambda(x, etaExpand(apply(t, etaExpand(var x, k1)), k2))
+	end
+      | (STAR | EXT ) => t
+      | SING t' => etaExpand(t, kind t')
+
+(*
+ * Inspection
+ *)
+
+datatype desc =
+	 Unknown  of constraint
+       | Var	  of var
+       | Con	  of path
+       | Arrow	  of typ * typ
+       | Prod	  of row
+       | Sum	  of row
+       | Mu	  of typ
+       | All	  of var * typ
+       | Exist	  of var * typ
+       | Lambda   of var * typ
+       | Apply	  of typ * typ
+
+fun inspect t =
+    if isUnknown t then raise Type
+    else
+	case t of
+	    VAR _ => Var t
+	  | CON(p, _) => Con p
+	  | FUN tp => Arrow tp
+	  | PROD r => Prod r
+	  | SUM r => Sum r
+	  | MU t => Mu t
+	  | ALL vt => All vt
+	  | EXIST vt => Exist vt
+	  | LAMBDA vt => Lambda vt
+	  | APPLY tp => Apply tp
+	  | ABBREV (_, t) => inspect t
+
+val isUnknown = Hole.isHole
+
+(* baseType throws abbreviations away *)
+fun baseType t = case t of ABBREV(_, t) => baseType t
+		       | _            => t
+
+(* ifUnknown applies 'els' to 't' if 't' is not unknown
+ * otherwise 'the' is returned *)
+fun ifUnknown (t, the, els) = if isUnknown t then the ()
+			      else els t
+
+fun isType (t, typF) = ifUnknown (t, (fn () => false),
+				  (fn t => typF (baseType t)))
+
+fun asType (t, typF) =
+    ifUnknown (t, (fn _ => raise Type), (fn t => typF (baseType t)))
+
+
+
+
+fun isVar t = isType (t, (fn t => case t of VAR _ => true
+					| _     => false))
+
+fun isCon t = isType (t, (fn t => case t of CON _ => true
+					| _     => false))
+
+fun isArrow t = isType (t, (fn t => case t of FUN _ => true
+					  | _     => false))
+
+fun isTuple t = isType (t, (fn t => case t of PROD r => isIndexed r
+					  | _      => false))
+
+fun isProd t = isType (t, (fn t => case t of PROD _ => true
+					 | _      => false))
+
+fun isSum t = isType (t, (fn t => case t of SUM _ => true
+					| _     => false))
+
+fun isMu t = isType (t, (fn t => case t of MU _ => true
+				       | _    => false))
+
+fun isAll t = isType (t, (fn t => case t of ALL _ => true
+					| _     => false))
+
+fun isExist t = isType (t, (fn t => case t of EXIST _ => true
+					  | _       => false))
+
+fun isLambda t = isType (t, (fn t => case t of LAMBDA _ => true
+					   | _        => false))
+
+fun isApply t = isType (t, (fn t => case t of APPLY _ => true
+					  | _       => false))
+
+
+fun asVar t = asType (t, (fn t => case t of VAR _ => t
+					| _     => raise Type))
+
+fun asCon t = asType (t, (fn t => case t of CON(p, _) => p
+					| _     => raise Type))
+
+fun asArrow t = asType (t, (fn t => case t of FUN tp => tp
+					  | _     => raise Type))
+
+fun asTuple t = asType (t, (fn t => case t of PROD r => asIndexed r
+					  | _      => raise Type))
+
+fun asProd t = asType (t, (fn t => case t of PROD r => r
+					 | _      => raise Type))
+
+fun asSum t = asType (t, (fn t => case t of SUM r => r
+					| _     => raise Type))
+
+fun asMu t = asType (t, (fn t => case t of MU t => t
+				       | _    => raise Type))
+
+fun asAll t = asType (t, (fn t => case t of ALL vt => vt
+					| _     => raise Type))
+
+fun asExist t = asType (t, (fn t => case t of EXIST vt => vt
+					  | _       => raise Type))
+
+fun asLambda t = asType (t, (fn t => case t of LAMBDA vt => vt
+					   | _        => raise Type))
+
+fun asApply t = asType (t, (fn t => case t of APPLY tp => tp
+					  | _       => raise Type))
+
+
+fun isAbbrev t = ifUnknown (t, (fn () => false),
+			   (fn t => case t of ABBREV _ => true
+					    | _        => false))
+
+fun asAbbrev t = ifUnknown (t, (fn () => raise Type),
+			   (fn t => case t of ABBREV tp => tp
+					    | _         => raise Type))
+
+(*
+ * Operations on Rows
+ *)
+
+exception Row
+
+fun emptyRow () = NAMED []
+
+
+fun isIndexed r =
+    case r
+     of INDEXED _  => true
+      | NAMED lts  => isIndexed'(lts,1)
+and isIndexed'(lts,i) =
+    case lts of
+	[]          => true
+      | (l,t)::lts' =>
+	case Label.toInt l of
+	    NONE    => false
+	  | SOME i' => i' = i andalso isIndexed'(lts',i+1)
+
+fun indexedToNamed vec =
+    List.tabulate(Vector.length vec,
+	       fn i => (Label.fromInt(i+1), Vector.sub(vec,i)))
+
+fun namedToIndexed lts =
+    Vector.fromList(List.mapi namedToIndexed' lts)
+    handle Overflow => raise Row
+and namedToIndexed'(i,(l,t)) =
+    case Label.toInt l
+     of NONE		=> raise Row
+      | SOME i'		=> if i' = i+1 then t else raise Row
+							 
+fun asIndexed r =
+    case r
+     of INDEXED ts => ts
+      | NAMED lts  => namedToIndexed lts
+
+fun asNamed r =
+    case r
+     of INDEXED ts => indexedToNamed ts
+      | NAMED x	   => x
+
+fun extendList (lab, typ, xs) =
+    case xs of
+	[]             => [(lab, typ)]
+      | ((l, t) :: ys) => case Label.compare(lab, l) of
+			      GREATER => (l, t) :: extendList(lab, typ, ys)
+			    | EQUAL   => raise Row
+			    | LESS    => (lab, typ) :: xs
+
+(* check if well-kinded: new entry must be of kind STAR and label must be
+ * fresh *)
+fun extendRow (lab, typ, row) =
+    (matchKind(kind typ, STAR) handle Hole.Hole => ();
+     let
+	 val xs = asNamed row
+     in
+	 NAMED (extendList (lab, typ, xs))
+     end)
+
+
+datatype row_desc =
+	 UnknownRow
+       | EmptyRow
+       | FieldRow of lab * typ * row
+
+
+fun inspectRow r =
+    case asNamed r of
+	[]              => EmptyRow
+      | (l, t) :: lts	=> FieldRow(l, t, NAMED lts)
+
+(* there are no unknown rows in this representation *)
+fun isUnknownRow r = false
+
+fun isEmptyRow r =
+    case r of
+	( INDEXED #[] | NAMED [] ) => true
+      | _                          => false
+
+fun asFieldRow r =
+    case asNamed r
+     of []		=> raise Row
+      | (l,t) :: lts	=> (l, t, NAMED lts)
+
+val isTupleRow = isIndexed
+val asTupleRow = asIndexed
+
+fun lookupRow(r,l) =
+    case r
+     of INDEXED ts	=> (Vector.sub(ts, Option.valOf(Label.toInt l) - 1)
+				    handle (Option | Subscript) => raise Row)
+      | NAMED lts	=> lookupRow'(lts, l)
+
+and lookupRow' (lts, l) =
+case lts of
+    [] => raise Row
+  | (l',t) :: lts =>
+    case Label.compare(l', l)
+     of EQUAL		=> t
+      | LESS		=> lookupRow'(lts, l)
+      | GREATER		=> raise Row
+
+fun realise(rea, t) =
+    if PathMap.isEmpty rea
+    then t
+    else #1(substitute'(t, Store.Map.map(), Store.Map.map(), rea, 1))
+
+fun realiseKind(rea, k) =
+    if PathMap.isEmpty rea
+    then k
+    else #1(substituteKind(k, Store.Map.map(), Store.Map.map(), rea, 1))
+
+type realise_context = {smap : (typ, typ * int) Store.Map.map,
+			kmap : (kind, kind * int) Store.Map.map}
+
+fun realiseStart() = {smap = Store.Map.map(),
+		      kmap = Store.Map.map()}
+
+fun realiseCont(cont : realise_context, rea, t) =
+    if PathMap.isEmpty rea
+    then t
+    else #1(substitute'(t, #smap cont, #kmap cont, rea, 1))
+	 
+fun realiseKindCont(cont : realise_context, rea, k) =
+    if PathMap.isEmpty rea
+    then k
+    else #1(substituteKind(k, #smap cont, #kmap cont, rea, 1))
+
+(*
+ * Comparison
+ *)
+
+fun equalConstraint cp =
+    case cp of
+	((Unconstrained, Unconstrained)  | (Intensional, Intensional) ) => true
+      | (Extensional(p1, ps1), Extensional(p2, ps2)) =>
+	Path.equal(p1,p2) andalso ListPair.allEq Path.equal (ps1,ps2)
+      | _ => false
+
+
+fun isFreshVar v =
+    case v of
+	VAR(_, _, t) => Hole.isHole t
+      | _ => false
+
+(* DEBUG
+val d_map = ref (Store.Map.map())
+val num = ref 0
+fun d_num () = (num := !num + 1; !num)
+fun add t = case Store.Map.lookup(!d_map, t) of
+		SOME _ => ()
+	      | NONE   => Store.Map.insert(!d_map, t, d_num())
+fun look t = Int.toString(case Store.Map.lookup(!d_map, t) of
+			      SOME i => i
+			    | NONE   => 0) ^ " "
+fun pr s ts = (print (s ^ ": "); List.app (print o look) ts; print "\n")
+ * END DEBUG *)
+
+fun insertChain (ass, t, chain) =
+    case chain of
+	[] => ()
+      | t1 :: chain => (Store.Map.insert(ass, t1, t);
+			(* DEBUG
+			pr "ass" [t1, t];
+			 * END DEBUG *)
+			insertChain (ass, t, chain))
+
+fun endOfChain' (ass, t, chain) =
+    case Store.Map.lookup(ass, t) of
+	SOME t' => endOfChain' (ass, t', t :: chain)
+      | NONE    => (t, chain)
+
+fun endOfChain (ass, t1, t2) =
+    let
+	val (t2', chain2) = endOfChain' (ass, t2, [])
+
+	val _ = insertChain (ass, t2', tl chain2) handle Empty => ()
+
+	val (t1', chain1) = endOfChain' (ass, t1, [])
+
+	val _ = if Store.same(t1', t2')
+		then insertChain (ass, t2', tl chain1) handle Empty => ()
+		else
+		    if isFreshVar t2'
+		    then insertChain (ass, t1', t2' :: 
+						(tl chain1 handle Empty => []))
+		    else insertChain (ass, t2', t1' :: chain1)
+    in
+	 (t1', t2')
+    end
+
+(* two types are equal if
+ * + they are physically equal
+ * + they have been assumed to be equal
+ * + they are recursively equal
+ *)
+fun equal (t1, t2) = ((* DEBUG
+		      d_map := Store.Map.map();
+		      num := 0;
+		      add t1;
+		      add t2;
+		       * END DEBUG *)
+		      equal' (Store.Map.map(), PathMap.map(), t1, t2); true)
+    handle Mismatch _ => false
+
+and equal' (ass, rea, t1, t2) =
+    if Store.same (t1, t2) then ()
+    else
+	let
+	    (* DEBUG
+	    val _ = (add t1; add t2)
+	    val _ = pr "equal'" [t1, t2]
+	     * END DEBUG *)
+	    val (t1', t2') = endOfChain (ass, t1, t2)
+	    (* DEBUG
+	    val _ = (add t1'; add t2')
+	    val _ = pr "equal' eOC" [t1', t2']
+	     * END DEBUG *)
+	in
+	    if Store.same(t1', t2') orelse
+	       (* if one side is a free Variable then it is bound to the other
+		* side by taking it into the assumptions (done by endOfChain)
+		*)
+	       isFreshVar t1' orelse isFreshVar t2'
+	    then ()
+	    else
+		case (t1', t2') of
+		    (VAR(_, c1, t1), VAR(_, c2, t2)) =>
+		    if equalConstraint(c1, c2)
+		    then equal'(ass, rea, t1, t2)
+		    else raise Mismatch (t1', t2')
+		  | (CON(p1, _), _) =>
+		    (case PathMap.lookup(rea, p1) of
+			SOME t => equal'(ass, rea, t, t2')
+		      | NONE   =>
+			case t2' of
+			    CON(p2, _) => if Path.equal(p1, p2) then ()
+					  else raise Mismatch (t1', t2')
+			  | _ => raise Mismatch(t1', t2'))
+		  | (_ , CON(p2, _)) =>
+		    (case PathMap.lookup(rea, p2) of
+			SOME t => equal'(ass, rea, t1', t)
+		      | NONE   => raise Mismatch(t1', t2'))
+		  | ((PROD r1, PROD r2) |
+		     (SUM r1, SUM r2) )  => (equalRow (ass, rea, r1, r2)
+					     handle Row => raise Mismatch(t1', t2'))
+		  | ((ALL(v1, t1), ALL(v2, t2))        |
+		     (EXIST(v1, t1), EXIST(v2, t2))    |
+		     (LAMBDA(v1, t1), LAMBDA(v2, t2)) ) => 
+		    (equal' (ass, rea, v1, v2);
+		     equal' (ass, rea, t1, t2))
+		  | ((APPLY(t11, t12), APPLY(t21, t22)) |
+		     (FUN(t11, t12), FUN(t21, t22)) )    =>
+		    (equal' (ass, rea, t11, t21);
+		     equal' (ass, rea, t12, t22))
+		  | ((MU t1, MU t2)        |
+		     (ABBREV(_, t1), t2)   |
+		     (t1, ABBREV(_, t2)) ) => equal' (ass, rea, t1, t2)
+		  | _ => raise Mismatch (t1', t2')
+	end
+
+and equalRow (ass, rea, r1, r2) =
+    case (r1, r2) of
+	(INDEXED vec1, INDEXED vec2) =>
+	if Vector.length vec1 = Vector.length vec2
+	then VectorPair.app (fn (x, y) => equal' (ass, rea, x, y)) (vec1, vec2)
+	else raise Row
+      | (INDEXED _, NAMED _) => equalRow (ass, rea, NAMED (asNamed r1), r2)
+      | (NAMED _, INDEXED _) => equalRow (ass, rea, r1, NAMED (asNamed r2))
+      | (NAMED xs, NAMED ys) =>
+	if List.length xs = List.length ys
+	then ListPair.app (fn ((l1, t1), (l2, t2)) =>
+			      if l1 = l2 then equal' (ass, rea, t1, t2)
+			      else raise Row)
+			  (xs, ys)
+	else raise Row
+
+(* we assume that all quantifiers are on top
+ * abbreviations are omitted
+ *)
+fun instance' (smap, t) =
+    case t of
+	ALL(v, t')    => (Store.Map.insert(smap, v, newVar(starKind(),
+							Unconstrained));
+			  instance'(smap, t'))
+      | EXIST(v, t')  => instance'(smap, t')
+      | ABBREV(_, t') => instance'(smap, t')
+      | _ => t
+
+fun instance t = instance'(Store.Map.map(), t)
+
+(* we assume that all quantifiers are on top
+ * abbreviations are omitted
+ *)
+fun skolem' (smap, t) =
+    case t of
+	EXIST(v, t')    => (Store.Map.insert(smap, v, newVar(starKind(),
+							  Unconstrained));
+			    skolem'(smap, t'))
+      | ALL(v, t')      => skolem'(smap, t')
+      | ABBREV(_, t')   => skolem'(smap, t')
+      | _ => t
+
+fun skolem t = skolem'(Store.Map.map(), t)
+
+
+fun match (t1, t2) =
+    let
+	val smap = Store.Map.map()
+	val t1' = instance'(smap, t1)
+	(* DEBUG
+	val _ = print "instance\n"
+	 * END DEBUG *)
+	val t2' = skolem'(smap, t2)
+	(* DEBUG
+	val _ = print "skolem\n"
+         * END DEBUG *)
+    in
+	equal'(smap, PathMap.map(), t1', t2')
+    end
+
+fun matchKind' (cont, rea, k1, k2) =
+    case (k1, k2) of
+	((STAR, STAR) |
+	 (EXT, EXT)   |
+	 (EXT, STAR) ) => ()
+      | (SING t1, SING t2) => (equal'(cont, rea, t1, t2)
+			       handle Mismatch tp =>
+				      raise KindMismatch (SOME tp))
+      | (SING t, k) => matchKind'(cont, rea, kind t, k)
+      | (ARROW(k11, k12), ARROW(k21, k22)) => (matchKind'(cont, rea, k21, k11);
+					       matchKind'(cont, rea, k12, k22))
+      | _ => raise KindMismatch NONE
+
+fun matchKind (k1, k2) = matchKind'(Store.Map.map(), PathMap.map(), k1, k2)
+
+type match_context = (typ, typ) Store.Map.map
+
+fun matchStart () = Store.Map.map()
+
+fun matchBranch cont = Store.Map.clone cont
+
+fun matchCont (cont, rea, t1, t2) =
+    equal'(cont, rea, instance'(cont, t1), skolem'(cont, t2))
+
+fun equalCont (cont, rea, t1, t2) = equal'(cont, rea, t1, t2)
+
+fun matchKindCont (cont, rea, k1, k2) = matchKind'(cont, rea, k1, k2)
+
+fun equalKindCont (cont, rea, k1, k2) =
+    (matchKind'(cont, rea, k1, k2);
+     matchKind'(cont, rea, k2, k1))
+
+(* Tie forwarding knots *)
+
+val _ = Hole.fill(kindHole,      kind)
+val _ = Hole.fill(equalHole,     equal)
+val _ = Hole.fill(varHole,       var)
+val _ = Hole.fill(etaExpandHole, etaExpand)
+val _ = Hole.fill(matchKindHole, matchKind)
+val _ = Hole.fill(isUnknownHole, isUnknown)
+val _ = Hole.fill(isIndexedHole, isIndexed)
+val _ = Hole.fill(asIndexedHole, asIndexed)
+
+end

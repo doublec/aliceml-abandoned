@@ -1,0 +1,79 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Contributor:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *   Leif Kornstaedt, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature INSPECTOR =
+    sig
+	type value
+
+	datatype color =
+	    KEEP_COLOR
+	  | SET_COLOR       of {red: int, green: int, blue: int}
+	datatype width =
+	    KEEP_WIDTHS
+	  | REPLACE_WIDTHS  of int vector
+	  | APPEND_WIDTH    of int
+	  | REMOVE_WIDTH    of int
+	datatype depth =
+	    KEEP_DEPTHS
+	  | REPLACE_DEPTHS  of int vector
+	  | APPEND_DEPTH    of int
+	  | REMOVE_DEPTH    of int
+	datatype action =
+	    KEEP_ACTIONS
+	  | REPLACE_ACTIONS of (string * (value -> unit)) vector
+	  | APPEND_ACTION   of string * (value -> unit)
+	  | REMOVE_ACTION   of string
+
+	datatype option =
+	    NUMBER            of color *                 action
+	  | FUNCTION          of color *                 action
+	  | STRING            of color *                 action
+	  | HOLE              of color *                 action
+	  | FUTURE            of color *                 action
+	  | CONSTRUCTOR       of color *                 action
+	  | REFERENCE         of                         action
+	  | FD                of                         action
+	  | FSET              of                         action
+	  | TUPLE             of color * width * depth * action
+	  | RECORD            of color * width * depth * action
+	  | LIST              of color * width * depth * action
+	  | CONSTRUCTED_VALUE of         width * depth * action
+	  | VECTOR            of color * width * depth * action
+	  | RECORD_LABEL      of color
+	  (* relation mode *)
+	  | ALIAS_DEFINITION  of color
+	  | ALIAS_REFERENCE   of color
+	  (* ellipses *)
+	  | WIDTH_ARROW       of color
+	  | DEPTH_ARROW       of color
+	  | PARENTHESES       of color
+	  | MISC              of color
+	  | TYPEDINDICATOR    of color
+	  | PROMISE           of color
+	  | PACKAGE           of color
+          | CELL_POLL_INTERVAL of int
+
+	exception ConfigurationError
+
+	val inspect: 'a -> unit
+	val inspectN: int * 'a -> unit
+	val configure: option vector -> unit   (* ConfigurationError *)
+
+	functor Inspect(signature S structure X: S): any
+	functor InspectType(type t): any
+	functor InspectSig(signature S): any
+    end

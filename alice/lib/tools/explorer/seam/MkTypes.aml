@@ -1,0 +1,181 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk  from "x-alice:/lib/gtk/Gtk"
+import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
+
+import signature TYPES from "TYPES-sig"
+
+functor MkTypes (Space : SPACE) :
+    TYPES where type space = Space.space =
+  struct
+
+      type space = Space.space
+      type object = Gtk.object
+
+  datatype status = FAILED | SOLVED | CHOICE of int | UNKNOWN
+  type node_info = {offset : int ref,
+		    oldOffset : int option ref,
+		    groupOffset : int ref,
+		    status : status ref,
+                    openChildren : int ref,
+		    hidden : bool ref,
+		    dirty  : bool ref,
+		    hasSolBelow : bool ref,
+		    shape : (int * int) list ref,
+		    vNode : Gtk.object option ref,
+		    space : Space.space option ref,
+		    clone : Space.space option ref,
+		    dist : int ref,
+		    ownBest : Space.space option ref,
+		    alternative : int,
+		    connection : Gtk.object option ref}
+		   
+  datatype tree = N of node_info * tree option ref * tree vector ref
+
+  fun getDist (N ({dist,...},_,_)) = !dist
+
+  type explorer_state = {gtk : {canvas : Gtk.object,
+                                rootGroup : Gtk.object ref,
+			        actionGroup : Gtk.object ref,
+			        shadowGroup : Gtk.object ref,
+                                actionHandler : int ref,
+                                scale : real ref,
+                                window : Gtk.object,
+			        menu : {inspectionActions :
+                                        Gtk.object ref},
+                                contextId : int ref },
+                         tree : {tree : tree ref,
+                                 rootSpace : Space.space option ref,
+				 bestSpace : Space.space option ref,
+				 constrain : (Space.space * Space.space -> 
+					      unit) option ref,
+			         currentNode : tree option ref,
+				 mrd : int ref},
+			 inspect : ((Space.space -> unit) * string) list ref,
+                         curInspAction : string ref,
+                         refreshAfter : int ref,
+                         breakAfter : int ref,
+                         breakAfterNodes : int ref,
+                         hideFailed : bool ref,
+                         zoomFollows : bool ref,
+                         cancelSearch : bool ref,
+                         status : {all : int ref,
+				   choice : int ref,
+                                   failed : int ref,
+                                   solved : int ref } }
+
+  fun setTree (ref (SOME ({tree={tree=tree,...},...}:
+                          explorer_state))) newTree =
+      tree:=newTree
+    | setTree _ _ = ()
+
+  fun getTree (ref (SOME ({tree={tree=tree,...},...}:
+                          explorer_state))) = !tree
+    | getTree _ = raise Empty
+
+  fun getCurrentNode (ref (SOME ({tree={currentNode,...},...}:
+                                 explorer_state))) = !currentNode
+    | getCurrentNode _ = raise Empty
+
+  fun getBestSpace (ref (SOME ({tree={bestSpace,...},...}:
+			       explorer_state))) = !bestSpace
+    | getBestSpace _ = raise Empty
+
+  fun getConstrain (ref (SOME ({tree={constrain,...},...}:
+			       explorer_state))) = !constrain
+    | getConstrain _ = NONE
+
+  (* Status accessors *)
+  fun getSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
+                                 explorer_state))) =
+      (!choice,!failed,!solved)
+    | getSearchState _ = raise Empty
+
+  fun resetSearchState (ref (SOME ({status={choice,failed,solved,all},...}:
+                                   explorer_state))) =
+      (all := 0; choice := 0; failed := 0; solved := 0)
+    | resetSearchState _ = ()
+
+  fun cancelSearch (ref (SOME ({cancelSearch=cs,...}:
+                               explorer_state))) =
+      if !cs then (cs := false; true) else false
+    | cancelSearch _ = raise Empty
+
+  fun setCancelSearch (ref (SOME ({cancelSearch=cs,...}:
+                               explorer_state))) =
+      cs := true
+    | setCancelSearch _ = ()
+
+  fun resetCancelSearch (ref (SOME ({cancelSearch=cs,status={all,...},...}:
+                               explorer_state))) =
+      (cs := false;
+       all := 0)
+    | resetCancelSearch _ = ()
+
+  fun addChoice (state as ref (SOME ({status={all,choice,failed,solved},
+			     breakAfterNodes,...}:
+                            explorer_state))) =
+      (choice := (!choice) + 1;
+       all := (!all) + 1;
+       if !breakAfterNodes>0 andalso
+	   (!all) >= (!breakAfterNodes) then
+	   setCancelSearch state else ()
+       )
+    | addChoice _ = ()
+
+  fun addFailed (state as ref (SOME ({status={all,choice,failed,solved},
+			     breakAfterNodes,...}:
+                            explorer_state))) =
+      (failed := (!failed) + 1;
+       all := (!all) + 1;
+       if !breakAfterNodes>0 andalso
+	   (!all) >= (!breakAfterNodes) then
+	   setCancelSearch state else ()
+       )
+    | addFailed _ = ()
+
+  fun addSolved (state as ref (SOME ({status={all,choice,failed,solved},
+			     breakAfterNodes,
+			     tree={bestSpace,constrain,...},...}:
+                            explorer_state)), s) =
+      (solved := (!solved) + 1;
+       (case !constrain of NONE => ()
+                         | SOME c => bestSpace := SOME s);
+       all := (!all) + 1;
+       if !breakAfterNodes>0 andalso
+	   (!all) >= (!breakAfterNodes) then
+	   setCancelSearch state else ()
+       )
+    | addSolved _ = ()
+
+  fun getHideFailed (ref (SOME {hideFailed=ref hideFailed,...}:
+                          explorer_state option)) = hideFailed
+    | getHideFailed _ = false
+
+  fun setHideFailed (ref (SOME {hideFailed=hideFailed,...}:
+                          explorer_state option)) hf = hideFailed:=hf
+    | setHideFailed _ _ = ()
+
+  fun getZoomFollows (ref (SOME {zoomFollows=ref zoomFollows,...}:
+                          explorer_state option)) = zoomFollows
+    | getZoomFollows _ = false
+
+  fun setZoomFollows (ref (SOME {zoomFollows=zoomFollows,...}:
+                          explorer_state option)) zf = zoomFollows:=zf
+    | setZoomFollows _ _ = ()
+
+  fun getMrd (ref (SOME {tree={mrd=ref mrd,...},...}:
+                          explorer_state option)) = mrd
+    | getMrd _ = assert false
+
+  end

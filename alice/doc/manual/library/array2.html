@@ -1,0 +1,167 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Array2 structure", "The <TT>Array2</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature ARRAY2
+    structure Array2 : ARRAY2
+  </PRE>
+
+  <P>
+    An extended version of the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/array2.html"><TT>Array2</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="array.html"><TT>Array</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+   signature ARRAY2 =
+   sig
+       type 'a array
+       type 'a t = 'a array
+       type 'a region = 
+           { base :  'a array,
+	     row :   int,
+	     col :   int,
+	     nrows : int option,
+	     ncols : int option 
+	   }
+
+       datatype traversal = RowMajor | ColMajor
+
+       val array :       int * int * 'a -> 'a array
+       val fromList :    'a list list -> 'a array
+       val toList :      'a array -> 'a list list
+ 
+       val tabulate :    traversal -> int * int * (int * int -> 'a) -> 'a array
+
+       val sub :         'a array * int * int -> 'a
+       val update :      'a array * int * int * 'a -> unit
+    
+       val dimensions :  'a array -> int * int
+       val nRows :       'a array -> int
+       val nCols :       'a array -> int
+    
+       val row :         'a array * int -> 'a vector
+       val column :      'a array * int -> 'a vector
+
+       val copy :        {src : 'a region, dst : 'a array, dst_row : int, dst_col : int } -> unit
+
+       val app :         traversal -> ('a -> unit) -> 'a array -> unit
+       val modify :      traversal -> ('a -> 'a) -> 'a array -> unit
+       val fold :        traversal -> ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+       val all :         traversal -> ('a -> bool) -> 'a array -> bool
+       val exists :      traversal -> ('a -> bool) -> 'a array -> bool
+
+       val appi :        traversal -> (int * int * 'a -> unit) -> 'a region -> unit
+       val modifyi :     traversal -> (int * int * 'a -> 'a) -> 'a region -> unit
+       val foldi :       traversal -> (int * int * 'a * 'b -> 'b) -> 'b -> 'a region -> 'b
+       val alli :        traversal -> (int * int * 'a -> bool) -> 'a region -> bool
+       val existsi :     traversal -> (int * int * 'a -> bool) -> 'a region -> bool
+
+       val contains :    traversal -> ''a array -> ''a -> bool
+       val notContains : traversal -> ''a array -> ''a -> bool
+
+       val equal :       traversal -> ('a * 'a -> bool) -> 'a array * 'a array -> bool
+   end
+     
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/array2.html"><TT>Array2</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+      <TT>type t = array</TT>
+    </DT>
+    <DD>
+      <P>A local synonym for type <TT>array</TT>.</P>
+    </DD>
+
+
+    <DT>
+      <TT>toList <I>arr</I> </TT>
+    </DT>
+    <DD>
+      <P>Creates a list of a list of the elements of <TT><I>arr</I></TT> in 
+      row major form.  That is, given a valid list <I>l</I> 
+      the following equation holds:</P>
+      <PRE>
+        toList (fromList <I>l</I>) = <I>l</I></TT></PRE>
+      </P>
+    </DD>
+
+    
+    <DT>
+	<TT>all <I>trv</I> <I>f</I> <I>arr</I></TT> <BR>
+	<TT>exists <I>trv</I> <I>f</I> <I>arr</I></TT> 
+    </DT>
+    <DD>
+      <P>These functions apply <TT><I>f</I></TT> to each element of
+         <TT><I>arr</I></TT>
+	 in the order specified by <TT><I>trv</I></TT>. The function
+	 <TT>all</TT> returns 
+         <TT>false</TT> as soon as <I><TT>f</TT> x</I> returns 
+	 <TT>false</TT>; <TT>true</TT> if no such <I>x</I> exists.
+	 The function <TT>exists</TT> returns <TT>true</TT> as soon as 
+	 <I><TT>f</TT> x</I> returns <TT>true</TT>; <TT>false</TT>
+         if no such <I>x</I> exists.
+      </P>
+    </DD> 
+
+    <DT>
+      <TT>alli <I>trv</I> <I>f</I> <I>reg</I></TT> <BR>
+      <TT>existsi <I>trv</I> <I>f</I> <I>reg</I></TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>,
+         that operate on the given region of an array.
+         The coordinates of each element are passed to <TT><I>f</I></TT> as 
+	 additional arguments. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>arr</I>    = alli (<I>f</I> o #3) {base = <I>arr</I>, row = 0, col = 0, nrows = NONE, ncols = NONE}
+        exists <I>f</I> <I>arr</I> = existsi (<I>f</I> o #3) {base = <I>arr</I>, row = 0, col = 0, nrows = NONE, ncols = NONE}</PRE>
+    </DD>
+
+    <DT>
+      <TT>contains <I>trv</I> <I>arr</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      array <TT><I>arr</I></TT>; otherwise <TT>false</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>notContains <I>trv</I> <I>arr</I> <I>a</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      array <TT><I>arr</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>trv</I> <I>arr a</I>)</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>equal <I>trv</I> <I>eq</I> (<I>arr1</I>, <I>arr2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Creates an equality function on arrays given a traversal mode 
+         and an equality on the element type.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

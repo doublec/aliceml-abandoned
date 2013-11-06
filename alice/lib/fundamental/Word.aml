@@ -1,0 +1,18 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive        from "Pervasive"
+import __primitive structure Word31 from "Word31"
+import __primitive signature WORD   from "WORD-sig"
+
+structure Word : WORD = Word31

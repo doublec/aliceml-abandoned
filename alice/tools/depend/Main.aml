@@ -1,0 +1,17 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS          from "../../lib/system/OS"
+import structure CommandLine from "../../lib/system/CommandLine"
+import structure MakeDepend  from "MakeDepend"
+
+val _ = OS.Process.exit (MakeDepend.depend (CommandLine.arguments ()))

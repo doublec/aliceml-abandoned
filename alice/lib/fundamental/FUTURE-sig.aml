@@ -1,0 +1,42 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import __primitive type unit and bool and alt from "ToplevelTypes"
+import __primitive structure Time             from "Time"
+
+signature FUTURE =					(**)
+sig
+    datatype status = FUTURE | FAILED | DETERMINED
+    exception Cyclic
+
+    val concur :	(unit -> 'a) -> 'a
+    val byneed :	(unit -> 'a) -> 'a
+    val alarm :		Time.time -> unit
+
+    val await :		'a -> 'a
+    val awaitEither :	'a * 'b -> ('a,'b) alt
+
+    val status :	'a -> status
+    val isFuture :	'a -> bool
+    val isFailed :	'a -> bool
+    val isDetermined :	'a -> bool
+    val isLazy :	'a -> bool
+
+    functor Concur (signature S functor F () : S) : S
+    functor ByNeed (signature S functor F () : S) : S
+end

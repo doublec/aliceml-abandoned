@@ -1,0 +1,181 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive and IntInf            from "Pervasive"
+import __primitive
+       type int
+       datatype bool and order and option and list from "ToplevelTypes"
+import __primitive val op =                        from "ToplevelValues"
+
+import __primitive structure Option                from "Option"
+import __primitive structure Char                  from "Char"
+import __primitive structure String                from "String"
+import __primitive structure StringCvt             from "StringCvt"
+import __primitive structure Int                   from "Int"
+import __primitive structure Word                  from "Word"
+import __primitive signature INT_INF               from "INT_INF-sig"
+
+structure IntInf : INT_INF =
+struct
+    infix 4 = > < >= <=
+    infixr 5 ::
+    infix 6 + -
+    infix 7 * div mod
+
+    type int = IntInf.int
+    type t   = int							(**)
+
+    val minInt  = NONE
+    val maxInt  = NONE
+    val precision = NONE
+
+    __primitive val toInt : int -> Int.int   = "IntInf.toInt"
+    __primitive val fromInt : Int.int -> int = "IntInf.fromInt"
+    fun toLarge i = i
+    fun fromLarge i = i
+
+    __primitive val ~ : int -> int = "IntInf.~"
+    __primitive val op + : int * int -> int = "IntInf.+"
+    __primitive val op - : int * int -> int = "IntInf.-"
+    __primitive val op * : int * int -> int = "IntInf.*"
+    __primitive val op div : int * int -> int = "IntInf.div"
+    __primitive val op mod : int * int -> int = "IntInf.mod"
+    __primitive val op < : int * int -> bool = "IntInf.<"
+    __primitive val op > : int * int -> bool = "IntInf.>"
+    __primitive val op <= : int * int -> bool = "IntInf.<="
+    __primitive val op >= : int * int -> bool = "IntInf.>="
+    __primitive val quot : int * int -> int = "IntInf.quot"
+    __primitive val rem :  int * int -> int = "IntInf.rem"
+
+    __primitive val compare : int * int -> order = "IntInf.compare"
+
+    fun equal(i,j) = compare(i,j)=EQUAL
+
+    __primitive val abs : int -> int = "IntInf.abs"
+    fun hash i =
+        case Int.maxInt of NONE => toInt (abs i)
+                         | SOME max => toInt (abs i mod fromInt max)
+
+    fun min(i,j)		= if i < j then i else j
+    fun max(i,j)		= if i > j then i else j
+
+    fun sign i if (i>fromInt 0)	= 1
+      | sign i if (i<fromInt 0)	= ~1
+      | sign i			= 0
+
+    fun sameSign(i,j)		= sign i = sign j
+
+    __primitive val divMod :   int * int -> int * int = "IntInf.divMod"
+    __primitive val quotRem :  int * int -> int * int = "IntInf.quotRem"
+    __primitive val pow :      int * Int.int -> int = "IntInf.pow"
+    __primitive val log2 :     int -> Int.int = "IntInf.log2"
+    __primitive val orb :      int * int -> int = "IntInf.orb"
+    __primitive val xorb :     int * int -> int = "IntInf.xorb"
+    __primitive val andb :     int * int -> int = "IntInf.andb"
+    __primitive val notb :     int -> int = "IntInf.notb"
+    __primitive val << :       int * Word.word -> int = "IntInf.<<"
+    __primitive val ~>> :      int * Word.word -> int = "IntInf.~>>"
+
+    (* Formatting *)
+
+    open StringCvt
+
+    (* fmt and scan both use inverted signs to cope with minInt! *)
+
+    fun base BIN	= fromInt 2
+      | base OCT	= fromInt 8
+      | base DEC	= fromInt 10
+      | base HEX	= fromInt 16
+
+    fun toIsDigit BIN	= Char.isBinDigit
+      | toIsDigit OCT	= Char.isOctDigit
+      | toIsDigit DEC	= Char.isDigit
+      | toIsDigit HEX	= Char.isHexDigit
+
+    local
+        open Int
+    in
+    val zero		= Char.ord #"0"
+    val ten		= Char.ord #"A" - 10
+    fun digit i		= Char.chr(i + (if i < 10 then zero else ten))
+    fun value c		= Char.ord(Char.toUpper c) -
+			  (if Char.ord c < ten+10 then zero else ten)
+    end
+
+    fun fmt radix (i if (i=fromInt 0))	= "0"
+      | fmt radix i	= if i > fromInt 0
+			  then String.implode(fmt'(base radix, ~i, []))
+			  else String.implode(#"~" :: fmt'(base radix, i, []))
+    and fmt'(b, i if (i=fromInt 0), cs)	= cs
+      | fmt'(b, i, cs)	= fmt'(b, quot(i,b),
+                               digit(toInt(~(rem(i,b)))) :: cs)
+
+
+    (* Scanning *)
+
+    fun scanSign getc src =
+	case getc src
+	  of SOME(#"-", src') => (fromInt 1, src')
+	   | SOME(#"~", src') => (fromInt 1, src')
+	   | SOME(#"+", src') => (fromInt ~1, src')
+	   | _                => (fromInt ~1, src)
+
+    fun scanPrefix getc src =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"x", src'') => (true, src'')
+		 | SOME(#"X", src'') => (true, src'')
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanNum (isDigit, b) getc src =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then SOME(scanNum' (isDigit, b) getc src (fromInt 0))
+	     else if c = #"_" then scanNum (isDigit, b) getc src'
+	     else NONE
+	   | NONE => NONE
+    and scanNum' (isDigit, b) getc src i =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then scanNum' (isDigit, b) getc src' (b*i - fromInt(value c))
+	     else if c = #"_" then scanNum' (isDigit, b) getc src' i
+	     else (i, src)
+	   | NONE => (i, src)
+
+    fun scan radix getc src =
+	let
+	    val       src1  = skipWS getc src
+	    val (sign,src2) = scanSign getc src1
+	    val (pref,src3) = if radix = HEX then scanPrefix getc src2
+					     else (false, src2)
+	in
+	    case scanNum (toIsDigit radix, base radix) getc src3
+	      of SOME(num, src4) => SOME(sign*num, src4)
+	       | NONE => if pref then SOME(fromInt 0,
+                                           #2(Option.valOf(getc src2)))
+				 else NONE
+	end
+
+    val toString	= fmt DEC
+    val fromString	= scanString(scan DEC)
+end

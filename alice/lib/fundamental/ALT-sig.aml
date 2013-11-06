@@ -1,0 +1,47 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                    from "Pervasive"
+import __primitive type unit and bool and order from "ToplevelTypes"
+
+
+signature ALT =								(**)
+sig
+    datatype ('a,'b) alt = FST of 'a | SND of 'b
+    type     ('a,'b) t   = ('a,'b) alt
+
+    exception Alt
+
+    val isFst :		('a,'b) alt -> bool
+    val isSnd :		('a,'b) alt -> bool
+    val fst :		('a,'b) alt -> 'a		(* [Alt] *)
+    val snd :		('a,'b) alt -> 'b		(* [Alt] *)
+    val getFst :	('a,'b) alt * 'a -> 'a
+    val getSnd :	('a,'b) alt * 'b -> 'b
+
+    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) alt -> unit
+    val appFst :	('a -> unit) -> ('a,'b) alt -> unit
+    val appSnd :	('b -> unit) -> ('a,'b) alt -> unit
+    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
+    val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
+    val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+    val mapBoth :	('a -> 'b) -> ('a,'a) alt -> ('b,'b) alt
+
+    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
+			    ('a,'b) alt * ('a,'b) alt -> bool
+    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
+			    ('a,'b) alt * ('a,'b) alt -> order
+end

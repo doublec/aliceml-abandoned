@@ -1,0 +1,331 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg & Leif Kornstaedt, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeIODesc from "UnsafeIODesc"
+import structure UnsafeOS     from "UnsafeOS"
+import signature OS           from "OS-sig"
+import signature OS_PATH      from "OS_PATH-sig"
+
+structure OS : OS =
+struct
+    type syserror = int
+    exception SysErr = UnsafeOS.SysErr
+
+    val errorMsg = UnsafeOS.errorMsg
+
+    fun errorName _ = "" (*--** *)
+    fun syserror  _ = NONE  (*--** *)
+
+    structure FileSys =
+    struct
+	__primitive type dirstream = "OS.FileSys.dirstream"
+	__primitive eqtype file_id = "''OS.FileSys.file_id"
+	datatype access_mode = A_READ | A_WRITE | A_EXEC
+
+	open UnsafeOS.FileSys
+
+	fun readDir ds =
+	    case UnsafeOS.FileSys.readDir ds of
+		SOME ("." | "..") => readDir ds
+	      | result => result
+
+	fun getApplicationConfigDir appName =
+	    UnsafeOS.FileSys.getApplicationConfigDir() ^ "/" ^ appName
+    end
+
+    structure Process =
+    struct
+	type status = int
+
+	val success = UnsafeOS.Process.success
+	val failure = UnsafeOS.Process.failure
+
+	fun isSuccess status = status = success
+
+	val system = UnsafeOS.Process.system
+
+	val actions = ref nil
+	val inAtExit = ref false
+
+	fun atExit f =
+	    if !inAtExit then () else
+	    let
+		val p = Promise.promise ()
+		val rest = Ref.exchange (actions, Promise.future p)
+	    in
+		Promise.fulfill (p, f::rest)
+	    end
+
+	fun executeActions () =
+	    let
+		val p = Promise.promise ()
+		val actions = Ref.exchange (actions, Promise.future p)
+	    in
+		case actions of
+		    action::rest =>
+			(Promise.fulfill (p, rest);
+			 action () handle _ => ();
+			 executeActions ())
+		  | nil => Promise.fulfill (p, nil)
+	    end
+
+	val terminate = UnsafeOS.Process.terminate
+
+	fun exit status =
+	    (inAtExit := true;
+	     executeActions ();
+	     inAtExit := false;
+	     terminate status)
+
+	val getEnv = UnsafeOS.Process.getEnv
+
+	fun sleep t = Future.await (Future.alarm t)
+
+	val atExn = UnsafeOS.Process.atExn
+    end
+
+    structure IO =
+    struct
+	__primitive eqtype iodesc = "''OS.IO.iodesc"
+
+	fun hash iodesc = Word.fromInt (UnsafeIODesc.hash iodesc)
+	val compare = UnsafeIODesc.compare
+
+	datatype iodesc_kind =
+	    FILE | DIR | SYMLINK | TTY | PIPE | SOCKET
+	  | DEVICE | UNKNOWN | CLOSED
+
+	val kind = UnsafeIODesc.kind
+
+	structure Kind =
+	struct
+	    val file = FILE
+	    val dir = DIR
+	    val symlink = SYMLINK
+	    val tty = TTY
+	    val pipe = PIPE
+	    val socket = SOCKET
+	    val device = DEVICE
+	end
+    end
+
+    structure Path : OS_PATH =
+    struct
+	infixr ^ @
+	val op^ = String.^
+	val op@ = List.@
+
+	fun splitLast nil		= NONE
+	  | splitLast(x::xs)		= case splitLast xs
+					    of NONE        => SOME(nil, x)
+					     | SOME(ys, y) => SOME(x::ys, y)
+
+	exception Path
+	exception InvalidArc
+
+	val currentArc			= "."
+	val parentArc			= ".."
+	fun isArcSep c			= c = #"/" orelse c = #"\\"
+	fun isExtSep c			= c = #"."
+
+	fun getVolume s =
+	    if String.size s >= 2 andalso String.sub(s,1) = #":" andalso
+		Char.isAlpha(String.sub(s,0))
+	    then String.substring(s, 0, 2)
+	    else ""
+
+	fun validVolume{isAbs, vol} = getVolume vol = vol
+
+	fun fromString s =
+	    let
+		val vol = getVolume s
+		val s'  = if vol = "" then s
+			  else String.extract(s, String.size vol, NONE)
+	    in
+		case String.fields isArcSep s'
+		  of ""::nil  => {isAbs=false, vol, arcs=nil}
+		   | ""::arcs => {isAbs=true,  vol, arcs}
+		   | arcs     => {isAbs=false, vol, arcs}
+	    end
+
+	fun validArc arc =
+	    case fromString arc
+	      of {isAbs=false, vol="", arcs} => List.length arcs <= 1
+	       | _                           => false
+
+	fun toString{isAbs=false, vol, arcs=""::_} = raise Path
+	  | toString{isAbs, vol, arcs} =
+	    if Bool.not(validVolume{isAbs, vol}) then
+		raise Path
+	    else if Bool.not(List.all validArc arcs) then
+		raise InvalidArc
+	    else
+		vol ^ (if isAbs then "/" else "") ^ String.concatWith "/" arcs
+
+	fun isRoot s =
+	    case fromString s
+	     of {isAbs=true, vol, arcs=[""]} => true
+	      | _                            => false
+
+	fun getParent s =
+	    let
+		val {isAbs, vol, arcs} = fromString s
+	    in
+		if isAbs andalso arcs = [""] then s else
+		case splitLast arcs
+		  of NONE          => ".."
+		   | SOME(_, "")   => s ^ ".."
+		   | SOME(_, ".")  => s ^ "."
+		   | SOME(_, "..") => s ^ "/.."
+		   | SOME(nil, _)  => toString{isAbs, vol, arcs=["."]}
+		   | SOME(arcs, _) => toString{isAbs, vol, arcs}
+	    end
+
+	fun splitDirFile s =
+	    let
+		val {isAbs, vol, arcs} = fromString s
+	    in
+		case splitLast arcs
+		  of NONE =>
+		     {dir = toString{isAbs, vol, arcs=nil}, file = ""}
+		   | SOME(arcs, arc) =>
+		     {dir = toString{isAbs, vol, arcs}, file = arc}
+	    end
+
+	fun joinDirFile{dir, file} =
+	    let
+		val {isAbs, vol, arcs} = fromString dir
+		val arcs = if List.null arcs andalso file = "" then []
+			   else arcs@[file]
+	    in
+		toString{isAbs, vol, arcs}
+	    end
+
+	fun splitArcBaseExt arc =
+	    let
+		val (base, ext) = Substring.splitr (Bool.not o isExtSep)
+						   (Substring.full arc)
+	    in
+		if Substring.isEmpty ext orelse Substring.size base <= 1 then
+		    NONE
+		else
+		    SOME{base = Substring.string(Substring.trimr 1 base),
+			 ext  = Substring.string ext}
+	    end
+
+	fun splitBaseExt s =
+	    let
+		val {isAbs, vol, arcs} = fromString s
+	    in
+		case splitLast arcs
+		  of NONE =>
+		     {base = toString{isAbs, vol, arcs=nil}, ext = NONE}
+		   | SOME(arcs, arc) =>
+		case splitArcBaseExt arc
+		  of NONE => {base = s, ext = NONE}
+		   | SOME{base, ext} =>
+		     {base = toString{isAbs, vol, arcs=arcs@[base]},
+		      ext  = SOME ext}
+	    end
+
+	fun joinBaseExt{base, ext=NONE}     = base
+	  | joinBaseExt{base, ext=SOME ""}  = base
+	  | joinBaseExt{base, ext=SOME arc} = base ^ "." ^ arc
+
+	val dir  = #dir o splitDirFile
+	val file = #file o splitDirFile
+	val base = #base o splitBaseExt
+	val ext  = #ext o splitBaseExt
+
+	fun mkCanonicalVol vol = String.map Char.toLower vol
+
+	fun mkCanonicalArcs((*isAbs*)false, nil, nil) =
+		"."::nil
+	  | mkCanonicalArcs(isAbs, nil, arcs') =
+		List.rev arcs'
+	  | mkCanonicalArcs(isAbs, ""::arcs, arcs') =
+		mkCanonicalArcs(isAbs, arcs, arcs')
+	  | mkCanonicalArcs(isAbs, "."::arcs, arcs') =
+		mkCanonicalArcs(isAbs, arcs, arcs')
+	  | mkCanonicalArcs(true, ".."::arcs, nil) =
+		mkCanonicalArcs(true, arcs, nil)
+	  | mkCanonicalArcs(isAbs, ".."::arcs, ".."::arcs') =
+		mkCanonicalArcs(true, arcs, ".."::".."::arcs')
+	  | mkCanonicalArcs(isAbs, ".."::arcs, _::arcs') =
+		mkCanonicalArcs(isAbs, arcs, arcs')
+	  | mkCanonicalArcs(isAbs, arc::arcs, arcs') =
+		mkCanonicalArcs(isAbs, arcs, arc::arcs')
+
+	fun mkCanonical s =
+	    let
+		val {isAbs, vol, arcs} = fromString s
+		val vol'  = mkCanonicalVol vol
+		val arcs' = mkCanonicalArcs(isAbs, arcs, nil)
+	    in
+		toString{isAbs, vol=vol', arcs=arcs'}
+	    end
+
+	fun isCanonical s = s = mkCanonical s
+	fun isAbsolute s  = #isAbs(fromString s)
+	fun isRelative s  = Bool.not(isAbsolute s)
+
+	fun concatArcs(arcs1, arcs2) =
+	    case splitLast arcs1
+	     of NONE             => arcs2
+	      | SOME(arcs1', "") => arcs1' @ arcs2
+	      | SOME _           => arcs1 @ arcs2
+
+	fun concat(s1, s2) =
+	    case (fromString s1, fromString s2)
+	     of (_, {isAbs=true, ...}) => raise Path
+	      | ({isAbs, vol=vol1, arcs=arcs1}, {vol=vol2, arcs=arcs2, ...}) =>
+		if vol2 = "" orelse mkCanonicalVol vol1 = mkCanonicalVol vol2
+		then toString{isAbs, vol=vol1, arcs=concatArcs(arcs1, arcs2)}
+		else raise Path
+
+	fun mkAbsolute{path, relativeTo} =
+	    if isRelative relativeTo then
+		raise Path
+	    else if isAbsolute path then
+		path
+	    else
+		mkCanonical(concat(relativeTo, path))
+
+	fun stripCommonPrefix(x::xs, y::ys) =
+	    if x = y then stripCommonPrefix(xs, ys) else (x::xs, y::ys)
+	  | stripCommonPrefix(xs, ys) = (xs, ys)
+
+	fun mkRelative{path, relativeTo} =
+	    let
+		val abs = mkCanonical relativeTo
+		val {isAbs=isAbs1, vol=vol1, arcs=arcs1} = fromString path
+		val {isAbs=isAbs2, vol=vol2, arcs=arcs2} = fromString abs
+		val vol1  = mkCanonicalVol vol1
+		val arcs1 = case arcs1 of [""] => nil | _ => arcs1
+	    in
+		if Bool.not isAbs1 andalso isAbs2 then
+		    path
+		else if isAbs1 <> isAbs2 orelse vol1 <> vol2 then
+		    raise Path
+		else case stripCommonPrefix(arcs1, arcs2)
+		 of (arcs1' as (nil | ""::_), nil) =>
+		    toString{isAbs=false, vol="", arcs = "."::arcs1'}
+		  | (arcs1', (""::arcs2' | "."::arcs2' | arcs2')) =>
+		    toString{isAbs=false, vol="",
+			     arcs = List.map (fn _ => parentArc) arcs2' @ arcs1'}
+	    end
+
+	fun fromUnixPath s = s
+	fun toUnixPath s   = String.map (fn #"\\" => #"/" | c => c) s
+    end
+end

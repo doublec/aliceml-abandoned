@@ -1,0 +1,191 @@
+<?php include("macros.php3"); ?>
+<?php heading("The RESOLVER_HANDLER signature",
+	      "The <TT>RESOLVER_HANDLER</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature RESOLVER_HANDLER</PRE>
+
+  <P>
+    This signature defines functions for defining and applying rules to
+    rewrite resource names, represented as uniform resource identifiers (URIs).
+    For example, <A href="resolver.html">resolvers</A> use rewriting to locate
+    resources such as components.  In this case, the client considers the
+    result of rewriting to be a uniform resource locator (URL), with which
+    it attempts to actually access the resource.  Clients may also use
+    rewriting to perform the reverse operation, namely to abstract a URL
+    into a URI again.
+  </P>
+
+  <P>
+    On the programming language level, a <EM>handler</EM> is a function that
+    takes a URI and transforms it into another URI.  Any or both of the URIs
+    may be relative.  A handler may or may not be <EM>applicable</EM>, which
+    means that it actually may or may not return a URI.
+  </P>
+
+  <P>
+    See also:
+    <A href="resolver.html"><TT>Resolver</TT></A>,
+    <A href="url.html"><TT>Url</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature RESOLVER_HANDLER from "x-alice:/lib/system/RESOLVER_HANDLER-sig"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature RESOLVER_HANDLER =
+    sig
+	type <A href="#handler">handler</A>
+	type <A href="#t">t</A> = handler
+
+	exception <A href="#Syntax">Syntax</A>
+
+	val <A href="#default">default</A> : handler
+	val <A href="#root">root</A> : <A href="url.html#t">Url.t</A> -> handler
+	val <A href="#cache">cache</A> : <A href="url.html#t">Url.t</A> -> handler
+	val <A href="#prefix">prefix</A> : string * string -> handler
+	val <A href="#pattern">pattern</A> : string * string -> handler
+	val <A href="#custom">custom</A> : string * (<A href="url.html#t">Url.t</A> -> <A href="url.html#t">Url.t</A> option) -> handler
+
+	val <A href="#parse">parse</A> : string -> handler list
+
+	val <A href="#apply">apply</A> : <A href="url.html#t">Url.t</A> -> handler list -> (<A href="url.html#t">Url.t</A> * handler list) option
+	val <A href="#tracingApply">tracingApply</A> : (string -> unit) -> <A href="url.html#t">Url.t</A> -> handler list -> (<A href="url.html#t">Url.t</A> * handler list) option
+    end</PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="handler">handler</A></TT><BR>
+      <TT>type <A name="t">t</A> = handler</TT>
+    </DT>
+    <DD>
+      <P>The type of handlers.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Syntax">Syntax</A></TT>
+    </DT>
+    <DD>
+      <P>used by <TT><A href="#parse">parse</A></TT> to indicate that a string
+	was not a well-formed representation of a list of handlers.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="default">default</A></TT>
+    </DT>
+    <DD>
+      <P>is the identify function handler that returns the URI as a URL.
+	It causes an attempt to locate the resource directly under its
+	symbolic name.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="root">root</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>returns a handler that causes an attempt to locate the resource
+	below a specific root <TT><I>url</I></TT>.  The root <I>url</I>
+	is, if relative, resolved with respect to the current working
+	directory at the time of handler creation.  The handler is only
+	applicable for resource names that represent a relative path name.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="cache">cache</A> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>returns a handler that causes an attempt to locate the resource
+	within a cache-style path structure.  A relative URL of the form</P>
+      <PRE><I>scheme</I>/<I>authority</I>/<I>device</I>/<I>path</I></PRE>
+      <P>is constructed, where path components for absent constituents are
+	left out.  The handler returns the URL obtained by resolving this
+	relative URL with respect to <TT><I>url</I></TT>, which is resolved,
+	if relative, with respect to the current working directory at the
+	time of handler creation.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="prefix">prefix</A> (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a handler that causes an attempt to locate the resource
+	under prefix replacement.  Only applicable for resource names whose
+	raw string representations start with prefix <TT><I>s1</I></TT>.
+	The prefix is replaced by <TT><I>s2</I></TT> and the result is again
+	parsed as a URL.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="pattern">pattern</A> (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a handler that causes an attempt to locate the resource
+	under pattern replacement.  <TT><I>s1</I></TT> is a pattern that
+	contains variables of the form <TT>?{<I>x</I>}</TT>, where <TT><I
+	>x</I></TT> is a string not containing a right brace character.
+	Only applicable for resource names whose raw string representations
+	match <TT><I>s1</I></TT>.  Variables given in the pattern are bound
+	to corresponding substrings of the resource name.  <TT><I>s2</I></TT>
+	is returned, with occurrences of variables replaced by the substrings
+	they are bound to, parsed as a URL.  Raises <TT><A href="#Syntax"
+	>Syntax</A></TT> if either <TT><I>s1</I></TT> or <TT><I>s2</I></TT>
+	contain a variable that is not terminated by a right brace.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="custom">custom</A> (<I>s</I>, <I>f</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a handler that causes an attempt to locate the resource using
+	the custom function&nbsp;<TT><I>f</I></TT>.  <TT><I>s</I></TT>&nbsp;is
+	a name for the handler for use in trace messages (see <A
+	href="#tracingApply"><TT>tracingApply</TT></A>).  The handler is
+	applicable if <TT><I>f</I></TT> returns <TT>SOME _</TT>.  It is not
+	applicable if <TT><I>f</I></TT> returns <TT>NONE</TT>. If it raises an
+	exception, this exception will be propagated to the caller of
+	the <A href="#apply"><TT>apply</TT></A>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="parse">parse</A> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>interprets <TT><I>s</I></TT> as a string representation for a list of
+	handlers and returns this.  Raises <TT><A href="#Syntax">Syntax</A
+	></TT> if the string is not well-formed.  The concrete syntax is
+	specified by implementations of this signature.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="apply">apply</A> <I>url</I> <I>handlers</I></TT>
+    </DT>
+    <DD>
+      <P>rewrites <TT><I>url</I></TT> using <TT><I>handlers</I></TT>.
+	The <TT><I>handlers</I></TT> are tested for applicability in order.
+	If an applicable handler is found, returns <TT>SOME (<I>url'</I>,
+	<I>handlers'</I>)</TT>, where <TT><I>url'</I></TT> is the result
+	of the applicable handler and <TT><I>handlers'</I></TT> is the list
+	of handlers that have not been tested for applicability.  If no
+	handler is applicable, returns <TT>NONE</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="tracingApply">tracingApply</A> <I>trace</I> <I>url</I> <I>handlers</I></TT>
+    </DT>
+    <DD>
+      <P>rewrites <TT><I>url</I></TT> using <TT><I>handlers</I></TT>,
+	similarly to <TT><A href="apply">apply</A></TT>, and outputs
+	tracing information about tested handlers and their results using
+	<TT><I>trace</I></TT>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -1,0 +1,27 @@
+(* Alice Snake 2.0 - ConnectionWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk            from "GtkSupport"
+
+
+signature CONNECTION =
+sig 
+
+    type connection_widget
+    
+    type connect_cb = string -> string option
+
+    type cancel_cb = unit -> unit
+
+    val mkConnectionWindow : Gtk.object * connect_cb * cancel_cb -> 
+                                                              connection_widget
+
+end

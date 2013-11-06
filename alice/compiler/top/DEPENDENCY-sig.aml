@@ -1,0 +1,23 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature DEPENDENCY =
+sig
+    type dependency
+    type t = dependency
+
+    exception Format
+
+    val empty :  dependency
+    val load :   dependency * string -> dependency
+    val lookup : dependency * string -> string list
+end

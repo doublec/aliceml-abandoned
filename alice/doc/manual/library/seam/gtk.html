@@ -1,0 +1,4712 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Gtk structure", "The <TT>Gtk</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature GTK
+    structure Gtk : GTK</PRE>
+
+ <P>
+   The <TT>Gtk</TT> structure provides access to the Gtk toolkit.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="glib.html"><TT>GLib</TT></A>,
+   <A href="pango.html"><TT>Pango</TT></A>,
+   <A href="atk.html"><TT>Atk</TT></A>,
+   <A href="gdk.html"><TT>Gdk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+   <A href="gtkbuilder.html"><TT>GtkBuilder</TT></A>
+ </P>
+
+  <?php section("import", "import"); ?>
+
+  <PRE>
+    import signature GTK from "x-alice:/lib/gtk/GTK-sig"
+    import structure Gtk from "x-alice:/lib/gtk/Gtk"
+  </PRE>
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature GTK =
+sig
+    type object = Core.object
+    type gtype = Core.gtype
+    type gvalue = Core.gvalue
+    type prop   = Core.prop
+    type prop_initializer = Core.prop_initializer
+(* begin of CORE-sig.aml *)
+
+
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+
+    type callback_function = object * arg list -> unit
+    val signalConnect        : object * string * callback_function -> int
+    val signalConnectAfter   : object * string * callback_function -> int
+    val signalDisconnect     : object * int -> unit
+    val signalHandlerBlock   : object * int -> unit
+    val signalHandlerUnblock : object * int -> unit
+
+    val latin1ToUtf8 : string -> string
+    val utf8ToLatin1 : string -> string
+
+    val lock : Lock.lock
+
+
+    structure Types :
+    sig
+        val string : gtype
+        val int    : gtype
+        val float  : gtype
+        val double : gtype
+        val pixbuf : gtype
+    end
+
+    structure Value :
+    sig
+        (* exception TypeError *)
+
+        val undefined : unit -> gvalue
+
+        val int : int -> gvalue
+        val enum : int * gtype -> gvalue
+        val string : string -> gvalue
+        val float : real -> gvalue
+        val double : real -> gvalue
+        val bool : bool -> gvalue
+        val object : object -> gvalue
+            
+        val toInt : gvalue -> int
+        val toString : gvalue -> string
+        val toReal : gvalue -> real
+        val toBool : gvalue -> bool
+        val toObject : gvalue -> object
+
+        val getType : gvalue -> gtype
+    end
+
+    structure Prop :
+    sig
+        val setL : object -> prop_initializer list -> unit
+
+        val set : 'a prop -> object * 'a -> unit
+        val get : 'a prop -> object -> 'a 
+
+        val rawSet : object * string * gvalue -> unit
+        val rawGet : object * string -> gvalue
+
+        val name : 'a prop -> string
+
+        val prop : 'a prop * 'a -> prop_initializer
+
+        (* creation *)
+        val newProp : string * ('a -> gvalue) * (gvalue -> 'a) -> 'a prop
+    end
+(* end of CORE-sig.aml *)
+
+    structure WidgetFlags :
+    sig
+        datatype flag =
+            APP_PAINTABLE
+          | CAN_DEFAULT
+          | CAN_FOCUS
+          | COMPOSITE_CHILD
+          | DOUBLE_BUFFERED
+          | HAS_DEFAULT
+          | HAS_FOCUS
+          | HAS_GRAB
+          | MAPPED
+          | NO_REPARENT
+          | NO_SHOW_ALL
+          | NO_WINDOW
+          | PARENT_SENSITIVE
+          | RC_STYLE
+          | REALIZED
+          | RECEIVES_DEFAULT
+          | SENSITIVE
+          | TOPLEVEL
+          | VISIBLE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure UIManagerItemType :
+    sig
+        datatype flag =
+            ACCELERATOR
+          | AUTO
+          | MENU
+          | MENUBAR
+          | MENUITEM
+          | PLACEHOLDER
+          | POPUP
+          | SEPARATOR
+          | TOOLBAR
+          | TOOLITEM
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TreeModelFlags :
+    sig
+        datatype flag =
+            ITERS_PERSIST
+          | LIST_ONLY
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TextSearchFlags :
+    sig
+        datatype flag =
+            TEXT_ONLY
+          | VISIBLE_ONLY
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TargetFlags :
+    sig
+        datatype flag =
+            APP
+          | WIDGET
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure RcFlags :
+    sig
+        datatype flag =
+            BASE
+          | BG
+          | FG
+          | TEXT
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PrivateFlags :
+    sig
+        datatype flag =
+            ALLOC_NEEDED
+          | ANCHORED
+          | CHILD_VISIBLE
+          | DIRECTION_LTR
+          | DIRECTION_SET
+          | HAS_SHAPE_MASK
+          | IN_REPARENT
+          | LEAVE_PENDING
+          | REDRAW_ON_ALLOC
+          | REQUEST_NEEDED
+          | RESIZE_PENDING
+          | USER_STYLE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ObjectFlags :
+    sig
+        datatype flag =
+            FLOATING
+          | IN_DESTRUCTION
+          | RESERVED_1
+          | RESERVED_2
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure IconLookupFlags :
+    sig
+        datatype flag =
+            FORCE_SVG
+          | NO_SVG
+          | USE_BUILTIN
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FileFilterFlags :
+    sig
+        datatype flag =
+            DISPLAY_NAME
+          | FILENAME
+          | MIME_TYPE
+          | URI
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DialogFlags :
+    sig
+        datatype flag =
+            DESTROY_WITH_PARENT
+          | MODAL
+          | NO_SEPARATOR
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DestDefaults :
+    sig
+        datatype flag =
+            ALL
+          | DROP
+          | HIGHLIGHT
+          | MOTION
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DebugFlag :
+    sig
+        datatype flag =
+            KEYBINDINGS
+          | MISC
+          | MULTIHEAD
+          | PLUGSOCKET
+          | TEXT
+          | TREE
+          | UPDATES
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CellRendererState :
+    sig
+        datatype flag =
+            FOCUSED
+          | INSENSITIVE
+          | PRELIT
+          | SELECTED
+          | SORTED
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CalendarDisplayOptions :
+    sig
+        datatype flag =
+            NO_MONTH_CHANGE
+          | SHOW_DAY_NAMES
+          | SHOW_HEADING
+          | SHOW_WEEK_NUMBERS
+          | WEEK_START_MONDAY
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ButtonAction :
+    sig
+        datatype flag =
+            DRAGS
+          | EXPANDS
+          | IGNORED
+          | SELECTS
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure AttachOptions :
+    sig
+        datatype flag =
+            EXPAND
+          | FILL
+          | SHRINK
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ArgFlags :
+    sig
+        datatype flag =
+            CHILD_ARG
+          | CONSTRUCT
+          | CONSTRUCT_ONLY
+          | READABLE
+          | WRITABLE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure AccelFlags :
+    sig
+        datatype flag =
+            LOCKED
+          | MASK
+          | VISIBLE
+        type t = flag list
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WrapMode :
+    sig
+        datatype t =
+            CHAR
+          | NONE
+          | WORD
+          | WORD_CHAR
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowType :
+    sig
+        datatype t =
+            POPUP
+          | TOPLEVEL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WindowPosition :
+    sig
+        datatype t =
+            CENTER
+          | CENTER_ALWAYS
+          | CENTER_ON_PARENT
+          | MOUSE
+          | NONE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure WidgetHelpType :
+    sig
+        datatype t =
+            TOOLTIP
+          | WHATS_THIS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Visibility :
+    sig
+        datatype t =
+            FULL
+          | NONE
+          | PARTIAL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure UpdateType :
+    sig
+        datatype t =
+            CONTINUOUS
+          | DELAYED
+          | DISCONTINUOUS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TreeViewDropPosition :
+    sig
+        datatype t =
+            AFTER
+          | BEFORE
+          | INTO_OR_AFTER
+          | INTO_OR_BEFORE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TreeViewColumnSizing :
+    sig
+        datatype t =
+            AUTOSIZE
+          | FIXED
+          | GROW_ONLY
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ToolbarStyle :
+    sig
+        datatype t =
+            BOTH
+          | BOTH_HORIZ
+          | ICONS
+          | TEXT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ToolbarSpaceStyle :
+    sig
+        datatype t =
+            EMPTY
+          | LINE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ToolbarChildType :
+    sig
+        datatype t =
+            BUTTON
+          | RADIOBUTTON
+          | SPACE
+          | TOGGLEBUTTON
+          | WIDGET
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TextWindowType :
+    sig
+        datatype t =
+            BOTTOM
+          | LEFT
+          | PRIVATE
+          | RIGHT
+          | TEXT
+          | TOP
+          | WIDGET
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TextDirection :
+    sig
+        datatype t =
+            LTR
+          | NONE
+          | RTL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SubmenuPlacement :
+    sig
+        datatype t =
+            LEFT_RIGHT
+          | TOP_BOTTOM
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SubmenuDirection :
+    sig
+        datatype t =
+            LEFT
+          | RIGHT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure StateType :
+    sig
+        datatype t =
+            ACTIVE
+          | INSENSITIVE
+          | NORMAL
+          | PRELIGHT
+          | SELECTED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SpinType :
+    sig
+        datatype t =
+            END
+          | HOME
+          | PAGE_BACKWARD
+          | PAGE_FORWARD
+          | STEP_BACKWARD
+          | STEP_FORWARD
+          | USER_DEFINED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SpinButtonUpdatePolicy :
+    sig
+        datatype t =
+            ALWAYS
+          | IF_VALID
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SortType :
+    sig
+        datatype t =
+            ASCENDING
+          | DESCENDING
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SizeGroupMode :
+    sig
+        datatype t =
+            BOTH
+          | HORIZONTAL
+          | NONE
+          | VERTICAL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SideType :
+    sig
+        datatype t =
+            BOTTOM
+          | LEFT
+          | RIGHT
+          | TOP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ShadowType :
+    sig
+        datatype t =
+            ETCHED_IN
+          | ETCHED_OUT
+          | IN
+          | NONE
+          | OUT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure SelectionMode :
+    sig
+        datatype t =
+            BROWSE
+          | EXTENDED
+          | MULTIPLE
+          | NONE
+          | SINGLE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ScrollType :
+    sig
+        datatype t =
+            END
+          | JUMP
+          | NONE
+          | PAGE_BACKWARD
+          | PAGE_DOWN
+          | PAGE_FORWARD
+          | PAGE_LEFT
+          | PAGE_RIGHT
+          | PAGE_UP
+          | START
+          | STEP_BACKWARD
+          | STEP_DOWN
+          | STEP_FORWARD
+          | STEP_LEFT
+          | STEP_RIGHT
+          | STEP_UP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ScrollStep :
+    sig
+        datatype t =
+            ENDS
+          | HORIZONTAL_ENDS
+          | HORIZONTAL_PAGES
+          | HORIZONTAL_STEPS
+          | PAGES
+          | STEPS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ResponseType :
+    sig
+        datatype t =
+            ACCEPT
+          | APPLY
+          | CANCEL
+          | CLOSE
+          | DELETE_EVENT
+          | HELP
+          | NO
+          | NONE
+          | OK
+          | REJECT
+          | YES
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ResizeMode :
+    sig
+        datatype t =
+            IMMEDIATE
+          | PARENT
+          | QUEUE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ReliefStyle :
+    sig
+        datatype t =
+            HALF
+          | NONE
+          | NORMAL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure RcTokenType :
+    sig
+        datatype t =
+            ACTIVE
+          | APPLICATION
+          | BASE
+          | BG
+          | BG_PIXMAP
+          | BIND
+          | BINDING
+          | CLASS
+          | ENGINE
+          | FG
+          | FONT
+          | FONTSET
+          | FONT_NAME
+          | GTK
+          | HIGHEST
+          | IM_MODULE_FILE
+          | IM_MODULE_PATH
+          | INCLUDE
+          | INSENSITIVE
+          | INVALID
+          | LAST
+          | LOWEST
+          | LTR
+          | MODULE_PATH
+          | NORMAL
+          | PIXMAP_PATH
+          | PRELIGHT
+          | RC
+          | RTL
+          | SELECTED
+          | STOCK
+          | STYLE
+          | TEXT
+          | THEME
+          | WIDGET
+          | WIDGET_CLASS
+          | XTHICKNESS
+          | YTHICKNESS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ProgressBarStyle :
+    sig
+        datatype t =
+            CONTINUOUS
+          | DISCRETE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ProgressBarOrientation :
+    sig
+        datatype t =
+            BOTTOM_TO_TOP
+          | LEFT_TO_RIGHT
+          | RIGHT_TO_LEFT
+          | TOP_TO_BOTTOM
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PreviewType :
+    sig
+        datatype t =
+            COLOR
+          | GRAYSCALE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PositionType :
+    sig
+        datatype t =
+            BOTTOM
+          | LEFT
+          | RIGHT
+          | TOP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PolicyType :
+    sig
+        datatype t =
+            ALWAYS
+          | AUTOMATIC
+          | NEVER
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PathType :
+    sig
+        datatype t =
+            CLASS
+          | WIDGET
+          | WIDGET_CLASS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PathPriorityType :
+    sig
+        datatype t =
+            APPLICATION
+          | GTK
+          | HIGHEST
+          | LOWEST
+          | RC
+          | THEME
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure PackType :
+    sig
+        datatype t =
+            END
+          | START
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Orientation :
+    sig
+        datatype t =
+            HORIZONTAL
+          | VERTICAL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure NotebookTab :
+    sig
+        datatype t =
+            FIRST
+          | LAST
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure MovementStep :
+    sig
+        datatype t =
+            BUFFER_ENDS
+          | DISPLAY_LINES
+          | DISPLAY_LINE_ENDS
+          | HORIZONTAL_PAGES
+          | LOGICAL_POSITIONS
+          | PAGES
+          | PARAGRAPHS
+          | PARAGRAPH_ENDS
+          | VISUAL_POSITIONS
+          | WORDS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure MetricType :
+    sig
+        datatype t =
+            CENTIMETERS
+          | INCHES
+          | PIXELS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure MessageType :
+    sig
+        datatype t =
+            ERROR
+          | INFO
+          | QUESTION
+          | WARNING
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure MenuDirectionType :
+    sig
+        datatype t =
+            CHILD
+          | NEXT
+          | PARENT
+          | PREV
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure MatchType :
+    sig
+        datatype t =
+            ALL
+          | ALL_TAIL
+          | EXACT
+          | HEAD
+          | LAST
+          | TAIL
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure Justification :
+    sig
+        datatype t =
+            CENTER
+          | FILL
+          | LEFT
+          | RIGHT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure IMStatusStyle :
+    sig
+        datatype t =
+            CALLBACK
+          | NOTHING
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure IMPreeditStyle :
+    sig
+        datatype t =
+            CALLBACK
+          | NONE
+          | NOTHING
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ImageType :
+    sig
+        datatype t =
+            ANIMATION
+          | EMPTY
+          | ICON_SET
+          | IMAGE
+          | PIXBUF
+          | PIXMAP
+          | STOCK
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure IconThemeError :
+    sig
+        datatype t =
+            FAILED
+          | NOT_FOUND
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure IconSize :
+    sig
+        datatype t =
+            BUTTON
+          | DIALOG
+          | DND
+          | INVALID
+          | LARGE_TOOLBAR
+          | MENU
+          | SMALL_TOOLBAR
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FileChooserError :
+    sig
+        datatype t =
+            BAD_FILENAME
+          | NONEXISTENT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure FileChooserAction :
+    sig
+        datatype t =
+            CREATE_FOLDER
+          | OPEN
+          | SAVE
+          | SELECT_FOLDER
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ExpanderStyle :
+    sig
+        datatype t =
+            COLLAPSED
+          | EXPANDED
+          | SEMI_COLLAPSED
+          | SEMI_EXPANDED
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DirectionType :
+    sig
+        datatype t =
+            DOWN
+          | LEFT
+          | RIGHT
+          | TAB_BACKWARD
+          | TAB_FORWARD
+          | UP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure DeleteType :
+    sig
+        datatype t =
+            CHARS
+          | DISPLAY_LINES
+          | DISPLAY_LINE_ENDS
+          | PARAGRAPHS
+          | PARAGRAPH_ENDS
+          | WHITESPACE
+          | WORDS
+          | WORD_ENDS
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CurveType :
+    sig
+        datatype t =
+            FREE
+          | LINEAR
+          | SPLINE
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CornerType :
+    sig
+        datatype t =
+            BOTTOM_LEFT
+          | BOTTOM_RIGHT
+          | TOP_LEFT
+          | TOP_RIGHT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CellType :
+    sig
+        datatype t =
+            EMPTY
+          | PIXMAP
+          | PIXTEXT
+          | TEXT
+          | WIDGET
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure CellRendererMode :
+    sig
+        datatype t =
+            ACTIVATABLE
+          | EDITABLE
+          | INERT
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ButtonsType :
+    sig
+        datatype t =
+            CANCEL
+          | CLOSE
+          | NONE
+          | OK
+          | OK_CANCEL
+          | YES_NO
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ButtonBoxStyle :
+    sig
+        datatype t =
+            DEFAULT_STYLE
+          | EDGE
+          | END
+          | SPREAD
+          | START
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure ArrowType :
+    sig
+        datatype t =
+            DOWN
+          | LEFT
+          | RIGHT
+          | UP
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure AnchorType :
+    sig
+        datatype t =
+            CENTER
+          | E
+          | EAST
+          | N
+          | NE
+          | NORTH
+          | NORTH_EAST
+          | NORTH_WEST
+          | NW
+          | S
+          | SE
+          | SOUTH
+          | SOUTH_EAST
+          | SOUTH_WEST
+          | SW
+          | W
+          | WEST
+        val getType : unit -> gtype
+        val toInt   : t -> int
+        val fromInt : int -> t
+    end
+    structure TreeRowReference :
+    sig
+        (* constructors *)
+        val newProxy : object * object * object -> object
+        val new : object * object -> object
+        (* methods *)
+        val reordered : object * object * object * int -> int
+        val deleted : object * object -> unit
+        val inserted : object * object -> unit
+        val free : object -> unit
+        val copy : object -> object
+        val valid : object -> bool
+        val getPath : object -> object
+        val getType : unit -> gtype
+    end
+    structure TreeIter :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        val free : object -> unit
+        val copy : object -> object
+    end
+    structure TextIter :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val order : object * object -> unit
+        val inRange : object * object * object -> bool
+        val compare : object * object -> int
+        val equal : object * object -> bool
+        val backwardSearch : object * string * TextSearchFlags.t * object * object * object -> bool
+        val forwardSearch : object * string * TextSearchFlags.t * object * object * object -> bool
+        val backwardFindChar : object * object * object * object -> bool
+        val forwardFindChar : object * object * object * object -> bool
+        val backwardToTagToggle : object * object -> bool
+        val forwardToTagToggle : object * object -> bool
+        val setVisibleLineIndex : object * int -> unit
+        val setVisibleLineOffset : object * int -> unit
+        val forwardToLineEnd : object -> bool
+        val forwardToEnd : object -> unit
+        val setLineIndex : object * int -> unit
+        val setLineOffset : object * int -> unit
+        val setLine : object * int -> unit
+        val setOffset : object * int -> unit
+        val backwardVisibleCursorPositions : object * int -> bool
+        val forwardVisibleCursorPositions : object * int -> bool
+        val backwardVisibleCursorPosition : object -> bool
+        val forwardVisibleCursorPosition : object -> bool
+        val backwardCursorPositions : object * int -> bool
+        val forwardCursorPositions : object * int -> bool
+        val backwardCursorPosition : object -> bool
+        val forwardCursorPosition : object -> bool
+        val backwardSentenceStarts : object * int -> bool
+        val forwardSentenceEnds : object * int -> bool
+        val backwardSentenceStart : object -> bool
+        val forwardSentenceEnd : object -> bool
+        val backwardVisibleWordStarts : object * int -> bool
+        val forwardVisibleWordEnds : object * int -> bool
+        val backwardVisibleWordStart : object -> bool
+        val forwardVisibleWordEnd : object -> bool
+        val backwardWordStarts : object * int -> bool
+        val forwardWordEnds : object * int -> bool
+        val backwardWordStart : object -> bool
+        val forwardWordEnd : object -> bool
+        val backwardLines : object * int -> bool
+        val forwardLines : object * int -> bool
+        val backwardLine : object -> bool
+        val forwardLine : object -> bool
+        val backwardChars : object * int -> bool
+        val forwardChars : object * int -> bool
+        val backwardChar : object -> bool
+        val forwardChar : object -> bool
+        val isStart : object -> bool
+        val isEnd : object -> bool
+        val getLanguage : object -> object
+        val getAttributes : object * object -> bool
+        val getBytesInLine : object -> int
+        val getCharsInLine : object -> int
+        val isCursorPosition : object -> bool
+        val endsLine : object -> bool
+        val startsLine : object -> bool
+        val insideSentence : object -> bool
+        val endsSentence : object -> bool
+        val startsSentence : object -> bool
+        val insideWord : object -> bool
+        val endsWord : object -> bool
+        val startsWord : object -> bool
+        val canInsert : object * bool -> bool
+        val editable : object * bool -> bool
+        val getTags : object -> object list
+        val hasTag : object * object -> bool
+        val togglesTag : object * object -> bool
+        val endsTag : object * object -> bool
+        val beginsTag : object * object -> bool
+        val getToggledTags : object * bool -> object list
+        val getChildAnchor : object -> object
+        val getMarks : object -> object list
+        val getPixbuf : object -> object
+        val getVisibleText : object * object -> string
+        val getVisibleSlice : object * object -> string
+        val getText : object * object -> string
+        val getSlice : object * object -> string
+        val getChar : object -> int
+        val getVisibleLineIndex : object -> int
+        val getVisibleLineOffset : object -> int
+        val getLineIndex : object -> int
+        val getLineOffset : object -> int
+        val getLine : object -> int
+        val getOffset : object -> int
+        val getType : unit -> gtype
+        val free : object -> unit
+        val copy : object -> object
+        val getBuffer : object -> object
+    end
+    structure TextAttributes :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        val reference : object -> unit
+        val unref : object -> unit
+        val copyValues : object * object -> unit
+        val copy : object -> object
+        val getFieldWrapMode : object -> WrapMode.t
+        val setFieldWrapMode : object * WrapMode.t -> unit
+        val getFieldTabs : object -> object
+        val setFieldTabs : object * object -> unit
+        val getFieldRightMargin : object -> int
+        val setFieldRightMargin : object * int -> unit
+        val getFieldRealized : object -> int
+        val setFieldRealized : object * int -> unit
+        val getFieldPixelsInsideWrap : object -> int
+        val setFieldPixelsInsideWrap : object * int -> unit
+        val getFieldPixelsBelowLines : object -> int
+        val setFieldPixelsBelowLines : object * int -> unit
+        val getFieldPixelsAboveLines : object -> int
+        val setFieldPixelsAboveLines : object * int -> unit
+        val getFieldLeftMargin : object -> int
+        val setFieldLeftMargin : object * int -> unit
+        val getFieldLanguage : object -> object
+        val setFieldLanguage : object * object -> unit
+        val getFieldJustification : object -> Justification.t
+        val setFieldJustification : object * Justification.t -> unit
+        val getFieldInvisible : object -> int
+        val setFieldInvisible : object * int -> unit
+        val getFieldIndent : object -> int
+        val setFieldIndent : object * int -> unit
+        val getFieldFontScale : object -> real
+        val setFieldFontScale : object * real -> unit
+        val getFieldFont : object -> object
+        val setFieldFont : object * object -> unit
+        val getFieldEditable : object -> int
+        val setFieldEditable : object * int -> unit
+        val getFieldDirection : object -> TextDirection.t
+        val setFieldDirection : object * TextDirection.t -> unit
+        val getFieldBgFullHeight : object -> int
+        val setFieldBgFullHeight : object * int -> unit
+        val getFieldAppearance : object -> object
+        val setFieldAppearance : object * object -> unit
+    end
+    structure TextAppearance :
+    sig
+        (* constructors *)
+        val new : { bg_color : object, bg_stipple : object, draw_bg : int, fg_color : object, fg_stipple : object, rise : int, strikethrough : int, underline : int } -> object
+        (* methods *)
+        val getFieldUnderline : object -> int
+        val setFieldUnderline : object * int -> unit
+        val getFieldStrikethrough : object -> int
+        val setFieldStrikethrough : object * int -> unit
+        val getFieldRise : object -> int
+        val setFieldRise : object * int -> unit
+        val getFieldFgStipple : object -> object
+        val setFieldFgStipple : object * object -> unit
+        val getFieldFgColor : object -> object
+        val setFieldFgColor : object * object -> unit
+        val getFieldDrawBg : object -> int
+        val setFieldDrawBg : object * int -> unit
+        val getFieldBgStipple : object -> object
+        val setFieldBgStipple : object * object -> unit
+        val getFieldBgColor : object -> object
+        val setFieldBgColor : object * object -> unit
+    end
+    structure SelectionData :
+    sig
+        (* constructors *)
+        val new : { data : string, format : int, selection : Word32.word, target : Word32.word, ty : Word32.word } -> object
+        (* methods *)
+        val treeGetRowDragData : object -> bool * object * object
+        val treeSetRowDragData : object * object * object -> bool
+        val targetsIncludeImage : object * bool -> bool
+        val getUris : object -> object
+        val setUris : object * (string vector) -> bool
+        val getPixbuf : object -> object
+        val setPixbuf : object * object -> bool
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+        val targetsIncludeText : object -> bool
+        val getTargets : object * object * int -> bool * int
+        val getText : object -> string
+        val setText : object * string * int -> bool
+        val set : object * Word32.word * int * string * int -> unit
+        val getFieldType : object -> Word32.word
+        val setFieldType : object * Word32.word -> unit
+        val getFieldTarget : object -> Word32.word
+        val setFieldTarget : object * Word32.word -> unit
+        val getFieldSelection : object -> Word32.word
+        val setFieldSelection : object * Word32.word -> unit
+        val getFieldFormat : object -> int
+        val setFieldFormat : object * int -> unit
+        val getFieldData : object -> string
+        val setFieldData : object * string -> unit
+    end
+    structure Requisition :
+    sig
+        (* constructors *)
+        val new : { height : int, width : int } -> object
+        (* methods *)
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+        val getFieldWidth : object -> int
+        val setFieldWidth : object * int -> unit
+        val getFieldHeight : object -> int
+        val setFieldHeight : object * int -> unit
+    end
+    structure IconSource :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getSize : object -> IconSize.t
+        val getState : object -> StateType.t
+        val getDirection : object -> TextDirection.t
+        val setSize : object * IconSize.t -> unit
+        val setState : object * StateType.t -> unit
+        val setDirection : object * TextDirection.t -> unit
+        val getDirectionWildcarded : object -> bool
+        val getStateWildcarded : object -> bool
+        val getSizeWildcarded : object -> bool
+        val setSizeWildcarded : object * bool -> unit
+        val setStateWildcarded : object * bool -> unit
+        val setDirectionWildcarded : object * bool -> unit
+        val getPixbuf : object -> object
+        val getIconName : object -> string
+        val getFilename : object -> string
+        val setPixbuf : object * object -> unit
+        val setIconName : object * string -> unit
+        val setFilename : object * string -> unit
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+    end
+    structure IconSet :
+    sig
+        (* constructors *)
+        val newFromPixbuf : object -> object
+        (* methods *)
+        val getSizes : object * object * int -> int
+        val addSource : object * object -> unit
+        val renderIcon : object * object * TextDirection.t * StateType.t * IconSize.t * object * string -> object
+        val copy : object -> object
+        val unref : object -> unit
+        val reference : object -> object
+        val new : unit -> object
+        val getType : unit -> gtype
+    end
+    structure IconInfo :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getDisplayName : object -> string
+        val getAttachPoints : object * int -> bool * object * int
+        val getEmbeddedRect : object * object -> bool
+        val setRawCoordinates : object * bool -> unit
+        val loadIcon : object -> object
+        val getBuiltinPixbuf : object -> object
+        val getFilename : object -> string
+        val getBaseSize : object -> int
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+    end
+    structure Border :
+    sig
+        (* constructors *)
+        (* methods *)
+        val free : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+    end
+    structure TargetEntry :
+    sig
+        (* constructors *)
+        val new : { flags : int, info : int, target : string } -> object
+        (* methods *)
+        val getFieldTarget : object -> string
+        val setFieldTarget : object * string -> unit
+        val getFieldInfo : object -> int
+        val setFieldInfo : object * int -> unit
+        val getFieldFlags : object -> int
+        val setFieldFlags : object * int -> unit
+    end
+    structure TreePath :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val isDescendant : object * object -> bool
+        val isAncestor : object * object -> bool
+        val down : object -> unit
+        val up : object -> int
+        val prev : object -> int
+        val next : object -> unit
+        val compare : object * object -> int
+        val copy : object -> object
+        val free : object -> unit
+        val getDepth : object -> int
+        val prependIndex : object * int -> unit
+        val appendIndex : object * int -> unit
+        val newFirst : unit -> object
+        val toString : object -> string
+        val newFromIndices : int -> object
+        val newFromString : string -> object
+    end
+    structure BindingSet :
+    sig
+        (* constructors *)
+        val find : string -> object
+        val new : string -> object
+        (* methods *)
+        val addPath : object * PathType.t * string * PathPriorityType.t -> unit
+        val activate : object * int * Gdk.ModifierType.t * object -> bool
+        val byClass : object -> object
+    end
+    structure WindowGroup :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val removeWindow : object * object -> unit
+        val addWindow : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Window :
+    sig
+        (* constructors *)
+        val new : WindowType.t -> object
+        (* methods *)
+        val setDefaultIconName : string -> unit
+        val getIconName : object -> string
+        val setIconName : object * string -> unit
+        val getFocusOnMap : object -> bool
+        val setFocusOnMap : object * bool -> unit
+        val addEmbeddedXid : object * int -> unit
+        val removeEmbeddedXid : object * int -> unit
+        val reshowWithInitialSize : object -> unit
+        val parseGeometry : object * string -> bool
+        val getPosition : object * int * int -> int * int
+        val move : object * int * int -> unit
+        val getSize : object * int * int -> int * int
+        val resize : object * int * int -> unit
+        val getDefaultSize : object * int * int -> int * int
+        val setDefaultSize : object * int * int -> unit
+        val beginMoveDrag : object * int * int * int * int -> unit
+        val beginResizeDrag : object * Gdk.WindowEdge.t * int * int * int * int -> unit
+        val setKeepBelow : object * bool -> unit
+        val setKeepAbove : object * bool -> unit
+        val unfullscreen : object -> unit
+        val fullscreen : object -> unit
+        val unmaximize : object -> unit
+        val maximize : object -> unit
+        val unstick : object -> unit
+        val stick : object -> unit
+        val deiconify : object -> unit
+        val iconify : object -> unit
+        val present : object -> unit
+        val propagateKeyEvent : object * object -> bool
+        val activateKey : object * object -> bool
+        val getMnemonicModifier : object -> Gdk.ModifierType.t
+        val setMnemonicModifier : object * Gdk.ModifierType.t -> unit
+        val mnemonicActivate : object * int * Gdk.ModifierType.t -> bool
+        val removeMnemonic : object * int * object -> unit
+        val addMnemonic : object * int * object -> unit
+        val listToplevels : unit -> object list
+        val getModal : object -> bool
+        val setModal : object * bool -> unit
+        val setAutoStartupNotification : bool -> unit
+        val setDefaultIconFromFile : string -> unit
+        val setDefaultIcon : object -> unit
+        val getDefaultIconList : unit -> object list
+        val setDefaultIconList : (object list) -> unit
+        val getIcon : object -> object
+        val setIconFromFile : object * string -> unit
+        val setIcon : object * object -> unit
+        val getIconList : object -> object list
+        val setIconList : object * (object list) -> unit
+        val getDecorated : object -> bool
+        val setDecorated : object * bool -> unit
+        val getFrameDimensions : object * int * int * int * int -> int * int * int * int
+        val setFrameDimensions : object * int * int * int * int -> unit
+        val getHasFrame : object -> bool
+        val setHasFrame : object * bool -> unit
+        val hasToplevelFocus : object -> bool
+        val isActive : object -> bool
+        val getScreen : object -> object
+        val setScreen : object * object -> unit
+        val getGravity : object -> Gdk.Gravity.t
+        val setGravity : object * Gdk.Gravity.t -> unit
+        val getResizable : object -> bool
+        val setResizable : object * bool -> unit
+        val getDestroyWithParent : object -> bool
+        val setDestroyWithParent : object * bool -> unit
+        val getAcceptFocus : object -> bool
+        val setAcceptFocus : object * bool -> unit
+        val getSkipPagerHint : object -> bool
+        val setSkipPagerHint : object * bool -> unit
+        val getSkipTaskbarHint : object -> bool
+        val setSkipTaskbarHint : object * bool -> unit
+        val getTypeHint : object -> Gdk.WindowTypeHint.t
+        val setTypeHint : object * Gdk.WindowTypeHint.t -> unit
+        val getTransientFor : object -> object
+        val setTransientFor : object * object -> unit
+        val activateDefault : object -> bool
+        val setDefault : object * object -> unit
+        val getFocus : object -> object
+        val setFocus : object * object -> unit
+        val activateFocus : object -> bool
+        val setPosition : object * WindowPosition.t -> unit
+        val removeAccelGroup : object * object -> unit
+        val addAccelGroup : object * object -> unit
+        val getRole : object -> string
+        val setRole : object * string -> unit
+        val setWmclass : object * string * string -> unit
+        val getTitle : object -> string
+        val setTitle : object * string -> unit
+        val getType : unit -> gtype
+        val tooltipsGetInfoFromTipWindow : object -> bool * object * object
+        val getFieldWmclassName : object -> string
+        val setFieldWmclassName : object * string -> unit
+        val getFieldWmclassClass : object -> string
+        val setFieldWmclassClass : object * string -> unit
+        val getFieldWmRole : object -> string
+        val setFieldWmRole : object * string -> unit
+        val getFieldTypeHint : object -> int
+        val setFieldTypeHint : object * int -> unit
+        val getFieldType : object -> int
+        val setFieldType : object * int -> unit
+        val getFieldTransientParent : object -> object
+        val setFieldTransientParent : object * object -> unit
+        val getFieldTitle : object -> string
+        val setFieldTitle : object * string -> unit
+        val getFieldStickInitially : object -> int
+        val setFieldStickInitially : object * int -> unit
+        val getFieldPosition : object -> int
+        val setFieldPosition : object * int -> unit
+        val getFieldNeedDefaultSize : object -> int
+        val setFieldNeedDefaultSize : object * int -> unit
+        val getFieldNeedDefaultPosition : object -> int
+        val setFieldNeedDefaultPosition : object * int -> unit
+        val getFieldModal : object -> int
+        val setFieldModal : object * int -> unit
+        val getFieldMnemonicModifier : object -> Gdk.ModifierType.t
+        val setFieldMnemonicModifier : object * Gdk.ModifierType.t -> unit
+        val getFieldMaximizeInitially : object -> int
+        val setFieldMaximizeInitially : object * int -> unit
+        val getFieldKeysChangedHandler : object -> int
+        val setFieldKeysChangedHandler : object * int -> unit
+        val getFieldIconifyInitially : object -> int
+        val setFieldIconifyInitially : object * int -> unit
+        val getFieldHasUserRefCount : object -> int
+        val setFieldHasUserRefCount : object * int -> unit
+        val getFieldHasFrame : object -> int
+        val setFieldHasFrame : object * int -> unit
+        val getFieldHasFocus : object -> int
+        val setFieldHasFocus : object * int -> unit
+        val getFieldGroup : object -> object
+        val setFieldGroup : object * object -> unit
+        val getFieldGravity : object -> int
+        val setFieldGravity : object * int -> unit
+        val getFieldFrameTop : object -> int
+        val setFieldFrameTop : object * int -> unit
+        val getFieldFrameRight : object -> int
+        val setFieldFrameRight : object * int -> unit
+        val getFieldFrameLeft : object -> int
+        val setFieldFrameLeft : object * int -> unit
+        val getFieldFrameBottom : object -> int
+        val setFieldFrameBottom : object * int -> unit
+        val getFieldFrame : object -> object
+        val setFieldFrame : object * object -> unit
+        val getFieldFocusWidget : object -> object
+        val setFieldFocusWidget : object * object -> unit
+        val getFieldDestroyWithParent : object -> int
+        val setFieldDestroyWithParent : object * int -> unit
+        val getFieldDefaultWidget : object -> object
+        val setFieldDefaultWidget : object * object -> unit
+        val getFieldDecorated : object -> int
+        val setFieldDecorated : object * int -> unit
+        val getFieldConfigureRequestCount : object -> int
+        val setFieldConfigureRequestCount : object * int -> unit
+        val getFieldConfigureNotifyReceived : object -> int
+        val setFieldConfigureNotifyReceived : object * int -> unit
+        val getFieldAllowShrink : object -> int
+        val setFieldAllowShrink : object * int -> unit
+        val getFieldAllowGrow : object -> int
+        val setFieldAllowGrow : object * int -> unit
+        (* properties *)
+    end
+    structure Widget :
+    sig
+        (* constructors *)
+        val new : gtype * string -> object
+        (* methods *)
+        val removeMnemonicLabel : object * object -> unit
+        val addMnemonicLabel : object * object -> unit
+        val listMnemonicLabels : object -> object list
+        val classPath : object * int * (string vector) * (string vector) -> int
+        val path : object * int * (string vector) * (string vector) -> int
+        val resetShapes : object -> unit
+        val shapeCombineMask : object * object * int * int -> unit
+        val getDefaultDirection : unit -> TextDirection.t
+        val setDefaultDirection : TextDirection.t -> unit
+        val getDirection : object -> TextDirection.t
+        val setDirection : object * TextDirection.t -> unit
+        val getDefaultVisual : unit -> object
+        val getDefaultColormap : unit -> object
+        val setDefaultColormap : object -> unit
+        val getDefaultStyle : unit -> object
+        val styleGet : object * string -> unit
+        val styleGetProperty : object * string -> gvalue
+        val classFindStyleProperty : object * string -> object
+        val classInstallStylePropertyParser : object * object * object -> unit
+        val classInstallStyleProperty : object * object -> unit
+        val popColormap : unit -> unit
+        val popCompositeChild : unit -> unit
+        val pushCompositeChild : unit -> unit
+        val pushColormap : object -> unit
+        val resetRcStyles : object -> unit
+        val getCompositeName : object -> string
+        val setCompositeName : object * string -> unit
+        val renderIcon : object * string * IconSize.t * string -> object
+        val createPangoLayout : object * string -> object
+        val getPangoContext : object -> object
+        val createPangoContext : object -> object
+        val modifyFont : object * object -> unit
+        val modifyBase : object * StateType.t * object -> unit
+        val modifyText : object * StateType.t * object -> unit
+        val modifyBg : object * StateType.t * object -> unit
+        val modifyFg : object * StateType.t * object -> unit
+        val getModifierStyle : object -> object
+        val modifyStyle : object * object -> unit
+        val getStyle : object -> object
+        val ensureStyle : object -> unit
+        val setStyle : object * object -> unit
+        val hideOnDelete : object -> bool
+        val translateCoordinates : object * object * int * int * int * int -> bool * int * int
+        val isAncestor : object * object -> bool
+        val getPointer : object * int * int -> int * int
+        val getEvents : object -> int
+        val setColormap : object * object -> unit
+        val getAccessible : object -> object
+        val getClipboard : object * Word32.word -> object
+        val getSettings : object -> object
+        val getRootWindow : object -> object
+        val getDisplay : object -> object
+        val hasScreen : object -> bool
+        val getScreen : object -> object
+        val getVisual : object -> object
+        val getColormap : object -> object
+        val getAncestor : object * gtype -> object
+        val getToplevel : object -> object
+        val getExtensionEvents : object -> Gdk.ExtensionMode.t
+        val setExtensionEvents : object * Gdk.ExtensionMode.t -> unit
+        val addEvents : object * int -> unit
+        val setEvents : object * int -> unit
+        val getSizeRequest : object * int * int -> int * int
+        val setSizeRequest : object * int * int -> unit
+        val childFocus : object * DirectionType.t -> bool
+        val getParentWindow : object -> object
+        val getParent : object -> object
+        val getChildVisible : object -> bool
+        val setChildVisible : object * bool -> unit
+        val setParentWindow : object * object -> unit
+        val setParent : object * object -> unit
+        val setRedrawOnAllocate : object * bool -> unit
+        val setDoubleBuffered : object * bool -> unit
+        val setAppPaintable : object * bool -> unit
+        val setSensitive : object * bool -> unit
+        val setState : object * StateType.t -> unit
+        val getName : object -> string
+        val setName : object * string -> unit
+        val grabDefault : object -> unit
+        val grabFocus : object -> unit
+        val isFocus : object -> bool
+        val thawChildNotify : object -> unit
+        val childNotify : object * string -> unit
+        val freezeChildNotify : object -> unit
+        val regionIntersect : object * object -> object
+        val intersect : object * object * object -> bool
+        val reparent : object * object -> unit
+        val setScrollAdjustments : object * object * object -> bool
+        val activate : object -> bool
+        val sendExpose : object * object -> int
+        val event : object * object -> bool
+        val mnemonicActivate : object * bool -> bool
+        val canActivateAccel : object * int -> bool
+        val listAccelClosures : object -> object list
+        val setAccelPath : object * string * object -> unit
+        val removeAccelerator : object * object * int * Gdk.ModifierType.t -> bool
+        val addAccelerator : object * string * object * int * Gdk.ModifierType.t * AccelFlags.t -> unit
+        val getChildRequisition : object * object -> unit
+        val sizeAllocate : object * object -> unit
+        val sizeRequest : object * object -> unit
+        val draw : object * object -> unit
+        val queueResizeNoRedraw : object -> unit
+        val queueResize : object -> unit
+        val queueClearArea : object * int * int * int * int -> unit
+        val queueClear : object -> unit
+        val queueDrawArea : object * int * int * int * int -> unit
+        val queueDraw : object -> unit
+        val unrealize : object -> unit
+        val realize : object -> unit
+        val unmap : object -> unit
+        val map : object -> unit
+        val getNoShowAll : object -> bool
+        val setNoShowAll : object * bool -> unit
+        val hideAll : object -> unit
+        val showAll : object -> unit
+        val hide : object -> unit
+        val showNow : object -> unit
+        val show : object -> unit
+        val unparent : object -> unit
+        val set : object * string -> unit
+        val destroyed : object -> object
+        val destroy : object -> unit
+        val unref : object -> unit
+        val reference : object -> object
+        val getType : unit -> gtype
+        val selectionClear : object * object -> bool
+        val selectionRemoveAll : object -> unit
+        val selectionConvert : object * Word32.word * Word32.word * int -> bool
+        val selectionClearTargets : object * Word32.word -> unit
+        val selectionAddTargets : object * Word32.word * object * int -> unit
+        val selectionAddTarget : object * Word32.word * Word32.word * int -> unit
+        val selectionOwnerSet : object * Word32.word * int -> bool
+        val rcGetStyle : object -> object
+        val menuGetForAttachWidget : object -> object list
+        val propagateEvent : object * object -> unit
+        val grabRemove : object -> unit
+        val grabAdd : object -> unit
+        val dragSourceAddTextTargets : object -> unit
+        val dragDestAddUriTargets : object -> unit
+        val dragDestAddImageTargets : object -> unit
+        val dragDestAddTextTargets : object -> unit
+        val dragBegin : object * object * Gdk.DragAction.t * int * object -> object
+        val dragSourceSetTargetList : object * object -> unit
+        val dragSourceGetTargetList : object -> object
+        val dragSourceSetIconStock : object * string -> unit
+        val dragSourceSetIconPixbuf : object * object -> unit
+        val dragSourceSetIcon : object * object * object * object -> unit
+        val dragSourceUnset : object -> unit
+        val dragSourceSet : object * Gdk.ModifierType.t * (object vector) * Gdk.DragAction.t -> unit
+        val dragDestSetTargetList : object * object -> unit
+        val dragDestGetTargetList : object -> object
+        val dragDestFindTarget : object * object * object -> Word32.word
+        val dragDestUnset : object -> unit
+        val dragDestSetProxy : object * object * Gdk.DragProtocol.t * bool -> unit
+        val dragDestSet : object * DestDefaults.t * (object vector) * Gdk.DragAction.t -> unit
+        val dragUnhighlight : object -> unit
+        val dragHighlight : object -> unit
+        val dragGetData : object * object * Word32.word * int -> unit
+        val dragCheckThreshold : object * int * int * int * int -> bool
+        val getFieldWindow : object -> object
+        val setFieldWindow : object * object -> unit
+        val getFieldStyle : object -> object
+        val setFieldStyle : object * object -> unit
+        val getFieldState : object -> int
+        val setFieldState : object * int -> unit
+        val getFieldSavedState : object -> int
+        val setFieldSavedState : object * int -> unit
+        val getFieldParent : object -> object
+        val setFieldParent : object * object -> unit
+        val getFieldName : object -> string
+        val setFieldName : object * string -> unit
+        val getFieldAllocation : object -> object
+        val setFieldAllocation : object * object -> unit
+        (* properties *)
+        val sensitive : bool prop
+        val hasDefault : bool prop
+        val hasFocus : bool prop
+        val canFocus : bool prop
+        val canDefault : bool prop
+    end
+    structure VSeparator :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure VScrollbar :
+    sig
+        (* constructors *)
+        val new : object -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure VScale :
+    sig
+        (* constructors *)
+        val newWithRange : real * real * real -> object
+        val new : object -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure VRuler :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure VPaned :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Viewport :
+    sig
+        (* constructors *)
+        val new : object * object -> object
+        (* methods *)
+        val getShadowType : object -> ShadowType.t
+        val setShadowType : object * ShadowType.t -> unit
+        val setVadjustment : object * object -> unit
+        val setHadjustment : object * object -> unit
+        val getVadjustment : object -> object
+        val getHadjustment : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure VButtonBox :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setLayoutDefault : ButtonBoxStyle.t -> unit
+        val getLayoutDefault : unit -> ButtonBoxStyle.t
+        val setSpacingDefault : int -> unit
+        val getSpacingDefault : unit -> int
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure VBox :
+    sig
+        (* constructors *)
+        val new : bool * int -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure UIManager :
+    sig
+        (* constructors *)
+        val gtkUiManagerNew : unit -> object
+        (* methods *)
+        val newMergeId : object -> int
+        val ensureUpdate : object -> unit
+        val getUi : object -> string
+        val removeUi : object * int -> unit
+        val addUi : object * int * string * string * string * UIManagerItemType.t * bool -> unit
+        val addUiFromFile : object * string -> int
+        val addUiFromString : object * string * object -> int
+        val getAction : object * string -> object
+        val getToplevels : object * UIManagerItemType.t -> object list
+        val getWidget : object * string -> object
+        val getAccelGroup : object -> object
+        val getActionGroups : object -> object list
+        val removeActionGroup : object * object -> unit
+        val insertActionGroup : object * object * int -> unit
+        val getAddTearoffs : object -> bool
+        val setAddTearoffs : object * bool -> unit
+        (* properties *)
+    end
+    structure TreeViewColumn :
+    sig
+        (* constructors *)
+        val newWithAttributes : string * object -> object
+        val new : unit -> object
+        (* methods *)
+        val cellGetPosition : object * object * int * int -> int * int
+        val focusCell : object * object -> unit
+        val cellIsVisible : object -> bool
+        val cellGetSize : object * object * int * int * int * int -> int * int * int * int
+        val cellSetCellData : object * object * object * bool * bool -> unit
+        val getSortOrder : object -> SortType.t
+        val setSortOrder : object * SortType.t -> unit
+        val getSortIndicator : object -> bool
+        val setSortIndicator : object * bool -> unit
+        val getSortColumnId : object -> int
+        val setSortColumnId : object * int -> unit
+        val getReorderable : object -> bool
+        val setReorderable : object * bool -> unit
+        val getAlignment : object -> real
+        val setAlignment : object * real -> unit
+        val getWidget : object -> object
+        val setWidget : object * object -> unit
+        val getClickable : object -> bool
+        val setClickable : object * bool -> unit
+        val getExpand : object -> bool
+        val setExpand : object * bool -> unit
+        val getTitle : object -> string
+        val setTitle : object * string -> unit
+        val clicked : object -> unit
+        val getMaxWidth : object -> int
+        val setMaxWidth : object * int -> unit
+        val getMinWidth : object -> int
+        val setMinWidth : object * int -> unit
+        val setFixedWidth : object * int -> unit
+        val getFixedWidth : object -> int
+        val getWidth : object -> int
+        val getSizing : object -> int
+        val setSizing : object * TreeViewColumnSizing.t -> unit
+        val getResizable : object -> bool
+        val setResizable : object * bool -> unit
+        val getVisible : object -> bool
+        val setVisible : object * bool -> unit
+        val getSpacing : object -> int
+        val setSpacing : object * int -> unit
+        val clearAttributes : object * object -> unit
+        val setCellDataFunc : object * object * Core.object * object * object -> unit
+        val setAttributes : object * object -> unit
+        val addAttribute : object * object * string * int -> unit
+        val getCellRenderers : object -> object list
+        val clear : object -> unit
+        val packEnd : object * object * bool -> unit
+        val packStart : object * object * bool -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeView :
+    sig
+        (* constructors *)
+        val newWithModel : object -> object
+        val new : unit -> object
+        (* methods *)
+        val getHoverExpand : object -> bool
+        val setHoverExpand : object * bool -> unit
+        val getHoverSelection : object -> bool
+        val setHoverSelection : object * bool -> unit
+        val getFixedHeightMode : object -> bool
+        val setFixedHeightMode : object * bool -> unit
+        val setSearchColumn : object * int -> unit
+        val getSearchColumn : object -> int
+        val getEnableSearch : object -> bool
+        val setEnableSearch : object * bool -> unit
+        val createRowDragIcon : object * object -> object
+        val getDestRowAtPos : object * int * int * TreeViewDropPosition.t -> bool * object * TreeViewDropPosition.t
+        val getDragDestRow : object * TreeViewDropPosition.t -> object * TreeViewDropPosition.t
+        val setDragDestRow : object * object * TreeViewDropPosition.t -> unit
+        val unsetRowsDragDest : object -> unit
+        val unsetRowsDragSource : object -> unit
+        val enableModelDragDest : object * (object vector) * Gdk.DragAction.t -> unit
+        val enableModelDragSource : object * Gdk.ModifierType.t * (object vector) * Gdk.DragAction.t -> unit
+        val treeToWidgetCoords : object * int * int * int * int -> int * int
+        val widgetToTreeCoords : object * int * int * int * int -> int * int
+        val getVisibleRect : object * object -> unit
+        val getBackgroundArea : object * object * object * object -> unit
+        val getCellArea : object * object * object * object -> unit
+        val getPathAtPos : object * int * int * int * int -> bool * object * object * int * int
+        val getBinWindow : object -> object
+        val getCursor : object -> object * object
+        val setCursorOnCell : object * object * object * object * bool -> unit
+        val setCursor : object * object * object * bool -> unit
+        val getReorderable : object -> bool
+        val setReorderable : object * bool -> unit
+        val rowExpanded : object * object -> bool
+        val collapseRow : object * object -> unit
+        val expandRow : object * object * bool -> bool
+        val expandToPath : object * object -> unit
+        val collapseAll : object -> unit
+        val expandAll : object -> unit
+        val rowActivated : object * object * object -> unit
+        val scrollToCell : object * object * object * bool * real * real -> unit
+        val scrollToPoint : object * int * int -> unit
+        val getExpanderColumn : object -> object
+        val setExpanderColumn : object * object -> unit
+        val moveColumnAfter : object * object * object -> unit
+        val getColumns : object -> object list
+        val getColumn : object * int -> object
+        val insertColumnWithAttributes : object * int * string * object -> int
+        val insertColumn : object * object * int -> int
+        val removeColumn : object * object -> int
+        val appendColumn : object * object -> int
+        val getRulesHint : object -> bool
+        val setRulesHint : object * bool -> unit
+        val setHeadersClickable : object * bool -> unit
+        val columnsAutosize : object -> unit
+        val setHeadersVisible : object * bool -> unit
+        val getHeadersVisible : object -> bool
+        val setVadjustment : object * object -> unit
+        val getVadjustment : object -> object
+        val setHadjustment : object * object -> unit
+        val getHadjustment : object -> object
+        val getSelection : object -> object
+        val setModel : object * object -> unit
+        val getModel : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+        val searchColumn : int prop
+        val reorderable : bool prop
+        val headersVisible : bool prop
+        val headersClickable : bool prop
+        val enableSearch : bool prop
+        val indentExpanders : bool prop
+        val allowRules : bool prop
+        val verticalSeparator : int prop
+        val horizontalSeparator : int prop
+        val expanderSize : int prop
+        val oddRowColor : object prop
+        val evenRowColor : object prop
+    end
+    structure TreeStore :
+    sig
+        (* constructors *)
+        val newv : (gtype vector) -> object
+        (* methods *)
+        val moveBefore : object * object * object -> unit
+        val moveAfter : object * object * object -> unit
+        val swap : object * object * object -> unit
+        val reorder : object * object * int -> int
+        val iterIsValid : object * object -> bool
+        val clear : object -> unit
+        val iterDepth : object * object -> int
+        val isAncestor : object * object * object -> bool
+        val append : object * object * object -> unit
+        val prepend : object * object * object -> unit
+        val insertAfter : object * object * object * object -> unit
+        val insertBefore : object * object * object * object -> unit
+        val insert : object * object * object * int -> unit
+        val remove : object * object -> bool
+        val set : object * object -> unit
+        val setValue : object * object * int * gvalue -> unit
+        val setColumnTypes : object * int * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeSelection :
+    sig
+        (* constructors *)
+        (* methods *)
+        val unselectRange : object * object * object -> unit
+        val selectRange : object * object * object -> unit
+        val unselectAll : object -> unit
+        val selectAll : object -> unit
+        val iterIsSelected : object * object -> bool
+        val pathIsSelected : object * object -> bool
+        val unselectIter : object * object -> unit
+        val selectIter : object * object -> unit
+        val unselectPath : object * object -> unit
+        val selectPath : object * object -> unit
+        val countSelectedRows : object -> int
+        val getSelectedRows : object -> (object list) * object
+        val getSelected : object * object -> bool * object
+        val getTreeView : object -> object
+        val getUserData : object -> object
+        val getMode : object -> SelectionMode.t
+        val setMode : object * SelectionMode.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeModelSort :
+    sig
+        (* constructors *)
+        val newWithModel : object -> object
+        (* methods *)
+        val iterIsValid : object * object -> bool
+        val clearCache : object -> unit
+        val resetDefaultSortFunc : object -> unit
+        val convertIterToChildIter : object * object * object -> unit
+        val convertPathToChildPath : object * object -> object
+        val convertChildIterToIter : object * object * object -> unit
+        val convertChildPathToPath : object * object -> object
+        val getModel : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeModelFilter :
+    sig
+        (* constructors *)
+        (* methods *)
+        val clearCache : object -> unit
+        val refilter : object -> unit
+        val convertPathToChildPath : object * object -> object
+        val convertChildPathToPath : object * object -> object
+        val convertIterToChildIter : object * object * object -> unit
+        val convertChildIterToIter : object * object * object -> unit
+        val getModel : object -> object
+        val setVisibleColumn : object * int -> unit
+        val setModifyFunc : object * int * object * Core.object * object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Tooltips :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val forceWindow : object -> unit
+        val dataGet : object -> object
+        val setTip : object * object * string * string -> unit
+        val disable : object -> unit
+        val enable : object -> unit
+        val getType : unit -> gtype
+        val getFieldUseStickyDelay : object -> int
+        val setFieldUseStickyDelay : object * int -> unit
+        val getFieldTipsDataList : object -> object list
+        val setFieldTipsDataList : object * (object list) -> unit
+        val getFieldTipWindow : object -> object
+        val setFieldTipWindow : object * object -> unit
+        val getFieldTipLabel : object -> object
+        val setFieldTipLabel : object * object -> unit
+        val getFieldTimerTag : object -> int
+        val setFieldTimerTag : object * int -> unit
+        val getFieldEnabled : object -> int
+        val setFieldEnabled : object * int -> unit
+        val getFieldDelay : object -> int
+        val setFieldDelay : object * int -> unit
+        val getFieldActiveTipsData : object -> object
+        val setFieldActiveTipsData : object * object -> unit
+        (* properties *)
+    end
+    structure ToolItem :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val rebuildMenu : object -> unit
+        val getProxyMenuItem : object * string -> object
+        val setProxyMenuItem : object * string * object -> unit
+        val retrieveProxyMenuItem : object -> object
+        val getReliefStyle : object -> ReliefStyle.t
+        val getToolbarStyle : object -> ToolbarStyle.t
+        val getOrientation : object -> Orientation.t
+        val getIconSize : object -> IconSize.t
+        val getIsImportant : object -> bool
+        val setIsImportant : object * bool -> unit
+        val getVisibleVertical : object -> bool
+        val setVisibleVertical : object * bool -> unit
+        val getVisibleHorizontal : object -> bool
+        val setVisibleHorizontal : object * bool -> unit
+        val getUseDragWindow : object -> bool
+        val setUseDragWindow : object * bool -> unit
+        val setTooltip : object * object * string * string -> unit
+        val getExpand : object -> bool
+        val setExpand : object * bool -> unit
+        val getHomogeneous : object -> bool
+        val setHomogeneous : object * bool -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ToolButton :
+    sig
+        (* constructors *)
+        val new : object * string -> object
+        (* methods *)
+        val getLabelWidget : object -> object
+        val setLabelWidget : object * object -> unit
+        val getIconWidget : object -> object
+        val setIconWidget : object * object -> unit
+        val getStockId : object -> string
+        val setStockId : object * string -> unit
+        val getUseUnderline : object -> bool
+        val setUseUnderline : object * bool -> unit
+        val getLabel : object -> string
+        val setLabel : object * string -> unit
+        val newFromStock : string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Toolbar :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getTooltips : object -> bool
+        val getIconSize : object -> IconSize.t
+        val getStyle : object -> ToolbarStyle.t
+        val getOrientation : object -> Orientation.t
+        val unsetStyle : object -> unit
+        val setTooltips : object * bool -> unit
+        val setStyle : object * ToolbarStyle.t -> unit
+        val setOrientation : object * Orientation.t -> unit
+        val getReliefStyle : object -> ReliefStyle.t
+        val getShowArrow : object -> bool
+        val setShowArrow : object * bool -> unit
+        val setDropHighlightItem : object * object * int -> unit
+        val getDropIndex : object * int * int -> int
+        val getNthItem : object * int -> object
+        val getNItems : object -> int
+        val getItemIndex : object * object -> int
+        val insert : object * object * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ToggleToolButton :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getActive : object -> bool
+        val setActive : object * bool -> unit
+        val newFromStock : string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ToggleButton :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val getInconsistent : object -> bool
+        val setInconsistent : object * bool -> unit
+        val toggled : object -> unit
+        val getActive : object -> bool
+        val setActive : object * bool -> unit
+        val getMode : object -> bool
+        val setMode : object * bool -> unit
+        val getType : unit -> gtype
+        val getFieldDrawIndicator : object -> bool
+        val setFieldDrawIndicator : object * bool -> unit
+        (* properties *)
+    end
+    structure ToggleAction :
+    sig
+        (* constructors *)
+        val new : string * string * string * string -> object
+        (* methods *)
+        val getDrawAsRadio : object -> bool
+        val setDrawAsRadio : object * bool -> unit
+        val getActive : object -> bool
+        val setActive : object * bool -> unit
+        val toggled : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TextView :
+    sig
+        (* constructors *)
+        val newWithBuffer : object -> object
+        val new : unit -> object
+        (* methods *)
+        val getDefaultAttributes : object -> object
+        val getTabs : object -> object
+        val setTabs : object * object -> unit
+        val getIndent : object -> int
+        val setIndent : object * int -> unit
+        val getRightMargin : object -> int
+        val setRightMargin : object * int -> unit
+        val getLeftMargin : object -> int
+        val setLeftMargin : object * int -> unit
+        val getJustification : object -> Justification.t
+        val setJustification : object * Justification.t -> unit
+        val getPixelsInsideWrap : object -> int
+        val setPixelsInsideWrap : object * int -> unit
+        val getPixelsBelowLines : object -> int
+        val setPixelsBelowLines : object * int -> unit
+        val getPixelsAboveLines : object -> int
+        val setPixelsAboveLines : object * int -> unit
+        val getAcceptsTab : object -> bool
+        val setAcceptsTab : object * bool -> unit
+        val getOverwrite : object -> bool
+        val setOverwrite : object * bool -> unit
+        val getEditable : object -> bool
+        val setEditable : object * bool -> unit
+        val getWrapMode : object -> WrapMode.t
+        val setWrapMode : object * WrapMode.t -> unit
+        val moveChild : object * object * int * int -> unit
+        val addChildInWindow : object * object * TextWindowType.t * int * int -> unit
+        val addChildAtAnchor : object * object * object -> unit
+        val moveVisually : object * object * int -> bool
+        val startsDisplayLine : object * object -> bool
+        val backwardDisplayLineStart : object * object -> bool
+        val forwardDisplayLineEnd : object * object -> bool
+        val backwardDisplayLine : object * object -> bool
+        val forwardDisplayLine : object * object -> bool
+        val getBorderWindowSize : object * TextWindowType.t -> int
+        val setBorderWindowSize : object * TextWindowType.t * int -> unit
+        val getWindowType : object * object -> TextWindowType.t
+        val getWindow : object * TextWindowType.t -> object
+        val windowToBufferCoords : object * TextWindowType.t * int * int * int * int -> int * int
+        val bufferToWindowCoords : object * TextWindowType.t * int * int * int * int -> int * int
+        val getLineAtY : object * object * int * int -> int
+        val getLineYrange : object * object * int * int -> int * int
+        val getIterAtPosition : object * object * int * int * int -> int
+        val getIterAtLocation : object * object * int * int -> unit
+        val getIterLocation : object * object * object -> unit
+        val getCursorVisible : object -> bool
+        val setCursorVisible : object * bool -> unit
+        val getVisibleRect : object * object -> unit
+        val placeCursorOnscreen : object -> bool
+        val moveMarkOnscreen : object * object -> bool
+        val scrollMarkOnscreen : object * object -> unit
+        val scrollToMark : object * object * real * bool * real * real -> unit
+        val scrollToIter : object * object * real * bool * real * real -> bool
+        val getBuffer : object -> object
+        val setBuffer : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TextTagTable :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getSize : object -> int
+        val foreach : object * object * object -> unit
+        val lookup : object * string -> object
+        val remove : object * object -> unit
+        val add : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TextTag :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val event : object * object * object * object -> bool
+        val setPriority : object * int -> unit
+        val getPriority : object -> int
+        val getType : unit -> gtype
+        (* properties *)
+        val weightSet : bool prop
+        val weight : int prop
+        val sizeSet : bool prop
+        val size : int prop
+        val styleSet : bool prop
+        val style : Pango.Style.t prop
+        val name : string prop
+        val editableSet : bool prop
+        val editable : bool prop
+        val foregroundGdk : object prop
+        val foreground : string prop
+        val fontDesc : object prop
+        val font : string prop
+        val backgroundGdk : object prop
+        val background : string prop
+    end
+    structure TextMark :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getLeftGravity : object -> bool
+        val getBuffer : object -> object
+        val getDeleted : object -> bool
+        val getName : object -> string
+        val getVisible : object -> bool
+        val setVisible : object * bool -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TextChildAnchor :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getDeleted : object -> bool
+        val getWidgets : object -> object list
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TextBuffer :
+    sig
+        (* constructors *)
+        val new : object -> object
+        (* methods *)
+        val backspace : object * object * bool * bool -> bool
+        val endUserAction : object -> unit
+        val beginUserAction : object -> unit
+        val deleteSelection : object * bool * bool -> bool
+        val getSelectionBounds : object * object * object -> bool
+        val pasteClipboard : object * object * object * bool -> unit
+        val copyClipboard : object * object -> unit
+        val cutClipboard : object * object * bool -> unit
+        val removeSelectionClipboard : object * object -> unit
+        val addSelectionClipboard : object * object -> unit
+        val setModified : object * bool -> unit
+        val getModified : object -> bool
+        val getIterAtChildAnchor : object * object * object -> unit
+        val getIterAtMark : object * object * object -> unit
+        val getBounds : object * object * object -> unit
+        val getEndIter : object * object -> unit
+        val getStartIter : object * object -> unit
+        val getIterAtLine : object * object * int -> unit
+        val getIterAtOffset : object * object * int -> unit
+        val getIterAtLineIndex : object * object * int * int -> unit
+        val getIterAtLineOffset : object * object * int * int -> unit
+        val createTag : object * string * string -> object
+        val removeAllTags : object * object * object -> unit
+        val removeTagByName : object * string * object * object -> unit
+        val applyTagByName : object * string * object * object -> unit
+        val removeTag : object * object * object * object -> unit
+        val applyTag : object * object * object * object -> unit
+        val selectRange : object * object * object -> unit
+        val placeCursor : object * object -> unit
+        val getSelectionBound : object -> object
+        val getInsert : object -> object
+        val deleteMarkByName : object * string -> unit
+        val moveMarkByName : object * string * object -> unit
+        val getMark : object * string -> object
+        val deleteMark : object * object -> unit
+        val moveMark : object * object * object -> unit
+        val createMark : object * string * object * bool -> object
+        val createChildAnchor : object * object -> object
+        val insertChildAnchor : object * object * object -> unit
+        val insertPixbuf : object * object * object -> unit
+        val getSlice : object * object * object * bool -> string
+        val getText : object * object * object * bool -> string
+        val deleteInteractive : object * object * object * bool -> bool
+        val delete : object * object * object -> unit
+        val insertWithTagsByName : object * object * string * int * string -> unit
+        val insertWithTags : object * object * string * int * object -> unit
+        val insertRangeInteractive : object * object * object * object * bool -> bool
+        val insertRange : object * object * object * object -> unit
+        val insertInteractiveAtCursor : object * string * int * bool -> bool
+        val insertInteractive : object * object * string * int * bool -> bool
+        val insertAtCursor : object * string * int -> unit
+        val insert : object * object * string * int -> unit
+        val setText : object * string * int -> unit
+        val getTagTable : object -> object
+        val getCharCount : object -> int
+        val getLineCount : object -> int
+        val getType : unit -> gtype
+        val getFieldTagTable : object -> object
+        val setFieldTagTable : object * object -> unit
+        (* properties *)
+    end
+    structure TearoffMenuItem :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Table :
+    sig
+        (* constructors *)
+        val new : int * int * bool -> object
+        (* methods *)
+        val getHomogeneous : object -> bool
+        val setHomogeneous : object * bool -> unit
+        val getDefaultColSpacing : object -> int
+        val setColSpacings : object * int -> unit
+        val getDefaultRowSpacing : object -> int
+        val setRowSpacings : object * int -> unit
+        val getColSpacing : object * int -> int
+        val setColSpacing : object * int * int -> unit
+        val getRowSpacing : object * int -> int
+        val setRowSpacing : object * int * int -> unit
+        val attachDefaults : object * object * int * int * int * int -> unit
+        val attach : object * object * int * int * int * int * AttachOptions.t * AttachOptions.t * int * int -> unit
+        val resize : object * int * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Style :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val paintResizeGrip : object * object * StateType.t * object * object * string * Gdk.WindowEdge.t * int * int * int * int -> unit
+        val paintLayout : object * object * StateType.t * bool * object * object * string * int * int * object -> unit
+        val paintExpander : object * object * StateType.t * object * object * string * int * int * ExpanderStyle.t -> unit
+        val paintHandle : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int * Orientation.t -> unit
+        val paintSlider : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int * Orientation.t -> unit
+        val paintFocus : object * object * StateType.t * object * object * string * int * int * int * int -> unit
+        val paintExtension : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int * PositionType.t -> unit
+        val paintBoxGap : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int * PositionType.t * int * int -> unit
+        val paintShadowGap : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int * PositionType.t * int * int -> unit
+        val paintTab : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintOption : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintCheck : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintFlatBox : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintBox : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintDiamond : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintArrow : object * object * StateType.t * ShadowType.t * object * object * string * ArrowType.t * bool * int * int * int * int -> unit
+        val paintPolygon : object * object * StateType.t * ShadowType.t * object * object * string * object * int * bool -> unit
+        val paintShadow : object * object * StateType.t * ShadowType.t * object * object * string * int * int * int * int -> unit
+        val paintVLine : object * object * StateType.t * object * object * string * int * int * int -> unit
+        val paintHline : object * object * StateType.t * object * object * string * int * int * int -> unit
+        val drawCheck : object * object * StateType.t * ShadowType.t * int * int * int * int -> unit
+        val renderIcon : object * object * TextDirection.t * StateType.t * IconSize.t * object * string -> object
+        val lookupIconSet : object * string -> object
+        val applyDefaultBackground : object * object * bool * StateType.t * object * int * int * int * int -> unit
+        val setBackground : object * object * StateType.t -> unit
+        val detach : object -> unit
+        val attach : object * object -> object
+        val copy : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Statusbar :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getHasResizeGrip : object -> bool
+        val setHasResizeGrip : object * bool -> unit
+        val remove : object * int * int -> unit
+        val pop : object * int -> unit
+        val push : object * int * string -> int
+        val getContextId : object * string -> int
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure SpinButton :
+    sig
+        (* constructors *)
+        val newWithRange : real * real * real -> object
+        val new : object * real * int -> object
+        (* methods *)
+        val update : object -> unit
+        val getSnapToTicks : object -> bool
+        val setSnapToTicks : object * bool -> unit
+        val getWrap : object -> bool
+        val setWrap : object * bool -> unit
+        val spin : object * SpinType.t * real -> unit
+        val getNumeric : object -> bool
+        val setNumeric : object * bool -> unit
+        val getUpdatePolicy : object -> int
+        val setUpdatePolicy : object * SpinButtonUpdatePolicy.t -> unit
+        val setValue : object * real -> unit
+        val getValueAsInt : object -> int
+        val getValue : object -> real
+        val getRange : object * real * real -> real * real
+        val setRange : object * real * real -> unit
+        val getIncrements : object * real * real -> real * real
+        val setIncrements : object * real * real -> unit
+        val getDigits : object -> int
+        val setDigits : object * int -> unit
+        val getAdjustment : object -> object
+        val setAdjustment : object * object -> unit
+        val configure : object * object * real * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure SizeGroup :
+    sig
+        (* constructors *)
+        val new : SizeGroupMode.t -> object
+        (* methods *)
+        val removeWidget : object * object -> unit
+        val addWidget : object * object -> unit
+        val getMode : object -> SizeGroupMode.t
+        val setMode : object * SizeGroupMode.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Settings :
+    sig
+        (* constructors *)
+        (* methods *)
+        val setDoubleProperty : object * string * real * string -> unit
+        val setLongProperty : object * string * int * string -> unit
+        val setStringProperty : object * string * string * string -> unit
+        val setPropertyValue : object * string * object -> unit
+        val installPropertyParser : object * object -> unit
+        val installProperty : object -> unit
+        val getForScreen : object -> object
+        val getDefault : unit -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure SeparatorToolItem :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setDraw : object * bool -> unit
+        val getDraw : object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure SeparatorMenuItem :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Separator :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ScrolledWindow :
+    sig
+        (* constructors *)
+        val new : object * object -> object
+        (* methods *)
+        val addWithViewport : object * object -> unit
+        val getShadowType : object -> ShadowType.t
+        val setShadowType : object * ShadowType.t -> unit
+        val getPlacement : object -> CornerType.t
+        val setPlacement : object * CornerType.t -> unit
+        val getPolicy : object * PolicyType.t * PolicyType.t -> PolicyType.t * PolicyType.t
+        val setPolicy : object * PolicyType.t * PolicyType.t -> unit
+        val getVadjustment : object -> object
+        val getHadjustment : object -> object
+        val setVadjustment : object * object -> unit
+        val setHadjustment : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Scrollbar :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Scale :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getLayoutOffsets : object * int * int -> int * int
+        val getLayout : object -> object
+        val getValuePos : object -> PositionType.t
+        val setValuePos : object * PositionType.t -> unit
+        val getDrawValue : object -> bool
+        val setDrawValue : object * bool -> unit
+        val getDigits : object -> int
+        val setDigits : object * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Ruler :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getRange : object * real * real * real * real -> real * real * real * real
+        val getMetric : object -> MetricType.t
+        val drawPos : object -> unit
+        val drawTicks : object -> unit
+        val setRange : object * real * real * real * real -> unit
+        val setMetric : object * MetricType.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RcStyle :
+    sig
+        (* constructors *)
+        (* methods *)
+        val unref : object -> unit
+        val reference : object -> unit
+        val copy : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Range :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getValue : object -> real
+        val setValue : object * real -> unit
+        val setRange : object * real * real -> unit
+        val setIncrements : object * real * real -> unit
+        val getInverted : object -> bool
+        val setInverted : object * bool -> unit
+        val getAdjustment : object -> object
+        val setAdjustment : object * object -> unit
+        val getUpdatePolicy : object -> UpdateType.t
+        val setUpdatePolicy : object * UpdateType.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RadioToolButton :
+    sig
+        (* constructors *)
+        val newWithStockFromWidget : object * string -> object
+        val newFromWidget : object -> object
+        (* methods *)
+        val getGroup : object -> object list
+        val setGroup : object * (object list) -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RadioMenuItem :
+    sig
+        (* constructors *)
+        val newWithMnemonic : (object list) * string -> object
+        val newWithLabel : (object list) * string -> object
+        val new : (object list) -> object
+        (* methods *)
+        val setGroup : object * (object list) -> unit
+        val getGroup : object -> object list
+        val newWithLabelFromWidget : object * string -> object
+        val newWithMnemonicFromWidget : object * string -> object
+        val newFromWidget : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RadioButton :
+    sig
+        (* constructors *)
+        val newWithMnemonicFromWidget : object * string -> object
+        val newWithMnemonic : (object list) * string -> object
+        val newWithLabelFromWidget : object * string -> object
+        val newWithLabel : (object list) * string -> object
+        val newFromWidget : object -> object
+        val new : (object list) -> object
+        (* methods *)
+        val setGroup : object * (object list) -> unit
+        val getGroup : object -> object list
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RadioAction :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+    end
+    structure ProgressBar :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getEllipsize : object -> Pango.EllipsizeMode.t
+        val setEllipsize : object * Pango.EllipsizeMode.t -> unit
+        val getOrientation : object -> ProgressBarOrientation.t
+        val getPulseStep : object -> real
+        val getFraction : object -> real
+        val getText : object -> string
+        val setOrientation : object * ProgressBarOrientation.t -> unit
+        val setPulseStep : object * real -> unit
+        val setFraction : object * real -> unit
+        val setText : object * string -> unit
+        val pulse : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Progress :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Preview :
+    sig
+        (* constructors *)
+        (* methods *)
+        val setExpand : object * bool -> unit
+        val drawRow : object * string * int * int * int -> unit
+        val put : object * object * object * int * int * int * int * int * int -> unit
+        val size : object * int * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Pixmap :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+    end
+    structure Paned :
+    sig
+        (* constructors *)
+        (* methods *)
+        val computePosition : object * int * int * int -> unit
+        val getChild2 : object -> object
+        val getChild1 : object -> object
+        val setPosition : object * int -> unit
+        val getPosition : object -> int
+        val pack2 : object * object * bool * bool -> unit
+        val pack1 : object * object * bool * bool -> unit
+        val add2 : object * object -> unit
+        val add1 : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure OptionMenu :
+    sig
+        (* constructors *)
+        (* methods *)
+        val setHistory : object * int -> unit
+        val getHistory : object -> int
+        val removeMenu : object -> unit
+        val setMenu : object * object -> unit
+        val getMenu : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure OldEditable :
+    sig
+        (* constructors *)
+        (* methods *)
+        val changed : object -> unit
+        val claimSelection : object * bool * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Object :
+    sig
+        (* constructors *)
+        (* methods *)
+        val destroy : object -> unit
+        val sink : object -> unit
+        val new : gtype * string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Notebook :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val reorderChild : object * object * int -> unit
+        val setTabLabelPacking : object * object * bool * bool * PackType.t -> unit
+        val queryTabLabelPacking : object * object * object * object * PackType.t -> PackType.t
+        val getMenuLabelText : object * object -> string
+        val setMenuLabelText : object * object * string -> unit
+        val setMenuLabel : object * object * object -> unit
+        val getMenuLabel : object * object -> object
+        val getTabLabelText : object * object -> string
+        val setTabLabelText : object * object * string -> unit
+        val setTabLabel : object * object * object -> unit
+        val getTabLabel : object * object -> object
+        val popupDisable : object -> unit
+        val popupEnable : object -> unit
+        val getScrollable : object -> bool
+        val setScrollable : object * bool -> unit
+        val getTabPos : object -> PositionType.t
+        val setTabPos : object * PositionType.t -> unit
+        val getShowTabs : object -> bool
+        val setShowTabs : object * bool -> unit
+        val getShowBorder : object -> bool
+        val setShowBorder : object * bool -> unit
+        val prevPage : object -> unit
+        val nextPage : object -> unit
+        val setCurrentPage : object * int -> unit
+        val pageNum : object * object -> int
+        val getNPages : object -> int
+        val getNthPage : object * int -> object
+        val getCurrentPage : object -> int
+        val removePage : object * int -> unit
+        val insertPageMenu : object * object * object * object * int -> int
+        val insertPage : object * object * object * int -> int
+        val prependPageMenu : object * object * object * object -> int
+        val prependPage : object * object * object -> int
+        val appendPageMenu : object * object * object * object -> int
+        val appendPage : object * object * object -> int
+        val getType : unit -> gtype
+        val getFieldTabPos : object -> PositionType.t
+        val setFieldTabPos : object * PositionType.t -> unit
+        (* properties *)
+    end
+    structure Misc :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getPadding : object * int * int -> int * int
+        val setPadding : object * int * int -> unit
+        val getAlignment : object * real * real -> real * real
+        val setAlignment : object * real * real -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure MessageDialog :
+    sig
+        (* constructors *)
+        val newWithMarkup : object * DialogFlags.t * MessageType.t * ButtonsType.t * string -> object
+        val new : object * DialogFlags.t * MessageType.t * ButtonsType.t * string -> object
+        (* methods *)
+        val formatSecondaryMarkup : object * string -> unit
+        val formatSecondaryText : object * string -> unit
+        val setMarkup : object * string -> unit
+        val getType : unit -> gtype
+        val getFieldLabel : object -> object
+        val setFieldLabel : object * object -> unit
+        val getFieldImage : object -> object
+        val setFieldImage : object * object -> unit
+        (* properties *)
+    end
+    structure MenuToolButton :
+    sig
+        (* constructors *)
+        val new : object * string -> object
+        (* methods *)
+        val setArrowTooltip : object * object * string * string -> unit
+        val getMenu : object -> object
+        val setMenu : object * object -> unit
+        val newFromStock : string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure MenuShell :
+    sig
+        (* constructors *)
+        (* methods *)
+        val cancel : object -> unit
+        val selectFirst : object * bool -> unit
+        val activateItem : object * object * bool -> unit
+        val deselect : object -> unit
+        val selectItem : object * object -> unit
+        val deactivate : object -> unit
+        val insert : object * object * int -> unit
+        val prepend : object * object -> unit
+        val append : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure MenuItem :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val setAccelPath : object * string -> unit
+        val getRightJustified : object -> bool
+        val setRightJustified : object * bool -> unit
+        val toggleSizeAllocate : object * int -> unit
+        val toggleSizeRequest : object * int -> int
+        val activate : object -> unit
+        val deselect : object -> unit
+        val select : object -> unit
+        val removeSubmenu : object -> unit
+        val getSubmenu : object -> object
+        val setSubmenu : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure MenuBar :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Menu :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setMonitor : object * int -> unit
+        val attach : object * object * int * int * int * int -> unit
+        val setScreen : object * object -> unit
+        val reorderChild : object * object * int -> unit
+        val getTitle : object -> string
+        val setTitle : object * string -> unit
+        val getTearoffState : object -> bool
+        val setTearoffState : object * bool -> unit
+        val getAttachWidget : object -> object
+        val detach : object -> unit
+        val attachToWidget : object * object * Core.object -> unit
+        val setAccelPath : object * string -> unit
+        val getAccelGroup : object -> object
+        val setAccelGroup : object * object -> unit
+        val setActive : object * int -> unit
+        val getActive : object -> object
+        val popdown : object -> unit
+        val reposition : object -> unit
+        val popup : object * object * object * Core.object * object * int * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ListStore :
+    sig
+        (* constructors *)
+        val newv : (gtype vector) -> object
+        (* methods *)
+        val moveBefore : object * object * object -> unit
+        val moveAfter : object * object * object -> unit
+        val swap : object * object * object -> unit
+        val reorder : object * int -> int
+        val iterIsValid : object * object -> bool
+        val clear : object -> unit
+        val append : object * object -> unit
+        val prepend : object * object -> unit
+        val insertWithValuesv : object * object * int * int * (gvalue vector) -> int
+        val insertWithValues : object * object * int -> unit
+        val insertAfter : object * object * object -> unit
+        val insertBefore : object * object * object -> unit
+        val insert : object * object * int -> unit
+        val remove : object * object -> bool
+        val set : object * object -> unit
+        val setValue : object * object * int * gvalue -> unit
+        val setColumnTypes : object * int * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Layout :
+    sig
+        (* constructors *)
+        val new : object * object -> object
+        (* methods *)
+        val thaw : object -> unit
+        val freeze : object -> unit
+        val setVadjustment : object * object -> unit
+        val setHadjustment : object * object -> unit
+        val getVadjustment : object -> object
+        val getHadjustment : object -> object
+        val getSize : object * int * int -> int * int
+        val setSize : object * int * int -> unit
+        val move : object * object * int * int -> unit
+        val put : object * object * int * int -> unit
+        val getType : unit -> gtype
+        val getFieldBinWindow : object -> object
+        val setFieldBinWindow : object * object -> unit
+        (* properties *)
+    end
+    structure Label :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val new : string -> object
+        (* methods *)
+        val getSingleLineMode : object -> bool
+        val setSingleLineMode : object * bool -> unit
+        val getMaxWidthChars : object -> int
+        val setMaxWidthChars : object * int -> unit
+        val getWidthChars : object -> int
+        val setWidthChars : object * int -> unit
+        val getAngle : object -> int
+        val setAngle : object * int -> unit
+        val getEllipsize : object -> Pango.EllipsizeMode.t
+        val setEllipsize : object * Pango.EllipsizeMode.t -> unit
+        val getLayoutOffsets : object * int * int -> int * int
+        val getLayout : object -> object
+        val getSelectionBounds : object * int * int -> bool * int * int
+        val selectRegion : object * int * int -> unit
+        val getSelectable : object -> bool
+        val setSelectable : object * bool -> unit
+        val getLineWrap : object -> bool
+        val setLineWrap : object * bool -> unit
+        val setPattern : object * string -> unit
+        val getJustify : object -> Justification.t
+        val setJustify : object * Justification.t -> unit
+        val setTextWithMnemonic : object * string -> unit
+        val getMnemonicWidget : object -> object
+        val setMnemonicWidget : object * object -> unit
+        val getMnemonicKeyval : object -> int
+        val setMarkupWithMnemonic : object * string -> unit
+        val getUseUnderline : object -> bool
+        val setUseUnderline : object * bool -> unit
+        val getUseMarkup : object -> bool
+        val setUseMarkup : object * bool -> unit
+        val setMarkup : object * string -> unit
+        val getLabel : object -> string
+        val setLabel : object * string -> unit
+        val getAttributes : object -> object
+        val setAttributes : object * object -> unit
+        val getText : object -> string
+        val setText : object * string -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ItemFactory :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+    end
+    structure Item :
+    sig
+        (* constructors *)
+        (* methods *)
+        val toggle : object -> unit
+        val deselect : object -> unit
+        val select : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Invisible :
+    sig
+        (* constructors *)
+        val newForScreen : object -> object
+        val new : unit -> object
+        (* methods *)
+        val getScreen : object -> object
+        val setScreen : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure InputDialog :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure IMMulticontext :
+    sig
+        (* constructors *)
+        val gtkImMulticontextNew : unit -> object
+        (* methods *)
+        val appendMenuitems : object * object -> unit
+        (* properties *)
+    end
+    structure IMContextSimple :
+    sig
+        (* constructors *)
+        val gtkImContextSimpleNew : unit -> object
+        (* methods *)
+        val addTable : object * object * int * int -> unit
+        (* properties *)
+    end
+    structure IMContext :
+    sig
+        (* constructors *)
+        (* methods *)
+        val deleteSurrounding : object * int * int -> bool
+        val getSurrounding : object * (string vector) * int -> bool * int
+        val setSurrounding : object * string * int * int -> unit
+        val setUsePreedit : object * bool -> unit
+        val setCursorLocation : object * object -> unit
+        val reset : object -> unit
+        val focusOut : object -> unit
+        val focusIn : object -> unit
+        val filterKeypress : object * object -> bool
+        val getPreeditString : object * (string vector) * object * int -> int
+        val setClientWindow : object * object -> unit
+        (* properties *)
+    end
+    structure ImageMenuItem :
+    sig
+        (* constructors *)
+        val newFromStock : string * object -> object
+        val newWithMnemonic : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val getImage : object -> object
+        val setImage : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Image :
+    sig
+        (* constructors *)
+        val newFromStock : string * IconSize.t -> object
+        val newFromPixbuf : object -> object
+        val newFromFile : string -> object
+        val newFromImage : object * object -> object
+        val newFromPixmap : object * object -> object
+        val new : unit -> object
+        (* methods *)
+        val getPixelSize : object -> int
+        val getIconName : object * (string vector) * IconSize.t -> IconSize.t
+        val setPixelSize : object * int -> unit
+        val setFromIconName : object * string * IconSize.t -> unit
+        val newFromIconName : string * IconSize.t -> object
+        val getAnimation : object -> object
+        val getIconSet : object * IconSize.t -> object * IconSize.t
+        val getStock : object * (string vector) * IconSize.t -> IconSize.t
+        val getPixbuf : object -> object
+        val getImage : object -> object * object
+        val getPixmap : object -> object * object
+        val getStorageType : object -> ImageType.t
+        val setFromAnimation : object * object -> unit
+        val setFromIconSet : object * object * IconSize.t -> unit
+        val setFromStock : object * string * IconSize.t -> unit
+        val setFromPixbuf : object * object -> unit
+        val setFromFile : object * string -> unit
+        val setFromImage : object * object * object -> unit
+        val setFromPixmap : object * object * object -> unit
+        val newFromAnimation : object -> object
+        val newFromIconSet : object * IconSize.t -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure IconView :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val itemActivated : object * object -> unit
+        val unselectAll : object -> unit
+        val selectAll : object -> unit
+        val getSelectedItems : object -> object list
+        val pathIsSelected : object * object -> bool
+        val unselectPath : object * object -> unit
+        val selectPath : object * object -> unit
+        val getSelectionMode : object -> SelectionMode.t
+        val setSelectionMode : object * SelectionMode.t -> unit
+        val getPathAtPos : object * int * int -> object
+        val getMargin : object -> int
+        val setMargin : object * int -> unit
+        val getColumnSpacing : object -> int
+        val setColumnSpacing : object * int -> unit
+        val getRowSpacing : object -> int
+        val setRowSpacing : object * int -> unit
+        val getSpacing : object -> int
+        val setSpacing : object * int -> unit
+        val getItemWidth : object -> int
+        val setItemWidth : object * int -> unit
+        val getColumns : object -> int
+        val setColumns : object * int -> unit
+        val getOrientation : object -> Orientation.t
+        val setOrientation : object * Orientation.t -> unit
+        val getPixbufColumn : object -> int
+        val setPixbufColumn : object * int -> unit
+        val getMarkupColumn : object -> int
+        val setMarkupColumn : object * int -> unit
+        val getTextColumn : object -> int
+        val setTextColumn : object * int -> unit
+        val getModel : object -> object
+        val setModel : object * object -> unit
+        val newWithModel : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure IconTheme :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val addBuiltinIcon : string * int * object -> unit
+        val rescanIfNeeded : object -> bool
+        val getExampleIconName : object -> string
+        val listIcons : object * string -> object list
+        val loadIcon : object * string * int * IconLookupFlags.t -> object
+        val lookupIcon : object * string * int * IconLookupFlags.t -> object
+        val hasIcon : object * string -> bool
+        val setCustomTheme : object * string -> unit
+        val prependSearchPath : object * string -> unit
+        val appendSearchPath : object * string -> unit
+        val setScreen : object * object -> unit
+        val getForScreen : object -> object
+        val getDefault : unit -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure IconFactory :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val lookupDefault : string -> object
+        val removeDefault : object -> unit
+        val addDefault : object -> unit
+        val lookup : object * string -> object
+        val add : object * string * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure HSeparator :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HScrollbar :
+    sig
+        (* constructors *)
+        val new : object -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HScale :
+    sig
+        (* constructors *)
+        val newWithRange : real * real * real -> object
+        val new : object -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HRuler :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HPaned :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HButtonBox :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HBox :
+    sig
+        (* constructors *)
+        val new : bool * int -> object
+        (* methods *)
+        (* properties *)
+    end
+    structure HandleBox :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getSnapEdge : object -> PositionType.t
+        val setSnapEdge : object * PositionType.t -> unit
+        val getHandlePosition : object -> PositionType.t
+        val setHandlePosition : object * PositionType.t -> unit
+        val getShadowType : object -> ShadowType.t
+        val setShadowType : object * ShadowType.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure GammaCurve :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        val getFieldTable : object -> object
+        val setFieldTable : object * object -> unit
+        val getFieldGammaText : object -> object
+        val setFieldGammaText : object * object -> unit
+        val getFieldGammaDialog : object -> object
+        val setFieldGammaDialog : object * object -> unit
+        val getFieldGamma : object -> real
+        val setFieldGamma : object * real -> unit
+        val getFieldCurve : object -> object
+        val setFieldCurve : object * object -> unit
+        (* properties *)
+    end
+    structure Frame :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val getShadowType : object -> ShadowType.t
+        val setShadowType : object * ShadowType.t -> unit
+        val getLabelAlign : object * real * real -> real * real
+        val setLabelAlign : object * real * real -> unit
+        val getLabelWidget : object -> object
+        val setLabelWidget : object * object -> unit
+        val getLabel : object -> string
+        val setLabel : object * string -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FontSelectionDialog :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val setPreviewText : object * string -> unit
+        val getPreviewText : object -> string
+        val setFontName : object * string -> bool
+        val getFont : object -> object
+        val getFontName : object -> string
+        val getType : unit -> gtype
+        val getFieldOkButton : object -> object
+        val setFieldOkButton : object * object -> unit
+        val getFieldMainVBox : object -> object
+        val setFieldMainVBox : object * object -> unit
+        val getFieldFontsel : object -> object
+        val setFieldFontsel : object * object -> unit
+        val getFieldCancelButton : object -> object
+        val setFieldCancelButton : object * object -> unit
+        val getFieldApplyButton : object -> object
+        val setFieldApplyButton : object * object -> unit
+        val getFieldActionArea : object -> object
+        val setFieldActionArea : object * object -> unit
+        (* properties *)
+    end
+    structure FontSelection :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setPreviewText : object * string -> unit
+        val getPreviewText : object -> string
+        val setFontName : object * string -> bool
+        val getFont : object -> object
+        val getFontName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FontButton :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setShowSize : object * bool -> unit
+        val getShowSize : object -> bool
+        val setShowStyle : object * bool -> unit
+        val getShowStyle : object -> bool
+        val setFontName : object * string -> bool
+        val getFontName : object -> string
+        val setUseSize : object * bool -> unit
+        val getUseSize : object -> bool
+        val setUseFont : object * bool -> unit
+        val getUseFont : object -> bool
+        val setTitle : object * string -> unit
+        val getTitle : object -> string
+        val newWithFont : string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Fixed :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getHasWindow : object -> bool
+        val setHasWindow : object * bool -> unit
+        val move : object * object * int * int -> unit
+        val put : object * object * int * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FileSelection :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val getSelectMultiple : object -> bool
+        val setSelectMultiple : object * bool -> unit
+        val getSelections : object -> object
+        val hideFileopButtons : object -> unit
+        val showFileopButtons : object -> unit
+        val complete : object * string -> unit
+        val getFilename : object -> string
+        val setFilename : object * string -> unit
+        val getType : unit -> gtype
+        val getFieldSelectionText : object -> object
+        val setFieldSelectionText : object * object -> unit
+        val getFieldSelectionEntry : object -> object
+        val setFieldSelectionEntry : object * object -> unit
+        val getFieldOkButton : object -> object
+        val setFieldOkButton : object * object -> unit
+        val getFieldMainVBox : object -> object
+        val setFieldMainVBox : object * object -> unit
+        val getFieldHistoryPulldown : object -> object
+        val setFieldHistoryPulldown : object * object -> unit
+        val getFieldHistoryMenu : object -> object
+        val setFieldHistoryMenu : object * object -> unit
+        val getFieldHelpButton : object -> object
+        val setFieldHelpButton : object * object -> unit
+        val getFieldFileopRenFile : object -> object
+        val setFieldFileopRenFile : object * object -> unit
+        val getFieldFileopFile : object -> string
+        val setFieldFileopFile : object * string -> unit
+        val getFieldFileopEntry : object -> object
+        val setFieldFileopEntry : object * object -> unit
+        val getFieldFileopDialog : object -> object
+        val setFieldFileopDialog : object * object -> unit
+        val getFieldFileopDelFile : object -> object
+        val setFieldFileopDelFile : object * object -> unit
+        val getFieldFileopCDir : object -> object
+        val setFieldFileopCDir : object * object -> unit
+        val getFieldFileList : object -> object
+        val setFieldFileList : object * object -> unit
+        val getFieldDirList : object -> object
+        val setFieldDirList : object * object -> unit
+        val getFieldCancelButton : object -> object
+        val setFieldCancelButton : object * object -> unit
+        val getFieldButtonArea : object -> object
+        val setFieldButtonArea : object * object -> unit
+        val getFieldActionArea : object -> object
+        val setFieldActionArea : object * object -> unit
+        (* properties *)
+    end
+    structure FileFilter :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val filter : object * object -> bool
+        val getNeeded : object -> FileFilterFlags.t
+        val addPixbufFormats : object -> unit
+        val addPattern : object * string -> unit
+        val addMimeType : object * string -> unit
+        val getName : object -> string
+        val setName : object * string -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FileChooserWidget :
+    sig
+        (* constructors *)
+        val new : FileChooserAction.t -> object
+        (* methods *)
+        val newWithBackend : FileChooserAction.t * string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FileChooserDialog :
+    sig
+        (* constructors *)
+        val new : string * object * FileChooserAction.t * string -> object
+        (* methods *)
+        val newWithBackend : string * object * FileChooserAction.t * string * string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FileChooserButton :
+    sig
+        (* constructors *)
+        (* methods *)
+        val setWidthChars : object * int -> unit
+        val getWidthChars : object -> int
+        val setTitle : object * string -> unit
+        val getTitle : object -> string
+        val newWithDialog : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Expander :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val getLabelWidget : object -> object
+        val setLabelWidget : object * object -> unit
+        val getUseMarkup : object -> bool
+        val setUseMarkup : object * bool -> unit
+        val getUseUnderline : object -> bool
+        val setUseUnderline : object * bool -> unit
+        val getLabel : object -> string
+        val setLabel : object * string -> unit
+        val getSpacing : object -> int
+        val setSpacing : object * int -> unit
+        val getExpanded : object -> bool
+        val setExpanded : object * bool -> unit
+        val newWithMnemonic : string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure EventBox :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setAboveChild : object * bool -> unit
+        val getAboveChild : object -> bool
+        val setVisibleWindow : object * bool -> unit
+        val getVisibleWindow : object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure EntryCompletion :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getPopupCompletion : object -> bool
+        val setPopupCompletion : object * bool -> unit
+        val getInlineCompletion : object -> bool
+        val setInlineCompletion : object * bool -> unit
+        val insertPrefix : object -> unit
+        val setTextColumn : object * int -> unit
+        val deleteAction : object * int -> unit
+        val insertActionMarkup : object * int * string -> unit
+        val insertActionText : object * int * string -> unit
+        val complete : object -> unit
+        val getMinimumKeyLength : object -> int
+        val setMinimumKeyLength : object * int -> unit
+        val getModel : object -> object
+        val setModel : object * object -> unit
+        val getEntry : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Entry :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setEditable : object * bool -> unit
+        val selectRegion : object * int * int -> unit
+        val setPosition : object * int -> unit
+        val prependText : object * string -> unit
+        val getCompletion : object -> object
+        val setCompletion : object * object -> unit
+        val getAlignment : object -> real
+        val setAlignment : object * real -> unit
+        val getLayoutOffsets : object * int * int -> int * int
+        val getLayout : object -> object
+        val getText : object -> string
+        val setText : object * string -> unit
+        val getWidthChars : object -> int
+        val setWidthChars : object * int -> unit
+        val getActivatesDefault : object -> bool
+        val setActivatesDefault : object * bool -> unit
+        val getMaxLength : object -> int
+        val setMaxLength : object * int -> unit
+        val getHasFrame : object -> bool
+        val setHasFrame : object * bool -> unit
+        val getInvisibleChar : object -> int
+        val setInvisibleChar : object * int -> unit
+        val getVisibility : object -> bool
+        val setVisibility : object * bool -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure DrawingArea :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Dialog :
+    sig
+        (* constructors *)
+        val newWithButtons : string * object * DialogFlags.t * string -> object
+        val new : unit -> object
+        (* methods *)
+        val setAlternativeButtonOrderFromArray : object * int * int -> int
+        val setAlternativeButtonOrder : object * int -> unit
+        val run : object -> int
+        val response : object * int -> unit
+        val getHasSeparator : object -> bool
+        val setHasSeparator : object * bool -> unit
+        val setDefaultResponse : object * int -> unit
+        val setResponseSensitive : object * int * bool -> unit
+        val addButtons : object * string -> unit
+        val addButton : object * string * int -> object
+        val addActionWidget : object * object * int -> unit
+        val getType : unit -> gtype
+        val getFieldVBox : object -> object
+        val setFieldVBox : object * object -> unit
+        val getFieldActionArea : object -> object
+        val setFieldActionArea : object * object -> unit
+        (* properties *)
+    end
+    structure Curve :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setCurveType : object * CurveType.t -> unit
+        val setRange : object * real * real * real * real -> unit
+        val setGamma : object * real -> unit
+        val reset : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Container :
+    sig
+        (* constructors *)
+        val new : { border_width : int, focus_child : object, has_focus_chain : int, need_resize : int, reallocate_redraws : int, resize_mode : int } -> object
+        (* methods *)
+        val forall : object * object * object -> unit
+        val childGetProperty : object * object * string -> gvalue
+        val childSetProperty : object * object * string * gvalue -> unit
+        val childGet : object * object * string -> unit
+        val childSet : object * object * string -> unit
+        val addWithProperties : object * object * string -> unit
+        val classListChildProperties : object * int -> object * int
+        val classFindChildProperty : object * string -> object
+        val classInstallChildProperty : object * int * object -> unit
+        val childType : object -> gtype
+        val resizeChildren : object -> unit
+        val getFocusHadjustment : object -> object
+        val setFocusHadjustment : object * object -> unit
+        val getFocusVadjustment : object -> object
+        val setFocusVadjustment : object * object -> unit
+        val setFocusChild : object * object -> unit
+        val setReallocateRedraws : object * bool -> unit
+        val unsetFocusChain : object -> unit
+        val getFocusChain : object * object -> bool
+        val setFocusChain : object * (object list) -> unit
+        val propagateExpose : object * object * object -> unit
+        val getChildren : object -> object list
+        val foreach : object * object * object -> unit
+        val checkResize : object -> unit
+        val getResizeMode : object -> ResizeMode.t
+        val setResizeMode : object * ResizeMode.t -> unit
+        val remove : object * object -> unit
+        val add : object * object -> unit
+        val getBorderWidth : object -> int
+        val setBorderWidth : object * int -> unit
+        val getType : unit -> gtype
+        val getFieldResizeMode : object -> int
+        val setFieldResizeMode : object * int -> unit
+        val getFieldReallocateRedraws : object -> int
+        val setFieldReallocateRedraws : object * int -> unit
+        val getFieldNeedResize : object -> int
+        val setFieldNeedResize : object * int -> unit
+        val getFieldHasFocusChain : object -> int
+        val setFieldHasFocusChain : object * int -> unit
+        val getFieldFocusChild : object -> object
+        val setFieldFocusChild : object * object -> unit
+        val getFieldBorderWidth : object -> int
+        val setFieldBorderWidth : object * int -> unit
+        (* properties *)
+    end
+    structure ComboBoxEntry :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val newText : unit -> object
+        val getTextColumn : object -> int
+        val setTextColumn : object * int -> unit
+        val newWithModel : object * int -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ComboBox :
+    sig
+        (* constructors *)
+        val newWithModel : object -> object
+        val new : unit -> object
+        (* methods *)
+        val getPopupAccessible : object -> object
+        val getActiveText : object -> string
+        val setFocusOnClick : object * bool -> unit
+        val getFocusOnClick : object -> bool
+        val setAddTearoffs : object * bool -> unit
+        val getColumnSpanColumn : object -> int
+        val getRowSpanColumn : object -> int
+        val getWrapWidth : object -> int
+        val popdown : object -> unit
+        val popup : object -> unit
+        val removeText : object * int -> unit
+        val prependText : object * string -> unit
+        val insertText : object * int * string -> unit
+        val appendText : object * string -> unit
+        val newText : unit -> object
+        val getModel : object -> object
+        val setModel : object * object -> unit
+        val setActiveIter : object * object -> unit
+        val getActiveIter : object * object -> bool
+        val setActive : object * int -> unit
+        val getActive : object -> int
+        val setColumnSpanColumn : object * int -> unit
+        val setRowSpanColumn : object * int -> unit
+        val setWrapWidth : object * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Combo :
+    sig
+        (* constructors *)
+        val new : { entry : object, list : object } -> object
+        (* methods *)
+        val getFieldList : object -> object
+        val setFieldList : object * object -> unit
+        val getFieldEntry : object -> object
+        val setFieldEntry : object * object -> unit
+        (* properties *)
+    end
+    structure ColorSelectionDialog :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val getType : unit -> gtype
+        val getFieldOkButton : object -> object
+        val setFieldOkButton : object * object -> unit
+        val getFieldHelpButton : object -> object
+        val setFieldHelpButton : object * object -> unit
+        val getFieldColorsel : object -> object
+        val setFieldColorsel : object * object -> unit
+        val getFieldCancelButton : object -> object
+        val setFieldCancelButton : object * object -> unit
+        (* properties *)
+    end
+    structure ColorSelection :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val paletteToString : (object vector) -> string
+        val paletteFromString : string * int -> bool * object * int
+        val isAdjusting : object -> bool
+        val getPreviousAlpha : object -> int
+        val getPreviousColor : object * object -> unit
+        val setPreviousAlpha : object * int -> unit
+        val setPreviousColor : object * object -> unit
+        val getCurrentAlpha : object -> int
+        val getCurrentColor : object * object -> unit
+        val setCurrentAlpha : object * int -> unit
+        val setCurrentColor : object * object -> unit
+        val setHasPalette : object * bool -> unit
+        val getHasPalette : object -> bool
+        val setHasOpacityControl : object * bool -> unit
+        val getHasOpacityControl : object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ColorButton :
+    sig
+        (* constructors *)
+        val newWithColor : object -> object
+        val new : unit -> object
+        (* methods *)
+        val getTitle : object -> string
+        val setTitle : object * string -> unit
+        val getUseAlpha : object -> bool
+        val setUseAlpha : object * bool -> unit
+        val getAlpha : object -> int
+        val getColor : object * object -> unit
+        val setAlpha : object * int -> unit
+        val setColor : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Clipboard :
+    sig
+        (* constructors *)
+        val getForDisplay : object * Word32.word -> object
+        (* methods *)
+        val waitForTargets : object * object * int -> bool * int
+        val waitIsTextAvailable : object -> bool
+        val waitForText : object -> string
+        val waitForContents : object * Word32.word -> object
+        val setText : object * string * int -> unit
+        val clear : object -> unit
+        val getOwner : object -> object
+        val getDisplay : object -> object
+        val get : Word32.word -> object
+        val getType : unit -> gtype
+        val store : object -> unit
+        val setCanStore : object * (object vector) -> unit
+        val waitIsTargetAvailable : object * Word32.word -> bool
+        (* properties *)
+    end
+    structure CheckMenuItem :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val getDrawAsRadio : object -> bool
+        val setDrawAsRadio : object * bool -> unit
+        val getInconsistent : object -> bool
+        val setInconsistent : object * bool -> unit
+        val toggled : object -> unit
+        val getActive : object -> bool
+        val setActive : object * bool -> unit
+        val getType : unit -> gtype
+        val getFieldActive : object -> bool
+        val setFieldActive : object * bool -> unit
+        (* properties *)
+    end
+    structure CheckButton :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellView :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getCellRenderers : object -> object list
+        val setBackgroundColor : object * object -> unit
+        val getSizeOfRow : object * object * object -> bool
+        val getDisplayedRow : object -> object
+        val setDisplayedRow : object * object -> unit
+        val setModel : object * object -> unit
+        val newWithPixbuf : object -> object
+        val newWithMarkup : string -> object
+        val newWithText : string -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellRendererToggle :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setActive : object * bool -> unit
+        val getActive : object -> bool
+        val setRadio : object * bool -> unit
+        val getRadio : object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellRendererText :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setFixedHeightFromFont : object * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellRendererProgress :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellRendererPixbuf :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellRendererCombo :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellRenderer :
+    sig
+        (* constructors *)
+        (* methods *)
+        val stopEditing : object * bool -> unit
+        val editingCanceled : object -> unit
+        val getFixedSize : object * int * int -> int * int
+        val setFixedSize : object * int * int -> unit
+        val startEditing : object * object * object * string * object * object * CellRendererState.t -> object
+        val activate : object * object * object * string * object * object * CellRendererState.t -> bool
+        val render : object * object * object * object * object * object * CellRendererState.t -> unit
+        val getSize : object * object * object * int * int * int * int -> int * int * int * int
+        val getType : unit -> gtype
+        (* properties *)
+        val pixbuf : object prop
+        val sizePoints : real prop
+        val size : int prop
+        val text : string prop
+        val markup : string prop
+        val editableSet : bool prop
+        val editable : bool prop
+        val fontDesc : object prop
+        val font : string prop
+        val ypad : int prop
+        val yalign : real prop
+        val xpad : int prop
+        val xalign : real prop
+        val width : int prop
+        val visible : bool prop
+        val sensitive : bool prop
+        val mode : CellRendererMode.t prop
+        val height : int prop
+        val cellBackgroundSet : bool prop
+        val cellBackgroundGdk : object prop
+        val cellBackground : string prop
+    end
+    structure Calendar :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val thaw : object -> unit
+        val freeze : object -> unit
+        val getDate : object * int * int * int -> int * int * int
+        val displayOptions : object * CalendarDisplayOptions.t -> unit
+        val getDisplayOptions : object -> CalendarDisplayOptions.t
+        val setDisplayOptions : object * CalendarDisplayOptions.t -> unit
+        val clearMarks : object -> unit
+        val unmarkDay : object * int -> bool
+        val markDay : object * int -> bool
+        val selectDay : object * int -> unit
+        val selectMonth : object * int * int -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure ButtonBox :
+    sig
+        (* constructors *)
+        (* methods *)
+        val setChildSecondary : object * object * bool -> unit
+        val getChildSecondary : object * object -> bool
+        val setLayout : object * ButtonBoxStyle.t -> unit
+        val getLayout : object -> ButtonBoxStyle.t
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Button :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val newFromStock : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val getImage : object -> object
+        val setImage : object * object -> unit
+        val getAlignment : object * real * real -> real * real
+        val setAlignment : object * real * real -> unit
+        val getFocusOnClick : object -> bool
+        val setFocusOnClick : object * bool -> unit
+        val getUseStock : object -> bool
+        val setUseStock : object * bool -> unit
+        val getUseUnderline : object -> bool
+        val setUseUnderline : object * bool -> unit
+        val getLabel : object -> string
+        val setLabel : object * string -> unit
+        val getRelief : object -> ReliefStyle.t
+        val setRelief : object * ReliefStyle.t -> unit
+        val leave : object -> unit
+        val enter : object -> unit
+        val clicked : object -> unit
+        val released : object -> unit
+        val pressed : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Box :
+    sig
+        (* constructors *)
+        (* methods *)
+        val setChildPacking : object * object * bool * bool * int * PackType.t -> unit
+        val queryChildPacking : object * object * object * object * int * PackType.t -> int * PackType.t
+        val reorderChild : object * object * int -> unit
+        val getSpacing : object -> int
+        val setSpacing : object * int -> unit
+        val getHomogeneous : object -> bool
+        val setHomogeneous : object * bool -> unit
+        val packEndDefaults : object * object -> unit
+        val packStartDefaults : object * object -> unit
+        val packEnd : object * object * bool * bool * int -> unit
+        val packStart : object * object * bool * bool * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Bin :
+    sig
+        (* constructors *)
+        val new : { child : object } -> object
+        (* methods *)
+        val getChild : object -> object
+        val getType : unit -> gtype
+        val getFieldChild : object -> object
+        val setFieldChild : object * object -> unit
+        (* properties *)
+    end
+    structure AspectFrame :
+    sig
+        (* constructors *)
+        val new : string * real * real * real * bool -> object
+        (* methods *)
+        val set : object * real * real * real * bool -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Arrow :
+    sig
+        (* constructors *)
+        val new : ArrowType.t * ShadowType.t -> object
+        (* methods *)
+        val set : object * ArrowType.t * ShadowType.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Alignment :
+    sig
+        (* constructors *)
+        val new : real * real * real * real -> object
+        (* methods *)
+        val getPadding : object * int * int * int * int -> int * int * int * int
+        val setPadding : object * int * int * int * int -> unit
+        val set : object * real * real * real * real -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Adjustment :
+    sig
+        (* constructors *)
+        val new : real * real * real * real * real * real -> object
+        (* methods *)
+        val setValue : object * real -> unit
+        val getValue : object -> real
+        val clampPage : object * real * real -> unit
+        val valueChanged : object -> unit
+        val changed : object -> unit
+        val getType : unit -> gtype
+        val getFieldValue : object -> real
+        val setFieldValue : object * real -> unit
+        val getFieldUpper : object -> real
+        val setFieldUpper : object * real -> unit
+        val getFieldStepIncrement : object -> real
+        val setFieldStepIncrement : object * real -> unit
+        val getFieldPageSize : object -> real
+        val setFieldPageSize : object * real -> unit
+        val getFieldPageIncrement : object -> real
+        val setFieldPageIncrement : object * real -> unit
+        val getFieldLower : object -> real
+        val setFieldLower : object * real -> unit
+        (* properties *)
+    end
+    structure ActionGroup :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val translateString : object * string -> string
+        val setTranslationDomain : object * string -> unit
+        val removeAction : object * object -> unit
+        val addActionWithAccel : object * object * string -> unit
+        val addAction : object * object -> unit
+        val listActions : object -> object list
+        val getAction : object * string -> object
+        val setVisible : object * bool -> unit
+        val getVisible : object -> bool
+        val setSensitive : object * bool -> unit
+        val getSensitive : object -> bool
+        val getName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Action :
+    sig
+        (* constructors *)
+        val new : string * string * string * string -> object
+        (* methods *)
+        val setVisible : object * bool -> unit
+        val setSensitive : object * bool -> unit
+        val setAccelGroup : object * object -> unit
+        val setAccelPath : object * string -> unit
+        val unblockActivateFrom : object * object -> unit
+        val blockActivateFrom : object * object -> unit
+        val getAccelPath : object -> string
+        val disconnectAccelerator : object -> unit
+        val connectAccelerator : object -> unit
+        val getProxies : object -> object list
+        val disconnectProxy : object * object -> unit
+        val connectProxy : object * object -> unit
+        val createToolItem : object -> object
+        val createMenuItem : object -> object
+        val createIcon : object * IconSize.t -> object
+        val activate : object -> unit
+        val getVisible : object -> bool
+        val isVisible : object -> bool
+        val getSensitive : object -> bool
+        val isSensitive : object -> bool
+        val getName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Accessible :
+    sig
+        (* constructors *)
+        (* methods *)
+        val connectWidgetDestroyed : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure AccelLabel :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val refetch : object -> bool
+        val setAccelClosure : object * object -> unit
+        val setAccelWidget : object * object -> unit
+        val getAccelWidth : object -> int
+        val getAccelWidget : object -> object
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure AccelGroup :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val query : object * int * Gdk.ModifierType.t * int -> object * int
+        val fromAccelClosure : object -> object
+        val activate : object * Word32.word * object * int * Gdk.ModifierType.t -> bool
+        val disconnectKey : object * int * Gdk.ModifierType.t -> bool
+        val disconnect : object * object -> bool
+        val connectByPath : object * string * object -> unit
+        val connect : object * int * Gdk.ModifierType.t * AccelFlags.t * object -> unit
+        val unlock : object -> unit
+        val lock : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure AboutDialog :
+    sig
+        (* constructors *)
+        val new : unit -> object
+        (* methods *)
+        val setLogoIconName : object * string -> unit
+        val getLogoIconName : object -> string
+        val setLogo : object * object -> unit
+        val getLogo : object -> object
+        val setTranslatorCredits : object * string -> unit
+        val getTranslatorCredits : object -> string
+        val setArtists : object * (string vector) -> unit
+        val getArtists : object -> object
+        val setDocumenters : object * (string vector) -> unit
+        val getDocumenters : object -> object
+        val setAuthors : object * (string vector) -> unit
+        val getAuthors : object -> object
+        val setWebsiteLabel : object * string -> unit
+        val getWebsiteLabel : object -> string
+        val setWebsite : object * string -> unit
+        val getWebsite : object -> string
+        val setLicense : object * string -> unit
+        val getLicense : object -> string
+        val setComments : object * string -> unit
+        val getComments : object -> string
+        val setCopyright : object * string -> unit
+        val getCopyright : object -> string
+        val setVersion : object * string -> unit
+        val getVersion : object -> string
+        val setName : object * string -> unit
+        val getName : object -> string
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeSortable :
+    sig
+        (* constructors *)
+        (* methods *)
+        val hasDefaultSortFunc : object -> bool
+        val setSortColumnId : object * int * SortType.t -> unit
+        val getSortColumnId : object * int * SortType.t -> bool * int * SortType.t
+        val sortColumnChanged : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeModel :
+    sig
+        (* constructors *)
+        (* methods *)
+        val filterNew : object * object -> object
+        val rowsReordered : object * object * object * int -> int
+        val rowDeleted : object * object -> unit
+        val rowHasChildToggled : object * object * object -> unit
+        val rowInserted : object * object * object -> unit
+        val rowChanged : object * object * object -> unit
+        val getValist : object * object * object -> unit
+        val get : object * object -> unit
+        val unrefNode : object * object -> unit
+        val refNode : object * object -> unit
+        val iterParent : object * object * object -> bool
+        val iterNthChild : object * object * object * int -> bool
+        val iterNChildren : object * object -> int
+        val iterHasChild : object * object -> bool
+        val iterChildren : object * object * object -> bool
+        val iterNext : object * object -> bool
+        val getValue : object * object * int -> gvalue
+        val getPath : object * object -> object
+        val getIterFirst : object * object -> bool
+        val getIterRoot : object * object -> bool
+        val getStringFromIter : object * object -> string
+        val getIterFromString : object * object * string -> bool
+        val getIter : object * object * object -> bool
+        val getColumnType : object * int -> gtype
+        val getNColumns : object -> int
+        val getFlags : object -> TreeModelFlags.t
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeDragSource :
+    sig
+        (* constructors *)
+        (* methods *)
+        val dragDataGet : object * object * object -> bool
+        val dragDataDelete : object * object -> bool
+        val rowDraggable : object * object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure TreeDragDest :
+    sig
+        (* constructors *)
+        (* methods *)
+        val rowDropPossible : object * object * object -> bool
+        val dragDataReceived : object * object * object -> bool
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure FileChooser :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getShowHidden : object -> bool
+        val setShowHidden : object * bool -> unit
+        val listShortcutFolderUris : object -> object list
+        val removeShortcutFolderUri : object * string -> bool
+        val addShortcutFolderUri : object * string -> bool
+        val listShortcutFolders : object -> object list
+        val removeShortcutFolder : object * string -> bool
+        val addShortcutFolder : object * string -> bool
+        val getFilter : object -> object
+        val setFilter : object * object -> unit
+        val listFilters : object -> object list
+        val removeFilter : object * object -> unit
+        val addFilter : object * object -> unit
+        val getExtraWidget : object -> object
+        val setExtraWidget : object * object -> unit
+        val getPreviewUri : object -> string
+        val getPreviewFilename : object -> string
+        val getUsePreviewLabel : object -> bool
+        val setUsePreviewLabel : object * bool -> unit
+        val getPreviewWidgetActive : object -> bool
+        val setPreviewWidgetActive : object * bool -> unit
+        val getPreviewWidget : object -> object
+        val setPreviewWidget : object * object -> unit
+        val getCurrentFolderUri : object -> string
+        val setCurrentFolderUri : object * string -> bool
+        val getUris : object -> object list
+        val unselectUri : object * string -> unit
+        val selectUri : object * string -> bool
+        val setUri : object * string -> bool
+        val getUri : object -> string
+        val getCurrentFolder : object -> string
+        val setCurrentFolder : object * string -> bool
+        val getFilenames : object -> object list
+        val unselectAll : object -> unit
+        val selectAll : object -> unit
+        val unselectFilename : object * string -> unit
+        val selectFilename : object * string -> bool
+        val setFilename : object * string -> bool
+        val getFilename : object -> string
+        val setCurrentName : object * string -> unit
+        val getSelectMultiple : object -> bool
+        val setSelectMultiple : object * bool -> unit
+        val getLocalOnly : object -> bool
+        val setLocalOnly : object * bool -> unit
+        val getAction : object -> FileChooserAction.t
+        val setAction : object * FileChooserAction.t -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Editable :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getEditable : object -> bool
+        val setEditable : object * bool -> unit
+        val getPosition : object -> int
+        val setPosition : object * int -> unit
+        val deleteSelection : object -> unit
+        val pasteClipboard : object -> unit
+        val copyClipboard : object -> unit
+        val cutClipboard : object -> unit
+        val getChars : object * int * int -> string
+        val deleteText : object * int * int -> unit
+        val insertText : object * string * int * int -> int
+        val getSelectionBounds : object * int * int -> bool * int * int
+        val selectRegion : object * int * int -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellLayout :
+    sig
+        (* constructors *)
+        (* methods *)
+        val reorder : object * object * int -> unit
+        val clearAttributes : object * object -> unit
+        val addAttribute : object * object * string * int -> unit
+        val setAttributes : object * object -> unit
+        val clear : object -> unit
+        val packEnd : object * object * bool -> unit
+        val packStart : object * object * bool -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure CellEditable :
+    sig
+        (* constructors *)
+        (* methods *)
+        val removeWidget : object -> unit
+        val editingDone : object -> unit
+        val startEditing : object * object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Gc:
+    sig
+        val release : object -> unit
+        val get : int * object * object * Gdk.GCValuesMask.t -> object
+    end
+    structure Hscrollbar:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Accelerator:
+    sig
+        val getLabel : int * Gdk.ModifierType.t -> string
+        val getDefaultModMask : unit -> int
+        val setDefaultModMask : Gdk.ModifierType.t -> unit
+        val name : int * Gdk.ModifierType.t -> string
+        val parse : string * int * Gdk.ModifierType.t -> int * Gdk.ModifierType.t
+        val valid : int * Gdk.ModifierType.t -> bool
+    end
+    structure Key:
+    sig
+        val snooperRemove : int -> unit
+    end
+    structure Set:
+    sig
+        val locale : unit -> string
+    end
+    structure Quit:
+    sig
+        val removeByData : object -> unit
+        val remove : int -> unit
+        val addFull : int * object * object * object * object -> int
+        val add : int * object * object -> int
+        val addDestroy : int * object -> unit
+    end
+    structure Show:
+    sig
+        val aboutDialog : object * string -> unit
+    end
+    structure Hseparator:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Idle:
+    sig
+        val removeByData : object -> unit
+        val remove : int -> unit
+    end
+    structure Get:
+    sig
+        val eventWidget : object -> object
+        val currentEventState : Gdk.ModifierType.t -> bool * Gdk.ModifierType.t
+        val currentEventTime : unit -> int
+        val currentEvent : unit -> object
+        val defaultLanguage : unit -> object
+    end
+    structure Hscale:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Accel:
+    sig
+        val mapGet : unit -> object
+        val mapGetType : unit -> gtype
+        val mapForeachUnfiltered : object * object -> unit
+        val mapAddFilter : string -> unit
+        val mapUnlockPath : string -> unit
+        val mapLockPath : string -> unit
+        val mapSaveFd : int -> unit
+        val mapLoadScanner : object -> unit
+        val mapLoadFd : int -> unit
+        val mapForeach : object * object -> unit
+        val mapSave : string -> unit
+        val mapLoad : string -> unit
+        val mapChangeEntry : string * int * Gdk.ModifierType.t * bool -> bool
+        val mapLookupEntry : string * object -> bool
+        val mapAddEntry : string * int * Gdk.ModifierType.t -> unit
+        val groupsFromObject : object -> object list
+        val groupsActivate : object * int * Gdk.ModifierType.t -> bool
+    end
+    structure Hbox:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Events:
+    sig
+        val pending : unit -> int
+    end
+    structure Im:
+    sig
+        val multicontextGetType : unit -> gtype
+        val contextSimpleGetType : unit -> gtype
+        val contextGetType : unit -> gtype
+    end
+    structure Init:
+    sig
+        val add : object * object -> unit
+        val check : int * object -> bool * int
+    end
+    structure Rc:
+    sig
+        val propertyParseBorder : object * object -> bool * gvalue
+        val propertyParseRequisition : object * object -> bool * gvalue
+        val propertyParseFlags : object * object -> bool * gvalue
+        val propertyParseEnum : object * object -> bool * gvalue
+        val propertyParseColor : object * object -> bool * gvalue
+        val parsePriority : object * PathPriorityType.t -> int * PathPriorityType.t
+        val parseState : object * StateType.t -> int * StateType.t
+        val parseColor : object * object -> int
+        val getImModuleFile : unit -> string
+        val getImModulePath : unit -> string
+        val getModuleDir : unit -> string
+        val getThemeDir : unit -> string
+        val findModuleInPath : string -> string
+        val reparseAll : unit -> bool
+        val parseString : string -> unit
+        val parse : string -> unit
+        val findPixmapInPath : object * object * string -> string
+        val resetStyles : object -> unit
+        val reparseAllForSettings : object * bool -> bool
+        val getStyleByPaths : object * string * string * gtype -> object
+        val getDefaultFiles : unit -> object
+        val setDefaultFiles : (string vector) -> unit
+        val addDefaultFile : string -> unit
+    end
+    structure Timeout:
+    sig
+        val remove : int -> unit
+    end
+    structure Selection:
+    sig
+        val ownerSetForDisplay : object * object * Word32.word * int -> bool
+    end
+    structure Check:
+    sig
+        val version : int * int * int -> string
+    end
+    structure Hpaned:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Binding:
+    sig
+        val parseBinding : object -> int
+        val entryAddSignall : object * int * Gdk.ModifierType.t * string * (object list) -> unit
+        val entryRemove : object * int * Gdk.ModifierType.t -> unit
+        val entryAddSignal : object * int * Gdk.ModifierType.t * string * int -> unit
+        val entryClear : object * int * Gdk.ModifierType.t -> unit
+    end
+    structure Grab:
+    sig
+        val getCurrent : unit -> object
+    end
+    structure Disable:
+    sig
+        val setlocale : unit -> unit
+    end
+    structure Main:
+    sig
+        val iterationDo : bool -> bool
+        val iteration : unit -> bool
+        val quit : unit -> unit
+        val level : unit -> int
+        val doEvent : object -> unit
+    end
+    structure Draw:
+    sig
+        val insertionCursor : object * object * object * object * bool * TextDirection.t * bool -> unit
+    end
+    structure Target:
+    sig
+        val listAddUriTargets : object * int -> unit
+        val listAddImageTargets : object * int * bool -> unit
+        val listAddTextTargets : object * int -> unit
+    end
+    structure Hruler:
+    sig
+        val getType : unit -> gtype
+    end
+    structure Bindings:
+    sig
+        val activateEvent : object * object -> bool
+        val activate : object * int * Gdk.ModifierType.t -> bool
+    end
+    structure Ui:
+    sig
+        val managerGetType : unit -> gtype
+    end
+    structure Input:
+    sig
+        val remove : int -> unit
+    end
+    structure Hbutton:
+    sig
+        val boxGetType : unit -> gtype
+    end
+
+</PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the <A href="gtk-overview.html">Porting Guide</A>. It
+     gives a comprehensive overview on what has been made available.
+
+<?php footing(); ?>

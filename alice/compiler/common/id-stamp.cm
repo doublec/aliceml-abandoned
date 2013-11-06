@@ -1,0 +1,14 @@
+Group
+
+	signature STAMP
+	structure Stamp
+	structure StampSet
+	structure StampMap
+
+is
+
+	../../lib/utility/sources.cm
+
+	Stamp.aml
+	StampSet.aml
+	StampMap.aml

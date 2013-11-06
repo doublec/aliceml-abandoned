@@ -1,0 +1,134 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeFD from "UnsafeFD"
+import signature FD       from "FD-sig"
+import structure Foreign  from "x-alice:/lib/system/Foreign"
+
+structure FD : FD =
+    struct
+	type fd
+	type bin = fd
+	    
+	datatype domain_element =
+	    SINGLE of int
+	  | RANGE  of int * int
+	    
+	type domain = domain_element vector
+
+	datatype relation =
+	    LESS
+	  | LESSEQ
+	  | EQUAL
+	  | NOTEQUAL
+	  | GREATER
+	  | GREATEREQ
+
+	datatype dist_mode =
+	    NAIVE
+	  | FIRSTFAIL
+	  | SPLIT_MIN
+	  | SPLIT_MAX
+	  | NBSUSPS
+
+	datatype assign =
+	    MIN
+	  | MID
+	  | MAX
+
+	(* Introduce flat bindings *)
+	open UnsafeFD
+
+	(* Wrap constructors *)
+	fun checkBounds i = if i >= inf
+			    then if i <= sup then ()
+				 else raise Overflow
+			    else raise Domain
+
+	fun checkDomainElement (SINGLE i)    = checkBounds i
+	  | checkDomainElement (RANGE(l, h)) = (checkBounds l; checkBounds h)
+	fun checkDomain d = Vector.app checkDomainElement d
+
+	fun fd NONE            = unsafeFD NONE
+	  | fd (r as (SOME d)) = (checkDomain d; unsafeFD r)
+
+	fun fdVec (i, d) = (checkDomain d; unsafeFDVec(i, d))
+
+	fun range(l, h) =
+	    (checkBounds l; checkBounds h; unsafeRange(l, h))
+
+	fun rangeVec(v, r as (l, h)) =
+	    (checkBounds l; checkBounds h; unsafeRangeVec(v, r))
+
+	fun fromInt i = (checkBounds i; unsafeFromInt i)
+
+	(* Reified Constraints *)
+	structure Reified =
+	    struct
+	        fun fd (d, b)     = (checkDomain d; unsafeReified_fd(d, b))
+		fun fdVec(i,d, b) =
+		    (checkDomain d; unsafeReified_fdVec(i, d, b))
+		val card  = reified_card
+		val distance = reified_distance
+		val sum = reified_sum
+		val sumC  = reified_sumC
+		val sumAC = reified_sumAC
+		val sumCN = reified_sumCN
+		val sumACN = reified_sumACN
+	    end
+
+	(* Reflection *)
+	structure Reflect =
+	    struct
+		val min = reflect_min
+		val max = reflect_max
+		val mid = reflect_mid
+		val nextLarger = reflect_nextLarger
+		val nextSmaller = reflect_nextSmaller
+		val size = reflect_size
+		val dom = reflect_dom
+		val domList = reflect_domList
+		val nbSusps = reflect_nbSusps
+		val eq = reflect_eq
+	    end
+
+	(* Watching *)
+	structure Watch =
+	    struct
+		val min = watch_min
+		val max = watch_max
+		val size = watch_size
+	    end
+
+	(* Schedule *)
+	structure Schedule =
+	    struct
+		type tasks  = (string * string list) vector
+		type starts = (string * fd) vector
+		type specs  = (string * int) vector
+
+		val cumulative  = schedule_cumulative
+		val cumulativeEF = schedule_cumulativeEF
+		val cumulativeTI = schedule_cumulativeTI
+		val cumulativeUp = schedule_cumulativeUp
+		val disjoint = schedule_disjoint
+		val firstsDist = schedule_firstsDist
+		val lastsDist = schedule_lastsDist
+		val firstsLastsDist = schedule_firstsLastsDist
+		val taskIntervalsDistP = schedule_taskIntervalsDistP
+		val taskIntervalsDistO = schedule_taskIntervalsDistO
+		val serializedDisj = schedule_serializedDisj
+		val serialized = schedule_serialized
+		val taskIntervals = schedule_taskIntervals
+	    end
+    end

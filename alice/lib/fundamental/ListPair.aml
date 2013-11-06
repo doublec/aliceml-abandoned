@@ -1,0 +1,161 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                         from "Pervasive"
+import __primitive datatype bool and option and list from "ToplevelTypes"
+import __primitive
+       infixr 5 :: @ infix 6 + - val op +            from "ToplevelValues"
+import __primitive signature LIST_PAIR               from "LIST_PAIR-sig"
+
+structure ListPair : LIST_PAIR =
+struct
+    exception UnequalLengths
+
+    fun ignore _			= ()
+    fun checkEq(nil,nil)		= ()
+      | checkEq(_,_)			= raise UnequalLengths
+
+    fun zip'(x::xs, y::ys, g)		= (x,y) :: zip'(xs,ys,g)
+      | zip'( xs,    ys,   g)		= (g(xs,ys); nil)
+    fun zip (xs1,xs2)			= zip'(xs1,xs2,ignore)
+    fun zipEq (xs1,xs2)			= zip'(xs1,xs2,checkEq)
+
+    fun unzip((x,y)::xys)		= let val (xs,ys) = unzip xys
+					  in (x::xs, y::ys) end
+      | unzip     nil			= (nil, nil)
+
+    fun map'(f, x::xs, y::ys, g)	= f(x,y)::map'(f,xs,ys,g)
+      | map'(f,  xs,    ys,   g)	= (g(xs,ys); nil)
+    fun map  f (xs,ys)			= map'(f,xs,ys,ignore)
+    fun mapEq f (xs,ys)			= map'(f,xs,ys,checkEq)
+
+    fun mapi'(f, i, x::xs,y::ys, g)	= f(i,x,y)::mapi'(f,i+1,xs,ys,g)
+      | mapi'(f, i,  xs,   ys,   g)	= (g(xs,ys); nil)
+    fun mapi  f (xs,ys)			= mapi'(f,0,xs,ys,ignore)
+    fun mapiEq f (xs,ys)		= mapi'(f,0,xs,ys,checkEq)
+
+    fun mapPartial'(f, x::xs, y::ys, g)	= (case f(x,y)
+					   of NONE   => mapPartial'(f,xs,ys,g)
+					    | SOME z =>
+					      z::mapPartial'(f,xs,ys,g)
+					  )
+      | mapPartial'(f, xs,     ys,   g)	= (g(xs,ys); nil)
+    fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys,ignore)
+    fun mapPartialEq f (xs,ys)		= mapPartial'(f,xs,ys,checkEq)
+
+    fun mapiPartial'(f,i,x::xs,y::ys,g)	= (case f(i,x,y)
+					   of NONE =>
+					      mapiPartial'(f,i+1,xs,ys,g)
+					    | SOME z =>
+					      z::mapiPartial'(f,i+1,xs,ys,g)
+					  )
+      | mapiPartial'(f,i, xs,   ys,  g)	= (g(xs,ys); nil)
+    fun mapiPartial  f (xs,ys)		= mapiPartial'(f,0,xs,ys,ignore)
+    fun mapiPartialEq f (xs,ys)		= mapiPartial'(f,0,xs,ys,checkEq)
+
+    fun app'(f, x::xs, y::ys, g)	= (f(x,y) ; app'(f,xs,ys,g))
+      | app'(f,  xs,    ys,   g)	= g(xs,ys)
+    fun app  f (xs,ys)			= app'(f,xs,ys,ignore)
+    fun appEq f (xs,ys)			= app'(f,xs,ys,checkEq)
+
+    fun appr'(f, x::xs, y::ys, g)	= (appr'(f,xs,ys,g) ; f(x,y))
+      | appr'(f,  xs,    ys,   g)	= g(xs,ys)
+    fun appr  f (xs,ys)			= appr'(f,xs,ys,ignore)
+    fun apprEq f (xs,ys)		= appr'(f,xs,ys,checkEq)
+
+    fun appi'(f, i, x::xs, y::ys, g)	= (f(i,x,y) ; appi'(f,i+1,xs,ys,g))
+      | appi'(f, i,  xs,    ys,   g)	= g(xs,ys)
+    fun appi  f (xs,ys)			= appi'(f,0,xs,ys,ignore)
+    fun appiEq f (xs,ys)		= appi'(f,0,xs,ys,checkEq)
+
+    fun appri'(f, i, x::xs, y::ys, g)	= (appri'(f,i+1,xs,ys,g) ; f(i,x,y))
+      | appri'(f, i,  xs,    ys,   g)	= g(xs,ys)
+    fun appri  f (xs,ys)		= appri'(f,0,xs,ys,ignore)
+    fun appriEq f (xs,ys)		= appri'(f,0,xs,ys,checkEq)
+
+    fun foldl'(f, z, x::xs, y::ys, g)	= foldl'(f, f(x,y,z), xs, ys, g)
+      | foldl'(f, z,  xs,    ys,   g)	= (g(xs,ys); z)
+    fun foldl  f  z (xs,ys)		= foldl'(f,z,xs,ys,ignore)
+    fun foldlEq f z (xs,ys)		= foldl'(f,z,xs,ys,checkEq)
+
+    fun foldr'(f, z, x::xs, y::ys, g) 	= f(x, y, foldr'(f,z,xs,ys,g))
+      | foldr'(f, z,  xs,    ys,   g) 	= (g(xs,ys); z)
+    fun foldr  f  z (xs,ys)      	= foldr'(f,z,xs,ys,ignore)
+    fun foldrEq f z (xs,ys)      	= foldr'(f,z,xs,ys,checkEq)
+
+    fun foldli'(f, z,i, x::xs,y::ys, g)	= foldli'(f, f(i,x,y,z), i+1, xs, ys, g)
+      | foldli'(f, z,i,  xs,   ys,   g)	= (g(xs,ys); z)
+    fun foldli  f  z (xs,ys)		= foldli'(f,z,0,xs,ys,ignore)
+    fun foldliEq f z (xs,ys)		= foldli'(f,z,0,xs,ys,checkEq)
+
+    fun foldri'(f, z,i, x::xs,y::ys, g)	= f(i, x, y, foldri'(f,z,i+1,xs,ys,g))
+      | foldri'(f, z,i,  xs,    ys,  g)	= (g(xs,ys); z)
+    fun foldri  f  z (xs,ys)      	= foldri'(f,z,0,xs,ys,ignore)
+    fun foldriEq f z (xs,ys)      	= foldri'(f,z,0,xs,ys,checkEq)
+
+    fun all'(f, x::xs, y::ys, b)	= f(x,y) andalso all'(f,xs,ys,b)
+      | all'(f,  nil,   nil,  b)	= true
+      | all'(f,   _,     _,   b)	= b
+    fun all  f (xs,ys)			= all'(f,xs,ys,true)
+    fun allEq f (xs,ys)			= all'(f,xs,ys,false)
+
+    fun alli'(f, i, x::xs, y::ys, b)	= f(i,x,y) andalso alli'(f,i+1,xs,ys,b)
+      | alli'(f, i,  nil,   nil,  b)	= true
+      | alli'(f, i,   _,     _,   b)	= b
+    fun alli  f (xs,ys)			= alli'(f,0,xs,ys,true)
+    fun alliEq f (xs,ys)		= alli'(f,0,xs,ys,false)
+
+    fun exists'(f, x::xs, y::ys,b) 	= f(x,y) orelse exists'(f,xs,ys,b)
+      | exists'(f, nil  ,  nil ,_ ) 	= false
+      | exists'(f,  _   ,  nil ,true)   = raise UnequalLengths
+      | exists'(f, nil  ,   _  ,true)   = raise UnequalLengths
+      | exists'(f,  _   ,   _  ,_)      = false
+    fun exists  f (xs,ys)        	= exists'(f,xs,ys,false)
+    fun existsEq f (xs,ys)              = exists'(f,xs,ys,true)
+
+    fun existsi'(f,i,x::xs,y::ys,b) 	= f(i,x,y) orelse 
+					     existsi'(f,i+1,xs,ys,b)
+      | existsi'(f,i, nil , nil ,_)     = false
+      | existsi'(f,i, nil ,  _  ,true)  = raise UnequalLengths
+      | existsi'(f,i,  _  , nil ,true)  = raise UnequalLengths
+      | existsi'(f,i,  _  ,  _  ,_) 	= false
+    fun existsi  f (xs,ys)        	= existsi'(f,0,xs,ys,false)
+    fun existsiEq  f (xs,ys)            = existsi'(f,0,xs,ys,true)
+
+    fun find'(f, x::xs, y::ys) 		= if f(x,y) then SOME (x,y)
+					  else find'(f,xs,ys)
+      | find'(f,   _,     _  )		= NONE
+    fun find f (xs,ys)			= find'(f,xs,ys)
+
+    fun findi'(f, i, x::xs, y::ys)	= if f(i,x,y) then SOME(i,x,y)
+					  else findi'(f,i+1,xs,ys)
+      | findi'(f, i,   _,     _  )	= NONE
+    fun findi f (xs,ys)			= findi'(f,0,xs,ys)
+
+    fun filter'(f, x::xs, y::ys, g)	= if f(x,y)
+					  then (x,y)::filter'(f,xs,ys,g)
+					  else filter'(f,xs,ys,g)
+      | filter'(f,  xs,    ys,   g)	= (g(xs,ys); nil)
+    fun filter f (xs,ys)		= filter'(f,xs,ys,ignore)
+    fun filterEq f (xs,ys)		= filter'(f,xs,ys,checkEq)
+
+    fun filteri'(f, i, x::xs, y::ys, g)	= if f(i,x,y)
+					  then (i,x,y)::filteri'(f,i+1,xs,ys,g)
+					  else filteri'(f,i+1,xs,ys,g)
+      | filteri'(f, i,  xs,    ys,   g)	= (g(xs,ys); nil)
+    fun filteri f (xs,ys)		= filteri'(f,0,xs,ys,ignore)
+    fun filteriEq f (xs,ys)		= filteri'(f,0,xs,ys,checkEq)
+end

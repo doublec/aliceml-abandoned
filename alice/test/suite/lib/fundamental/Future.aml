@@ -1,0 +1,249 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestFuture :> TESTSUITE = (* the future test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    (* concur f ^= spawn f *)
+    (* creates new thread, evaluating f ()!
+       returns immideately with future!
+       if evaluation ends, future is replaced by result!
+       if f () returns future itself => raise Cyclic!
+       *)
+    fun testConcur () =
+	let
+	    val a = ref ""
+	    val b = ref ()
+	    val time = Time.fromMilliseconds (IntInf.fromInt 500)
+
+	    fun fReturn () = (a := "Alice")
+	    fun fFail   () = (raise Subscript; a := "false")
+	    fun fCyclic () = !b
+
+	    fun t x = 
+		(case x of
+		    NONE       => (Future.concur fReturn; 
+				   Thread.sleep time; !a = "Alice")
+		  | SOME false => (b := Future.concur fFail;
+				   Thread.sleep time;
+				   Future.isFailed (!b))
+		  | SOME true  => (b := Future.concur fCyclic;
+				   Thread.sleep time;
+				   Future.isFailed (!b)))
+	in 
+	    Gen.try 10 (Gen.option Gen.bool) (Test.test (fn x => (a := ""; 
+								  b := ();
+								  t x)))
+	end
+
+    (* byneed f ^= lazy f *)
+    fun testByneed () =
+	let
+	    val a = ref ""
+	    val b = ref ()
+	    val time = Time.fromMilliseconds (IntInf.fromInt 500)
+
+	    fun fReturn () = (a := "Alice")
+	    fun fFail   () = (raise Subscript; a := "false")
+	    fun fCyclic () = !b
+
+	    fun eval () = ()
+
+	    fun t x = 
+		(case x of
+		    NONE       => (eval (Future.byneed fReturn);
+				   Thread.sleep time; !a = "Alice")
+		  | SOME false => (b := Future.byneed fFail;
+				   eval (!b) handle Subscript => (); 
+				   Thread.sleep time;
+				   Future.isFailed (!b))
+		  | SOME true  => (b := Future.byneed fCyclic;
+				   Thread.sleep time;
+				   (eval (!b); false) 
+				      handle _ => true andalso
+						Future.isFailed (!b)))
+	in 
+	    Gen.try 10 (Gen.option Gen.bool) (Test.test (fn x => (a := ""; 
+								  b := ();
+								  t x)))
+	end
+
+    (* alarm t ^= spawn Thread.sleep t *)
+    fun testAlarm () =
+	let
+	    fun t x = 
+		let
+		    val a = Future.alarm x
+		    val b = Future.isFuture a
+		    val _ = Thread.sleep x
+		    val _ = Thread.sleep x
+		    val c = Future.isDetermined a
+		in
+		    a = () andalso b andalso c
+		end
+		    
+	in 
+	    Test.test (fn s => (Future.alarm (valOf (Time.fromString s)); 
+				false) handle Overflow => true) "1073741.8240";
+	    Test.test t (valOf (Time.fromString "1.00"))
+	end
+
+    fun testStatus () =
+	let
+	    val a = ref ""
+	    val b = ref ()
+	    val time = Time.fromMilliseconds (IntInf.fromInt 500)
+
+	    fun fReturn () = (a := "Alice")
+	    fun fWait   () = (Thread.sleep time; 
+			      Thread.sleep time; a := "Alice")
+	    fun fFail   () = (raise Subscript; a := "false")
+	    fun fCyclic () = !b
+
+	    fun t NONE                = (b := Future.concur fReturn;
+					 Thread.sleep time;
+					Future.status (!b) = Future.DETERMINED)
+	      | t (SOME NONE)         = (b := Future.concur fWait;
+					 Future.status (!b) = Future.FUTURE)
+	      | t (SOME (SOME false)) = (b := Future.concur fFail;
+					 Thread.sleep time;
+					 Future.status (!b) = Future.FAILED)
+	      | t (SOME (SOME true))  = (b := Future.concur fCyclic;
+					 Thread.sleep time;
+					 Future.status (!b) = Future.FAILED)
+	in
+	    Gen.try 10 (Gen.option (Gen.option Gen.bool)) 
+		    (Test.test (fn x => (a := "";
+					 b := ();
+					 t x)))
+	end
+
+    fun testIsFuture () =
+	let
+	    fun t x =
+		let
+		    val a = Future.concur (fn _ => Thread.sleep x)
+		    val b = Future.isFuture a
+		    val a' = Future.concur (fn _ => (raise Subscript; ()))
+		    val _ = Thread.sleep x
+		    val c = Future.isFuture a'
+		in
+		    b andalso (not c)
+		end
+	in
+	    Test.test t (valOf (Time.fromString "1.00"))
+	end
+
+    fun testIsFailed () =
+	let
+	    fun t x =
+		let
+		    val a = Future.concur (fn _ => Thread.sleep x)
+		    val b = Future.isFailed a
+		    val a' = Future.concur (fn _ => (raise Subscript; ()))
+		    val _ = Thread.sleep x
+		    val c = Future.isFailed a'
+		in
+		    (not b) andalso c
+		end
+	in
+	    Test.test t (valOf (Time.fromString "1.00"))
+	end
+
+    fun testIsDetermined () =
+	let
+	    fun t x =
+		let
+		    val a = Future.concur (fn _ => Thread.sleep x)
+		    val b = Future.isDetermined a
+		    val _ = Thread.sleep x
+		    val _ = Thread.sleep x
+		    val c = Future.isDetermined a
+		in
+		    (not b) andalso c
+		end
+	in
+	    Test.test t (valOf (Time.fromString "1.00"))
+	end
+
+    fun testIsLazy () =
+	let
+	    fun t x =
+		let
+		    val a = Future.byneed (fn _ => Thread.sleep x)
+		    val b = Future.isLazy a
+		    val c = Future.isFuture a
+		    val a' = Future.concur (fn _ => Thread.sleep x)
+		    val d = Future.isLazy a'
+		    val a'' = Future.concur (fn _ => (raise Subscript; ()))
+		    val e = Future.isLazy a''
+		in
+		    b andalso c andalso (not d) andalso (not e)
+		end
+	in
+	    Test.test t (valOf (Time.fromString "1.00"))
+	end
+
+    fun testAwait () =
+	let
+	    val a = ref ""
+
+	    fun retImm () = (a := "Alice")
+	    fun retNorm () = (Thread.sleep (valOf (Time.fromString "1.00"));
+			      a := "Alice")
+	    fun noRet () = (raise Subscript)
+
+	    fun t b = (case b of
+			  NONE       => (Future.await (retImm ()); 
+					 !a = "Alice")
+			| SOME true  => (Future.await (retNorm ());
+					 !a = "Alice")
+			| SOME false => ((Future.await (noRet ());false)
+					         handle Subscript => true))
+	in 
+	    Gen.try 10 (Gen.option Gen.bool) (Test.test (fn b => (a := "";
+								  t b)))
+	end
+
+    fun testAwaitEither () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    (*  Concur (signature S = SIG functor F () = MOD) = spawn MOD : SIG
+        ByNeed (signature S = SIG functor F () = MOD) = lazy MOD : SIG *)
+    fun testConcurFunctor  () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testByNeedFunctor () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("Future", [("concur", testConcur), 
+                            ("byneed", testByneed),
+                            ("alarm", testAlarm),
+                            ("await", testAwait),
+ 			    ("awaitEither", testAwaitEither), 
+ 			    ("status", testStatus), 
+ 			    ("isFuture", testIsFuture), 
+ 			    ("isFailed", testIsFailed), 
+ 			    ("isDetermined", testIsDetermined),
+  			    ("isLazy", testIsLazy), 
+ 			    ("Concur", testConcurFunctor), 
+	                    ("ByNeed", testByNeedFunctor)])
+end

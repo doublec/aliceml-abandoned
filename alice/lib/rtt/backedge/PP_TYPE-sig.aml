@@ -1,0 +1,29 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure Path        from "x-alice:/lib/rtt/Path"
+import structure Type        from "Type"
+
+signature PP_TYPE =
+sig
+    type doc  = PrettyPrint.doc
+    type path = Path.t
+    type var  = Type.var
+    type typ  = Type.typ
+    type kind = Type.kind
+
+    val ppKind :	kind -> doc
+    val ppTyp :		typ -> doc
+    val ppTyp' :	path list * int * (Type.canonical_typ, doc) Type.Map.map * (var, doc) Type.Map.map -> typ -> doc
+    val ppVar :		int * var -> doc
+end
