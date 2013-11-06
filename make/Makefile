@@ -142,14 +142,12 @@ info:
 
 .PHONY:	setup setup-wingtk setup-release
 setup:
-	(cd $(PWD) && hg clone $(HGROOT)seam-support seam-support)
 	make build-seam-support
-	mkdir -p $(PWD)/seam/build
-	(cd $(PWD)/seam && hg clone $(HGROOT)seam sources)
-	mkdir -p $(PWD)/gecode/build
+	mkdir -p $(PWD)/build/seam
+	mkdir -p $(PWD)/build/gecode
+	mkdir -p $(PWD)/gecode
+	mkdir -p $(PWD)/build/alice
 	(cd $(PWD)/gecode && wget $(GECODE_URL) -O - | tar xz && mv $(GECODE_ARCHIVE_NAME) sources && cd sources && patch -p1 < $(PWD)/make/patches/gecode1-3-1_gcc4-4.patch)
-	mkdir -p $(PWD)/alice/build
-	(cd $(PWD)/alice && hg clone $(HGROOT)alice sources)
 	@echo Setup complete.
 	@echo Include $(PWD)/seam-support/install/bin into your PATH.
 
@@ -306,12 +304,12 @@ build-seam-support-windows:
 
 .PHONY:	clean-gecode
 clean-gecode:
-	(cd $(PWD)/gecode/build && rm -rf *)
+	(cd $(PWD)/build/gecode && rm -rf *)
 
 .PHONY:	configure-gecode-windows
 configure-gecode-windows:
-	(cd $(PWD)/gecode/build && \
-	 ../sources/configure \
+	(cd $(PWD)/build/gecode && \
+	 $(PWD)/gecode/sources/configure \
 		CXX='i686-pc-mingw32-g++' \
 		CC='i686-pc-mingw32-gcc' \
 		--enable-static --disable-shared \
@@ -320,15 +318,15 @@ configure-gecode-windows:
 
 .PHONY:	configure-gecode-linux
 configure-gecode-linux:
-	(cd $(PWD)/gecode/build && \
-	 ../sources/configure \
+	(cd $(PWD)/build/gecode && \
+	 $(PWD)/gecode/sources/configure \
 		--enable-static \
 		--disable-examples --disable-search --disable-minimodel \
 		--prefix='$(PWD)/gecode/install')
 
 .PHONY:	rebuild-gecode
 rebuild-gecode:
-	(cd $(PWD)/gecode/build && make install)
+	(cd $(PWD)/build/gecode && make install)
 
 .PHONY:	build-gecode-windows build-gecode-linux
 build-gecode-windows: configure-gecode-windows rebuild-gecode
@@ -338,20 +336,20 @@ build-gecode-linux: configure-gecode-linux rebuild-gecode
 
 .PHONY:	clean-seam
 clean-seam:
-	(cd $(PWD)/seam/build && rm -rf *)
+	(cd $(PWD)/build/seam && rm -rf *)
 
 .PHONY: setup-seam
 setup-seam:
-	(cd $(PWD)/seam/sources && make -f Makefile.cvs)
+	(cd $(PWD)/seam && make -f Makefile.cvs)
 
 .PHONY: setup-seam64
 setup-seam64:
-	(cd $(PWD)/seam/sources && make -f Makefile.cvs autotools)
+	(cd $(PWD)/seam && make -f Makefile.cvs autotools)
 
 .PHONY:	configure-seam-windows
 configure-seam-windows:
-	(cd $(PWD)/seam/build && \
-	 ../sources/configure \
+	(cd $(PWD)/build/seam && \
+	 $(PWD)/seam/configure \
 		CXX='i686-pc-mingw32-g++ -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
 		CC='i686-pc-mingw32-gcc -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
 		--prefix='$(PREFIX)' \
@@ -360,23 +358,23 @@ configure-seam-windows:
 
 .PHONY:	configure-seam-linux
 configure-seam-linux:
-	(cd $(PWD)/seam/build && \
-	 ../sources/configure \
+	(cd $(PWD)/build/seam && \
+	 $(PWD)/seam/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
 		--with-zlib='$(PWD)/seam-support/install')
 
 .PHONY:	configure-seam-linux64
 configure-seam-linux64:
-	(cd $(PWD)/seam/build && \
-	 ../sources/configure \
+	(cd $(PWD)/build/seam && \
+	 $(PWD)/seam/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
 		--disable-lightning)
 
 .PHONY:	rebuild-seam
 rebuild-seam:
-	(cd $(PWD)/seam/build && make install)
+	(cd $(PWD)/build/seam && make install)
 
 .PHONY:	build-seam-windows build-seam-linux build-seam-linux64
 build-seam-windows: setup-seam configure-seam-windows rebuild-seam
@@ -387,17 +385,17 @@ build-seam-linux64: setup-seam64 configure-seam-linux64 rebuild-seam
 
 .PHONY:	clean-alice-ll
 clean-alice-ll:
-	(cd $(PWD)/alice/build && rm -rf *)
+	(cd $(PWD)/build/alice && rm -rf *)
 
 .PHONY: setup-alice-ll
 setup-alice-ll:
-	(cd $(PWD)/alice/sources/vm-seam &&  if (test ! -e configure); then make -f Makefile.cvs; fi)
+	(cd $(PWD)/alice/vm-seam &&  if (test ! -e configure); then make -f Makefile.cvs; fi)
 
 .PHONY:	configure-alice-ll-windows
 configure-alice-ll-windows:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd $(PWD)/alice/build && \
-	 ../sources/vm-seam/configure \
+	(cd $(PWD)/build/alice && \
+	 $(PWD)/alice/vm-seam/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
 		--with-gmp='$(PWD)/seam-support/install')
@@ -405,15 +403,15 @@ configure-alice-ll-windows:
 .PHONY:	configure-alice-ll-linux
 configure-alice-ll-linux:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd $(PWD)/alice/build && \
-	 ../sources/vm-seam/configure \
+	(cd $(PWD)/build/alice && \
+	 $(PWD)/alice/vm-seam/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes)
 
 .PHONY:	rebuild-alice-ll
 rebuild-alice-ll:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd $(PWD)/alice/build && make install)
+	(cd $(PWD)/build/alice && make install)
 
 .PHONY:	build-alice-ll-windows build-alice-ll-linux
 build-alice-ll-windows: setup-alice-ll configure-alice-ll-windows rebuild-alice-ll
@@ -423,13 +421,13 @@ build-alice-ll-linux: setup-alice-ll configure-alice-ll-linux rebuild-alice-ll
 
 .PHONY:	clean-alice-bootstrap
 clean-alice-bootstrap:
-	(cd $(PWD)/alice/sources && make distclean)
+	(cd $(PWD)/alice && make distclean)
 
 .PHONY: setup-alice-bootstrap
 setup-alice-bootstrap:
-	(cp $(PWD)/alice/build/Makefile.bootstrap $(PWD)/alice/sources/vm-seam) && \
+	(cp $(PWD)/build/alice/Makefile.bootstrap $(PWD)/alice/vm-seam) && \
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd $(PWD)/alice/sources && \
+	(cd $(PWD)/alice && \
 	 make PREFIX="$(PREFIX)" \
 	      TARGET=seam \
 	      bootstrap-smlnj)
@@ -437,7 +435,7 @@ setup-alice-bootstrap:
 .PHONY:	rebuild-alice-bootstrap
 rebuild-alice-bootstrap:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd $(PWD)/alice/sources && \
+	(cd $(PWD)/alice && \
 	 make PREFIX="$(PREFIX)" \
 	      TARGET=seam \
 	      reinstall-seam)
