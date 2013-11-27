@@ -38,7 +38,7 @@ Building on Mac OS X
 ====================
 
 Support for building on Mac OS X is in the early stages and slightly more manual
-than building on Linux due to errors I haven't worked out. Help for Mac OS X
+than building on Linux due to errors I haven't worked out. Help from Mac OS X
 users would be useful.
 
 The following packages were used from [Homebrew](http://brew.sh):
