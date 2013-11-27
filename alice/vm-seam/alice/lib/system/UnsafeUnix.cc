@@ -227,7 +227,7 @@ DEFINE1(UnsafeUnix_waitnh) {
 #else
   DECLARE_INT(pid, x0);
   int status;
-  s_int ret = waitpid(static_cast<__pid_t>(pid), &status, WNOHANG);
+  s_int ret = waitpid(static_cast<pid_t>(pid), &status, WNOHANG);
   if(ret == 0) { // process is still alive
     option = Store::IntToWord(Types::NONE);
   } else if(ret == pid) { // process is dead

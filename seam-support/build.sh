@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh 
 
 set -e
 
@@ -12,15 +12,21 @@ SUPPORTDIR="$(pwd)"
 : ${prefix="$SUPPORTDIR/install"}
 
 case `uname -sm` in
+    *Darwin*)
+	CC=gcc-4.2
+	LIBTOOLIZE=glibtoolize
+	;;
     *CYGWIN*)
 	BUILD_GMP=1
 	BUILD_SQLITE=1
 	BUILD_LIBXML=1
 	CC="i686-pc-mingw32-gcc"
+	LIBTOOLIZE=libtoolize
 	;;
 	*x86_64*)
 	LIGHTNING=0
 	CC=gcc
+	LIBTOOLIZE=libtoolize
 	;;
     *)
 	CC=gcc
@@ -53,7 +59,7 @@ if [ "x${AUTOMAKE}" != "x" ]; then
 		rm -f aclocal.m4 configure
 		find . -name Makefile.in | xargs rm -f
 		echo "### - reconfiguring the source" >&2
-		libtoolize --automake && aclocal && automake --add-missing && autoconf &&
+		$LIBTOOLIZE --automake && aclocal && automake --add-missing && autoconf &&
 		./configure --prefix="${prefix}" &&
 		echo "### - building and installing" >&2
 		make all install

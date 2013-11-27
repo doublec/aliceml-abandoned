@@ -202,12 +202,14 @@ clean: clean-distro clean-gecode clean-seam clean-alice-ll clean-alice-bootstrap
 .PHONY:	cleanbuild
 cleanbuild: clean all
 
-.PHONY:	build-windows build-linux build-linux64 build-freebsd build-ppc-darwin
+.PHONY:	build-windows build-linux build-linux64 build-freebsd build-ppc-darwin build-darwin64
 build-windows: build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap build-suffix
 
 build-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap build-suffix 
 
 build-linux64: build-gecode-linux build-seam-linux64 build-alice-ll-linux build-alice-bootstrap build-suffix
+
+build-darwin64: build-gecode-darwin build-seam-darwin64 build-alice-ll-linux build-alice-bootstrap build-suffix
 
 build-freebsd:
 	@echo TODO
@@ -231,12 +233,13 @@ release-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-al
 release-freebsd:    build-freebsd
 release-ppc-darwin: build-ppc-darwin
 
-.PHONY: all windows linux linux64 freebsd ppc-darwin
+.PHONY: all windows linux linux64 freebsd ppc-darwin darwin64
 windows:    setup-wingtk build-windows
 linux:	    build-linux
 linux64:    build-linux64
 freebsd:    build-freebsd
 ppc-darwin: build-ppc-darwin
+darwin64:   build-darwin64
 
 # remember: values in SYSTEM are lowercase (see setting SYSTEM)
 all:
@@ -261,6 +264,10 @@ all:
 		echo "building for Power Mac Darwin" ; \
 	        make ppc-darwin ; \
 	   	;; \
+	   *x86_64*darwin*) \
+	    echo "building for Darwin64" ; \
+	    make darwin64 ; \
+	    ;; \
 	   *) \
 		echo "Non-supported OS: $(SYSTEM)"; \
 		exit 1 \
@@ -324,13 +331,25 @@ configure-gecode-linux:
 		--disable-examples --disable-search --disable-minimodel \
 		--prefix='$(PWD)/gecode/install')
 
+.PHONY: configure-gecode-darwin
+configure-gecode-darwin:
+	(cd $(PWD)/build/gecode && \
+	 $(PWD)/gecode/sources/configure \
+		CXX='g++-4.2' \
+		CC='gcc-4.2' \
+		--enable-static \
+		--disable-examples --disable-search --disable-minimodel \
+		--prefix='$(PWD)/gecode/install')
+
+
 .PHONY:	rebuild-gecode
 rebuild-gecode:
 	(cd $(PWD)/build/gecode && make install)
 
-.PHONY:	build-gecode-windows build-gecode-linux
+.PHONY:	build-gecode-windows build-gecode-linux build-gecode-darwin
 build-gecode-windows: configure-gecode-windows rebuild-gecode
 build-gecode-linux: configure-gecode-linux rebuild-gecode
+build-gecode-darwin: configure-gecode-darwin rebuild-gecode
 
 ########### Seam ############
 
@@ -372,14 +391,25 @@ configure-seam-linux64:
 		--with-warnings=yes \
 		--disable-lightning)
 
+.PHONY:	configure-seam-darwin64
+configure-seam-darwin64:
+	(cd $(PWD)/build/seam && \
+	 $(PWD)/seam/configure \
+		CXX='g++-4.2' \
+		CC='gcc-4.2' \
+		--prefix='$(PREFIX)' \
+		--with-warnings=yes \
+		--disable-lightning)
+
 .PHONY:	rebuild-seam
 rebuild-seam:
 	(cd $(PWD)/build/seam && make install)
 
-.PHONY:	build-seam-windows build-seam-linux build-seam-linux64
+.PHONY:	build-seam-windows build-seam-linux build-seam-linux64 build-seam-darwin64
 build-seam-windows: setup-seam configure-seam-windows rebuild-seam
 build-seam-linux: setup-seam configure-seam-linux rebuild-seam
 build-seam-linux64: setup-seam64 configure-seam-linux64 rebuild-seam
+build-seam-darwin64: setup-seam64 configure-seam-darwin64 rebuild-seam
 
 ########### Alice Language Layer ############
 

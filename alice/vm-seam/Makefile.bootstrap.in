@@ -459,15 +459,15 @@ build1/%.cc: %.cc
 
 Rel1.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../|g' < $< | tr '\n' ' ' | \
-	sed 's|(\*END\*)|\n|g' > $@
+	sed 's|(\*END\*)| |g' > $@
 
 Rel2.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' | \
-	sed 's|(\*END\*)|\n|g' > $@
+	sed 's|(\*END\*)| |g' > $@
 
 Rel3.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../../|g' < $< | tr '\n' ' ' | \
-	sed 's|(\*END\*)|\n|g' > $@
+	sed 's|(\*END\*)| |g' > $@
 
 build1/Build1.aml: Build1.aml
 	cp $< $@

@@ -30,8 +30,14 @@ VERSION = $(shell alicetool --package-version)
 DISTFILES = $(SOURCES) Makefile debian LICENSE
 distdir = alice-xml-$(VERSION)
 
+OS:=$(shell uname -s)
+ifeq ($(OS),Darwin)
+EXTRA_LIBS = "-lxml2"
+EXTRA_INCLUDES = "-I/usr/include/libxml2"
+else
 EXTRA_LIBS = `pkg-config --libs libxml-2.0`
 EXTRA_INCLUDES = `pkg-config --cflags libxml-2.0`
+endif
 
 all: compiledll compilealice
 compiledll: $(NATIVES:%=%.dll)
