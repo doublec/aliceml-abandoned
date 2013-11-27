@@ -64,11 +64,7 @@ The build can be continued with:
     $ PATH=/path/to/aliceml/distro/bin:$PATH make -C ../alice/lib/gtk/seam/
     $ make all
 
-The final system will be in the `distro` subdirectory and instructions are printed at the end of `make all` on how to add to the `PATH` and run. Unfortunately the GUI tools won't work so `inspect` and other commands fail with:
-
-    NativeCore.cc:744 error 'dlopen(libgtk-x11-2.0.so, 9): image not found'
-
-This is due to Alice ML not using 'dylib' instead of 'so' for shared libraries from the looks of it. This should be relatively simple to fix but I haven't yet got to it.
+The final system will be in the `distro` subdirectory and instructions are printed at the end of `make all` on how to add to the `PATH` and run.
 
 Original Source
 ===============

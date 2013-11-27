@@ -735,6 +735,8 @@ static void Init() {
   HWND hWnd = CreateWindow("BUTTON", "", 0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
   ShowWindow(hWnd, SW_SHOWNORMAL);
   DestroyWindow(hWnd);
+#elif defined(__APPLE__)
+  /* Nothing needed on Mac OS X */
 #else
   /*
    * on linux, this is required for GtkBuilder to work - it uses dlsym to
