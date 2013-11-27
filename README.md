@@ -13,8 +13,8 @@ Alice ML is a functional programming language based on Standard ML, extended wit
 
 More about Alice ML is available from the original project page: http://www.ps.uni-saarland.de/alice/
 
-Building
-========
+Building on Linux
+=================
 
 The following packages were required to build on Ubuntu 13.10:
 
@@ -28,11 +28,47 @@ To build:
     $ git clone git://github.com/doublec/aliceml
     $ cd aliceml/make
     $ make setup
-    #...add directory display to the PATH...
+    #...add directory displayed to the PATH...
     $ export PATH=/path/displayed/in/setup:$PATH
     $ make all
 
 The final system will be in the `distro` subdirectory and instructions are printed at the end of `make all` on how to add to the `PATH` and run.
+
+Building on Mac OS X
+====================
+
+Support for building on Mac OS X is in the early stages and slightly more manual
+than building on Linux due to errors I haven't worked out. Help for Mac OS X
+users would be useful.
+
+The following packages were used from [Homebrew](http://brew.sh):
+
+    $ brew install smlnj gmp libgnomecanvas gtk+
+
+To build:
+
+    $ git clone git://github.com/doublec/aliceml
+    $ cd aliceml/make
+    $ export PKG_CONFIG_PATH=/opt/X11/lib/pkgconfig
+    $ make setup
+    #...add directory displayed to the PATH...
+    $ export PATH=/path/displayed/in/setup:$PATH
+    $ make all
+
+On my machine the `make all` fails some time in the build when compiling `NativeLibs.cc` with this error:
+
+    distro/bin/seamtool: line 63: echo: write error: Resource temporarily unavailable
+
+The build can be continued with:
+
+    $ PATH=/path/to/aliceml/distro/bin:$PATH make -C ../alice/lib/gtk/seam/
+    $ make all
+
+The final system will be in the `distro` subdirectory and instructions are printed at the end of `make all` on how to add to the `PATH` and run. Unfortunately the GUI tools won't work so `inspect` and other commands fail with:
+
+    NativeCore.cc:744 error 'dlopen(libgtk-x11-2.0.so, 9): image not found'
+
+This is due to Alice ML not using 'dylib' instead of 'so' for shared libraries from the looks of it. This should be relatively simple to fix but I haven't yet got to it.
 
 Original Source
 ===============
