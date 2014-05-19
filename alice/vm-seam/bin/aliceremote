@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Author:
 #   Andreas Rossberg <rossberg@ps.uni-sb.de>

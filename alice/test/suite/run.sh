@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if [ `uname | head -c 6 | tr [A-Z] [a-z]` = "cygwin" ]; then
   ARG=PLATFORM_WINDOWS

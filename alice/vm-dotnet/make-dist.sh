@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 URL=http://www.ps.uni-sb.de/stockhausen/lightning/
 

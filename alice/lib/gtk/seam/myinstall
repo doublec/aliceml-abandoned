@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This little shell script tests whether install has the -C option,
 # and uses it if it exists. 

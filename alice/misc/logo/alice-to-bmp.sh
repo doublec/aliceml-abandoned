@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 gs="gs -q -dBATCH -dNOPAUSE -sDEVICE=bmp16m -r300"
 

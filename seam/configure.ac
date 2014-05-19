@@ -44,8 +44,8 @@ else
      [LIBS="${LIBS}${LIBS:+ }-lz"
       AC_DEFINE(HAVE_ZLIB, 1)],
      [LIBS="zlib.lib${LIBS:+ }${LIBS}"
-      AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <zlib.h>]],
-                                     [[gzFile f = gzopen("foo", "rb");]]),
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <zlib.h>]],
+                                     [[gzFile f = gzopen("foo", "rb");]])],
         [AC_MSG_RESULT(zlib.lib)
          AC_DEFINE(HAVE_ZLIB, 1)],
         [AC_MSG_ERROR(cannot find the zlib file compression library)])])
@@ -109,8 +109,8 @@ AC_CHECK_DECL(LoadLibrary,
 
 # groups of checks
 
-AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <signal.h>]],
-  [[signal(SIGALRM, 0);]]),
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
+  [[signal(SIGALRM, 0);]])],
   [AC_DEFINE(HAVE_SIGNAL, 1)
    AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_SIGNAL=1)],
   [AC_DEFINE(HAVE_SIGNAL, 0)
@@ -180,7 +180,6 @@ AC_CONFIG_FILES([
    adt/Makefile
    generic/Makefile
    store/Makefile
-   lightning/Makefile
    debian/Makefile
    seamtool])
 AC_OUTPUT

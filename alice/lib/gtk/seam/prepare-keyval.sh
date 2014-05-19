@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Shell script to generate Key.aml 
 # calls prepare-keyval.awk to do the actual work
 # Copyright: Benedikt Grundmann <bgrund@ps.uni-sb.de>

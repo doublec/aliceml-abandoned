@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This script prepends a new changelog entry to all changelog files
 # found in PATHS.

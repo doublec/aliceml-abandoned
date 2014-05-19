@@ -131,7 +131,7 @@ AC_DEFUN([AC_SEAM_CHECK_CXXFLAG],
    ac_seam_save_CXXFLAGS="${CXXFLAGS}"
    CXXFLAGS="${CXXFLAGS}${CXXFLAGS:+ }$1"
    AC_LANG_PUSH(C++)
-   AC_COMPILE_IFELSE(AC_LANG_PROGRAM(),
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM()],
      [AC_MSG_RESULT(yes)
       CXXFLAGS="${ac_seam_save_CXXFLAGS}"
       ifelse([$2], , [CXXFLAGS="${CXXFLAGS}${CXXFLAGS:+ }$1"], [$2])],
@@ -176,7 +176,7 @@ AC_DEFUN([AC_SEAM_CHECK_LDFLAG],
    AC_MSG_CHECKING(whether the linker accepts [$1])
    ac_seam_save_LDFLAGS="${LDFLAGS}"
    LDFLAGS="${LDFLAGS}${LDFLAGS:+ }$1"
-   AC_LINK_IFELSE(AC_LANG_PROGRAM(),
+   AC_LINK_IFELSE([AC_LANG_PROGRAM()],
      [AC_MSG_RESULT(yes)
       LDFLAGS="$ac_seam_save_LDFLAGS"
       ifelse([$2], , [LDFLAGS="${LDFLAGS}${LDFLAGS:+ }$1"], [$2])],
@@ -489,7 +489,7 @@ dnl
 AC_DEFUN([AC_SEAM_CHECK_DECLSPEC],
   [AC_MSG_CHECKING(whether compiler understands __declspec(dllexport))
    AC_LINK_IFELSE(dnl
-      AC_LANG_PROGRAM([[void __declspec(dllexport) foo() {};]], []),
+      [AC_LANG_PROGRAM([[void __declspec(dllexport) foo() {};]], [])],
      [AC_MSG_RESULT(yes)
       AC_DEFINE(HAVE_DLLS, 1)],
      [AC_MSG_RESULT(no)
@@ -508,39 +508,39 @@ dnl
 AC_DEFUN([AC_SEAM_CHECK_SOCKET_FLAVOR],
   [AC_MSG_CHECKING(for Unix select vs. WinSock)
    AC_LINK_IFELSE(dnl
-      AC_LANG_PROGRAM(dnl
+      [AC_LANG_PROGRAM(dnl
         [[#include <sys/select.h>]],
-        [[select(0, 0, 0, 0, 0);]]),
+        [[select(0, 0, 0, 0, 0);]])],
      [AC_MSG_RESULT(posix)
       AC_DEFINE(USE_POSIX_SELECT, 1)
       AC_DEFINE(USE_WINSOCK, 0)],
      [AC_LINK_IFELSE(dnl
-        AC_LANG_PROGRAM(dnl
+        [AC_LANG_PROGRAM(dnl
           [[#include<sys/types.h>
 	    #include<sys/time.h>
 	    #include<unistd.h>]],
-          [[select(0, 0, 0, 0, 0);]]),
+          [[select(0, 0, 0, 0, 0);]])],
 	[AC_MSG_RESULT(unix)
 	 AC_DEFINE(USE_POSIX_SELECT, 0)
 	 AC_DEFINE(USE_WINSOCK, 0)],
         [ac_seam_save_LIBS="${LIBS}"
          LIBS="${LIBS}${LIBS:+ }-lwsock32"
          AC_RUN_IFELSE(dnl
-            AC_LANG_PROGRAM(dnl
+            [AC_LANG_PROGRAM(dnl
               [[#include <winsock.h>]],
               [[WSADATA wsa_data;
                 WORD req_version = MAKEWORD(1, 1);
-                return WSAStartup(req_version, &wsa_data);]]),
+                return WSAStartup(req_version, &wsa_data);]])],
            [AC_MSG_RESULT(-lwsock32)
 	    AC_DEFINE(USE_POSIX_SELECT, 0)
             AC_DEFINE(USE_WINSOCK, 1)],
            [LIBS="wsock32.lib${LIBS:+ }${LIBS}"
             AC_RUN_IFELSE(dnl
-               AC_LANG_PROGRAM(dnl
+               [AC_LANG_PROGRAM(dnl
                  [[#include <winsock.h>]],
                  [[WSADATA wsa_data;
                    WORD req_version = MAKEWORD(1, 1);
-                   return WSAStartup(req_version, &wsa_data);]]),
+                   return WSAStartup(req_version, &wsa_data);]])],
               [AC_MSG_RESULT(wsock32.lib)
 	       AC_DEFINE(USE_POSIX_SELECT, 0)
                AC_DEFINE(USE_WINSOCK, 1)],

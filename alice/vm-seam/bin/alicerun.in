@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Author:
 #   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>

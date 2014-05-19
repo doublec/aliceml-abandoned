@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 icfpaddress=icfp-sub@cs.cornell.edu
 icfpsubject="ICFPsubmission"
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if [ -x /bin/uname ]; then UNAME=/bin/uname
 elif [ -x /usr/bin/uname ]; then UNAME=/usr/bin/uname

@@ -1,8 +1,4 @@
-if HAVE_LIBLTDL
-SUBDIRS = libltdl store adt generic lightning debian
-else
-SUBDIRS = store adt generic lightning debian
-endif
+SUBDIRS = libltdl store adt generic debian
 
 INCLUDES = $(LTDLINCL)
 

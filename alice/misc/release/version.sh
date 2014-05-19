@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This script modifies the version number in all files listed in FILES
 # to the version number specified by alicetool.

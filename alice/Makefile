@@ -37,7 +37,7 @@ else
 endif
 endif
 
-TIME = /usr/bin/time
+TIME := $(shell which time)
 TIMEDIR = $(PWD)/time
 TIMEO = $(shell ($(TIME) -o /dev/null ls >/dev/null && echo "yes" ))
 ifeq ($(TIMEO),yes)
